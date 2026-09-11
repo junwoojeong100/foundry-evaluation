@@ -1,0 +1,44 @@
+name: foundry-evaluation
+services:
+  foundry-project:
+    host: azure.ai.project
+    endpoint: ${FOUNDRY_PROJECT_ENDPOINT}
+  frontier-loop-0910:
+    project: ./src/agent
+    host: azure.ai.agent
+    language: python
+    uses:
+    - foundry-project
+    env:
+      AZURE_AI_MODEL_DEPLOYMENT_NAME: ${AZURE_AI_MODEL_DEPLOYMENT_NAME}
+      AZURE_SEARCH_ENDPOINT: ${AZURE_SEARCH_ENDPOINT}
+      AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT}
+      LAB_PREFIX: ${LAB_PREFIX}
+      LAB_AGENT_NAME: ${LAB_AGENT_NAME}
+      MODEL_SOL_DEPLOYMENT: ${MODEL_SOL_DEPLOYMENT}
+      MODEL_TERRA_DEPLOYMENT: ${MODEL_TERRA_DEPLOYMENT}
+      MODEL_LUNA_DEPLOYMENT: ${MODEL_LUNA_DEPLOYMENT}
+      MODEL_ASTRA_DEPLOYMENT: ${MODEL_ASTRA_DEPLOYMENT}
+      LAB_PROMPT_VERSION: ${LAB_PROMPT_VERSION}
+      LAB_AS_OF_DATE: ${LAB_AS_OF_DATE}
+      LAB_MAX_OUTPUT_TOKENS: ${LAB_MAX_OUTPUT_TOKENS}
+      OTEL_TRACES_SAMPLER: microsoft.fixed_percentage
+      OTEL_TRACES_SAMPLER_ARG: '1.0'
+    codeConfiguration:
+      dependencyResolution: remote_build
+      entryPoint: main.py
+      runtime: python_3_13
+    container:
+      resources:
+        cpu: '1'
+        memory: 2Gi
+    kind: hosted
+    name: frontier-loop-0910
+    description: Synthetic Korean travel policy assistant with Foundry IQ, four swappable
+      models and evaluation lineage.
+    startupCommand: python main.py
+    protocols:
+    - protocol: invocations
+      version: 2.0.0
+infra:
+  provider: microsoft.foundry

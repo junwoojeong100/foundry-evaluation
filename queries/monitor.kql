@@ -1,0 +1,29 @@
+let agentRequests = materialize(
+    requests
+    | where timestamp > ago(2h)
+    | extend agentName = coalesce(
+        tostring(customDimensions["gen_ai.agent.name"]),
+        tostring(customDimensions["azure.ai.agentserver.agent_name"]),
+        tostring(split(tostring(customDimensions["gen_ai.agent.id"]), ":")[0])
+    )
+    | where agentName == "__AGENT_NAME__"
+    | distinct operation_Id
+);
+dependencies
+| where timestamp > ago(2h)
+| where name == "learning_loop.answer"
+| where tostring(customDimensions["lab.run_id"]) == "__RUN_ID__"
+| join kind=inner agentRequests on operation_Id
+| project
+    timestamp,
+    trace_id = operation_Id,
+    case_id = tostring(customDimensions["lab.case_id"]),
+    model_key = tostring(customDimensions["lab.model_key"]),
+    prompt_version = tostring(customDimensions["lab.prompt_version"]),
+    success,
+    sample_weight = itemCount,
+    duration_ms = duration,
+    input_tokens = tolong(customDimensions["lab.input_tokens"]),
+    output_tokens = tolong(customDimensions["lab.output_tokens"]),
+    context_hash = tostring(customDimensions["lab.context_hash"])
+| order by timestamp asc

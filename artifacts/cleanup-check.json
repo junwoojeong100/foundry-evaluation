@@ -1,0 +1,11 @@
+{
+  "temporary_hosted_agent_absent": true,
+  "temporary_model_deployments_absent": 4,
+  "temporary_search_objects_absent": 3,
+  "temporary_role_assignments_absent": 3,
+  "existing_foundry_project_preserved": true,
+  "existing_search_service_preserved": true,
+  "existing_application_insights_preserved": true,
+  "existing_auxiliary_model_preserved": true,
+  "app_insights_metadata_correction_retained": true
+}

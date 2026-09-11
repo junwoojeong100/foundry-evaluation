@@ -1,0 +1,12 @@
+00:00 실제 Foundry에서 경험하는 learning loop
+00:45 네 모델을 Foundry UI에서 실제 배포
+02:15 Azure Cloud Shell에서 Python 실습 실행
+03:30 Foundry IQ 지식베이스 확인
+04:45 Foundry Data에 평가 데이터 등록
+05:45 Python Hosted Agent 배포와 Sol 호출
+07:00 Terra·Luna·Astra도 같은 Playground에서 호출
+08:15 24개 baseline 응답과 실제 Foundry Evaluation
+10:00 실제 trace graph와 AI 보조 실패 검토
+11:45 지침 V2와 네이티브 버전 비교
+13:00 V2·holdout 결과와 실제 Monitor
+14:15 임시 자원 정리와 학습 자산 보존

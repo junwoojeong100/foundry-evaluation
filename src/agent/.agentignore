@@ -1,0 +1,7 @@
+.env
+.venv/
+.foundry/
+__pycache__/
+*.pyc
+tests/
+eval.yaml

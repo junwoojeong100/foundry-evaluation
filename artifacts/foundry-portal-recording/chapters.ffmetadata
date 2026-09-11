@@ -1,0 +1,63 @@
+;FFMETADATA1
+title=실제 Foundry 포털에서 경험하는 Learning Loop
+comment=실제 포털 Playwright headless 원본 편집. 대기 제거 및 읽기용 화면 정지. 한국어 AI 합성 음성.
+[CHAPTER]
+TIMEBASE=1/1000
+START=0
+END=45000
+title=01 실제 Foundry에서 경험하는 learning loop
+[CHAPTER]
+TIMEBASE=1/1000
+START=45000
+END=135000
+title=02 네 모델을 Foundry UI에서 실제 배포
+[CHAPTER]
+TIMEBASE=1/1000
+START=135000
+END=210000
+title=03 Azure Cloud Shell에서 Python 실습 실행
+[CHAPTER]
+TIMEBASE=1/1000
+START=210000
+END=285000
+title=04 Foundry IQ 지식베이스 확인
+[CHAPTER]
+TIMEBASE=1/1000
+START=285000
+END=345000
+title=05 Foundry Data에 평가 데이터 등록
+[CHAPTER]
+TIMEBASE=1/1000
+START=345000
+END=420000
+title=06 Python Hosted Agent 배포와 Sol 호출
+[CHAPTER]
+TIMEBASE=1/1000
+START=420000
+END=495000
+title=07 Terra·Luna·Astra도 같은 Playground에서 호출
+[CHAPTER]
+TIMEBASE=1/1000
+START=495000
+END=600000
+title=08 24개 baseline 응답과 실제 Foundry Evaluation
+[CHAPTER]
+TIMEBASE=1/1000
+START=600000
+END=705000
+title=09 실제 trace graph와 AI 보조 실패 검토
+[CHAPTER]
+TIMEBASE=1/1000
+START=705000
+END=780000
+title=10 지침 V2와 네이티브 버전 비교
+[CHAPTER]
+TIMEBASE=1/1000
+START=780000
+END=855000
+title=11 V2·holdout 결과와 실제 Monitor
+[CHAPTER]
+TIMEBASE=1/1000
+START=855000
+END=900000
+title=12 임시 자원 정리와 학습 자산 보존

@@ -1,0 +1,12 @@
+00:00 목표: 모델보다 중요한 learning loop
+00:44 계정·모델·환경 준비
+01:44 Foundry IQ로 지식 준비와 검색
+02:59 Microsoft Agent Framework Python 코드
+04:30 로컬 실행과 실제 호출
+05:30 Hosted Agent 배포
+06:30 네 모델 baseline과 Foundry Evaluation
+08:00 실패 trace를 회귀 데이터로
+09:30 관찰한 실패에 맞춘 V2 지침
+11:14 같은 dev 재평가와 고정 후보의 holdout
+12:30 Monitor와 운영 판단
+14:00 안전한 정리와 남는 학습 자산

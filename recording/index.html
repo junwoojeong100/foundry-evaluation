@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Learning Loop Lab · 실제 Azure 실행 콘솔</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="brand-mark">↻</span><div><strong>LEARNING LOOP LAB</strong><small>Microsoft Agent Framework Python · Microsoft Foundry</small></div></div>
+    <div class="header-status"><span id="mode-badge">실제 실행 콘솔</span><span class="pill">15분 편집본</span><span class="pill secondary">브라우저 터미널 · localhost</span></div>
+  </header>
+  <aside><div class="nav-heading">처음부터 끝까지</div><nav id="chapters"></nav><div class="nav-foot">모델은 교체하고<br><strong>조직의 학습은 남긴다</strong><small>합성 정책 · API 키 녹화 없음</small></div></aside>
+  <main>
+    <div class="chapter-heading"><div><div id="eyebrow">01 · LEARNING LOOP</div><h1 id="chapter-title">모델보다 중요한 것은 학습하는 시스템</h1><p id="chapter-description"></p></div><div id="chapter-counter">01 / 12</div></div>
+    <div class="tabs">
+      <button data-view="overview" class="selected">핵심 흐름</button>
+      <button data-view="code">Python · 지식 · 지침</button>
+      <button data-view="terminal">실제 명령 실행</button>
+      <button data-view="results">실측 결과</button>
+      <button data-view="trace">Trace · 회귀 데이터</button>
+      <button data-view="diff">V1 → V2</button>
+    </div>
+    <section id="overview" class="panel active"></section>
+    <section id="code" class="panel">
+      <div class="panel-toolbar"><select id="source-select" aria-label="코드 파일">
+        <option value="agent">policy_agent.py · 모델 호출</option>
+        <option value="host">main.py · Hosted Agent</option>
+        <option value="knowledge">knowledge.py · Foundry IQ</option>
+        <option value="contract">contracts.py · 입력·출력 계약</option>
+        <option value="policies">policies.json · 합성 정책</option>
+        <option value="dev">dev.jsonl · 동결한 평가 데이터</option>
+        <option value="v1">v1.txt · 초기 지침</option>
+        <option value="v2">v2.txt · 개선 지침</option>
+        <option value="evaluation">experiments.py · 평가·lineage</option>
+        <option value="monitor">monitor.kql · 관측</option>
+        <option value="dependencies">requirements.txt · 고정 버전</option>
+      </select><span class="tag">실행한 파일 그대로</span></div>
+      <div class="code-scroll" id="code-scroll"><pre id="source-code"></pre></div>
+    </section>
+    <section id="terminal" class="panel">
+      <div class="panel-toolbar"><select id="step-select" aria-label="실습 명령"></select><button id="run-step" class="primary">이 명령 실행</button><span id="job-status" class="tag">실행 전</span></div>
+      <div class="command-line"><span>$</span><code id="command-text"></code></div>
+      <div class="terminal-log" id="terminal-log" aria-label="실제 실행 출력"></div>
+      <div class="terminal-footer"><span>실제 subprocess stdout / stderr · 화면에는 비식별 출력만 표시</span><strong id="job-time"></strong></div>
+    </section>
+    <section id="results" class="panel"><div class="panel-toolbar"><select id="result-select" aria-label="결과 코호트"><option value="baseline">V1 · baseline</option><option value="improved">V2 · improved</option><option value="holdout">V2 · holdout</option></select><span class="tag">Azure 실측 데이터</span></div><div id="result-content"></div></section>
+    <section id="trace" class="panel"><div class="panel-toolbar"><select id="trace-select" aria-label="Trace 코호트"><option value="baseline">V1 · baseline</option><option value="improved">V2 · improved</option><option value="holdout">V2 · holdout</option></select><span class="tag">operation_Id ↔ trace_id</span></div><div id="trace-content"></div></section>
+    <section id="diff" class="panel"><div class="diff-grid"><article><div class="diff-title before">V1 · 감사 가능성 누락</div><pre id="v1-code"></pre></article><article><div class="diff-title after">V2 · 근거와 판단 기준 명시</div><pre id="v2-code"></pre></article></div></section>
+  </main>
+  <footer id="caption-bar"><div id="caption-kicker">LEARNING LOOP</div><div id="caption">실제 Azure 실행을 브라우저에서 관찰합니다. 대기 구간은 편집에서 제거합니다.</div><div id="caption-note">합성 실습 자료 · 운영 승인 아님</div></footer>
+  <script src="/app.js"></script>
+</body>
+</html>

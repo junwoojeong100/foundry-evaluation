@@ -1,0 +1,10 @@
+{
+  "authoring": "AI-assisted, explicitly specified reference examples; not target-model outputs",
+  "groundedness": {
+    "calibration-grounded": true,
+    "calibration-ungrounded": false
+  },
+  "passed": true,
+  "evaluation_id": "eval_a0909671eec14390a60ce0e714dd3476",
+  "run_id": "evalrun_e523d42464e74269acc115f3f26837f0"
+}

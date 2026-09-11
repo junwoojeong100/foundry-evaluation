@@ -1,0 +1,38 @@
+{
+  "evidence_type": "live-query-observation-summary",
+  "verified_on": "2026-09-10",
+  "source": "Azure Monitor Application Insights, queried with monitor_resource_log_query",
+  "cohorts": [
+    "baseline-fulltrace-20260910T110544Z",
+    "improved-20260910T112553Z",
+    "holdout-20260910T113408Z"
+  ],
+  "grouping": "gen_ai.operation.name=chat, joined to learning_loop.answer by operation_Id; distinct trace count per model_key",
+  "results": [
+    {
+      "model_key": "sol",
+      "requested_deployment": "ll-0910-sol",
+      "actual_response_model": "gpt-5.6-sol-2026-07-09",
+      "distinct_traces": 16
+    },
+    {
+      "model_key": "terra",
+      "requested_deployment": "ll-0910-terra",
+      "actual_response_model": "gpt-5.6-terra-2026-07-09",
+      "distinct_traces": 16
+    },
+    {
+      "model_key": "luna",
+      "requested_deployment": "ll-0910-luna",
+      "actual_response_model": "gpt-5.6-luna-2026-07-09",
+      "distinct_traces": 16
+    },
+    {
+      "model_key": "astra",
+      "requested_deployment": "ll-0910-astra",
+      "actual_response_model": "gpt-6-astra-2026-09-03",
+      "distinct_traces": 16
+    }
+  ],
+  "total_primary_traces": 64
+}

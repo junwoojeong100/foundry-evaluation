@@ -1,0 +1,51 @@
+{
+  "started": 1789087360539,
+  "method": "Playwright recordVideo of actual Microsoft portal pages",
+  "headless": true,
+  "sources": [
+    {
+      "key": "main",
+      "offset_ms": 0,
+      "video": "raw/page@8c3ce79728fbaa162ba9f05c4e10c169.webm",
+      "sha256": "035948608dcc77a2d9c48e389a535e0e8bf602f35737147615fa195d593cd549"
+    },
+    {
+      "key": "foundry",
+      "offset_ms": 3066026,
+      "video": "raw/page@c3f62639e038e37ccd304e99fd95be4b.webm",
+      "sha256": "dbd19cd38e8e448b4c983170bc5bf58fd8fb781ef166a32736af748d454c9cef"
+    },
+    {
+      "key": "baseline-run",
+      "offset_ms": 6119306.399902344,
+      "video": "raw/page@c9eeaf79377d11cec335a79ee21a673d.webm",
+      "sha256": "6884fd3804d3ae24dcf4ea95829e523df84cf13015b4722f5896f0d3a956e874"
+    },
+    {
+      "key": "popup-3",
+      "offset_ms": 8134108,
+      "video": "raw/page@4dcd917d4661913d3c0a40fd33dbc7a7.webm",
+      "sha256": "43960c8869422aa0494275f1b04748fbab9327822fa0c312f59233a1b00215fa"
+    },
+    {
+      "key": "popup-4",
+      "offset_ms": 8134318,
+      "video": "raw/page@0765b37b8e4d154afb343d3cc4b6351c.webm",
+      "sha256": "b08bbe09e653d5d36593c4b7b6feb239792cbe2e42ab20a2a48b901359e6e4f1"
+    },
+    {
+      "key": "popup-5",
+      "offset_ms": 8499803,
+      "video": "raw/page@00bfc2c975234ab2a76a6e28aeaaacc4.webm",
+      "sha256": "dfdd906751680c9490ad7d1d9794c510e35ac1a49ca93312584fd2f07e7b3721"
+    }
+  ],
+  "excluded": "Login was never recorded; initial unmasked welcome, setup failures, and long waits were not selected.",
+  "supplemental_ui_evaluation": {
+    "evaluation_id": "eval_e20c9991d66840a2b9ecb8f363924dda",
+    "run_id": "evalrun_89079f3226c5438ea2e9bd37120f1e6c",
+    "status": "Completed",
+    "name": "portal0911-ui-baseline",
+    "metrics": "portal0911-ui-baseline\nDelete\nRun details\nStatus\nCompleted\nCreate time\n9/11/2026, 11:40:07 AM\nDuration\n57.96s\nCreated by\n[redacted]\nSee all properties\nRaw JSON\nOverall metric results\nRelevance\nGroundedness\n88%\n21 / 24\n100%\n24 / 24\n"
+  }
+}
