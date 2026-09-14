@@ -402,6 +402,9 @@ def make_index(directory: Path, timeline: list, report: dict):
         f"python3 recording/media_server.py --directory docs/{relative} --port 8899",
         "```", "",
         "`http://127.0.0.1:8899/index.html`에서 챕터를 누르면 해당 시각으로 이동합니다. MP4 파일은 일반 동영상 플레이어로도 열 수 있습니다.", "",
+        "GitHub 재생 주소와 원본 파일의 해시는 `docs/video-links.json`에서 관리합니다. "
+        "영상을 다시 만들었다면 새 파일을 GitHub 영상 첨부로 게시하고 주소·해시를 갱신해야 합니다. "
+        "이전 영상 주소를 새 파일의 재생 링크로 잘못 사용하는 경우 가이드 생성기가 중단합니다.", "",
         "", "## 기록의 범위", "",
         "- 구성 요소의 실행 완료와 모델별 업무 품질·실제 운영 승인은 별개입니다.",
         "- 기존 교육용 dev/holdout을 재실행했습니다. 새로운 독립 검증셋으로 포장하지 않습니다.",

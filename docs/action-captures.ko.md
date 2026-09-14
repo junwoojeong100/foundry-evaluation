@@ -150,6 +150,8 @@ python3 recording/media_server.py --directory docs/assets/live-20260914-2034 --p
 
 `http://127.0.0.1:8899/index.html`에서 챕터를 누르면 해당 시각으로 이동합니다. MP4 파일은 일반 동영상 플레이어로도 열 수 있습니다.
 
+GitHub 재생 주소와 원본 파일의 해시는 `docs/video-links.json`에서 관리합니다. 영상을 다시 만들었다면 새 파일을 GitHub 영상 첨부로 게시하고 주소·해시를 갱신해야 합니다. 이전 영상 주소를 새 파일의 재생 링크로 잘못 사용하는 경우 가이드 생성기가 중단합니다.
+
 
 ## 기록의 범위
 
