@@ -9,6 +9,8 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
+from video_links import published_video_url
+
 ROOT = Path(__file__).resolve().parents[1]
 FONT = "/System/Library/Fonts/AppleSDGothicNeo.ttc"
 FPS = 20
@@ -331,11 +333,16 @@ def make_player(directory: Path, timeline: list, report: dict):
         for item in timeline
     )
     warning = "<p><strong>초안: 추가 Foundry 포털 촬영과 최종 객체 정리는 인증 대기 중입니다. 전체 절차 완료 영상이 아닙니다.</strong></p>" if report["draft"] else ""
+    hosted_link = "" if report["draft"] else (
+        f'<p><a style="color:#9bcdff" href="{html.escape(published_video_url(directory / report["video_file"]), quote=True)}">'
+        "GitHub에서 바로 재생</a> · 아래 플레이어는 다운로드한 자료의 로컬 챕터 재생용입니다.</p>"
+    )
     page = f"""<!doctype html><html lang="ko"><meta charset="utf-8">
 <title>Foundry 실습 순서 통합 영상</title>
 <style>body{{margin:28px;background:#111827;color:#eef4ff;font:18px sans-serif}}video{{width:min(100%,1400px);display:block}}button{{display:block;background:#21334d;color:white;border:0;margin:6px 0;padding:10px;text-align:left;cursor:pointer}}p{{max-width:1200px;line-height:1.6}}</style>
 <h1>실습 순서 통합본 · CLI + 실제 포털</h1>
 {warning}
+{hosted_link}
 <p>각 절차의 실제 실행 화면입니다. 대기·화면 확인 구간을 줄였으며 로그인 화면과 개인 정보는 제외했습니다.
 이 영상의 길이는 Azure 준비·실습의 실제 소요 시간이 아닙니다.</p>
 <video controls preload="metadata" src="{report['video_file']}"><track kind="captions" srclang="ko" label="한국어" src="captions.ko.vtt"></video>
@@ -346,11 +353,16 @@ def make_player(directory: Path, timeline: list, report: dict):
 
 def make_index(directory: Path, timeline: list, report: dict):
     relative = directory.relative_to(ROOT / "docs").as_posix()
+    video_url = None if report["draft"] else published_video_url(directory / report["video_file"])
+    playback = (
+        f"로컬 MP4 초안: `{relative}/{report['video_file']}`"
+        if report["draft"] else f"[통합 영상 바로 재생]({video_url})"
+    )
     lines = [
         "# 절차별 실제 화면과 통합 영상", "",
         "**CLI와 실제 Azure / Foundry 포털을 실습가이드 순서로 연결한 기록입니다.**", "",
-        f"[통합 MP4{' 초안' if report['draft'] else ''}]({relative}/{report['video_file']}) · "
-        f"[절차별 재생 화면]({relative}/index.html) · "
+        playback + " · "
+        "[로컬 챕터 플레이어 사용법](#로컬에서-챕터를-눌러-재생하기) · "
         f"[챕터]({relative}/chapters.txt) · [한국어 자막]({relative}/captions.ko.srt)", "",
         f"영상 {timecode(report['duration_seconds'])} · CLI {report['cli_actions']}개 절차 · "
         f"포털 {report['portal_actions']}개 절차. 실패한 시도도 성공으로 바꾸지 않고 구분했습니다.", "",
@@ -362,6 +374,12 @@ def make_index(directory: Path, timeline: list, report: dict):
         "사진의 개인 경로·구독·리소스 이름을 그대로 복사하지 말고 **본문의 명령**과 본인 설정을 사용하세요.", "",
         "| 절차 | 화면 | 결과 | 시작 | 실행 전 | 실행 후 |", "|---|---|---|---|---|---|",
     ]
+    if video_url:
+        lines[6:6] = [
+            "GitHub에서는 아래 플레이어의 재생 버튼을 누르거나 위 **바로 재생** 링크를 사용합니다. "
+            "영상 원본은 저장소에 보존하고, 재생 링크는 GitHub의 동영상 첨부 주소를 사용합니다.",
+            "", video_url, "",
+        ]
     if report["draft"]:
         lines[4:4] = [
             "**미완료 범위:** 현재 영상은 실제 CLI learning loop와 Azure Portal 준비 화면을 묶은 초안입니다. "
@@ -371,9 +389,13 @@ def make_index(directory: Path, timeline: list, report: dict):
         before = next(shot for shot in item["screenshots"] if shot["phase"] == "before")
         after = next(shot for shot in item["screenshots"] if shot["phase"] in {"after", "failed"})
         state = {"completed": "실행 완료", "service_ready": "서버 실행 유지", "failed": "**실패한 시도**"}[item["status"]]
+        start = timecode(item["start_seconds"])
+        if video_url:
+            start = f"[{start}]({video_url}#t={item['start_seconds']:.2f})"
         lines.append(
             f"| `{item['id']}` {item['title']} | {item['kind'].upper()} | {state} | "
-            f"{timecode(item['start_seconds'])} | [전]({relative}/{before['file']}) | [후]({relative}/{after['file']}) |"
+            f"{start} | "
+            f"[전]({relative}/{before['file']}) | [후]({relative}/{after['file']}) |"
         )
     lines.extend([
         "", "## 로컬에서 챕터를 눌러 재생하기", "",

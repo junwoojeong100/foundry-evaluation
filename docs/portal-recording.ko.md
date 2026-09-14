@@ -2,7 +2,9 @@
 
 이 문서는 **2026-09-11의 보존 영상**이다. 새 환경의 완성 통합 영상은 [새 통합 촬영분](action-captures.ko.md), 실제 결과와 한계는 [최신 검증 기록](validation.ko.md)에서 따로 확인한다. 이 영상의 화면·점수를 새 실행 결과로 재사용하지 않는다.
 
-[15분 MP4](../artifacts/foundry-portal-recording/foundry-portal-learning-loop-15min-ko.mp4) · [한국어 자막](../artifacts/foundry-portal-recording/captions-ko.srt) · [챕터](../artifacts/foundry-portal-recording/chapters.txt) · [검수 기록](../artifacts/foundry-portal-recording/delivery-verification.json)
+[15분 영상 바로 재생](https://github.com/user-attachments/assets/72d4588f-5a6d-450b-819c-bcab035020fe) · [한국어 자막](../artifacts/foundry-portal-recording/captions-ko.srt) · [챕터](../artifacts/foundry-portal-recording/chapters.txt) · [검수 기록](../artifacts/foundry-portal-recording/delivery-verification.json)
+
+https://github.com/user-attachments/assets/72d4588f-5a6d-450b-819c-bcab035020fe
 
 **공개 범위:** 최종 영상·자막·챕터·검수 화면·편집 구간·원본 해시와 제작 코드를 포함한다. 환경 식별자가 담긴 `portal-final-evidence.zip`, `run-summary.json`, `portal-workshop-source.zip`과 녹화 원본·편집 중간 자료는 로컬에 보존하며 공개 저장소에는 포함하지 않는다.
 

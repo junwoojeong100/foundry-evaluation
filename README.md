@@ -6,13 +6,15 @@
 
 [새 Azure 환경부터 준비하기 — 실제 화면](docs/environment.ko.md)
 
-[실습 순서 통합 MP4 — 21분 55초, 실제 CLI + 포털](docs/assets/live-20260914-2034/foundry-evaluation-guide-order.mp4) · [절차별 재생 화면](docs/assets/live-20260914-2034/index.html) · [121개 절차의 전·후 캡처](docs/action-captures.ko.md)
+[통합 영상 바로 재생 — 21분 55초, 실제 CLI + 포털](https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010) · [챕터별 재생 위치·전후 캡처](docs/action-captures.ko.md) · [로컬 챕터 플레이어 사용법](docs/action-captures.ko.md#로컬에서-챕터를-눌러-재생하기)
+
+https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010
 
 > **이번 재촬영:** 2026-09-14–15에 새 Sweden Central 환경에서 **64응답·64trace·세 Foundry 평가 run**을 검증하고, 실제 포털의 KB·모델·V1/V2 응답·평가 보고서·trace·Monitor·정리 결과를 촬영했다. [실제 결과와 검증 한계](docs/validation.ko.md)는 과거 영상과 구분한다.
 
-[실제 Foundry 포털 15분 녹화본](artifacts/foundry-portal-recording/foundry-portal-learning-loop-15min-ko.mp4) · [포털 영상 설명·실행 결과](docs/portal-recording.ko.md)
+[실제 Foundry 포털 15분 녹화본 재생](https://github.com/user-attachments/assets/72d4588f-5a6d-450b-819c-bcab035020fe) · [포털 영상 설명·실행 결과](docs/portal-recording.ko.md)
 
-[기존 로컬 콘솔 15분 영상 — 보존본](artifacts/recording/foundry-learning-loop-15min-ko.mp4) · [기존 영상 설명](docs/recording.ko.md)
+[기존 로컬 콘솔 15분 영상 재생 — 보존본](https://github.com/user-attachments/assets/5bf6bf34-c5e7-4479-9f80-14e947ac5685) · [기존 영상 설명](docs/recording.ko.md)
 
 > **공개 저장소 범위:** 소스·문서·합성 데이터·선별된 검증 JSON/JSONL과 완성 녹화본·자막·챕터·검수 화면을 포함한다. 개인 환경 설정·실행 캐시, 녹화 원본·편집 중간 자료와 환경 식별자를 포함한 실행 증거 ZIP·업로드 설정은 로컬에 보존하며 GitHub에 올리지 않는다.
 

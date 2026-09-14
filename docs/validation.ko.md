@@ -4,7 +4,7 @@
 
 **새 Azure 환경의 실제 실행, 추가 포털 촬영, 실습 전용 객체 정리를 완료했다.** 본평가 **64응답·64개 서로 다른 실제 trace·완료된 Foundry 평가 run 3개**를 확인했다. 2026-09-15에 지정 계정으로 다시 인증한 뒤 실제 Foundry 포털에서 KB·모델·V1/V2 응답·평가·trace·Monitor·정리 결과를 촬영했다. 이전 영상이나 모의 화면으로 대체하지 않았다.
 
-[이번 실행의 선별 검증 JSON](assets/live-20260914-2034/azure-verification.json) · [실습 순서 통합 영상](assets/live-20260914-2034/foundry-evaluation-guide-order.mp4) · [절차별 전·후 화면](action-captures.ko.md) · [새 환경 준비](environment.ko.md)
+[이번 실행의 선별 검증 JSON](assets/live-20260914-2034/azure-verification.json) · [실습 순서 통합 영상 바로 재생](https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010) · [절차별 전·후 화면](action-captures.ko.md) · [새 환경 준비](environment.ko.md)
 
 ### 새 환경과 보존 범위
 
