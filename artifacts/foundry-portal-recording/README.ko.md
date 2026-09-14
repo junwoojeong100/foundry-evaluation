@@ -1,6 +1,8 @@
 # 실제 Foundry 포털 녹화
 
-**[15분 영상 재생](foundry-portal-learning-loop-15min-ko.mp4)**
+**[15분 영상 바로 재생](https://github.com/user-attachments/assets/72d4588f-5a6d-450b-819c-bcab035020fe)**
+
+https://github.com/user-attachments/assets/72d4588f-5a6d-450b-819c-bcab035020fe
 
 실제 Microsoft Foundry와 Azure Portal Cloud Shell을 Playwright headless로 녹화했다. 한국어 AI 합성 음성·핵심 자막을 포함하며, 대기를 잘라내고 읽기용 화면 정지를 명시했다. 기존 `../recording/` 영상은 그대로 보존했다.
 

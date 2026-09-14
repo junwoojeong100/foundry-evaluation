@@ -4,7 +4,9 @@
 
 요청한 형식은 **Playwright headless, 약 15분, 대기 구간 제거**다.
 
-**제작 완료:** [15분 MP4](../artifacts/recording/foundry-learning-loop-15min-ko.mp4) · [핵심 자막 SRT](../artifacts/recording/captions-ko.srt) · [챕터](../artifacts/recording/chapters.txt) · [검증 결과](../artifacts/recording/delivery-verification.json)
+**제작 완료:** [15분 영상 바로 재생](https://github.com/user-attachments/assets/5bf6bf34-c5e7-4479-9f80-14e947ac5685) · [핵심 자막 SRT](../artifacts/recording/captions-ko.srt) · [챕터](../artifacts/recording/chapters.txt) · [검증 결과](../artifacts/recording/delivery-verification.json)
+
+https://github.com/user-attachments/assets/5bf6bf34-c5e7-4479-9f80-14e947ac5685
 
 최종 MP4·자막·챕터·검수 기록과 contact sheet는 공개 저장소에 포함한다. `raw/`, `probe/`, 중간 음성 파일과 개인 실행 환경은 로컬에만 보존한다.
 

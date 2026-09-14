@@ -1,0 +1,28 @@
+{
+  "repository": "junwoojeong100/foundry-evaluation",
+  "hosting": "github-user-attachments",
+  "attachment_reference": "https://github.com/junwoojeong100/foundry-evaluation/pull/2",
+  "videos": {
+    "docs/assets/live-20260914-2034/foundry-evaluation-guide-order.mp4": {
+      "url": "https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010",
+      "content_type": "video/mp4",
+      "bytes": 32520580,
+      "duration_seconds": 1315.55,
+      "sha256": "14dfe628e56f48a9ef72a91ea7ee61855c1a9628e83c69cfe4526b70fba75f76"
+    },
+    "artifacts/foundry-portal-recording/foundry-portal-learning-loop-15min-ko.mp4": {
+      "url": "https://github.com/user-attachments/assets/72d4588f-5a6d-450b-819c-bcab035020fe",
+      "content_type": "video/mp4",
+      "bytes": 38245593,
+      "duration_seconds": 900,
+      "sha256": "2d5c22b223e37c4bbe6737d05d4bf62f0ea2359129563f9c7209a9988f7c7695"
+    },
+    "artifacts/recording/foundry-learning-loop-15min-ko.mp4": {
+      "url": "https://github.com/user-attachments/assets/5bf6bf34-c5e7-4479-9f80-14e947ac5685",
+      "content_type": "video/mp4",
+      "bytes": 46114836,
+      "duration_seconds": 900,
+      "sha256": "59838801ba8082f8fc0f20e4ff871e96235e879467275342dc3f84a1e9c2a86e"
+    }
+  }
+}

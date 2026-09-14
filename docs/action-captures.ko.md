@@ -2,7 +2,11 @@
 
 **CLI와 실제 Azure / Foundry 포털을 실습가이드 순서로 연결한 기록입니다.**
 
-[통합 MP4](assets/live-20260914-2034/foundry-evaluation-guide-order.mp4) · [절차별 재생 화면](assets/live-20260914-2034/index.html) · [챕터](assets/live-20260914-2034/chapters.txt) · [한국어 자막](assets/live-20260914-2034/captions.ko.srt)
+[통합 영상 바로 재생](https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010) · [로컬 챕터 플레이어 사용법](#로컬에서-챕터를-눌러-재생하기) · [챕터](assets/live-20260914-2034/chapters.txt) · [한국어 자막](assets/live-20260914-2034/captions.ko.srt)
+
+GitHub에서는 아래 플레이어의 재생 버튼을 누르거나 위 **바로 재생** 링크를 사용합니다. 영상 원본은 저장소에 보존하고, 재생 링크는 GitHub의 동영상 첨부 주소를 사용합니다.
+
+https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010
 
 영상 00:21:55 · CLI 78개 절차 · 포털 43개 절차. 실패한 시도도 성공으로 바꾸지 않고 구분했습니다.
 
@@ -145,6 +149,8 @@ python3 recording/media_server.py --directory docs/assets/live-20260914-2034 --p
 ```
 
 `http://127.0.0.1:8899/index.html`에서 챕터를 누르면 해당 시각으로 이동합니다. MP4 파일은 일반 동영상 플레이어로도 열 수 있습니다.
+
+GitHub 재생 주소와 원본 파일의 해시는 `docs/video-links.json`에서 관리합니다. 영상을 다시 만들었다면 새 파일을 GitHub 영상 첨부로 게시하고 주소·해시를 갱신해야 합니다. 이전 영상 주소를 새 파일의 재생 링크로 잘못 사용하는 경우 가이드 생성기가 중단합니다.
 
 
 ## 기록의 범위
