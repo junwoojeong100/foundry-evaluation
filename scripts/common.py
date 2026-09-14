@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 import os
 import re
 import subprocess
@@ -94,15 +95,16 @@ def command(args: list[str], *, timeout: int = 600) -> str:
         cwd=REPO_ROOT,
         check=False,
         capture_output=True,
-        text=True,
         timeout=timeout,
     )
+    stdout = completed.stdout.decode("utf-8")
+    stderr = completed.stderr.decode("utf-8")
     if completed.returncode:
         raise RuntimeError(
             f"{' '.join(args[:5])} failed ({completed.returncode}):\n"
-            f"{completed.stderr.strip()}\n{completed.stdout.strip()}"
+            f"{stderr.strip()}\n{stdout.strip()}"
         )
-    return completed.stdout
+    return stdout
 
 
 def az(*args: str) -> Any:
@@ -118,7 +120,28 @@ def az(*args: str) -> Any:
 def azd(*args: str, json_output: bool = True) -> Any:
     options = ["--output", "json"] if json_output else []
     text = command(["azd", *args, *options])
-    return json.loads(text) if json_output and text.strip() else text
+    return parse_azd_json(text) if json_output and text.strip() else text
+
+
+def validate_azd_suffix(suffix: str) -> None:
+    notice = suffix.strip()
+    if not notice:
+        return
+    pattern = (
+        r"WARNING: A new version of extension '[^'\r\n]+' is available: "
+        r"[A-Za-z0-9.+-]+ -> [A-Za-z0-9.+-]+\r?\n"
+        r"\s*[\u2022*-] To update: azd extension update [A-Za-z0-9_.-]+\r?\n"
+        r"\s*[\u2022*-] To update all: azd extension update --all"
+    )
+    if not re.fullmatch(pattern, notice):
+        raise ValueError("Unexpected content after the azd response; raw output is preserved.")
+    logging.getLogger(__name__).warning("azd update notice after the response (no update performed):\n%s", notice)
+
+
+def parse_azd_json(text: str) -> Any:
+    value, end = json.JSONDecoder().raw_decode(text.lstrip())
+    validate_azd_suffix(text.lstrip()[end:])
+    return value
 
 
 def authenticate() -> dict[str, Any]:

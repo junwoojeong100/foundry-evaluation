@@ -1,5 +1,107 @@
 # 실제 실행 검증 보고서
 
+## 2026-09-14–15 재실행 — `20260914-2034`
+
+**새 Azure 환경의 실제 실행, 추가 포털 촬영, 실습 전용 객체 정리를 완료했다.** 본평가 **64응답·64개 서로 다른 실제 trace·완료된 Foundry 평가 run 3개**를 확인했다. 2026-09-15에 지정 계정으로 다시 인증한 뒤 실제 Foundry 포털에서 KB·모델·V1/V2 응답·평가·trace·Monitor·정리 결과를 촬영했다. 이전 영상이나 모의 화면으로 대체하지 않았다.
+
+[이번 실행의 선별 검증 JSON](assets/live-20260914-2034/azure-verification.json) · [실습 순서 통합 영상](assets/live-20260914-2034/foundry-evaluation-guide-order.mp4) · [절차별 전·후 화면](action-captures.ko.md) · [새 환경 준비](environment.ko.md)
+
+### 새 환경과 보존 범위
+
+| 항목 | 실제 상태 |
+|---|---|
+| 새 그룹 | `rg-foundry-evaluation-20260914-2034`, `swedencentral` |
+| 새 Foundry 계정 / 프로젝트 | `fe-20260914-2034` / `learning-loop` |
+| 새 Search | `fe-search-20260914-2034`, Basic, semantic/knowledge retrieval `free` |
+| 새 관측 | `fe-logs-20260914-2034`, `fe-insights-20260914-2034` |
+| 에이전트 | `ll-0914-2034-agent`, baseline version **1**, candidate/holdout version **2** |
+| 보조 배포 | `ll-0914-2034-judge`, `gpt-5.4-mini` / `2026-03-17` |
+| 기존 그룹 삭제 | **0건**. 이 리포 전용으로 확인된 기존 그룹이 없었음 |
+| 기존 공유 환경 | `rg-iq-foundry-lab-56d62b` 및 다른 리포의 두 v2 그룹 보존 |
+| 인증 | 지정 계정·tenant·구독과 발급된 ARM 토큰의 주체 대조 |
+
+모든 Azure CLI 조회·변경에 구성된 구독을 명시했으며 `az account set`은 사용하지 않았다. Search가 최초 15분의 로컬 대기 제한을 넘긴 시도를 보존했고, 같은 리소스에서 이후 **`Succeeded` / `running`**을 실제 확인했다. 새 그룹으로 리소스를 재생성하거나 다른 리전·모델로 바꾸지 않았다.
+
+### 실제 결과
+
+네 모델·버전은 기존 계약 그대로다: Sol/Terra/Luna의 `2026-07-09`, Astra의 `2026-09-03`. 각 후보가 dev 6 + dev 6 + holdout 4 = **16개 답변**을 생성했다.
+
+| 단계 | 버전 | 실제 응답 / trace | 업무 검사 | Groundedness 통과 | Relevance 통과 |
+|---|---:|---:|---:|---:|---:|
+| baseline dev | 1 | 24 / 24 | 0/24 | 24/24 | 21/24 |
+| improved dev | 2 | 24 / 24 | 24/24 | 24/24 | 21/24 |
+| holdout | 2 | 16 / 16 | 16/16 | 16/16 | 16/16 |
+
+업무 검사는 V2에서 모델별 dev **6/6**, holdout **4/4**다. LLM evaluator는 기존 1–5점 척도와 threshold 4를 유지했다. **업무 검사와 native relevance의 결과는 다르며**, 불합격 native 점수를 합격으로 바꾸지 않았다. 오류·누락 행을 분모에서 빼지 않았다.
+
+| 단계 | Evaluation ID | Run ID |
+|---|---|---|
+| baseline | `eval_4e52a8af03e94b1d97fccce719cf568b` | `evalrun_28e28fff0a1240e687d216826f1c5075` |
+| improved | `eval_276405197d78476abfd5b25377291e95` | `evalrun_022dd0d4fe17441ba7fb469077108050` |
+| holdout | `eval_61a0c1526bd54a559385fef1cf788e17` | `evalrun_b6b76d93cc3d46baa5b9505a2be77c51` |
+
+Calibration의 고정 정답/오답 2개, 로컬·원격 smoke 호출은 이 64개 본평가 응답에 포함하지 않았다. 기존 교육용 holdout을 재실행했으므로 **새로운 독립 검증셋이나 일반적인 모델 우월성의 증거가 아니다.** `production_release_approved`는 **false**다.
+
+### 실제 실패 검토와 lineage
+
+`baseline-sol-D01`은 180,000원 한도와 `allowed` 판단은 맞았지만, `TRAVEL-2026` 대신 `"현행 국내 출장비 규정"`이라는 제목을 인용했다. 실제 검색 결과에 `TRAVEL-2026`이 있었으므로, 해당 사례의 실패를 “문서를 찾지 못함”으로 분류하지 않았다.
+
+이 행의 실제 trace `09823f28661586d11629dd328191f997`을 대조한 뒤 고정 dev 정답을 유지한 회귀 데이터를 만들었다. V2 수집이 그 회귀 데이터를 실제로 읽고 원래 trace를 재사용한 lineage를 최종 검증했다. 검토자는 **assistant**이며 실제 재무 담당자의 승인으로 표시하지 않았다.
+
+### 실행 중 확인해 수정한 점
+
+| 관찰 | 처리 |
+|---|---|
+| `az ad signed-in-user show`가 `--subscription`을 받지 않음 | 기본 계정으로 우회하지 않고, 지정 구독으로 발급된 ARM 토큰에서 tenant·principal을 확인. 토큰은 출력·저장하지 않음 |
+| Search 준비가 최초 로컬 대기 제한을 넘김 | 실패한 대기 기록 유지, 동일 서비스 재조회로 실제 준비 완료 확인 |
+| 실제 로컬 HTTP JSON 뒤에 azd 확장 업데이트 안내가 붙음 | UTF-8 `Content-Length`와 응답 경계를 엄격히 구분. 확인된 안내만 별도 경고로 기록. 알 수 없는 후행 오류는 거부 |
+| azd 부모 종료 직후 잠깐 남은 로컬 포트 | 소유 프로세스·포트가 실제 종료됨을 재확인하고 종료 확인에 제한된 대기 추가. 다른 프로세스는 종료하지 않음 |
+| MCP 브라우저 연결 재설정 | 원본 영상 2개와 캡처 보존. 완료 전 이동은 `interrupted`로 기록. 독립 Playwright headless 프로세스로 전환하고 재인증 후 같은 실제 대상을 다시 촬영 |
+| 탭 이동 후 버전 선택이 최신 버전으로 복귀 | Playground·Details 이동 뒤 선택 버전과 실제 응답의 `prompt_version`을 다시 확인 |
+| Foundry Indexes 목록과 Monitor Tools 목록이 비어 있음 | Search index 부재·도구 미실행으로 해석하지 않음. 실제 Azure Search의 7문서와 native retrieve span으로 별도 확인 |
+| 비교 UI가 입력을 양쪽에 동기화 | 두 응답의 실제 `prompt_version`과 서로 다른 trace로 V1/V2를 식별. 화면의 입력 label만으로 버전을 단정하지 않음 |
+
+파서 보완은 CLI 실행기 두 파일에 한정했다. **에이전트 코드·V1/V2 지침·정답/정책 데이터의 원래 hash가 변하지 않았음**을 확인했다. 최초 로컬 응답의 `.http` 원문도 보존했다. 관련 변경 후 필수 unittest 명령의 **39개 테스트**가 통과했다.
+
+### 실제 포털 검증과 추가 호출
+
+Azure Portal의 새 그룹·태그·자원 5개와 Foundry의 모델 5개, 실제 KB/source, Search index의 합성 문서 7개를 확인했다. 검토한 baseline trace를 **ID로 검색해 정확히 1건**을 찾고, 같은 요청의 9개 span·1개 chat·1개 tool call을 native Graph view에서 확인했다. 실제 model span의 `gen_ai.response.model`도 `gpt-5.6-sol-2026-07-09`였다.
+
+포털에서 V1 단독 1회, V1/V2 비교 2회를 추가 호출했다. **이 3응답은 본평가 64응답과 별도**다. 비교 UI가 입력을 동기화해 양쪽 `run_id`가 같았지만 실제 응답은 `prompt_version=v1` / `v2`, 서로 다른 trace ID로 구분됐다. V1은 문서 제목, V2는 `TRAVEL-2026`을 인용했다.
+
+Monitor의 Last Day 화면에는 약 **189.5K 토큰·70 agent runs**가 표시됐고, 별도 tool chart는 71호출을 표시했다. 차트별 집계와 반영 시점은 다르며, 이 수치를 본평가 64행의 분모나 HTTP 실패 건수로 치환하지 않았다. 표시된 추정 비용 `$0`도 전체 Azure 청구액이 아니다. Continuous / scheduled evaluation, 알림, 자동 재학습·자동 운영 배포는 활성화하지 않았다.
+
+### 최종 정리와 남은 비용
+
+인증 대기 중에는 **세션 6개를 중지하고 active 0개**를 확인해 객체를 임시 보존했다. 이후 추가 포털 촬영을 마치고 `cleanup --dry-run` → `cleanup --confirm` → `check-cleanup`을 실제 실행했다.
+
+| 대상 | 최종 확인 |
+|---|---|
+| 실습 Hosted Agent V1/V2 및 세션 | agent 부재 확인, 포털 Agents 목록도 비어 있음 |
+| 네 후보 모델 배포 | 4개 부재 확인, 포털에는 보조 judge만 남음 |
+| KB / knowledge source / index | 3개 부재 확인, 같은 Search 연결의 KB 목록도 비어 있음 |
+| 실습 런타임 역할 부여 | 3개 부재 확인 |
+| 새 Foundry / Search / App Insights / Logs | 보존, 포털의 기반 자원 5개 확인 |
+| 고정 보조 judge / 네이티브 평가 이력 | 보존, baseline/improved/holdout/calibration run 확인 |
+| 과거 공유 환경·다른 리포의 그룹 | 변경·삭제하지 않음 |
+
+따라서 **실습 실행 자원 정리와 Azure 비용 전체 제거는 다르다.** 보존된 Search Basic 서비스, 로그 보존, 기반 서비스의 비용은 환경 소유자가 관리해야 한다.
+
+### 별도로 남긴 구독 경보·거버넌스 이력
+
+새 그룹의 ARM 배포 이력에 경보/정책 관련 실패 2건도 있어 실제 오류 화면을 확인했다. 이를 agent 배포 성공이나 평가 성공으로 바꾸지 않았다.
+
+- Failure-anomaly alert: `MissingSubscriptionRegistration` — 구독의 `Microsoft.AlertsManagement` 미등록.
+- Governance-policy diagnostic setting: `ResourceNotFound` — 정책이 참조한 공유 Log Analytics workspace 부재.
+
+이 항목들은 본 실습의 응답·평가·trace·객체 정리와 별도이며, 경보·거버넌스까지 정상 구성됐다고 주장하지 않는다. **공유 구독 provider·거버넌스 리소스·정책을 임의로 바꾸지 않았다.**
+
+원본은 `.recording/20260914-2034/`, 실제 응답·평가·trace는 그 아래 `workshop/src/agent/.foundry/results/`에 보존한다. 녹화 연결 재설정과 마지막 영상 종료 대기를 포함한 원본도 보존했고, 각 선택 영상은 실제 캡처와 대조했다. 가이드에는 비식별 화면과 선별 검증을 사용한다. 로그인·PIN 화면은 녹화하지 않았다.
+
+---
+
+## 이전 검증 기록 — 2026-09-10
+
 검증일: **2026-09-10**
 
 **요청한 네 모델과 Hosted Agent, Foundry IQ, Foundry Evaluation, Trace, Monitor를 실제 Azure에서 실행했다.** 최종 비교 대상은 **모델 응답 64건, Foundry 평가 64행, 서로 다른 실제 trace 64개**다. 모의 결과를 실제 실행 결과로 사용하지 않았다.

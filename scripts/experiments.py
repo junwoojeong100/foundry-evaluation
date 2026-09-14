@@ -15,7 +15,7 @@ from azure.identity import get_bearer_token_provider
 from cloud_setup import preflight
 from common import (
     FOUNDRY_DIR, REPO_ROOT, RESULTS_DIR, azd, binding, digest, label_dir,
-    read_json, read_jsonl, utc_stamp, write_json, write_jsonl,
+    parse_azd_json, read_json, read_jsonl, utc_stamp, validate_azd_suffix, write_json, write_jsonl,
 )
 from contracts import Invocation, MODEL_SPECS, PolicyAnswer
 from grading import grade, summarize, validate_matrix
@@ -52,17 +52,34 @@ def reviewed_cases(
 
 
 def parse_invocation_output(output: str) -> dict[str, Any]:
-    normalized = output.replace("\r\n", "\n")
+    normalized = output
     if normalized.startswith("HTTP/"):
-        header, separator, body = normalized.partition("\n\n")
+        header, separator, body = normalized.partition("\r\n\r\n")
+        if not separator:
+            header, separator, body = normalized.partition("\n\n")
         if not separator:
             raise ValueError("azd raw HTTP output has no response body.")
         status = int(header.splitlines()[0].split()[1])
         if not 200 <= status < 300:
             raise ValueError(f"Agent returned HTTP {status}: {body[:500]}")
+        lengths = [
+            line.partition(":")[2].strip()
+            for line in header.splitlines()[1:]
+            if line.partition(":")[0].casefold() == "content-length"
+        ]
+        if lengths:
+            if len(lengths) != 1:
+                raise ValueError("Ambiguous HTTP Content-Length in azd output.")
+            size = int(lengths[0])
+            encoded = body.encode("utf-8")
+            if size < 0 or len(encoded) < size:
+                raise ValueError("The invocation HTTP response body is truncated.")
+            result = json.loads(encoded[:size])
+            validate_azd_suffix(encoded[size:].decode("utf-8"))
+        else:
+            result = parse_azd_json(body)
     else:
-        body = normalized
-    result = json.loads(body)
+        result = parse_azd_json(normalized)
     if not isinstance(result, dict):
         raise ValueError("Expected a JSON object from the agent.")
     return result

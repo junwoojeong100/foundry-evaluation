@@ -40,3 +40,5 @@ artifacts/foundry-portal-recording/screenshots/*
 !artifacts/foundry-portal-recording/screenshots/chapter-*.png
 !artifacts/foundry-portal-recording/screenshots/contact-*.jpg
 .playwright-mcp/
+recording/node_modules/
+docs/assets/live-*/screenshots/*.png

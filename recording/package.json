@@ -1,0 +1,8 @@
+{
+  "name": "foundry-evaluation-recording",
+  "private": true,
+  "description": "Playwright headless recording tools; not part of the hosted agent runtime.",
+  "dependencies": {
+    "playwright": "1.63.0-alpha-2026-08-31"
+  }
+}

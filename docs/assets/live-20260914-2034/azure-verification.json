@@ -1,0 +1,357 @@
+{
+  "run": "20260914-2034",
+  "resource_group": "rg-foundry-evaluation-20260914-2034",
+  "region": "swedencentral",
+  "foundry_account": "fe-20260914-2034",
+  "project": "learning-loop",
+  "component_execution_verified": true,
+  "primary_responses": 64,
+  "verified_traces": 64,
+  "models": {
+    "sol": [
+      "gpt-5.6-sol",
+      "2026-07-09"
+    ],
+    "terra": [
+      "gpt-5.6-terra",
+      "2026-07-09"
+    ],
+    "luna": [
+      "gpt-5.6-luna",
+      "2026-07-09"
+    ],
+    "astra": [
+      "gpt-6-astra",
+      "2026-09-03"
+    ]
+  },
+  "production_release_approved": false,
+  "cohorts": [
+    {
+      "label": "baseline",
+      "agent_version": "1",
+      "prompt_version": "v1",
+      "prompt_hash": "5ea1ddeed8a50835fc7920b9a3e3cb7ebf5af9d8178976a76738549cfeed154a",
+      "dataset_hash": "3d8e909c14b5900fce284729f2f08990300ee361c5eb7b5fb46f433d3b7937b8",
+      "corpus_hash": "352f3ebeaa44a0c79d2b845ba1bcad65abef2328477c11a8fd2e6cabecb92d25",
+      "response_run_id": "baseline-20260914T140004Z",
+      "rows": 24,
+      "started_at": "20260914T140004Z",
+      "status": "completed",
+      "business": {
+        "sol": {
+          "total": 6,
+          "business_passed": 0,
+          "business_gate": false,
+          "input_tokens": 6322,
+          "output_tokens": 458
+        },
+        "terra": {
+          "total": 6,
+          "business_passed": 0,
+          "business_gate": false,
+          "input_tokens": 6132,
+          "output_tokens": 432
+        },
+        "luna": {
+          "total": 6,
+          "business_passed": 0,
+          "business_gate": false,
+          "input_tokens": 6346,
+          "output_tokens": 1009
+        },
+        "astra": {
+          "total": 6,
+          "business_passed": 0,
+          "business_gate": false,
+          "input_tokens": 6441,
+          "output_tokens": 946
+        }
+      },
+      "evaluation_id": "eval_4e52a8af03e94b1d97fccce719cf568b",
+      "evaluation_run_id": "evalrun_28e28fff0a1240e687d216826f1c5075",
+      "evaluation_status": "completed",
+      "native_evaluators": {
+        "groundedness": {
+          "passed": 24,
+          "total": 24
+        },
+        "relevance": {
+          "passed": 21,
+          "total": 24
+        }
+      },
+      "verified_traces": 24
+    },
+    {
+      "label": "improved",
+      "agent_version": "2",
+      "prompt_version": "v2",
+      "prompt_hash": "70b11bb7f871569c8febcd99c03d7e52cb56b463489305c9cab899666cc68120",
+      "dataset_hash": "3d8e909c14b5900fce284729f2f08990300ee361c5eb7b5fb46f433d3b7937b8",
+      "corpus_hash": "352f3ebeaa44a0c79d2b845ba1bcad65abef2328477c11a8fd2e6cabecb92d25",
+      "response_run_id": "improved-20260914T140812Z",
+      "rows": 24,
+      "started_at": "20260914T140812Z",
+      "status": "completed",
+      "business": {
+        "sol": {
+          "total": 6,
+          "business_passed": 6,
+          "business_gate": true,
+          "input_tokens": 8363,
+          "output_tokens": 557
+        },
+        "terra": {
+          "total": 6,
+          "business_passed": 6,
+          "business_gate": true,
+          "input_tokens": 8268,
+          "output_tokens": 570
+        },
+        "luna": {
+          "total": 6,
+          "business_passed": 6,
+          "business_gate": true,
+          "input_tokens": 7915,
+          "output_tokens": 933
+        },
+        "astra": {
+          "total": 6,
+          "business_passed": 6,
+          "business_gate": true,
+          "input_tokens": 8224,
+          "output_tokens": 644
+        }
+      },
+      "evaluation_id": "eval_276405197d78476abfd5b25377291e95",
+      "evaluation_run_id": "evalrun_022dd0d4fe17441ba7fb469077108050",
+      "evaluation_status": "completed",
+      "native_evaluators": {
+        "groundedness": {
+          "passed": 24,
+          "total": 24
+        },
+        "relevance": {
+          "passed": 21,
+          "total": 24
+        }
+      },
+      "verified_traces": 24
+    },
+    {
+      "label": "holdout",
+      "agent_version": "2",
+      "prompt_version": "v2",
+      "prompt_hash": "70b11bb7f871569c8febcd99c03d7e52cb56b463489305c9cab899666cc68120",
+      "dataset_hash": "cbbce3904bcdb5d03188fb45642558f3f8e6229594c8b2f822d464affae923c4",
+      "corpus_hash": "352f3ebeaa44a0c79d2b845ba1bcad65abef2328477c11a8fd2e6cabecb92d25",
+      "response_run_id": "holdout-20260914T141454Z",
+      "rows": 16,
+      "started_at": "20260914T141454Z",
+      "status": "completed",
+      "business": {
+        "sol": {
+          "total": 4,
+          "business_passed": 4,
+          "business_gate": true,
+          "input_tokens": 5468,
+          "output_tokens": 372
+        },
+        "terra": {
+          "total": 4,
+          "business_passed": 4,
+          "business_gate": true,
+          "input_tokens": 5401,
+          "output_tokens": 396
+        },
+        "luna": {
+          "total": 4,
+          "business_passed": 4,
+          "business_gate": true,
+          "input_tokens": 5468,
+          "output_tokens": 713
+        },
+        "astra": {
+          "total": 4,
+          "business_passed": 4,
+          "business_gate": true,
+          "input_tokens": 5191,
+          "output_tokens": 465
+        }
+      },
+      "evaluation_id": "eval_61a0c1526bd54a559385fef1cf788e17",
+      "evaluation_run_id": "evalrun_b6b76d93cc3d46baa5b9505a2be77c51",
+      "evaluation_status": "completed",
+      "native_evaluators": {
+        "groundedness": {
+          "passed": 16,
+          "total": 16
+        },
+        "relevance": {
+          "passed": 16,
+          "total": 16
+        }
+      },
+      "verified_traces": 16
+    }
+  ],
+  "reused_baseline_trace_ids": [
+    "09823f28661586d11629dd328191f997"
+  ],
+  "data_scope": "Existing synthetic educational dev/holdout; not a newly created independent test set.",
+  "reviewer": "assistant; not human production approval",
+  "resource_state": {
+    "temporary_hosted_agent_absent": true,
+    "temporary_model_deployments_absent": 4,
+    "temporary_search_objects_absent": 3,
+    "temporary_role_assignments_absent": 3,
+    "existing_foundry_project_preserved": true,
+    "existing_search_service_preserved": true,
+    "existing_application_insights_preserved": true,
+    "existing_auxiliary_model_preserved": true,
+    "app_insights_metadata_correction_retained": true,
+    "final_object_cleanup": "verified",
+    "foundation_costs": "Search service operation and telemetry retention can still incur charges."
+  },
+  "portal_recording": {
+    "completed": true,
+    "capture_date": "2026-09-15",
+    "mode": "Playwright headless",
+    "authentication_recorded": false,
+    "completed_portal_procedures": 43,
+    "primary_experiment_responses_unchanged": 64,
+    "verified_baseline_trace": "09823f28661586d11629dd328191f997",
+    "native_response_model": "gpt-5.6-sol-2026-07-09",
+    "additional_portal_invocations": [
+      {
+        "trace_id": [
+          "899ef21dd7cf4c7eb6339fd601127f82"
+        ],
+        "prompt_version": [
+          "v1"
+        ],
+        "configured_model_id": [
+          "gpt-5.6-sol"
+        ],
+        "configured_model_version": [
+          "2026-07-09"
+        ],
+        "run_id": [
+          "portal-v1-20260915"
+        ]
+      },
+      {
+        "trace_id": [
+          "514453e659bd497db48676bd6bc1ede3"
+        ],
+        "prompt_version": [
+          "v1"
+        ],
+        "configured_model_id": [
+          "gpt-5.6-sol"
+        ],
+        "configured_model_version": [
+          "2026-07-09"
+        ],
+        "run_id": [
+          "portal-compare-v2-20260915"
+        ]
+      },
+      {
+        "trace_id": [
+          "68d94d4c2d2a477697e28996da998d3e"
+        ],
+        "prompt_version": [
+          "v2"
+        ],
+        "configured_model_id": [
+          "gpt-5.6-sol"
+        ],
+        "configured_model_version": [
+          "2026-07-09"
+        ],
+        "run_id": [
+          "portal-compare-v2-20260915"
+        ]
+      }
+    ],
+    "comparison_note": "The comparison UI synchronized the input run_id across both panes. Actual prompt_version and distinct trace IDs identify V1 and V2; none are counted in the main 64 responses.",
+    "native_reports_verified": [
+      "baseline 24/24 groundedness, 21/24 relevance",
+      "improved 24/24 groundedness, 21/24 relevance",
+      "holdout 16/16 groundedness, 16/16 relevance"
+    ],
+    "monitor_observation": {
+      "date_range": "Last Day",
+      "displayed_agent_runs": 70,
+      "displayed_tool_calls": 71,
+      "displayed_tokens_approx": 189500,
+      "displayed_estimated_cost": "$0 is not a billing statement",
+      "not_the_primary_evaluation_denominator": true
+    },
+    "portal_list_limitations": [
+      "Foundry Indexes tab showed no indexes; actual Azure Search index separately showed 7 documents.",
+      "Monitor Tools showed no connected tools; the code-level IQ call was verified in the real trace."
+    ],
+    "retained_arm_history": [
+      {
+        "kind": "failure-anomaly alert",
+        "code": "MissingSubscriptionRegistration",
+        "namespace": "Microsoft.AlertsManagement"
+      },
+      {
+        "kind": "governance-policy diagnostics",
+        "code": "ResourceNotFound",
+        "detail": "Referenced shared governance Log Analytics workspace is absent."
+      }
+    ],
+    "shared_subscription_settings_changed": false,
+    "final_cleanup_observed_in_portal": true,
+    "procedure_ids": [
+      "00-P01-group",
+      "00-P02-tags",
+      "00-P03-resources",
+      "00-P04-project",
+      "00-P05-foundry-retry",
+      "00-P06-project-home",
+      "00-P07-models",
+      "A-P01-knowledge",
+      "A-P02-kb-details",
+      "A-P03-source",
+      "A-P04-source-fields",
+      "A-P05-index",
+      "A-P06-search-service",
+      "B-P01-v1-playground",
+      "B-P02-v1-invoke",
+      "B-P03-v1-answer",
+      "B-P04-v1-details",
+      "C-P01-evaluations",
+      "C-P02-baseline-report",
+      "D-P01-traces",
+      "D-P02-trace-search",
+      "D-P03-trace-detail",
+      "D-P04-graph",
+      "D-P05-retrieval-span",
+      "D-P06-model-span",
+      "D-P07-model-metadata",
+      "E-P01-versions",
+      "E-P02-compare-invoke",
+      "E-P03-compare-results",
+      "E-P04-improved-report",
+      "F-P01-holdout-report",
+      "G-P01-monitor",
+      "G-P02-monitor-window",
+      "G-P03-tools",
+      "G-P04-operational-detail",
+      "H-P01-agent-absent",
+      "H-P02-models-cleaned",
+      "H-P03-knowledge-cleaned",
+      "H-P04-evidence-retained",
+      "H-P05-foundation-retained",
+      "H-P06-arm-history",
+      "H-P07-arm-error",
+      "H-P08-policy-error"
+    ]
+  }
+}

@@ -4,6 +4,12 @@
 
 [실제 실행 결과](docs/validation.ko.md) · [전체 자료 ZIP](https://github.com/junwoojeong100/foundry-evaluation/archive/refs/heads/main.zip) · [강사 사전 준비](docs/instructor.ko.md)
 
+[새 Azure 환경부터 준비하기 — 실제 화면](docs/environment.ko.md)
+
+[실습 순서 통합 MP4 — 21분 55초, 실제 CLI + 포털](docs/assets/live-20260914-2034/foundry-evaluation-guide-order.mp4) · [절차별 재생 화면](docs/assets/live-20260914-2034/index.html) · [121개 절차의 전·후 캡처](docs/action-captures.ko.md)
+
+> **이번 재촬영:** 2026-09-14–15에 새 Sweden Central 환경에서 **64응답·64trace·세 Foundry 평가 run**을 검증하고, 실제 포털의 KB·모델·V1/V2 응답·평가 보고서·trace·Monitor·정리 결과를 촬영했다. [실제 결과와 검증 한계](docs/validation.ko.md)는 과거 영상과 구분한다.
+
 [실제 Foundry 포털 15분 녹화본](artifacts/foundry-portal-recording/foundry-portal-learning-loop-15min-ko.mp4) · [포털 영상 설명·실행 결과](docs/portal-recording.ko.md)
 
 [기존 로컬 콘솔 15분 영상 — 보존본](artifacts/recording/foundry-learning-loop-15min-ko.mp4) · [기존 영상 설명](docs/recording.ko.md)
@@ -27,6 +33,16 @@
 > **시간 조건:** 강사가 준비한 Azure 프로젝트, 모델 배포, 권한, Python 환경에서 시작하는 **참가자 실습 120분**이다. 신규 구독 생성, 모델 접근 승인, 할당량 증설, RBAC 전파 시간을 포함한 무조건적인 2시간 완료를 보장하지 않는다. [강사 준비](docs/instructor.ko.md)를 먼저 끝내야 한다.
 >
 > **실행 결과와 구분:** 본문의 숫자는 시간표·합격 기준이지 실측 성능이 아니다. 실제 실행 범위, 오류, 평가 점수, 모델 ID는 [실행 확인 보고서](docs/validation.ko.md)에 기록한다.
+
+### 화면을 읽는 순서
+
+**본문 명령 → 실제 촬영 화면 → 확인할 것** 순서로 진행한다. 이미지는 클릭해서 확대할 수 있다.
+
+- 실행할 명령은 **본문 코드 블록**에서 복사한다. 사진의 실행 폴더·리소스 이름은 이번 촬영의 값이므로 그대로 복사하지 않는다.
+- `실제 실행 완료`는 명령이 끝났다는 뜻이다. **업무 평가 합격이나 운영 승인과는 다르다.**
+- CLI 화면은 실제 로컬 CLI/SDK 출력을 보여 주는 녹화 콘솔이다. Azure Portal이나 Cloud Shell을 모방한 화면이 아니다.
+- 포털 화면은 실제 Azure / Foundry 페이지다. 실습 조작·녹화는 Playwright headless로 진행하며, 로그인·PIN 화면은 제외한다.
+- 녹화의 대기 시간을 줄였더라도 Azure 환경을 그 시간 안에 만들 수 있다는 보장은 아니다.
 
 ## 1. 무엇을 직접 경험하는가
 
@@ -161,6 +177,18 @@ python scripts/workshop.py prepare-iq
 python scripts/workshop.py retrieve --query "2026년 9월 국내 출장 숙박비 한도는 얼마인가요?"
 ```
 
+![실제 Foundry IQ 객체 생성과 합성 문서 적재](docs/assets/live-20260914-2034/screenshots/A02-prepare-iq-after.webp)
+
+**화면 확인:** 이번 접두사의 index, knowledge source, knowledge base가 만들어졌는지 확인한다. 다른 조의 객체가 보이면 그대로 진행하지 않는다.
+
+![실제 IQ retrieval의 문서 ID와 활동](docs/assets/live-20260914-2034/screenshots/A03-retrieve-after.webp)
+
+![실제 Foundry 포털의 KB와 source](docs/assets/live-20260914-2034/screenshots/A-P01-knowledge-after.webp)
+
+![Azure Search에서 확인한 실제 합성 문서 7개](docs/assets/live-20260914-2034/screenshots/A-P06-search-service-after.webp)
+
+**포털 확인:** Knowledge → Knowledge bases에서 이번 연결·KB·source를 확인한다. 이번 UI의 별도 **Indexes** 탭은 비어 있었지만, Azure Search의 실제 index에는 7문서가 있었다. 서로 다른 목록을 같은 대상으로 해석하지 않는다. KB의 모델·검색 설정이나 과금 계획은 확인만 하고 바꾸지 않는다.
+
 확인할 것:
 
 1. 응답에 **실제 knowledge base 이름, references, activity**가 있는가.
@@ -199,6 +227,12 @@ source src/agent/.venv/bin/activate
 python scripts/workshop.py smoke --local
 ```
 
+![로컬 readiness 확인](docs/assets/live-20260914-2034/screenshots/B05-readiness-after.webp)
+
+![로컬 에이전트의 실제 Sol 응답](docs/assets/live-20260914-2034/screenshots/B06-local-smoke-retry-after.webp)
+
+**화면 확인:** readiness 200과 실제 답변은 별개다. 답변의 판단·한도·근거, `model_key=sol`, `prompt_version=v1`을 읽는다. 이번 촬영에서는 azd 업데이트 안내가 HTTP 본문 뒤에 붙는 문제를 수정하고 같은 에이전트로 새 smoke 요청을 실행했다. 이전 원문은 보존했다.
+
 실제 IQ 검색과 실제 Sol 응답이 돌아와야 한다. 모의 응답은 사용하지 않는다. 로컬 프로세스를 `Ctrl+C`로 종료한 뒤:
 
 ```bash
@@ -211,12 +245,32 @@ python scripts/workshop.py smoke
 
 출력에서 `model_key=sol`, `prompt_version=v1`, 실제 근거, `trace_id`를 확인한다.
 
+![새 Hosted Agent V1 배포](docs/assets/live-20260914-2034/screenshots/B08-deploy-v1-after.webp)
+
+![원격 Hosted Agent의 실제 응답](docs/assets/live-20260914-2034/screenshots/B10-remote-smoke-after.webp)
+
+**화면 확인:** 로컬 응답과 원격 응답을 구분하고, 반환된 실제 agent version을 기록한다. 버전 하나의 smoke 성공을 전체 평가 성공으로 대신하지 않는다.
+
+![실제 V1 Portal Playground 응답](docs/assets/live-20260914-2034/screenshots/B-P03-v1-answer-after.webp)
+
+**포털 확인:** 에이전트 Playground에서 버전 1을 선택하고 `query`, `model_key`, `case_id`, `run_id`의 JSON 입력 계약을 사용한다. 사진의 추가 포털 호출은 본평가 64행과 별도다. 이번 UI는 탭을 이동하면 버전 선택이 최신 버전으로 돌아가기도 했으므로 **이동 후 버전과 실제 응답의 `prompt_version`을 다시 확인**한다.
+
 ## 7. 실습 C — 네 모델 baseline과 Foundry Evaluation
 
 ```bash
 python scripts/workshop.py collect --split dev --label baseline
 python scripts/workshop.py evaluate --label baseline
 ```
+
+![네 모델의 실제 baseline 응답 수집](docs/assets/live-20260914-2034/screenshots/C01-baseline-after.webp)
+
+![실제 Foundry baseline 평가 실행](docs/assets/live-20260914-2034/screenshots/C02-evaluation-after.webp)
+
+**화면 확인:** 예상 응답 수 24와 실제 수를 대조한다. Foundry run 완료 여부뿐 아니라 개별 행의 오류·점수와 별도의 업무 검사도 확인한다.
+
+![실제 baseline native 평가 보고서](docs/assets/live-20260914-2034/screenshots/C-P02-baseline-report-after.webp)
+
+**포털 확인:** 왼쪽의 전역 **Evaluations**에서 실제 baseline run을 연다. 이 실습의 데이터셋 평가는 에이전트 상세의 **Evaluation** 탭과 같은 목록이라고 가정하지 않는다. 이번 보고서는 groundedness 24/24, relevance 21/24이며, 업무 검사 0/24와는 다른 기준이다.
 
 수집기는 **특정 agent version에 고정한 SDK session**을 만든 뒤 인증된 HTTP로 6개 dev 질문을 네 모델 모두에 보낸다. smoke test는 azd로 수행하되, batch는 매 요청마다 CLI 인증 프로세스를 새로 띄우지 않는다. 로그·trace 확인 전 세션을 성급하게 종료하지 않고, `monitor`가 실제 trace를 확인한 뒤 중지한다. **24행이 정확히 존재하고, 누락·중복·오류가 없을 때만** 평가를 진행한다. 실패한 요청을 분모에서 빼지 않는다.
 
@@ -252,6 +306,18 @@ python scripts/workshop.py compare --labels baseline
 python scripts/workshop.py monitor --label baseline
 ```
 
+![baseline 실패와 업무 검사 결과](docs/assets/live-20260914-2034/screenshots/D01-compare-after.webp)
+
+![baseline의 실제 trace 대조](docs/assets/live-20260914-2034/screenshots/D02-monitor-after.webp)
+
+**화면 확인:** 실패 행의 `row_id`와 `trace_id`를 연결한다. HTTP 요청이 성공했어도 인용·정책 적용 계약에서 실패할 수 있다.
+
+![baseline 실패의 정확한 trace ID 검색](docs/assets/live-20260914-2034/screenshots/D-P02-trace-search-after.webp)
+
+![같은 실제 요청의 검색·모델 호출 그래프](docs/assets/live-20260914-2034/screenshots/D-P04-graph-after.webp)
+
+**포털 확인:** Traces에서 기간을 확인한 뒤 **행의 실제 trace ID**로 검색한다. Graph view의 `foundry_iq.retrieve`와 `chat`을 연결해 보고, 성공 span이 업무 계약 합격까지 뜻하는 것은 아니라는 점을 구분한다. 이번 검토 trace의 실제 모델은 `gpt-5.6-sol-2026-07-09`였다.
+
 보고서의 실패 행 하나를 선택한다. Foundry의 **Traces** 또는 Application Insights Logs에서 그 행의 `trace_id`를 찾는다.
 
 | 관찰 | 가능한 원인 | 바꿔야 할 대상 |
@@ -268,6 +334,12 @@ trace와 결과를 대조한 다음 회귀 데이터를 만든다. `ROW_ID`에�
 python scripts/workshop.py feedback --label baseline --row-id ROW_ID \
   --reason "검색 근거는 있었지만 V1 지침이 문서 식별자를 감추어 감사 가능한 인용이 사라졌다."
 ```
+
+![실패 응답과 실제 trace를 함께 검토한 화면](docs/assets/live-20260914-2034/screenshots/D03-review-after.webp)
+
+![검토한 실패를 회귀 데이터로 보존](docs/assets/live-20260914-2034/screenshots/D04-feedback-after.webp)
+
+**화면 확인:** 사진의 `baseline-sol-D01`을 그대로 선택하지 말고 본인 실패 행을 고른다. 이번 자동 실행은 `--reviewer assistant`로 기록했으며, 사람의 운영 승인을 대신하지 않는다.
 
 이 명령은 query와 **사전에 고정한 기준 ground truth**를 가져오고, trace ID·모델·agent version을 붙여 회귀 데이터를 보존한다. 평가 대상 모델의 오답을 정답으로 승격하지 않는다. holdout은 개선 재료로 사용할 수 없도록 막는다.
 
@@ -296,6 +368,18 @@ python scripts/workshop.py evaluate --label improved
 python scripts/workshop.py compare --labels baseline improved
 ```
 
+![V1과 V2 지침의 실제 차이](docs/assets/live-20260914-2034/screenshots/E01-prompt-diff-after.webp)
+
+![같은 dev에 대한 실제 전후 비교](docs/assets/live-20260914-2034/screenshots/E07-compare-after.webp)
+
+**화면 확인:** 새 버전과 지침 hash가 바뀌었는지, dev·평가 기준은 그대로인지 확인한다. 텍스트가 길어졌다는 사실만으로 개선을 주장하지 않는다.
+
+![실제 포털의 V1/V2 인용 차이](docs/assets/live-20260914-2034/screenshots/E-P03-compare-results-after.webp)
+
+![V2의 실제 native 평가 보고서](docs/assets/live-20260914-2034/screenshots/E-P04-improved-report-after.webp)
+
+**포털 확인:** Playground의 버전 메뉴 → Compare versions에서 양쪽이 **1 / 2**인지 먼저 확인한다. 기본 선택이 2 / 2일 수 있다. 이번 비교 UI는 입력을 양쪽에 동기화했으므로 실제 `prompt_version`과 서로 다른 `trace_id`로 응답을 구분했다. 포털 비교의 추가 2응답을 본평가에 더하지 않는다.
+
 새 agent version, 지침 hash, 모델별 통과 건수, 근거 인용, 지연·토큰을 비교한다. 같은 dev dataset hash가 아니면 직접적인 전후 비교를 중단한다.
 
 **개선이 없거나 악화되면 그것도 결과다.** V2를 자동 채택하지 않는다. 왜 개선되지 않았는지 기록하고 이전 버전을 유지한다. “learning loop를 돌렸다”와 “품질이 개선됐다”는 서로 다른 주장이다.
@@ -309,6 +393,14 @@ python scripts/workshop.py collect --split holdout --label holdout
 python scripts/workshop.py evaluate --label holdout
 python scripts/workshop.py compare --labels baseline improved holdout
 ```
+
+![고정 후보의 holdout 실행](docs/assets/live-20260914-2034/screenshots/F01-collect-after.webp)
+
+![세 코호트의 실제 비교](docs/assets/live-20260914-2034/screenshots/F03-compare-after.webp)
+
+**화면 확인:** holdout은 16행이며 dev와 별도다. 이번 재촬영은 기존 교육용 holdout의 재실행이므로, 새로 만든 독립 검증셋이나 운영 품질의 증거로 확대 해석하지 않는다.
+
+![실제 holdout 16행의 native 평가](docs/assets/live-20260914-2034/screenshots/F-P01-holdout-report-after.webp)
 
 4개 새로운 질문 × 4모델 = **16행**을 확인한다. 모델을 바꾸면서도 다음이 유지되는지 확인한다.
 
@@ -332,6 +424,10 @@ python scripts/workshop.py monitor --label holdout
 
 Foundry portal에서 프로젝트 → 에이전트 → **Monitor**를 열고, 실습 시간대로 범위를 좁힌다. UI 이름이 다르면 [공식 dashboard 가이드](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard)를 따른다.
 
+![실제 Agent Monitor의 운영 집계](docs/assets/live-20260914-2034/screenshots/G-P02-monitor-window-after.webp)
+
+**포털 확인:** 이번 화면의 약 189.5K 토큰·70 agent runs는 본평가의 64행과 동일한 분모가 아니다. 차트별 집계·반영 시점도 다를 수 있다. 표시된 추정 비용 `$0`을 전체 Azure 청구 무료로 읽지 않는다. **Tools** 탭의 `No connected tools`도 코드 내부의 IQ 호출이 없었다는 뜻이 아니다. 실제 호출은 앞의 trace와 retrieval activity로 확인했다.
+
 제공한 `queries/monitor.kql`은 Application Insights의 `requests`에서 실습 agent를 찾고 `operation_Id`로 `dependencies`를 연결한다. 기본 단위와 custom span 단위를 섞어 지연·토큰을 이중 집계하지 않는다.
 
 확인할 항목은 요청 수, 실행 성공률, 모델별 입력/출력 토큰, p50/p95 지연이다. **HTTP 성공률과 업무 정답률은 별개**다. 데이터가 아직 들어오지 않았다면 0건을 정상 운영으로 판정하지 말고 수집 지연으로 기록한다.
@@ -344,6 +440,8 @@ Foundry portal에서 프로젝트 → 에이전트 → **Monitor**를 열고, �
 python scripts/workshop.py verify --baseline baseline --candidate improved --holdout holdout
 ```
 
+![실제 응답·trace·평가·lineage의 통합 검증](docs/assets/live-20260914-2034/screenshots/G03-verify-after.webp)
+
 이 명령은 본평가 64개 응답·64개 실제 trace·완료된 Foundry run·변경하지 않은 평가 기준·소비된 회귀 데이터 lineage를 확인한다. **구성 요소의 실행 검증과 모델별 품질 gate, 실제 운영 승인은 서로 다른 결과**로 기록한다.
 
 ## 12. 마무리와 비용 정리
@@ -353,6 +451,18 @@ python scripts/workshop.py cleanup --dry-run
 python scripts/workshop.py cleanup --confirm
 python scripts/workshop.py check-cleanup
 ```
+
+![소유권에 기반한 실제 정리 계획](docs/assets/live-20260914-2034/screenshots/H01-cleanup-plan-after.webp)
+
+![실제 Azure 재조회로 확인한 최종 정리](docs/assets/live-20260914-2034/screenshots/H03-cleanup-check-after.webp)
+
+![포털에서 확인한 agent 삭제](docs/assets/live-20260914-2034/screenshots/H-P01-agent-absent-after.webp)
+
+![실행 자원 정리 뒤에도 보존된 평가 이력](docs/assets/live-20260914-2034/screenshots/H-P04-evidence-retained-after.webp)
+
+**이번 촬영의 결과:** 인증 대기 중에는 세션만 중지했다가, 추가 포털 촬영 후 위 최종 정리를 실행했다. Agent·네 후보 배포·KB/source/index 3개·런타임 역할 3개의 부재를 실제 확인했다. 기반 Foundry/Search/관측 서비스와 보조 judge, 평가 이력은 보존했다.
+
+**화면 확인:** 삭제한 객체와 보존한 기반 서비스를 함께 읽는다. 세션·모델·agent를 정리했어도 Search 가동과 로그 보존 등의 비용은 남을 수 있다.
 
 먼저 중지·삭제 계획을 읽는다. 이 실습에서 생성했다고 기록된 세션·agent·모델 배포·KB 객체만 정리한다. **공유 프로젝트에서는 `azd down`, resource group 삭제, Search 서비스 삭제를 실행하지 않는다.**
 
@@ -387,6 +497,7 @@ python scripts/workshop.py check-cleanup
 | `collect` 도중 실패 | 해당 label의 `failure.json`과 raw 응답을 보존한다. 원인을 고친 뒤 **새 label**로 전체 행을 다시 수집한다. 기존 결과를 덮어쓰거나 성공한 행만 평가하지 않는다. |
 | 특정 모델만 4xx/5xx | `python scripts/workshop.py smoke --model astra`처럼 해당 모델을 따로 실행하고, 표시된 session의 로그를 확인한다. 모델 API capability는 직접 호출로 확인한다. |
 | `azd invoke --output raw` 파싱 | 이 버전의 raw 출력은 JSON만이 아니라 HTTP 상태·헤더를 포함한다. 제공한 수집기가 상태를 검사하고 body를 분리한다. |
+| JSON 뒤의 azd 확장 업데이트 안내 | HTTP `Content-Length`는 UTF-8 바이트로 확인한다. 확인된 업데이트 안내만 별도 경고로 기록하며, 알 수 없는 후행 내용·오류·잘린 본문은 거부한다. 실습 중 SDK/확장을 임의로 업그레이드하지 않는다. |
 | trace가 없음 | App Insights 연결·권한·실제 실행 시각·수집 지연·sampling을 확인한다. |
 | Azure CLI credential이 10초에 종료 | 콜드 토큰 갱신 지연일 수 있다. 제공 코드는 계정/tenant 검증 후 CLI credential의 제한을 60초로 설정한다. 실제 로그인 실패와 혼동하지 않는다. |
 | 평가의 `ResourceId metadata` 오류 | 강사 준비의 metadata-only 보완을 적용하고, `evaluate --label LABEL --retry-failed`로 실패 시도를 보존한 채 재평가한다. |
