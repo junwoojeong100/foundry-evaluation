@@ -390,8 +390,6 @@ def make_index(directory: Path, timeline: list, report: dict):
         after = next(shot for shot in item["screenshots"] if shot["phase"] in {"after", "failed"})
         state = {"completed": "실행 완료", "service_ready": "서버 실행 유지", "failed": "**실패한 시도**"}[item["status"]]
         start = timecode(item["start_seconds"])
-        if video_url:
-            start = f"[{start}]({video_url}#t={item['start_seconds']:.2f})"
         lines.append(
             f"| `{item['id']}` {item['title']} | {item['kind'].upper()} | {state} | "
             f"{start} | "

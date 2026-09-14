@@ -76,6 +76,11 @@ class VideoLinkTests(unittest.TestCase):
                 with self.subTest(file=name, link=target):
                     self.assertIsNone(re.search(r"\.(mp4|webm)(?:[?#].*)?$", target, re.I))
 
+    def test_chapter_times_do_not_expand_into_repeated_github_players(self):
+        text = (ROOT / "docs/action-captures.ko.md").read_text()
+        self.assertIsNone(re.search(r"user-attachments/assets/[^)\s]+#t=", text))
+        self.assertIn("로컬 챕터 플레이어 사용법", text)
+
 
 if __name__ == "__main__":
     unittest.main()
