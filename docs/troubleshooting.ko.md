@@ -20,7 +20,8 @@
 |---|---|
 | `.env`가 없거나 필수 값 누락 | 저장소 루트에 강사가 준 파일을 둡니다. 다른 조의 이름·배포를 추측해 채우지 않습니다. |
 | `preflight`의 `missing_models`가 비어 있지 않음 | 강사에게 네 지정 배포의 접근·할당량·준비 상태 확인을 요청합니다. 다른 모델로 대체하지 않습니다. |
-| tenant / `InvalidAuthenticationTokenTenant` | `.env`의 구독·tenant·예상 사용자와 실제 CLI 로그인을 대조합니다. `az account set`으로 기본 구독을 바꾸지 않습니다. |
+| 로그인 안 됨 / tenant 오류 / 다른 계정 | [README 1-3](../README.md#login)에서 두 CLI에 로그인하고 `user`·`email`·`tenant`·`subscription`을 `.env`와 대조합니다. `az account set`으로 기본 구독을 바꾸지 않습니다. |
+| 새 터미널에서만 로그인이 풀린 것처럼 보임 | 같은 실습 폴더에서 `export AZURE_CONFIG_DIR="$PWD/.azure-cli"`를 다시 지정합니다. 이전 터미널의 경로 설정은 새 터미널에 자동으로 전달되지 않습니다. |
 | `bind` 또는 `set-prompt`에서 환경/프로젝트 오류 | 새 작업 폴더에서 `bind`를 먼저 실행했는지 확인합니다. 다른 프로젝트의 `.azure`나 소유권 파일을 복사하지 않습니다. |
 | 로컬 8088 연결 실패 | 터미널 A의 ready 로그를 확인합니다. 기존 프로세스를 임의 종료하지 않습니다. 포트가 이미 사용 중이면 강사와 실습 환경을 분리합니다. |
 | 모델 404 | 카탈로그 모델 ID와 실제 배포 이름을 구분합니다. `.env`와 azd가 같은 프로젝트·배포를 가리키는지 확인합니다. |
@@ -34,6 +35,23 @@
 | CLI credential 시간 초과 | 실제 로그인 실패와 토큰 갱신 지연을 구분합니다. 제공 코드의 60초 제한을 무한 대기로 바꾸지 않습니다. |
 | `ResourceId metadata` 평가 오류 | 강사에게 실습 전용 App Insights 연결 metadata 확인을 요청합니다. 참가자가 공유 연결을 직접 변경하지 않습니다. |
 | 정리 대상이 내 이름과 다름 | 즉시 중단합니다. `.foundry` 소유권 기록을 지우거나 편집해서 삭제를 강행하지 않습니다. |
+
+<a id="login"></a>
+
+## 로그인 브라우저가 열리지 않는다면
+
+[README 1-3](../README.md#login)의 **CLI 경로 지정과 tenant·구독 입력 블록을 먼저 실행한 같은 터미널**에서 아래를 사용합니다.
+각 명령이 표시한 주소를 브라우저로 열고, **본인 터미널에 표시된 일회용 코드**를 입력해 `.env`의 계정으로 로그인합니다.
+
+```bash
+az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" \
+  --use-device-code --output none &&
+azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
+```
+
+두 명령이 끝나면 README 1-3의 **두 로그인 결과 확인** 블록으로 돌아갑니다. 코드는 채팅·문서·녹화에 공유하지 않습니다.
+조직 정책이 device-code 로그인을 막으면 우회하지 말고 강사에게 승인된 로그인 환경을 요청합니다.
+공식 설명: [Azure CLI 대화형 로그인](https://learn.microsoft.com/cli/azure/authenticate-azure-cli-interactively) · [CLI 설정 경로](https://learn.microsoft.com/cli/azure/azure-cli-configuration#cli-configuration-file).
 
 ## 응답 수집에 실패했다면
 

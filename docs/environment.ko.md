@@ -51,11 +51,7 @@ python -m unittest discover -s tests -v
 ```
 
 **완료 확인:** 테스트가 `OK`입니다. `source-manifest.json`에 소스 revision과 파일별 SHA-256이 있고, 이전 `.azure`·`.foundry`·결과·가상환경을 재사용하지 않았습니다.
-다음 명령으로 **원래 저장소 루트**에 돌아옵니다. 이후 2–5단계는 이 위치에서 실행합니다.
-
-```bash
-cd "$REPO_ROOT"
-```
+**지금의 `$RUN_DIR/workshop` 폴더를 유지합니다.** 다음 로그인도 이 폴더에서 실행해야 이후 로컬 실습과 같은 CLI 캐시를 사용합니다.
 
 <details>
 <summary>녹화 예시 — 새 소스 폴더 확인</summary>
@@ -66,10 +62,15 @@ cd "$REPO_ROOT"
 
 ## 2. 로그인·소유권·용량 확인
 
-**할 일:** Azure CLI와 azd에 본인이 직접 로그인합니다. 로그인·암호·토큰은 녹화하지 않습니다.
+**할 일:** 지금 폴더에서 [README 1-3의 로그인 절차](../README.md#login)를 실행합니다.
+실습용 CLI 경로 지정 → tenant·구독 입력 → `az login` → `azd auth login` → 두 계정 확인까지 마친 뒤 **이 문서로 돌아옵니다.**
+기반 서비스가 아직 없으므로 README 1-4의 `preflight`·`bind`는 실행하지 않습니다. 로그인·암호·토큰은 녹화하지 않습니다.
+
+이제 **원래 저장소 루트**로 돌아와 소유권과 용량을 확인합니다. 절대 경로로 지정한 `AZURE_CONFIG_DIR`는 그대로 유지되며, 3–5단계도 원래 루트에서 실행합니다.
 `identity`는 설정한 구독·tenant·사용자를 ARM 토큰의 실제 principal과 대조하며 토큰을 저장하지 않습니다.
 
 ```bash
+cd "$REPO_ROOT" &&
 python recording/provision.py identity --run-dir "$RUN_DIR" &&
 python recording/provision.py ownership --run-dir "$RUN_DIR" &&
 python recording/provision.py model-capacity --run-dir "$RUN_DIR"
@@ -181,7 +182,7 @@ python scripts/workshop.py calibrate
 **완료 확인:** Sol/Terra/Luna/Astra의 고정 모델 ID·버전, `deployed: true`, `missing_models: []`, calibration 통과를 확인합니다.
 Calibration 예제 2개는 본평가 64응답이 아닙니다. 모델 접근·할당량이 부족하면 다른 모델로 대체하지 않고 준비를 중단합니다.
 
-이 폴더에서 계속 리허설한다면 [참가자 1단계](../README.md#start)의 **`bind`부터** 진행합니다.
+이 폴더에서 계속 리허설한다면 [참가자 1단계](../README.md#start)의 **1-4 프로젝트 연결부터** 진행합니다. 로그인은 위 2단계에서 이미 완료했습니다.
 새 참가자 폴더에는 완성된 `.env`를 주되, **미사용 `LAB_PREFIX` / `LAB_AGENT_NAME`**을 조별로 지정합니다.
 실제 모델 배포 이름은 유지하고 `.azure`·`.foundry` 소유권 파일·결과는 전달하지 않습니다.
 자세한 전달 항목과 리허설 분리는 [강사 체크리스트](instructor.ko.md#참가자에게-전달할-것)를 따릅니다.

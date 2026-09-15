@@ -21,8 +21,10 @@ Azure 환경이나 모델이 아직 없다면 [강사 준비](docs/instructor.ko
 
 **할 일:** 새 실습 폴더를 열고, 내 계정·모델·프로젝트가 맞는지 확인합니다.
 
-**터미널 A**에서 실행합니다. 이미 clone했거나 ZIP을 풀었다면 해당 폴더를 열고 다음 블록으로 진행합니다.
+**터미널 A**에서 먼저 `bash`를 실행합니다. 이미 clone했거나 ZIP을 풀었다면 해당 폴더를 열고 1-1의 clone 블록은 건너뜁니다.
 코드는 **한 블록씩** 복사합니다. `&&`로 연결한 명령은 앞 명령이 성공해야 다음 명령을 실행합니다.
+
+### 1-1. 코드와 설정 파일 준비
 
 ```bash
 git clone https://github.com/junwoojeong100/foundry-evaluation.git &&
@@ -33,6 +35,8 @@ cd foundry-evaluation
 구독·tenant, 프로젝트·Search, 모델 배포 이름, 조별 `LAB_PREFIX`와 `LAB_AGENT_NAME`이 들어 있어야 합니다.
 암호·API key·access token은 넣지 않습니다.
 
+### 1-2. 가상환경과 로컬 테스트
+
 ```bash
 python3.13 -m venv src/agent/.venv &&
 source src/agent/.venv/bin/activate &&
@@ -40,8 +44,55 @@ python -m pip install -r requirements.txt &&
 python -m unittest discover -s tests -v
 ```
 
-테스트 마지막에 **`OK`가 나온 뒤에만** Azure 프로젝트를 확인하고 연결합니다.
-Azure CLI와 azd 로그인은 본인이 직접 완료합니다. 설치·권한·모델 승인 대기는 참가자 120분에 포함하지 않습니다.
+테스트 마지막에 **`OK`가 나온 뒤**, 같은 터미널에서 **1-3 로그인 → 1-4 프로젝트 연결** 순서로 진행합니다.
+
+<a id="login"></a>
+
+### 1-3. 지금 Azure CLI와 azd에 로그인
+
+**로그인은 여기서 합니다. 아직 `preflight`나 `bind`를 실행하지 않습니다.**
+`.env`를 열고 아래 질문에 `AZURE_TENANT_ID`와 `AZURE_SUBSCRIPTION_ID`의 **`=` 오른쪽 값만** 붙여넣습니다.
+브라우저에서 선택할 계정은 같은 파일의 **`AZURE_EXPECTED_USERNAME`**입니다.
+
+```bash
+export AZURE_CONFIG_DIR="$PWD/.azure-cli" &&
+read -r -p ".env의 AZURE_TENANT_ID 값: " LOGIN_TENANT_ID &&
+read -r -p ".env의 AZURE_SUBSCRIPTION_ID 값: " LOGIN_SUBSCRIPTION_ID
+```
+
+첫 줄은 **Azure CLI의 실습용 로그인·구독 설정을 이 폴더에 분리**합니다. 다른 작업에서 쓰던 기본 CLI 구독은 바꾸지 않습니다.
+`.azure-cli/`에는 로그인 캐시가 생기므로 공유하거나 커밋하지 않습니다.
+
+**먼저 Azure CLI에 로그인합니다.**
+
+```bash
+az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" --output none
+```
+
+열린 브라우저에서 `.env`의 계정을 선택하고 MFA를 완료합니다. 다른 계정이 보이면 **다른 계정 사용**을 선택합니다.
+터미널에 구독 선택이 나오면 `.env`의 구독 ID와 같은 항목을 선택합니다. 오류 없이 터미널 A의 입력 프롬프트가 돌아올 때까지 기다립니다.
+
+**이어서 azd에 별도로 로그인합니다.** Azure CLI 로그인만으로 이 단계가 완료되지는 않습니다.
+
+```bash
+azd auth login --tenant-id "$LOGIN_TENANT_ID"
+```
+
+브라우저가 열리면 **같은 계정**을 선택하고 인증을 마칩니다. 암호·MFA·로그인 코드는 터미널 명령이나 녹화에 넣지 않습니다.
+로그인이 완료되지 않았는데 브라우저도 열리지 않으면 [로그인 문제 해결](docs/troubleshooting.ko.md#login)을 따릅니다.
+
+**두 로그인 결과를 확인합니다.**
+
+```bash
+az account show --subscription "$LOGIN_SUBSCRIPTION_ID" \
+  --query "{user:user.name,tenant:tenantId,subscription:id,state:state}" --output json &&
+azd auth status --output json
+```
+
+`user`와 `email`은 `.env`의 `AZURE_EXPECTED_USERNAME`, `tenant`와 `subscription`은 입력한 `.env`의 두 ID와 일치해야 합니다.
+또한 `state`는 **`Enabled`**, azd의 `status`는 **`authenticated`**여야 합니다. 하나라도 다르면 1-4로 넘어가지 말고 1-3에서 올바른 계정으로 다시 로그인합니다.
+
+### 1-4. 로그인 확인 후 프로젝트 연결
 
 ```bash
 python scripts/workshop.py preflight &&
@@ -51,7 +102,14 @@ python scripts/workshop.py bind
 **완료 확인:** 테스트가 `OK`, `missing_models`가 `[]`이며 `Bound ...`가 출력됩니다.
 `bind`는 **지금 사용하는 폴더의 azd 설정**을 연결합니다. 강사가 다른 PC에서 실행했더라도 새 폴더에서는 필요합니다.
 
-이후 명령은 모두 **저장소 루트의 터미널 A**에서 실행합니다. 새 터미널에서는 가상환경을 다시 활성화합니다.
+이후 명령은 모두 **저장소 루트의 터미널 A**에서 실행합니다.
+**새 터미널을 열 때마다** `bash`를 실행하고 같은 폴더에서 아래 두 줄로 가상환경과 실습용 CLI 경로를 다시 지정합니다. 로그인 캐시가 유효하면 재로그인은 필요 없습니다.
+
+```bash
+source src/agent/.venv/bin/activate &&
+export AZURE_CONFIG_DIR="$PWD/.azure-cli"
+```
+
 명령이 오류로 끝나면 다음 단계로 넘어가지 말고 [문제 해결](docs/troubleshooting.ko.md)을 확인합니다.
 기본 Azure CLI 구독을 바꾸는 `az account set`은 사용하지 않습니다.
 
@@ -70,7 +128,8 @@ python scripts/workshop.py retrieve --query "2026년 9월 국내 출장 숙박�
 **완료 확인:** 내 접두사의 KB가 생성되고 검색 결과에 `knowledge_base`, `document_ids`, `activity`가 있습니다.
 현재·과거 문서가 함께 나오면 적용일을 비교합니다. 다른 조의 객체를 덮어쓰지 않습니다.
 
-**포털 확인:** Foundry → **Knowledge → Knowledge bases**에서 내 KB와 source를 확인합니다.
+**포털은 여기서 처음 엽니다.** [Foundry 포털](https://ai.azure.com/)에 접속해 `.env`의 `AZURE_EXPECTED_USERNAME` 계정으로 로그인합니다. CLI 로그인과는 별도입니다.
+`AZURE_AI_ACCOUNT_NAME`과 `AZURE_AI_PROJECT_NAME`에 맞는 계정·프로젝트를 선택한 뒤 **Knowledge → Knowledge bases**에서 내 KB와 source를 확인합니다.
 
 <details>
 <summary>예시 화면 보기 — 내 KB 이름과 비교하세요</summary>
@@ -93,10 +152,11 @@ python scripts/workshop.py set-prompt v1 &&
 azd ai agent run --no-client
 ```
 
-터미널 A에 **ready 로그가 나온 뒤**, **터미널 B**를 새로 열고 같은 저장소 루트에서 실행합니다.
+터미널 A에 **ready 로그가 나온 뒤**, 같은 저장소 폴더에서 **터미널 B**를 새로 열고 `bash`를 실행한 다음 아래를 입력합니다.
 
 ```bash
 source src/agent/.venv/bin/activate &&
+export AZURE_CONFIG_DIR="$PWD/.azure-cli" &&
 curl --fail http://127.0.0.1:8088/readiness &&
 python scripts/workshop.py smoke --local
 ```

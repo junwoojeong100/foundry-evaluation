@@ -10,7 +10,7 @@
 
 | 전달 항목 | 강사가 확인할 내용 |
 |---|---|
-| 실행 가능한 계정 | 실제 참가자의 Azure CLI / azd 로그인과 필요한 조회·배포 권한 |
+| 실행 가능한 계정 | 참가자 계정의 조회·배포 권한. 실제 CLI 로그인은 참가자가 README 1-3에서 수행 |
 | 조별 `.env` | `.env.example`의 모든 값을 채움. 암호·API key·token은 없음 |
 | 준비된 서비스 | Foundry 프로젝트, Search, 연결된 App Insights, 네 후보와 별도 planner/judge |
 | 고유한 이름 | 참가자가 아직 사용하지 않은 `LAB_PREFIX`, `LAB_AGENT_NAME` |
@@ -39,7 +39,7 @@
 | Search | semantic/agentic retrieval 지원, system-assigned identity, Entra RBAC |
 | 관측 | 프로젝트에 연결된 Application Insights와 Logs 조회 권한 |
 | 로컬 | Python 3.13, Azure CLI, azd, `microsoft.foundry` 확장 |
-| 인증 | `az`와 `azd`가 의도한 계정으로 로그인되어 있음 |
+| 인증 | 참가자가 README 1-3에서 두 CLI에 로그인하고 MFA를 완료할 수 있음 |
 | 데이터 | 합성 문서만 사용, 실습 접두사는 조마다 다름 |
 
 도구 설치는 [azd 설치](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd), [Hosted Agent quickstart](https://learn.microsoft.com/azure/foundry/agents/quickstarts/quickstart-hosted-agent)를 따른다. agent hosting과 SDK 패키지의 GA/preview 상태를 혼동하지 않는다.
@@ -78,7 +78,7 @@ python -m unittest discover -s tests -v
 ## 설정과 안전한 준비
 
 1. `.env.example`을 참고해 `.env`에 **실습 환경의 값**을 채운다. 기존 파일은 덮어쓰지 않는다.
-2. 기본 Azure CLI 구독을 바꾸는 대신 지정 구독으로 조회·인증한다.
+2. 테스트가 `OK`인 같은 폴더에서 [README 1-3 로그인](../README.md#login)을 실행한다. 실습용 CLI 경로를 지정하고 두 CLI에 로그인한 뒤, 계정·tenant·구독·인증 상태를 대조한다. 다른 작업의 기본 CLI 구독은 바꾸지 않는다.
 3. `python scripts/workshop.py preflight --allow-missing-models`로 환경과 네 모델의 지역별 지원·할당량을 읽기 전용 확인한다.
 4. 모델이 없다면 `python scripts/workshop.py prepare-models`로 **고유 접두사**를 가진 네 배포만 만든다.
 5. `python scripts/workshop.py preflight`를 다시 통과시킨다.
@@ -108,7 +108,7 @@ python scripts/workshop.py bind
 
 | 시간 | 참가자 단계 | 확인할 결과 |
 |---|---|---|
-| 00–10분 | 1. 시작 준비 | 테스트·preflight·로컬 bind |
+| 00–10분 | 1. 시작 준비 | 테스트·두 CLI 로그인·계정 확인·preflight·bind |
 | 10–25분 | 2. 지식 검색 A | 실제 IQ 문서 ID와 activity |
 | 25–40분 | 3–4. 로컬·배포 B | 로컬과 원격의 실제 응답 |
 | 40–55분 | 5. baseline C | dev 24행과 Foundry 평가 |

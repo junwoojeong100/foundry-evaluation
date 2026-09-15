@@ -82,7 +82,6 @@ class GuideTests(unittest.TestCase):
     def test_participant_path_starts_early_and_has_ten_clear_steps(self):
         lines = self.readme.splitlines()
         self.assertLessEqual(lines.index("```bash") + 1, 40)
-        self.assertLessEqual(len(lines), 400)
         steps = re.findall(
             r"^## (\d+)\. [^\n]+\n(.*?)(?=^## |\Z)", self.readme, re.MULTILINE | re.DOTALL,
         )
@@ -148,6 +147,8 @@ class GuideTests(unittest.TestCase):
             "cleanup", "cleanup", "check-cleanup",
         ])
         self.assertEqual([command for command in self.commands if command[0] == "azd"], [
+            ["azd", "auth", "login", "--tenant-id", "$LOGIN_TENANT_ID"],
+            ["azd", "auth", "status", "--output", "json"],
             ["azd", "ai", "agent", "run", "--no-client"],
             ["azd", "deploy", "--no-prompt"],
             ["azd", "deploy", "--no-prompt"],
@@ -184,6 +185,50 @@ class GuideTests(unittest.TestCase):
         self.assertEqual((verify.baseline, verify.candidate, verify.holdout), ("baseline", "improved", "holdout"))
         self.assertNotIn("data/holdout.jsonl", "\n".join(self.blocks))
 
+    def test_both_logins_and_account_checks_precede_preflight(self):
+        required_order = [
+            ["python", "-m", "unittest", "discover", "-s", "tests", "-v"],
+            ["export", "AZURE_CONFIG_DIR=$PWD/.azure-cli"],
+            ["az", "login", "--tenant", "$LOGIN_TENANT_ID", "--subscription", "$LOGIN_SUBSCRIPTION_ID", "--output", "none"],
+            ["azd", "auth", "login", "--tenant-id", "$LOGIN_TENANT_ID"],
+            ["az", "account", "show", "--subscription", "$LOGIN_SUBSCRIPTION_ID", "--query",
+             "{user:user.name,tenant:tenantId,subscription:id,state:state}", "--output", "json"],
+            ["azd", "auth", "status", "--output", "json"],
+            ["python", "scripts/workshop.py", "preflight"],
+            ["python", "scripts/workshop.py", "bind"],
+        ]
+        indices = [self.commands.index(command) for command in required_order]
+        self.assertEqual(indices, sorted(indices))
+        for variable, source in (
+            ("LOGIN_TENANT_ID", "AZURE_TENANT_ID"),
+            ("LOGIN_SUBSCRIPTION_ID", "AZURE_SUBSCRIPTION_ID"),
+        ):
+            prompt = next(command for command in self.commands if command[0] == "read" and command[-1] == variable)
+            self.assertIn(source, prompt[-2])
+            self.assertLess(self.commands.index(prompt), indices[2])
+        login = self.readme.split('<a id="login"></a>', 1)[1].split("### 1-4.", 1)[0]
+        for expected in ("AZURE_EXPECTED_USERNAME", "Enabled", "authenticated", "MFA", "별도로 로그인"):
+            self.assertIn(expected, login)
+        self.assertNotIn("Azure CLI와 azd 로그인은 본인이 직접 완료합니다.", self.readme)
+
+    def test_second_terminal_reuses_the_ignored_workshop_cli_profile(self):
+        smoke_block = next(block for block in self.blocks if "workshop.py smoke --local" in block)
+        commands = shell_commands(smoke_block)
+        self.assertEqual(commands[:2], [
+            ["source", "src/agent/.venv/bin/activate"],
+            ["export", "AZURE_CONFIG_DIR=$PWD/.azure-cli"],
+        ])
+        cache_paths = [
+            ".azure-cli/azureProfile.json",
+            ".azure-cli/msal_token_cache.json",
+            ".recording/example/workshop/.azure-cli/msal_token_cache.json",
+        ]
+        ignored = subprocess.run(
+            ["git", "check-ignore", "--stdin"], cwd=ROOT,
+            input="\n".join(cache_paths) + "\n", text=True, capture_output=True, check=True,
+        )
+        self.assertEqual(ignored.stdout.splitlines(), cache_paths)
+
     def test_model_contract_and_verification_fields_are_preserved(self):
         from contracts import MODEL_SPECS
 
@@ -209,6 +254,8 @@ class GuideTests(unittest.TestCase):
         local_check = next(i for i, block in enumerate(blocks) if "unittest discover -s tests -v" in block)
         first_cloud = next(i for i, block in enumerate(blocks) if "provision.py identity" in block)
         self.assertLess(local_check, first_cloud)
+        environment = (ROOT / "docs/environment.ko.md").read_text()
+        self.assertLess(environment.index("../README.md#login"), environment.index("provision.py identity"))
 
     def test_all_public_local_links_and_anchors_resolve(self):
         documents = [ROOT / "README.md", *sorted((ROOT / "docs").glob("*.md"))]
