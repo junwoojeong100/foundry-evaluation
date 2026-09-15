@@ -1,8 +1,10 @@
-# Instructor: create a new English Azure environment
+# Create a new English Azure environment — instructor or self-study
 
 **Outcome:** an English-only workshop group in **Sweden Central**, with Foundry, Search, telemetry, four candidate models, and a fixed auxiliary planner/judge.
 
 Participants with a prepared `.env` should skip this document and start at [README step 1](../README.md#start). Use Git, Python 3.13, Azure CLI, azd with the Foundry extension, and Bash/WSL.
+
+For self-study, you are the environment owner. Complete the [tool and access prerequisites](instructor.en.md#tools) first. Keep this Bash terminal open throughout setup so its paths and login profile remain available.
 
 > New services incur costs. Use synthetic data, preserve shared/Korean resources, and never change the default Azure CLI subscription used by other work. Sweden Central resource placement does not mean GlobalStandard model inference is confined to that region.
 
@@ -10,14 +12,21 @@ Participants with a prepared `.env` should skip this document and start at [READ
 
 Use a **Git clone**, not an extracted ZIP: the preparation tool records the actual source commit and file hashes. Work in the same Bash terminal and stop on an error.
 
-Prepare a root `.env` from `.env.example`; do not overwrite an unrelated configuration.
+If you are not already at the root of an **unused Git clone**, start here:
+
+```bash
+git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evaluation-setup-en &&
+cd foundry-evaluation-setup-en
+```
+
+In your editor, copy `.env.example` to a new **`.env` in this folder**, not `.env.txt`. Do not overwrite an existing configuration. For the initial IDs, sign in to [Azure Portal](https://portal.azure.com/) with the approved account: **Subscriptions → your subscription → Overview** provides the subscription ID; **Microsoft Entra ID → Overview** provides its directory's tenant ID. Portal sign-in does not sign in either CLI.
 
 | Initial field | Value |
 |---|---|
 | `AZURE_SUBSCRIPTION_ID` | Authorized workshop subscription |
 | `AZURE_TENANT_ID` | Its tenant |
 | `AZURE_EXPECTED_USERNAME` | Account that will sign in |
-| `AZURE_RESOURCE_GROUP` | Previous group to inspect, or an empty value if none |
+| `AZURE_RESOURCE_GROUP` | Previous group to inspect; if none, keep the key as **`AZURE_RESOURCE_GROUP=`**, not the template placeholder |
 | `LAB_LANGUAGE` | `en` |
 
 Keep the other template settings. New service names, endpoints, and deployment names will be generated in the isolated folder. Do not put credentials in `.env`.
@@ -48,15 +57,15 @@ python -m pip install -r requirements.lock.txt &&
 python -m unittest discover -s tests -v
 ```
 
-**Checkpoint:** tests end with `OK`; `source-manifest.json` records the source commit and hashes. The generated `.env` has `LAB_LANGUAGE=en`, new owned names, and no reused `.azure`, `.foundry`, or virtual environment.
+**Checkpoint:** tests end with `OK`; **`$RUN_DIR/source-manifest.json`** records the source commit and hashes. **`$RUN_DIR/workshop/.env`** has `LAB_LANGUAGE=en`, new owned names, and no reused `.azure`, `.foundry`, or virtual environment.
 
-Stay in `$RUN_DIR/workshop` for sign-in so the later English agent uses the same isolated CLI profile.
+Stay in **`$RUN_DIR/workshop`** for sign-in so the later English agent uses the same isolated CLI profile. This snapshot contains runnable source, not another copy of the guide; keep this guide open in your browser/editor.
 
 ## 2. Verify identity, preservation, and capacity
 
 Complete only [README step 1-3](../README.md#login): CLI profile, tenant/subscription inputs, Azure CLI sign-in, azd sign-in, and both account checks. Return here afterward. Do **not** run README preflight/bind yet; the foundation is not ready.
 
-Then return to the original repository root:
+Then return to the **original clone** for provisioning. Keep `AZURE_CONFIG_DIR` unchanged: its absolute path still points to the new workspace's login profile.
 
 ```bash
 cd "$REPO_ROOT" &&
@@ -73,7 +82,7 @@ Each Azure CLI operation passes the configured subscription explicitly. Capacity
 
 ## 3. Create the new group and foundation services
 
-Review the generated names in `config.json`, then run:
+Review the generated names in **`$RUN_DIR/config.json`**, then run:
 
 ```bash
 python scripts/provision_environment.py group --run-dir "$RUN_DIR" &&
@@ -146,7 +155,9 @@ python scripts/workshop.py calibrate
 
 **Checkpoint:** `language: en`, the four exact candidate identities/versions, `deployed: true`, `missing_models: []`, and a successful judge calibration. The two calibration examples are not part of the 64 candidate outputs.
 
-Continue rehearsal at README **step 1-4** in this folder. Authentication is already complete. For participants, supply complete English `.env` values and **unused** team prefixes/agent names, but retain the actual prepared model deployment names.
+**Self-study or rehearsal: continue at [README step 1-4](../README.md#project-binding) in `$RUN_DIR/workshop`.** Do not clone again or restart step 1-1: this folder already has the source, complete `.env`, Python environment, and CLI sign-ins. Read the preflight checkpoint before binding.
+
+For other participants, supply complete English `.env` values and **unused** team prefixes/agent names, but retain the actual prepared model deployment names.
 
 Do not copy ownership, authentication, or result files to a participant's folder. Do not switch the Korean workspace's language or overwrite its knowledge objects.
 

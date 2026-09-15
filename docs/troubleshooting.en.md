@@ -17,13 +17,15 @@ If `collect` finished but `evaluate` stopped, do not paste the block again from 
 | Collection failed; manifest status is `failed` | Follow [collection recovery](#collection-retry), preserving the failed attempt |
 | `Evaluation is still running` | Repeat only `evaluate` with the same label |
 | Evaluation is failed/canceled or has error rows | Resolve the cause, then follow [evaluation recovery](#evaluation-retry) with `--retry-failed` |
-| `Telemetry is incomplete` | Repeat only `monitor` with the same label after checking ingestion/filter/access |
+| `Telemetry is incomplete` | Check ingestion/access and the [two-hour query window](#telemetry); repeat only `monitor` for that label |
 | `Label ... already exists` | Read the manifest. For `completed`, continue with evaluation; for `failed`, recover collection. If `running`, establish whether the original process is still active before starting anything else. |
 | Reviewed regression already exists | Verify its row, reason, language, and source trace. Continue only if they match the intended review; do not overwrite it. |
 
 In a new terminal, start Bash, return to the correct workspace, activate its virtual environment, and set `AZURE_CONFIG_DIR` to that workspace's `.azure-cli`.
 
 For a new experiment or another language, obtain unused names and use a separate folder. Deleting previous ownership or results is not a valid recovery strategy.
+
+If you closed the terminal, open your **existing workshop folder**, not a new clone. Restore the virtual environment and CLI profile using README step 1, then inspect **`src/agent/.foundry/results/<label>/manifest.json`** to identify the completed stage. Do not rerun `init`, `bind`, deployment, or collection merely because a new terminal is empty.
 
 ## Common symptoms
 
@@ -37,6 +39,7 @@ For a new experiment or another language, obtain unused names and use a separate
 | Login appears missing only in a new terminal | Restore `export AZURE_CONFIG_DIR="$PWD/.azure-cli"` in the correct folder |
 | `bind` or `set-prompt` environment error | Confirm that `bind` ran in this folder and targets the expected project/language |
 | Port 8088 unavailable | Check Terminal A and its readiness log; do not terminate an unrelated process |
+| `prepare-iq` cannot create a role assignment | The Search identity needs planner access. Ask the environment owner to grant only that access; do not bypass ownership or grant Owner to the agent. |
 | Model 404 | Distinguish the model catalog ID from the actual Azure deployment name |
 | 429 or request timeout | Preserve the attempt; inspect capacity and Retry-After. If concurrency changes, use the same value for all compared cohorts. |
 | Search 403 / role assignment failure | Check the user and agent instance identities separately; local success does not establish hosted permissions |
@@ -65,6 +68,40 @@ Open the address shown by each command and enter the code from **your own termin
 Never share or record one-time codes. If organizational policy blocks device-code authentication, use an approved environment rather than bypassing the policy.
 
 References: [interactive Azure CLI sign-in](https://learn.microsoft.com/cli/azure/authenticate-azure-cli-interactively) and [CLI configuration directories](https://learn.microsoft.com/cli/azure/azure-cli-configuration#cli-configuration-file).
+
+<a id="calibration"></a>
+
+## If judge calibration does not pass
+
+If the evaluation is **still running**, repeat only:
+
+```bash
+python scripts/workshop.py calibrate
+```
+
+If its native job failed, was canceled, or contains error rows, resolve the cause first, then preserve the failed job and retry:
+
+```bash
+python scripts/workshop.py calibrate --retry-failed
+```
+
+If the job completed but the judge did **not** distinguish the supplied supported and unsupported amounts, stop and review the judge/configuration with the environment owner. Do not edit the examples or threshold, or repeatedly rerun a valid low score until it passes. Calibration is separate from the 64 agent responses.
+
+<a id="telemetry"></a>
+
+## If traces are missing after a pause
+
+`monitor` defaults to the **last two hours**, even if the portal displays Last Day. For a run from the last 24 hours, extend the window while keeping the **same label**:
+
+```bash
+python scripts/workshop.py monitor --label baseline --hours 24
+```
+
+Replace `baseline` with the label whose monitoring failed (`improved` or `holdout` when applicable). `--hours` accepts whole hours from **1 to 168**. Use a window containing your original collection time; it does not recreate expired/deleted telemetry.
+
+The query still filters the exact agent and run, and missing, duplicate, foreign, or sampled traces still fail coverage checks. If the data is recent, allow ingestion to finish and repeat only this command. If it remains incomplete, inspect access, retention, and the connected App Insights resource with the environment owner. Never recollect answers or edit `telemetry.json` to manufacture completeness.
+
+After recovery, return to the interrupted checkpoint. If you already performed cleanup, read the saved evidence instead; starting another experiment requires a fresh workspace and names.
 
 <a id="collection-retry"></a>
 
@@ -109,7 +146,7 @@ python scripts/workshop.py evaluate --label baseline --retry-failed
 
 That is a legitimate result. Do not fabricate a failure or alter an answer/reference.
 
-1. Select an uncertain **English dev** row from `baseline/responses.jsonl`.
+1. Select an uncertain **English dev** row from `src/agent/.foundry/results/baseline/responses.jsonl`.
 2. Inspect its own trace, evidence, and answer.
 3. Explain that the baseline passed and what aspect warranted review.
 4. Decide whether comparing the provided V2 is justified; do not claim improvement in advance.

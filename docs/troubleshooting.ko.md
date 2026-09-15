@@ -26,24 +26,28 @@
 | `collect` 중 오류, `manifest.json`의 `status: failed` | [응답 수집 복구](#collection-retry). 실패한 결과는 보존하고 새 label로 전체 수집 |
 | `Evaluation is still running` | [평가 복구](#evaluation-retry). 같은 label의 `evaluate`만 다시 실행 |
 | Foundry run이 failed/canceled이거나 오류 행이 있음 | 원인을 해결한 뒤 [평가 복구](#evaluation-retry)의 `--retry-failed` 사용 |
-| `Telemetry is incomplete` | 같은 label의 `monitor`만 다시 실행. `collect`·`evaluate`를 다시 시작하지 않음 |
+| `Telemetry is incomplete` | 수집 지연·권한과 [기본 2시간 조회 범위](#telemetry)를 확인한 뒤 같은 label의 `monitor`만 재실행 |
 | `Label ... already exists` | 기존 `manifest.json`을 읽기만 해서 상태 확인. `completed`면 평가 단계부터, `failed`면 수집 복구. `running`이면 기존 실행의 진행·중단 여부를 강사와 확인 |
 | `feedback`에서 이미 같은 회귀 기록이 존재 | 기존 행 ID·검토 이유·출처가 이번에 검토한 내용과 일치할 때만 다음 단계 진행. 다르면 중단하고 확인하며 파일을 지워 우회하지 않음 |
 
 새 터미널이라면 먼저 실습 폴더로 이동하고 README의 가상환경·`AZURE_CONFIG_DIR` 설정을 다시 적용합니다.
 다른 실습을 새로 시작할 때는 강사에게 새 조별 이름과 설정을 받아 새 폴더에서 진행합니다. 과거 소유권·응답·trace 파일을 지워 재실행 오류를 우회하지 않습니다.
 
+터미널을 닫았다면 새 clone이 아니라 **기존 실습 폴더**를 엽니다. README 1단계의 가상환경·CLI 경로를 복원하고 **`src/agent/.foundry/results/<label>/manifest.json`**에서 어디까지 완료됐는지 확인합니다. 새 터미널이 비어 있다는 이유로 `init`·`bind`·배포·수집부터 반복하지 않습니다.
+
 ## 증상별 확인
 
 | 증상 | 확인 / 조치 |
 |---|---|
 | `.env`가 없거나 필수 값 누락 | 저장소 루트에 강사가 준 파일을 둡니다. 다른 조의 이름·배포를 추측해 채우지 않습니다. |
+| 언어가 다르거나 language mismatch | 한국어는 `LAB_LANGUAGE=ko`, 영어는 `en`인 별도 작업 폴더를 사용합니다. 기존 실행의 언어·소유권·결과를 바꾸어 표시하지 않습니다. |
 | `read: -p: no coprocess` 또는 경로/activate 파일 오류 | 먼저 `bash`를 실행했는지, 터미널 A의 `pwd` 경로로 이동했는지 확인합니다. 로그인 파일이 없다고 다른 계정으로 바꾸지 않습니다. |
 | `preflight`의 `missing_models`가 비어 있지 않음 | 강사에게 네 지정 배포의 접근·할당량·준비 상태 확인을 요청합니다. 다른 모델로 대체하지 않습니다. |
 | 로그인 안 됨 / tenant 오류 / 다른 계정 | [README 1-3](../README.ko.md#login)에서 두 CLI에 로그인하고 `user`·`email`·`tenant`·`subscription`을 `.env`와 대조합니다. `az account set`으로 기본 구독을 바꾸지 않습니다. |
 | 새 터미널에서만 로그인이 풀린 것처럼 보임 | 같은 실습 폴더에서 `export AZURE_CONFIG_DIR="$PWD/.azure-cli"`를 다시 지정합니다. 이전 터미널의 경로 설정은 새 터미널에 자동으로 전달되지 않습니다. |
 | `bind` 또는 `set-prompt`에서 환경/프로젝트 오류 | 새 작업 폴더에서 `bind`를 먼저 실행했는지 확인합니다. 다른 프로젝트의 `.azure`나 소유권 파일을 복사하지 않습니다. |
 | 로컬 8088 연결 실패 | 터미널 A의 ready 로그를 확인합니다. 기존 프로세스를 임의 종료하지 않습니다. 포트가 이미 사용 중이면 강사와 실습 환경을 분리합니다. |
+| `prepare-iq`에서 역할 부여 거부 | Search identity의 planner 접근 권한을 환경 소유자에게 요청합니다. 소유권 검사를 우회하거나 agent에 Owner 권한을 주지 않습니다. |
 | 모델 404 | 카탈로그 모델 ID와 실제 배포 이름을 구분합니다. `.env`와 azd가 같은 프로젝트·배포를 가리키는지 확인합니다. |
 | 429 / timeout | 원인을 보존한 뒤 용량·Retry-After·출력 한도를 확인합니다. 필요하면 수집 동시성을 낮추되 전후 비교에 같은 값을 사용합니다. |
 | Search 403 / 역할 부여 실패 | 사용자와 agent instance identity의 역할을 각각 확인합니다. 로컬 성공이 hosted 권한 성공은 아닙니다. 강사가 필요한 범위만 처리합니다. |
@@ -72,6 +76,40 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 두 명령이 끝나면 README 1-3의 **두 로그인 결과 확인** 블록으로 돌아갑니다. 코드는 채팅·문서·녹화에 공유하지 않습니다.
 조직 정책이 device-code 로그인을 막으면 우회하지 말고 강사에게 승인된 로그인 환경을 요청합니다.
 공식 설명: [Azure CLI 대화형 로그인](https://learn.microsoft.com/cli/azure/authenticate-azure-cli-interactively) · [CLI 설정 경로](https://learn.microsoft.com/cli/azure/azure-cli-configuration#cli-configuration-file).
+
+<a id="calibration"></a>
+
+## Judge calibration이 통과하지 않는다면
+
+평가가 **아직 실행 중**이면 아래 명령만 반복합니다.
+
+```bash
+python scripts/workshop.py calibrate
+```
+
+Native job이 실패·취소됐거나 오류 행이 있다면 원인을 먼저 해결한 뒤, 실패 job을 보존하고 재시도합니다.
+
+```bash
+python scripts/workshop.py calibrate --retry-failed
+```
+
+Job은 완료됐지만 judge가 제공된 근거 있는 금액과 근거 없는 금액을 **구분하지 못했다면** 중단하고 환경 소유자와 judge·설정을 검토합니다. 예제·threshold를 바꾸거나 정상적으로 나온 낮은 점수를 통과할 때까지 반복하지 않습니다. Calibration은 agent의 본평가 64응답과 별개입니다.
+
+<a id="telemetry"></a>
+
+## 쉬었다가 이어 하니 trace가 없다면
+
+포털이 Last Day를 보여도 `monitor`의 기본 조회는 **최근 2시간**입니다. 최근 24시간 안의 실행이라면 **같은 label**을 유지하고 기간만 늘립니다.
+
+```bash
+python scripts/workshop.py monitor --label baseline --hours 24
+```
+
+실패한 모니터링이 다른 단계라면 `baseline`을 실제 `improved` 또는 `holdout`으로 바꿉니다. `--hours`는 **1–168 사이 정수 시간**이며 원래 수집 시점을 포함하도록 선택합니다. 이미 보존 기간이 끝났거나 삭제된 telemetry를 되살리는 옵션은 아닙니다.
+
+Agent와 run 필터는 그대로이며 trace 누락·중복·다른 trace·sampling은 여전히 검사에서 실패합니다. 방금 실행했다면 반영을 기다린 뒤 이 명령만 반복합니다. 계속 누락되면 환경 소유자와 권한·보존 기간·연결된 App Insights를 확인합니다. 응답을 다시 수집하거나 `telemetry.json`을 편집해 완료 상태를 만들지 않습니다.
+
+복구 후 중단했던 완료 확인으로 돌아갑니다. 이미 cleanup까지 했다면 저장된 증거를 읽습니다. 새 실험은 새 폴더·이름으로 시작합니다.
 
 <a id="collection-retry"></a>
 
@@ -136,6 +174,7 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 - 화면의 계정·이름·버전·날짜가 아니라 **본인 값**을 확인합니다.
 - 탭 이동 후 agent 버전 선택이 최신 버전으로 바뀔 수 있습니다. 실제 응답의 `prompt_version`도 대조합니다.
 - 프로젝트 전역 **Evaluations**와 agent 상세의 **Evaluation**은 같은 목록이 아닙니다.
+- 버전 비교는 agent의 More가 아니라 **Version 선택 상자 → Compare versions**에서 엽니다. 서로 다른 두 버전을 고르고 Send는 한 번만 누릅니다. 양쪽이 함께 호출됩니다.
 - Foundry **Indexes**가 비어 있어도 실제 Search index는 존재할 수 있습니다. **Knowledge bases의 source**와 Azure Search의 index를 따로 확인합니다.
 - **Monitor → Tools**가 비어 있어도 코드 내부의 IQ 호출은 trace에 있을 수 있습니다.
 - 오래된 trace는 시간 범위를 넓힌 뒤 실제 ID로 찾습니다. 임의 ID나 다른 agent의 trace를 성공 증거로 대신하지 않습니다.

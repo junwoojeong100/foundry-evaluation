@@ -19,19 +19,22 @@ def telemetry_boolean(value: Any) -> bool:
     raise ValueError(f"Unrecognized telemetry boolean: {value!r}")
 
 
-def monitor(label: str) -> None:
+def monitor(label: str, hours: int = 2) -> None:
+    if type(hours) is not int or not 1 <= hours <= 168:
+        raise ValueError("monitor --hours must be a whole number from 1 to 168.")
     config = RuntimeConfig.from_env()
     manifest, responses = completed_rows(label)
     found = resources()
     app_id = found["app_insights"]["properties"]["AppId"]
     query = (REPO_ROOT / "queries" / "monitor.kql").read_text()
     query = query.replace("__AGENT_NAME__", config.agent_name).replace("__RUN_ID__", manifest["run_id"])
+    query = query.replace("__LOOKBACK_HOURS__", str(hours))
     print(query)
     token = credential().get_token("https://api.applicationinsights.io/.default")
     response = httpx.post(
         f"https://api.applicationinsights.io/v1/apps/{app_id}/query",
         headers={"Authorization": f"Bearer {token.token}"},
-        json={"query": query, "timespan": "PT2H"}, timeout=120, follow_redirects=False,
+        json={"query": query, "timespan": f"PT{hours}H"}, timeout=120, follow_redirects=False,
     )
     response.raise_for_status()
     payload = response.json()
@@ -51,6 +54,7 @@ def monitor(label: str) -> None:
     result: dict[str, Any] = {
         "language": config.language,
         "run_id": manifest["run_id"],
+        "lookback_hours": hours,
         "app_insights_resource_id": found["app_insights"]["id"],
         "query": query, "rows": rows,
         "expected_trace_count": len(wanted),

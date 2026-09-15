@@ -288,3 +288,7 @@ V2의 긴 지침과 검색 근거가 입력에 포함된다. 호출별 검색 co
 별도 경보·거버넌스의 ARM 실패는 이 평가 성공에 포함하지 않았고, 공유 구독 설정이나 다른 리포의 자원은 변경하지 않았다.
 
 구현: [응답 수집·Foundry 평가·회귀 재사용·verify](../scripts/experiments.py) · [업무 검사](../scripts/grading.py) · [모델 호출과 처리 시간](../src/agent/policy_agent.py) · [공식 출처](reference.ko.md#공식-출처).
+
+## 후속 가이드 점검 — 신규 cloud 실행과 구분
+
+2026-09-16의 명확성 점검에서는 양쪽 언어의 준비 경로·언어/버전 완료 기준·judge calibration·결과 파일 읽기·복구 절차를 보완했다. `monitor --hours`는 누락·중복·다른 trace·sampling을 포함한 오프라인 요청/trace fixture로 확인했다. 이 점검을 위해 Azure 자원·모델·지침·데이터·측정 점수를 변경하거나 다시 실행하지 않았다. 확장 조회 범위를 신규 cloud 검증으로 주장하지 않으며, 실제 초보 참가자 대상 사용성 테스트를 수행한 것은 아니다.

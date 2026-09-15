@@ -2,6 +2,44 @@
 
 Participants follow [README.md](../README.md#start). Keep infrastructure creation and recording production out of their 120-minute path. Use [new-environment setup](environment.en.md) when the required Azure foundation does not yet exist.
 
+**Self-study:** “instructor” means the environment owner, which can be you. Complete preparation once, then use the participant path. You still need an approved subscription, model access/capacity, and the permissions below; this guide cannot grant them.
+
+<a id="tools"></a>
+
+## Install and check the local tools
+
+| Tool | Installation reference / requirement |
+|---|---|
+| Git | [Install Git](https://git-scm.com/downloads) |
+| Python | [Install Python](https://www.python.org/downloads/), selecting **3.13.x**; `python3.13` must work in the workshop terminal |
+| Azure CLI | [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) |
+| azd | [Install Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) |
+| Windows terminal | [Install WSL](https://learn.microsoft.com/windows/wsl/install); install the Linux tools **inside WSL**, not only on Windows |
+
+Use Bash (`bash`) on macOS/Linux, or a WSL Bash terminal on Windows. A text editor such as VS Code is enough for reading JSON and editing `.env`.
+
+```bash
+git --version &&
+python3.13 --version &&
+az version &&
+azd version &&
+azd extension list
+```
+
+If a command is missing, install that tool and repeat this check. If `microsoft.foundry` has **no installed version**, install it once:
+
+```bash
+azd extension install microsoft.foundry
+```
+
+Then confirm the agent commands are available:
+
+```bash
+azd ai agent --help
+```
+
+Require the command list to include `run` and `invoke`. An update notice is not itself a failure of the installed commands; do not run “update all” or downgrade tools mid-experiment. If the installed commands fail, resolve the compatible azd/extension versions before starting. Return to [README step 1](../README.md#start) for a prepared environment, or [create the environment](environment.en.md).
+
 ## What to hand to each team
 
 | Item | Instructor responsibility |
@@ -26,6 +64,8 @@ If model deployments are shared within the approved workshop foundation, keep th
 Do not copy someone else's `.azure`, `.foundry` ownership files, authentication cache, or results to bypass a guard. A participant's cleanup deletes only objects recorded as owned by that folder. The instructor remains responsible for prepared models and foundation-service costs.
 
 ## Access boundaries
+
+The environment owner needs permission to create the resource group/resources and to assign the listed roles at their target scopes. **Contributor alone does not grant role-assignment permission** (`Microsoft.Authorization/roleAssignments/write`); an authorized access administrator must provide it or perform those operations. Do not give administrator/Owner permissions to the agent as a shortcut. Participants without assignment permission need the owner for `prepare-iq` and `grant-agent-access`.
 
 | Principal | Required purpose | Scope |
 |---|---|---|
@@ -65,7 +105,7 @@ Installation references: [Azure CLI](https://learn.microsoft.com/cli/azure/insta
 4. If the four candidates are missing, use `python scripts/workshop.py prepare-models` to create only the owned, prefixed deployments.
 5. Run `python scripts/workshop.py preflight` again and require `language: en` and `missing_models: []`.
 6. Bind the project, create English IQ objects, and complete actual local and hosted smoke invocations using the README order.
-7. Run `python scripts/workshop.py calibrate` before interpreting native scores. These two fixed English examples are not part of the 64 candidate responses.
+7. Run `python scripts/workshop.py calibrate` before interpreting native scores. README step 5 also makes this check explicit in each participant workspace; matching completed calibration is reused. The two fixed examples are not part of the 64 candidate responses.
 
 If evaluation reports missing App Insights `ResourceId` metadata, inspect connection ownership first. Only an authorized instructor may use `repair-observability --confirm` on a dedicated workshop connection. Do not modify a shared connection to make an example work.
 

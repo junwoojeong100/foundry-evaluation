@@ -196,3 +196,7 @@ After reviewing the actual cleanup plan, the workshop removed and verified the a
 The English Foundry project, Search service, Application Insights/Logs, connections, preparation access, and auxiliary planner/judge remain. **Retained services can still incur costs**; the environment owner manages their final lifecycle. No default CLI subscription or shared Azure setting was changed.
 
 Implementation: [collection, evaluation, feedback, and verification](../scripts/experiments.py) · [business grading](../scripts/grading.py) · [model calls and latency](../src/agent/policy_agent.py) · [language configuration](../src/agent/settings.py).
+
+## Later guide review — not another cloud execution
+
+The September 16 clarity review made preparation, language/version checkpoints, judge calibration, result-file navigation, and recovery explicit in both languages. `monitor --hours` was checked with offline request/trace fixtures, including missing, duplicate, foreign, and sampled traces. No Azure resources, models, prompts, datasets, or measured scores were changed or rerun for that review. Extended lookbacks are not additional live-cloud verification, and a first-time participant usability study has not been performed.

@@ -4,6 +4,8 @@
 
 [한국어 가이드](README.ko.md) · [Go directly to step 1](#start)
 
+**Choose your starting point:** ready Azure services, access, and a complete `.env` → [step 1](#start). Starting alone without them → [create your environment first](docs/environment.en.md). Missing local tools → [install and check them](docs/instructor.en.md#tools). This is a **paid Azure lab**, not an offline-only exercise.
+
 ## Background: learning loops and frontier ecosystems
 
 **You should be able to change the model without losing your organization's knowledge, judgment, and improvement history.**
@@ -26,11 +28,26 @@ This is **prompt and evaluation-system improvement**, not fine-tuning, reinforce
 
 ## Workshop overview
 
-You will send the same questions to four models, review a real failure or uncertain case, and compare two instruction versions. You will finish with **64 actual responses, native evaluations, real traces, and a documented reason for the change**.
+You will run a policy assistant for a fictional company. For example: “Is lodging at KRW 170,000 per night allowed for my September 2026 trip?” It retrieves the policy, then returns an **answer, a decision, and source-document IDs**. You run the provided code; you do not need to write an application.
 
-**Start here:** if your instructor has supplied a workshop account and a complete `.env`, continue to step 1. Otherwise, complete the [instructor prerequisites](docs/instructor.en.md) first.
+```text
+Question → Python agent → retrieve policy with Foundry IQ → selected model → answer
+Actual answers → business checks + Foundry evaluation → review a trace → V2 → holdout
+```
 
-**Required tools:** Git, Python 3.13, Azure CLI, and azd with the `microsoft.foundry` extension. Use Bash on macOS/Linux or a **WSL terminal** on Windows.
+| Term | Meaning in this guide |
+|---|---|
+| Agent / model | One Python agent uses one of four fixed models: Sol, Terra, Luna, or Astra. They answer independently; they do not vote. |
+| Foundry / Agent Framework | Foundry provides the Azure services and portal. Agent Framework is used by the provided Python agent. |
+| V1 / V2 | Two supplied instruction versions, not two models. Deploying V2 creates a new numeric `agent_version`. |
+| Dev / holdout | Six questions for review and comparison; four separate questions opened only after V2 is frozen |
+| Trace / regression case | A trace links one request's retrieval and model calls. A regression case retains a reviewed question, fixed reference, and original trace. |
+
+The primary experiment is **6 × 4 baseline + 6 × 4 V2 + 4 × 4 holdout = 64 responses**. The goal is complete evidence and an explained change, **not forcing every score to pass**.
+
+**Before step 1:** the [preparation checklist](docs/instructor.en.md) must be satisfied. A `.env` template alone does not create Azure resources or grant access. For self-study, you perform the linked environment setup as the environment owner, then return here at the step it specifies.
+
+**Required tools:** Git, Python 3.13, Azure CLI, azd with the `microsoft.foundry` extension, and a text editor such as VS Code. Use Bash on macOS/Linux or a **WSL terminal** on Windows. Allow about 120 minutes **after** tools, access, and Azure preparation are ready.
 
 **English configuration:** `.env` must contain `LAB_LANGUAGE=en`. Use a separate folder, unused `LAB_PREFIX`, and unused `LAB_AGENT_NAME`; do not switch an existing Korean workspace to English. English policies and questions live in `data/en/`, and English instructions live in `src/agent/prompts/en/`.
 
@@ -52,7 +69,7 @@ Call your command window **Terminal A**. First start Bash:
 bash
 ```
 
-Copy **one block at a time**. `&&` runs the next command only after the preceding command succeeds. Continue only when the checkpoint matches. If a command fails, [resume the failed command](docs/troubleshooting.en.md#resume), not the entire block.
+Copy **one block at a time**, without adding a leading `$`. `&&` runs the next command only after the preceding command succeeds. Most commands return to the input prompt; the local server in step 3 intentionally keeps running. Deployment and evaluation can take several minutes: do not launch a second copy while waiting. Continue only when the checkpoint matches. If a command fails, [resume the failed command](docs/troubleshooting.en.md#resume), not the entire block.
 
 ### 1-1. Get the source and configuration
 
@@ -64,6 +81,8 @@ cd foundry-evaluation-en
 ```
 
 Place the instructor's `.env` **next to this README**. Do not overwrite an existing file. It must identify the subscription, tenant, expected user, project, Search service, model deployments, and unused team-specific names. Set **`LAB_LANGUAGE=en`**. Do not add passwords, API keys, or access tokens.
+
+This folder is the **repository root**: it contains `azure.yaml`, `scripts/`, `src/`, and your `.env`. Use the editor's **Open File** command to open the hidden `.env`; the filename must not become `.env.txt`. Python reads this file automatically; **do not run or `source .env` as a shell script**. Replace template values such as `<subscription-id>` with actual values, without the angle brackets. If you do not know a resource/deployment value, stop and complete preparation rather than guessing it.
 
 ### 1-2. Create the Python environment and run offline tests
 
@@ -116,14 +135,23 @@ azd auth status --output json
 
 `user` and `email` must match `AZURE_EXPECTED_USERNAME`. `tenant` and `subscription` must match the two `.env` values. The Azure subscription state must be **`Enabled`**, and azd status must be **`authenticated`**. Do not continue with a mismatch.
 
+<a id="project-binding"></a>
+
 ### 1-4. Check and bind the project
 
 ```bash
-python scripts/workshop.py preflight &&
+python scripts/workshop.py preflight
+```
+
+**Check before binding:** `language` is **`en`**, `missing_models` is **`[]`**, and all four candidate records have `deployed: true`. A successful command with `language: ko` is the wrong workshop, not permission to continue. Correct an unused folder's configuration; do not relabel an existing run.
+
+Only when those values match:
+
+```bash
 python scripts/workshop.py bind
 ```
 
-**Checkpoint:** `language` is **`en`**, `missing_models` is **`[]`**, and the terminal prints **`Bound ...`**. `bind` configures azd for this specific folder; the instructor having run it on another machine is not enough.
+**Checkpoint:** the terminal prints **`Bound ...`** for your agent and project. `bind` configures azd for this specific folder; the instructor having run it on another machine is not enough.
 
 Run subsequent commands in **Terminal A at the repository root**. In any new Bash terminal, return to this folder and restore:
 
@@ -153,7 +181,7 @@ python scripts/workshop.py retrieve --query "What is the lodging limit for a dom
 
 **Open the portal for the first time here:** visit [Microsoft Foundry](https://ai.azure.com/) and sign in with the configured account. Portal sign-in is separate from CLI sign-in. Match the **Foundry resource name** `AZURE_AI_ACCOUNT_NAME` and **project name** `AZURE_AI_PROJECT_NAME`, then open **Knowledge → Knowledge bases**.
 
-Subsequent portal instructions refer to this project. “Your agent” means `LAB_AGENT_NAME`.
+Subsequent portal instructions use the English menu names in the **New Foundry** view. “Your agent” means `LAB_AGENT_NAME`. Your KB name is `LAB_PREFIX` followed by `-kb`; its source ends in `-source`. Match those names rather than another team's similarly named project or KB.
 
 **Read the screenshot:** check your knowledge-base name and its English policy source, not the example's resource name.
 
@@ -178,7 +206,7 @@ python scripts/workshop.py set-prompt v1 &&
 azd ai agent run --no-client
 ```
 
-After the **ready log** appears, open **Terminal B** and start Bash:
+Wait for the server to start listening on port **8088** without a traceback. Terminal A should **remain running**, not return to an input prompt. Open **Terminal B** and start Bash:
 
 ```bash
 bash
@@ -195,7 +223,7 @@ curl --fail --show-error --write-out '\nHTTP %{http_code}\n' http://127.0.0.1:80
 python scripts/workshop.py smoke --local
 ```
 
-**Checkpoint:** Terminal A shows readiness; Terminal B shows **`HTTP 200`**, a real English answer, `model_key: sol`, `language: en`, and `prompt_version: v1`. Readiness alone is not proof of successful model inference.
+**Checkpoint:** Terminal B shows **`HTTP 200`**, a real English answer, `model_key: sol`, `language: en`, and `prompt_version: v1`. Readiness alone is not proof of successful model inference. `smoke` checks a real request and routing; it does **not** require a perfect business grade. V1 may already show a citation problem, which you will investigate in steps 5–6.
 
 Press **`Ctrl+C` in Terminal A** to stop the local server. Close Terminal B if desired. Use Terminal A again from step 4 onward.
 
@@ -227,12 +255,31 @@ If role assignment fails, ask the instructor to grant the required access to **t
 
 **Action:** collect the six English dev cases from each of the four models. `--label` names the local result folder; keep the standard labels `baseline`, `improved`, and `holdout` on this main path.
 
+The **judge** is the separate auxiliary model that scores answer text in Foundry. Python business checks separately inspect the decision, amounts, and citation IDs.
+
+**First check the judge in this workspace:**
+
 ```bash
-python scripts/workshop.py collect --split dev --label baseline &&
+python scripts/workshop.py calibrate
+```
+
+Require **`Judge calibration passed`**. This evaluates two supplied correct/incorrect examples, not agent responses; they are excluded from the 64. Existing calibration with the same inputs is reused. If calibration fails, [resolve it before using native scores](docs/troubleshooting.en.md#calibration).
+
+**Collect the baseline:**
+
+```bash
+python scripts/workshop.py collect --split dev --label baseline
+```
+
+Require collection to finish without errors at **`24/24`**. `src/agent/.foundry/results/baseline/business-summary.json` must contain four model entries with `total: 6` each.
+
+**Then evaluate those saved responses:**
+
+```bash
 python scripts/workshop.py evaluate --label baseline
 ```
 
-**Checkpoint:** collection completes without errors at **`24/24`**, and evaluation prints **`Foundry evaluation completed: ... (24 rows)`**. In `src/agent/.foundry/results/baseline/business-summary.json`, all four models have `total: 6`.
+**Checkpoint:** evaluation prints **`Foundry evaluation completed: ... (24 rows)`**.
 
 If only evaluation fails, do not collect again. [Resume evaluation of the existing responses](docs/troubleshooting.en.md#evaluation-retry).
 
@@ -250,7 +297,7 @@ The six dev cases cover current limits, prior approval, historical policy, uncov
 
 The JSONL includes reference answers, but these two native evaluators do not receive `ground_truth`, `decision`, or the `citations` array in their field mappings. **A high groundedness score does not establish correct business decisions or citation IDs.**
 
-**Portal:** open the project-wide **Evaluations** list, not the agent detail's Evaluation tab, and select your baseline run.
+**Portal:** open the report URL printed by `evaluate` to reach your exact run. It is also saved at **`baseline/evaluation.json → run → report_url`** under `src/agent/.foundry/results/`. If navigating manually, use the project-wide **Evaluations** list, not the agent detail's Evaluation tab.
 
 **Do not confuse quality and execution:** low valid scores are evidence to review in step 6. Missing, duplicate, error, or null-score rows are not successful execution.
 
@@ -267,6 +314,8 @@ python scripts/workshop.py compare --labels baseline &&
 python scripts/workshop.py monitor --label baseline
 ```
 
+`compare` both prints the report and saves **`src/agent/.foundry/results/comparison.json`**. Open that file in your editor; the arrows below describe **JSON fields**, not portal menus.
+
 1. In **`labels → baseline → business_failures`**, choose a real `row_id`. Read its `trace_id` and false `checks`.
 2. Open `src/agent/.foundry/results/baseline/responses.jsonl` in an editor. Find that `row_id`, then compare **`answer`, `decision`, `citations`, and `source_ids`**. Use visual word wrap if necessary; do not edit or reformat the file.
 3. In **your agent → Traces**, search for the same `trace_id`. Adjust the time range and inspect its retrieval and model spans.
@@ -274,7 +323,13 @@ python scripts/workshop.py monitor --label baseline
 
 If the failure list is empty, do not invent a failure. Follow [the all-passed baseline path](docs/troubleshooting.en.md#no-failures).
 
-Enter **your reviewed row ID and an evidence-based reason of at least 10 characters**:
+### How to distinguish retrieval and instruction problems
+
+For example, if the correct policy ID is in `source_ids` but the answer's `citations` uses a document **title**, the immediate problem is not necessarily retrieval. V1's instruction to hide internal identifiers can conflict with the business contract requiring source IDs.
+
+Check your own row before using that explanation. `feedback` preserves a reference case and its provenance; it does not train model weights or automatically generate a better prompt.
+
+**Now record your review.** `responses.jsonl` contains **one JSON object per line**. Search for the chosen `row_id`; do not mistake a line's position for the ID. Enter **your reviewed row ID and an evidence-based reason of at least 10 characters**. Describe “what I observed → which evidence supports it → what V2 should change”; do not copy an example explanation that does not match your row.
 
 ```bash
 read -r -p "Reviewed row_id: " ROW_ID &&
@@ -285,19 +340,13 @@ python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
 
 **Checkpoint:** a `src/agent/.foundry/datasets/regression-*.jsonl` file links the frozen dev case to the original trace. Do not turn the model's answer into a new ground truth. Automated reviews must use `--reviewer assistant`, not `human`.
 
-### How to distinguish retrieval and instruction problems
-
-For example, if the correct policy ID is in `source_ids` but the answer's `citations` uses a document **title**, the immediate problem is not necessarily retrieval. V1's instruction to hide internal identifiers can conflict with the business contract requiring source IDs.
-
-Check your own row before using that explanation. `feedback` preserves a reference case and its provenance; it does not train model weights or automatically generate a better prompt.
-
 ![Real English trace review](docs/assets/live-en-20260916-0240/screenshots/06-trace.webp)
 
 <a id="lab-e"></a>
 
 ## 7. Deploy V2 and evaluate the same dev set — Lab E
 
-**Action:** read `src/agent/prompts/en/v1.txt` and `v2.txt`. V2 is a **provided candidate**, not an automatically generated improvement. Verify that its changes address the reviewed issue; stop and consult the instructor if they do not.
+**Action:** read `src/agent/prompts/en/v1.txt` and `src/agent/prompts/en/v2.txt`. V2 is a **provided candidate**, not an automatically generated improvement. Verify that its changes address the reviewed issue; stop and consult the instructor if they do not.
 
 | V1 weakness or ambiguity | Provided V2 instruction |
 |---|---|
@@ -312,17 +361,27 @@ The deliberate change is **the selected prompt and the hosted agent version**. K
 ```bash
 python scripts/workshop.py set-prompt v2 &&
 azd deploy --no-prompt &&
-python scripts/workshop.py smoke &&
-python scripts/workshop.py collect --split dev --label improved &&
+python scripts/workshop.py smoke
+```
+
+**Check before collecting:** a **different numeric `agent_version`** from step 4, `language: en`, and `prompt_version: v2`.
+
+```bash
+python scripts/workshop.py collect --split dev --label improved
+```
+
+Require **`24/24`**, then evaluate and compare:
+
+```bash
 python scripts/workshop.py evaluate --label improved &&
 python scripts/workshop.py compare --labels baseline improved
 ```
 
-**Checkpoint:** a new numeric hosted version, `language: en`, `prompt_version: v2`, collection **`24/24`**, and evaluation **`(24 rows)`**. Keep the same concurrency before and after.
+**Checkpoint:** evaluation **`(24 rows)`** and an updated **`src/agent/.foundry/results/comparison.json`**. Keep the same concurrency before and after.
 
-**Read your own comparison:** navigate to **`labels → baseline or improved → models → sol/terra/luna/astra`**. Compare `business_passed` with `total`, and `required_citation_passed` with `required_citation_total`. Also read `native_mean_score` and `native_passed` under each `foundry_evaluators` entry.
+**Read your own comparison:** in that file, navigate to **`labels → baseline or improved → models → sol/terra/luna/astra`**. Compare `business_passed` with `total`, and `required_citation_passed` with `required_citation_total`. Also read `native_mean_score` and `native_passed` under each `foundry_evaluators` entry.
 
-If the result is unchanged or worse, report that result. Do not lower the criteria, substitute another model, or automatically adopt V2.
+If the result is unchanged or worse, report that result. Do not lower the criteria, substitute another model, or automatically adopt V2. Step 8 evaluates this candidate; it is **not a decision to release it**.
 
 **Actual English recording:** business passes improved from **0/24 to 23/24**, not 24/24. Sol still returned `not_allowed` instead of the frozen `needs_approval` label for D02. Your own result may differ; read the [actual English evaluation and remaining failures](docs/validation.en.md).
 
@@ -350,12 +409,19 @@ Click **Send once**: the comparison view sends the question to both versions. Ch
 **Action:** stop changing V2's instructions, models, and retrieval configuration. Evaluate four holdout cases with each model.
 
 ```bash
-python scripts/workshop.py collect --split holdout --label holdout &&
+python scripts/workshop.py collect --split holdout --label holdout
+```
+
+Require **`16/16`**, then evaluate:
+
+```bash
 python scripts/workshop.py evaluate --label holdout &&
 python scripts/workshop.py compare --labels baseline improved holdout
 ```
 
 **Checkpoint:** collection **`16/16`**, evaluation **`(16 rows)`**, and the **same `agent_version` and V2 prompt** used in step 7.
+
+In `comparison.json`, compare `agent_version` and `prompt_hash` under **`labels → improved`** and **`labels → holdout`**. Open the holdout `evaluate` report URL, not the previous dev report.
 
 Do not modify the prompt after seeing these results and submit the same cases as an untouched validation set. The English holdout is a language variant of the same small educational cases, not a new independent benchmark or evidence of production quality.
 
@@ -366,6 +432,8 @@ Do not modify the prompt after seeing these results and submit the same cases as
 ## 9. Check operational signals and complete evidence — Lab G
 
 **Action:** use **Trace** to investigate one request and **Monitor** to understand latency, failures, and token trends across requests.
+
+The workshop CLI's `monitor` fetches trace evidence for a result label and stops its batch session after complete telemetry coverage is verified. Its default window is **the last two hours**. If you paused longer, use [the extended-window recovery command](docs/troubleshooting.en.md#telemetry); do not collect new responses merely to make old traces appear.
 
 ```bash
 python scripts/workshop.py monitor --label improved &&
@@ -381,7 +449,7 @@ The dashboard includes smoke and optional portal calls. Its totals and error ind
 
 **Checkpoint:** `language: en`, `component_execution_verified: true`, `primary_model_outputs: 64`, and `distinct_verified_traces: 64`. The 24 + 24 + 16 responses must retain complete evaluation and trace coverage, and the candidate must consume the reviewed baseline provenance.
 
-Read `candidate_quality_gates` separately. Execution verification is not proof that every native quality score passed. **`production_release_approved: false`** is not a missing checkbox to change into an approval.
+Open **`src/agent/.foundry/results/verified-evidence.json`** for the saved outcome. Read `candidate_quality_gates` separately: each model needs **at least 80% business passes and every required citation valid**. An execution check can pass while a quality gate is false. **`production_release_approved: false`** is intentional, not a missing checkbox to change into an approval.
 
 For the exact business checks, evaluator mappings, measured results, costs, latency, and limitations, see [how the English evaluation was performed](docs/validation.en.md).
 
@@ -391,7 +459,7 @@ For the exact business checks, evaluator mappings, measured results, costs, late
 
 ## 10. Clean up only your owned workshop objects
 
-**Action:** inspect the deletion plan first.
+**Action:** finish trace/portal review and save the step-9 result before cleanup. Cleanup removes the live agent and knowledge objects; their local response/evaluation files remain. Inspect the deletion plan first.
 
 ```bash
 python scripts/workshop.py cleanup --dry-run
@@ -430,7 +498,7 @@ These files are inputs to later workshop commands, not disposable success screen
 
 [Play the English summary video — 11m39s](https://github.com/user-attachments/assets/97562443-49da-45d0-9554-3ce740e26e7c)
 
-**11m39s of actual English CLI, Azure Portal, and Foundry Portal footage**, edited into guide order. **Silent, with English on-screen explanations.** Long waits are shortened and actual result frames are held for reading; authentication and MFA are not recorded.
+**11m39s of actual English CLI, Azure Portal, and Foundry Portal footage**, edited into guide order. **Silent, with English on-screen explanations.** Long waits are shortened and actual result frames are held for reading; authentication and MFA are not recorded. The recording checks calibration during environment preparation; the current text also makes that check explicit before baseline evaluation. Follow the text's checkpoints when the older recording groups commands differently.
 
 Instructor setup starts at **00:13**. If your environment is already prepared, move the player's time slider to **03:07**.
 

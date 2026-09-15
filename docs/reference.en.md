@@ -122,6 +122,8 @@ The full English method, actual measurements, and interpretation belong in [the 
 
 `queries/monitor.kql` selects this agent's requests and connects dependencies through `operation_Id`. It avoids counting both framework and custom spans as duplicate model calls.
 
+`python scripts/workshop.py monitor --label baseline` defaults to a two-hour lookback. `--hours 24` extends both the KQL filters and the API time window for a paused run; the agent/run filter and exact trace-coverage checks remain unchanged. This is different from the portal's date selector or `azd ai agent monitor` log streaming.
+
 The workshop agent uses `microsoft.fixed_percentage` with `1.0` for complete trace coverage. It does not change a shared Application Insights sampling policy.
 
 Portal dashboards may include smoke or additional UI invocations beyond the 64 primary responses. A displayed estimated cost of `$0` is not a complete Azure bill. An empty Tools chart does not prove that code-level IQ spans were absent.

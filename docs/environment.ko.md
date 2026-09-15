@@ -1,25 +1,34 @@
-# 강사 전용: 새 Azure 환경 준비하기
+# 새 Azure 환경 준비하기 — 강사 또는 개인 실습
 
 **목표:** Sweden Central에 실습 전용 그룹·Foundry·Search·관측·모델을 준비하고, 참가자에게 조별 `.env`를 전달합니다.
 이미 준비된 환경을 받았다면 이 문서를 건너뛰고 [참가자 1단계](../README.ko.md#start)로 이동하세요.
 
 Git, Python 3.13, Azure CLI, azd + `microsoft.foundry` 확장, Bash가 필요합니다. 도구 설치와 권한은 [강사 준비](instructor.ko.md)를 먼저 확인합니다.
 아래는 **같은 Bash 터미널에서 한 블록씩** 실행합니다. 오류가 나면 다음 블록으로 넘어가지 않습니다.
+혼자 실습한다면 본인이 환경 소유자를 맡습니다. [도구·권한 준비](instructor.ko.md#tools)를 먼저 마치고, 경로 변수와 로그인 프로필을 유지하도록 준비가 끝날 때까지 이 터미널을 열어 둡니다.
 
 > 새 서비스에는 비용이 발생합니다. 합성 데이터만 사용하고, 공유 자원과 기본 Azure CLI 구독은 변경하지 않습니다.
 > 서비스 위치가 Sweden Central이어도 **GlobalStandard 모델의 추론이 그 리전 안에만 머문다는 뜻은 아닙니다.**
 
 ## 1. 새 실행 폴더 준비
 
-**할 일:** clone한 저장소 루트에 `.env.example`을 참고해 `.env`를 준비합니다. 기존 파일은 덮어쓰지 않습니다.
-이 환경 준비 도구는 Git commit으로 소스 버전을 확인하므로 ZIP 폴더가 아니라 **Git으로 clone한 폴더**에서 실행합니다.
+**할 일:** 이 도구는 Git commit으로 소스 버전을 확인하므로 ZIP이 아니라 **아직 실습하지 않은 Git clone**에서 실행합니다. 그런 폴더의 루트에 있지 않다면 먼저 아래를 실행합니다.
+
+```bash
+git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evaluation-setup-ko &&
+cd foundry-evaluation-setup-ko
+```
+
+편집기에서 `.env.example`을 복사해 **지금 폴더의 새 `.env`**로 저장합니다. `.env.txt`가 되거나 기존 설정을 덮어쓰지 않도록 합니다.
+초기 ID는 승인된 계정으로 [Azure Portal](https://portal.azure.com/)에 로그인한 뒤 **Subscriptions → 해당 구독 → Overview**에서 구독 ID, **Microsoft Entra ID → Overview**에서 그 구독 디렉터리의 tenant ID를 확인합니다. 포털 로그인은 두 CLI 로그인과 별개입니다.
 
 | 먼저 채울 값 | 내용 |
 |---|---|
 | `AZURE_SUBSCRIPTION_ID` | 강사가 승인한 실습 구독 |
 | `AZURE_TENANT_ID` | 그 구독의 tenant |
 | `AZURE_EXPECTED_USERNAME` | 직접 로그인할 계정 |
-| `AZURE_RESOURCE_GROUP` | 조사할 이전 그룹 이름. 이전 그룹이 없으면 값만 비워 둠 |
+| `AZURE_RESOURCE_GROUP` | 조사할 이전 그룹 이름. 없으면 템플릿 표시 대신 **`AZURE_RESOURCE_GROUP=`**로 키를 남기고 값만 비움 |
+| `LAB_LANGUAGE` | `ko` |
 
 새 서비스 이름·endpoint·조별 기본 이름은 아래 도구가 **별도 폴더의 `.env`에 생성**합니다.
 나머지는 `.env.example`의 설정을 유지합니다. 암호·API key·토큰은 넣지 않습니다.
@@ -51,8 +60,9 @@ python -m pip install -r requirements.lock.txt &&
 python -m unittest discover -s tests -v
 ```
 
-**완료 확인:** 테스트가 `OK`입니다. `source-manifest.json`에 소스 revision과 파일별 SHA-256이 있고, 이전 `.azure`·`.foundry`·결과·가상환경을 재사용하지 않았습니다.
+**완료 확인:** 테스트가 `OK`입니다. **`$RUN_DIR/source-manifest.json`**에 소스 revision·SHA-256이 있고 **`$RUN_DIR/workshop/.env`**에 `LAB_LANGUAGE=ko`와 새 이름이 있습니다. 이전 `.azure`·`.foundry`·결과·가상환경을 재사용하지 않았습니다.
 **지금의 `$RUN_DIR/workshop` 폴더를 유지합니다.** 다음 로그인도 이 폴더에서 실행해야 이후 로컬 실습과 같은 CLI 캐시를 사용합니다.
+이 스냅샷은 실행할 소스이며 가이드 복사본은 포함하지 않습니다. 가이드는 브라우저나 편집기에 계속 열어 둡니다.
 
 <details>
 <summary>녹화 예시 — 새 소스 폴더 확인</summary>
@@ -73,16 +83,14 @@ python -m unittest discover -s tests -v
 ```bash
 cd "$REPO_ROOT" &&
 python scripts/provision_environment.py identity --run-dir "$RUN_DIR" &&
-python scripts/provision_environment.py ownership --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py ownership --run-dir "$RUN_DIR" --preserve-existing &&
 python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 ```
 
 **완료 확인:** 세 `matches` 값이 `true`, 구독은 `Enabled`이며 지정한 네 모델과 보조 모델의 용량 레코드가 있습니다.
 각 Azure CLI 요청에는 설정한 구독이 명시됩니다. 실제 구독 할당량은 6단계의 `preflight`와 모델 준비에서 다시 확인합니다.
 
-`ownership`은 **조사만 하며 그룹을 삭제하지 않습니다.** 이전 후보를 발견해 중단되면 실제 자원 목록·생성 기록·소유자를 확인합니다.
-태그나 이름만 보고 삭제하거나, 오류를 무시하고 새 그룹 생성으로 넘어가지 않습니다. 삭제는 별도 범위 확인과 승인이 필요합니다.
-기존 그룹을 모두 보존하기로 확인했다면 `ownership --preserve-existing`을 사용해 그 결정을 명시할 수 있습니다. 이 옵션도 그룹이나 자원을 삭제하지 않습니다.
+위 경로는 **`--preserve-existing`으로 기존 그룹을 모두 보존**하며 삭제하지 않습니다. 옵션 없이 실행하면 이전 후보를 발견했을 때 소유권 확인을 위해 중단할 수 있습니다. 어느 경로든 태그·이름만으로 다른 자원을 삭제하거나 오류를 무시하지 않습니다.
 
 <details>
 <summary>녹화 예시 — 계정 대조와 기존 그룹 보존</summary>
@@ -94,7 +102,7 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 
 ## 3. 새 전용 그룹과 서비스 생성
 
-**할 일:** `config.json`에 생성된 새 이름을 확인한 뒤 실행합니다. 같은 자원을 수동 `az ... create`로 한 번 더 만들지 않습니다.
+**할 일:** **`$RUN_DIR/config.json`**에 생성된 새 이름을 확인한 뒤 실행합니다. 같은 자원을 수동 `az ... create`로 한 번 더 만들지 않습니다.
 
 ```bash
 python scripts/provision_environment.py group --run-dir "$RUN_DIR" &&
@@ -184,7 +192,7 @@ python scripts/workshop.py calibrate
 **완료 확인:** Sol/Terra/Luna/Astra의 고정 모델 ID·버전, `deployed: true`, `missing_models: []`, calibration 통과를 확인합니다.
 Calibration 예제 2개는 본평가 64응답이 아닙니다. 모델 접근·할당량이 부족하면 다른 모델로 대체하지 않고 준비를 중단합니다.
 
-이 폴더에서 계속 리허설한다면 [참가자 1단계](../README.ko.md#start)의 **1-4 프로젝트 연결부터** 진행합니다. 로그인은 위 2단계에서 이미 완료했습니다.
+**개인 실습·리허설은 `$RUN_DIR/workshop`에서 [README 1-4 프로젝트 연결](../README.ko.md#project-binding)로 이어갑니다.** 소스·완성된 `.env`·가상환경·CLI 로그인이 이미 있으므로 다시 clone하거나 1-1부터 반복하지 않습니다. Preflight 완료 기준을 확인한 뒤 bind합니다.
 새 참가자 폴더에는 완성된 `.env`를 주되, **미사용 `LAB_PREFIX` / `LAB_AGENT_NAME`**을 조별로 지정합니다.
 실제 모델 배포 이름은 유지하고 `.azure`·`.foundry` 소유권 파일·결과는 전달하지 않습니다.
 자세한 전달 항목과 리허설 분리는 [강사 체크리스트](instructor.ko.md#참가자에게-전달할-것)를 따릅니다.

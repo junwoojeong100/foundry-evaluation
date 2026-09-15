@@ -4,6 +4,44 @@
 
 이 문서는 참가자 120분에 포함하지 않는 **환경 준비**다. 빈 Azure 구독에서의 전체 소요 시간은 모델 접근 승인·할당량·권한 전파에 따라 달라진다.
 
+**혼자 실습한다면:** 여기서 “강사”는 환경 소유자를 뜻하며 본인이 맡아도 된다. 준비를 한 번 마친 뒤 참가자 경로로 진행한다. 다만 승인된 구독·모델 접근·용량·아래 권한이 필요하며 문서가 이를 대신 부여하지는 않는다.
+
+<a id="tools"></a>
+
+## 로컬 도구 설치와 확인
+
+| 도구 | 설치 안내 / 확인 조건 |
+|---|---|
+| Git | [Git 설치](https://git-scm.com/downloads) |
+| Python | [Python 설치](https://www.python.org/downloads/)에서 **3.13.x** 선택. 실습 터미널에서 `python3.13` 실행 가능 |
+| Azure CLI | [Azure CLI 설치](https://learn.microsoft.com/cli/azure/install-azure-cli) |
+| azd | [Azure Developer CLI 설치](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) |
+| Windows 터미널 | [WSL 설치](https://learn.microsoft.com/windows/wsl/install). Windows에만 설치하지 말고 **WSL 안에 Linux용 도구도 설치** |
+
+macOS/Linux는 Bash(`bash`), Windows는 WSL의 Bash를 사용한다. `.env` 편집과 JSON 읽기에는 VS Code 같은 텍스트 편집기면 된다.
+
+```bash
+git --version &&
+python3.13 --version &&
+az version &&
+azd version &&
+azd extension list
+```
+
+없는 명령이 있으면 해당 도구를 설치하고 다시 확인한다. `microsoft.foundry`에 **설치된 버전이 없을 때만** 한 번 설치한다.
+
+```bash
+azd extension install microsoft.foundry
+```
+
+이어서 agent 명령이 제공되는지 확인한다.
+
+```bash
+azd ai agent --help
+```
+
+명령 목록에 `run`, `invoke`가 있어야 한다. 업데이트 안내 자체를 현재 명령의 실패로 보지 않으며, 실험 중 “모두 업데이트”나 임의 다운그레이드를 하지 않는다. 설치된 명령이 실패하면 호환되는 azd/확장 조합을 먼저 해결한다. Azure가 준비됐으면 [README 1단계](../README.ko.md#start), 아니라면 [새 환경 준비](environment.ko.md)로 진행한다.
+
 ## 참가자에게 전달할 것
 
 참가자는 [README의 1–10단계](../README.ko.md#start)만 따라간다. 녹화 제작이나 Azure 인프라 생성 절차를 참가자의 선행 과제로 섞지 않는다.
@@ -47,6 +85,8 @@
 
 ## 권한
 
+환경 소유자는 새 그룹·자원을 만들고 아래 역할을 해당 범위에 부여할 수 있어야 한다. **Contributor만으로는 역할 부여 권한**(`Microsoft.Authorization/roleAssignments/write`)이 생기지 않으므로 승인된 접근 관리자가 권한을 준비하거나 해당 작업을 수행해야 한다. 이를 해결하려고 agent에 관리자/Owner 권한을 주지 않는다. 역할 부여 권한이 없는 참가자는 `prepare-iq`, `grant-agent-access`에서 환경 소유자의 지원이 필요하다.
+
 | 주체 | 최소 업무 권한 | 범위 |
 |---|---|---|
 | 참가자 | Foundry User + 필요한 개발/배포 권한 | 실습 Foundry 프로젝트/계정 |
@@ -85,7 +125,7 @@ python -m unittest discover -s tests -v
 5. `python scripts/workshop.py preflight`를 다시 통과시킨다.
 6. `prepare-iq`와 실제 retrieval을 실행한다.
 7. azd를 아래 절차로 바인딩하고 로컬·원격 smoke test를 완료한다.
-8. `python scripts/workshop.py calibrate`로 명시적으로 정의한 정답/오답 예제 2건을 Foundry에서 평가한다. 실제 네 모델 응답과 섞지 않는 judge 점검이며, groundedness가 근거 없는 금액을 구분하는지 확인한다.
+8. `python scripts/workshop.py calibrate`로 명시적으로 정의한 정답/오답 예제 2건을 Foundry에서 평가한다. 참가자 README 5단계에도 같은 점검을 명시했으며, 같은 입력의 완료된 calibration은 재사용한다. 실제 네 모델 응답과 섞지 않고 groundedness가 근거 없는 금액을 구분하는지 확인한다.
 
 평가가 `AppInsights connection is missing ResourceId metadata`로 실패하면 강사가 연결의 소유권과 범위를 먼저 확인한다. **공유 연결은 참가자가 직접 변경하지 않는다.** 수정이 허용된 실습 전용 연결에만 `python scripts/workshop.py repair-observability --confirm`으로 실제 Application Insights ARM ID 메타데이터를 추가한다. target/credential은 변경하지 않으며 보완 기록은 cleanup 후에도 유지된다. 이후 `calibrate --retry-failed`로 실패 run을 보존한 채 새 run을 만든다.
 

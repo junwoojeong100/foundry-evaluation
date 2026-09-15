@@ -1,6 +1,6 @@
 let agentRequests = materialize(
     requests
-    | where timestamp > ago(2h)
+    | where timestamp > ago(__LOOKBACK_HOURS__h)
     | extend agentName = coalesce(
         tostring(customDimensions["gen_ai.agent.name"]),
         tostring(customDimensions["azure.ai.agentserver.agent_name"]),
@@ -10,7 +10,7 @@ let agentRequests = materialize(
     | distinct operation_Id
 );
 dependencies
-| where timestamp > ago(2h)
+| where timestamp > ago(__LOOKBACK_HOURS__h)
 | where name == "learning_loop.answer"
 | where tostring(customDimensions["lab.run_id"]) == "__RUN_ID__"
 | join kind=inner agentRequests on operation_Id

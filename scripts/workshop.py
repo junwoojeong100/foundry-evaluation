@@ -53,7 +53,9 @@ def main() -> None:
     review.add_argument("--row-id", required=True)
     review.add_argument("--reason", required=True)
     review.add_argument("--reviewer", choices=["human", "assistant"], default="human")
-    sub.add_parser("monitor").add_argument("--label", required=True)
+    monitoring = sub.add_parser("monitor")
+    monitoring.add_argument("--label", required=True)
+    monitoring.add_argument("--hours", type=int, default=2, help="Telemetry lookback in hours, 1-168 (default: 2); keep the same label when resuming.")
     verification = sub.add_parser("verify")
     verification.add_argument("--baseline", required=True)
     verification.add_argument("--candidate", required=True)
@@ -101,7 +103,7 @@ def main() -> None:
     elif args.command == "feedback":
         feedback(args.label, args.row_id, args.reason, args.reviewer)
     elif args.command == "monitor":
-        monitor(args.label)
+        monitor(args.label, args.hours)
     elif args.command == "verify":
         verify_evidence(args.baseline, args.candidate, args.holdout)
     elif args.command == "cleanup":

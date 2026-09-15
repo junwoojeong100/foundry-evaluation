@@ -115,6 +115,7 @@ flowchart LR
 ## Trace와 Monitor
 
 `queries/monitor.kql`은 실습 agent의 `requests`를 고른 뒤 `operation_Id`로 `dependencies`를 연결합니다.
+실습 CLI의 `monitor`는 기본 최근 2시간을 조회하며, `--hours 24`는 KQL과 API의 시간 범위를 함께 늘립니다. Agent/run 필터와 정확한 trace 수·sampling 검사는 유지됩니다. 포털의 날짜 선택이나 `azd ai agent monitor` 로그 스트리밍과는 다른 기능입니다.
 기본 단위와 custom span을 섞어 토큰·지연을 이중 집계하지 않습니다.
 실습 agent만 `microsoft.fixed_percentage` / `1.0`으로 100% trace를 수집하며, 공유 App Insights 설정은 바꾸지 않습니다.
 
