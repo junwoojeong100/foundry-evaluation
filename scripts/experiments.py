@@ -14,19 +14,24 @@ from azure.identity import get_bearer_token_provider
 
 from cloud_setup import preflight
 from common import (
-    FOUNDRY_DIR, REPO_ROOT, RESULTS_DIR, azd, binding, digest, label_dir,
+    FOUNDRY_DIR, REPO_ROOT, RESULTS_DIR, azd, binding, digest, label_dir, load_state,
     parse_azd_json, read_json, read_jsonl, utc_stamp, validate_azd_suffix, write_json, write_jsonl,
 )
 from contracts import Invocation, MODEL_SPECS, PolicyAnswer
 from grading import grade, summarize, validate_matrix
 from prompting import load_prompt
-from settings import RuntimeConfig, SOURCE_DIR, credential, required
+from settings import RuntimeConfig, credential, data_directory, required, workshop_language
 
 
 def dataset(split: str) -> list[dict[str, Any]]:
     if split not in {"dev", "holdout"}:
         raise ValueError("Dataset split must be dev or holdout.")
-    return read_jsonl(REPO_ROOT / "data" / f"{split}.jsonl")
+    return read_jsonl(data_directory() / f"{split}.jsonl")
+
+
+def require_run_language(record: dict[str, Any]) -> None:
+    if record.get("language", "ko") != workshop_language():
+        raise ValueError("Results belong to another language. Use its original workspace and language setting.")
 
 
 def reviewed_cases(
@@ -46,6 +51,7 @@ def reviewed_cases(
             lineage = record.get("lineage")
             if not isinstance(lineage, dict) or not lineage.get("source_trace_id"):
                 raise ValueError("A reviewed regression must retain its source trace.")
+            require_run_language(lineage)
             selected[case_id] = logical_case
             provenance.setdefault(case_id, []).append({"file": path.name, **lineage})
     return [selected[case["case_id"]] for case in cases], provenance
@@ -92,6 +98,8 @@ def validate_response(result: dict[str, Any], payload: Invocation, config: Runti
     for key, value in payload.model_dump().items():
         if result.get(key) != value:
             raise ValueError(f"Invocation response has mismatched {key}.")
+    if result.get("language", "ko") != config.language:
+        raise ValueError("Hosted language does not match this workspace. Bind and redeploy the correct language.")
     name, version = MODEL_SPECS[payload.model_key]
     if (
         result.get("deployment") != config.deployments[payload.model_key]
@@ -131,7 +139,7 @@ def invoke(
 
 
 def digest_prompt(version: str) -> str:
-    return load_prompt(version)[1]
+    return load_prompt(version, workshop_language())[1]
 
 
 def smoke(local: bool, model_key: str = "sol", case_id: str = "D01") -> None:
@@ -152,7 +160,10 @@ def smoke(local: bool, model_key: str = "sol", case_id: str = "D01") -> None:
     result["agent_version"] = "local" if local else agent_binding["version"]
     path = RESULTS_DIR / f"smoke-{config.prompt_version}-{'local' if local else 'hosted'}-{utc_stamp()}.json"
     write_json(path, result)
-    print(json.dumps({key: result[key] for key in ("answer", "decision", "citations", "source_ids", "trace_id", "model_key", "prompt_version", "agent_version", "input_tokens", "output_tokens")}, ensure_ascii=False, indent=2))
+    print(json.dumps({
+        **{key: result[key] for key in ("answer", "decision", "citations", "source_ids", "trace_id", "model_key", "prompt_version", "agent_version", "input_tokens", "output_tokens")},
+        "language": result.get("language", "ko"),
+    }, ensure_ascii=False, indent=2))
     print(f"Saved: {path.relative_to(REPO_ROOT)}")
 
 
@@ -171,9 +182,9 @@ def collect(split: str, label: str, concurrency: int = 4) -> None:
         cases, regressions = reviewed_cases(cases, FOUNDRY_DIR / "datasets")
     run_id = f"{label}-{utc_stamp()}"
     manifest = {
-        "label": label, "run_id": run_id, "split": split,
+        "label": label, "run_id": run_id, "split": split, "language": config.language,
         "dataset_hash": digest(cases),
-        "corpus_hash": digest(read_json(REPO_ROOT / "data" / "policies.json")),
+        "corpus_hash": digest(read_json(data_directory(config.language) / "policies.json")),
         "prompt_version": config.prompt_version, "prompt_hash": digest_prompt(config.prompt_version),
         "agent": agent_binding, "models": verified["models"],
         "expected_rows": len(cases) * len(MODEL_SPECS),
@@ -266,9 +277,12 @@ def collect(split: str, label: str, concurrency: int = 4) -> None:
 def completed_rows(label: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     run_dir = label_dir(label)
     manifest = read_json(run_dir / "manifest.json")
+    require_run_language(manifest)
     if manifest["status"] != "completed":
         raise ValueError(f"{label} is incomplete; do not score only the successful prefix.")
     rows = read_jsonl(run_dir / "responses.jsonl")
+    for row in rows:
+        require_run_language(row)
     cases = dataset(manifest["split"])
     if digest(cases) != manifest["dataset_hash"] or digest(rows) != manifest["responses_hash"]:
         raise ValueError("Dataset or raw responses changed after collection.")
@@ -317,7 +331,12 @@ def run_evaluation(
     source_run_id: str, timeout: int = 600, retry_failed: bool = False,
 ) -> None:
     config = RuntimeConfig.from_env()
+    load_state()
     run_dir = label_dir(label)
+    evaluation_file = run_dir / "evaluation.json"
+    existing = read_json(evaluation_file) if evaluation_file.exists() else None
+    if existing is not None:
+        require_run_language(existing)
     fields = ("row_id", "query", "response", "context", "ground_truth")
     items = [{field: (row["answer"] if field == "response" else row[field]) for field in fields} for row in rows]
     criteria = []
@@ -349,9 +368,8 @@ def run_evaluation(
     }
     write_json(FOUNDRY_DIR / "suites" / f"{label}.json", suite)
     write_jsonl(FOUNDRY_DIR / "datasets" / f"{label}-evaluation.jsonl", items)
-    evaluation_file = run_dir / "evaluation.json"
-    record = read_json(evaluation_file) if evaluation_file.exists() else {
-        "label": label, "input_hash": digest(items), "suite_hash": digest(suite),
+    record = existing if existing is not None else {
+        "label": label, "language": config.language, "input_hash": digest(items), "suite_hash": digest(suite),
         "agent_version": agent_version, "expected_rows": len(rows),
         "source_kind": "hosted_agent_outputs" if agent_version else "specified_judge_calibration",
     }
@@ -374,6 +392,7 @@ def run_evaluation(
                     testing_criteria=criteria,
                     metadata={
                         "lab_run": source_run_id,
+                        "lab_language": config.language,
                         "source_kind": record["source_kind"],
                         **({"lab_agent": config.agent_name} if agent_version else {}),
                     },
@@ -416,17 +435,23 @@ def run_evaluation(
 
 
 def calibrate(timeout: int = 600, retry_failed: bool = False) -> None:
-    context = "한빛기술의 합성 국내 출장 숙박비 한도는 1박 180000원이다."
+    english = workshop_language() == "en"
+    context = (
+        "Hanbit Technology's synthetic domestic business travel lodging limit is KRW 180000 per night."
+        if english else "한빛기술의 합성 국내 출장 숙박비 한도는 1박 180000원이다."
+    )
+    query = "What is the domestic business travel lodging limit?" if english else "국내 출장 숙박비 한도는 얼마인가요?"
+    expected = "KRW 180000 per night" if english else "1박 180000원"
     rows = [
         {
-            "row_id": "calibration-grounded", "query": "국내 출장 숙박비 한도는 얼마인가요?",
-            "answer": "국내 출장 숙박비 한도는 1박 180000원입니다.",
-            "context": context, "ground_truth": "1박 180000원",
+            "row_id": "calibration-grounded", "query": query,
+            "answer": "The domestic business travel lodging limit is KRW 180000 per night." if english else "국내 출장 숙박비 한도는 1박 180000원입니다.",
+            "context": context, "ground_truth": expected,
         },
         {
-            "row_id": "calibration-ungrounded", "query": "국내 출장 숙박비 한도는 얼마인가요?",
-            "answer": "국내 출장 숙박비 한도는 1박 990000원입니다.",
-            "context": context, "ground_truth": "1박 180000원",
+            "row_id": "calibration-ungrounded", "query": query,
+            "answer": "The domestic business travel lodging limit is KRW 990000 per night." if english else "국내 출장 숙박비 한도는 1박 990000원입니다.",
+            "context": context, "ground_truth": expected,
         },
     ]
     label = "judge-calibration"
@@ -482,6 +507,7 @@ def compare(labels: list[str]) -> dict[str, Any]:
             contexts.setdefault(row["case_id"], set()).add(row["context_hash"])
         differing = [case for case, hashes in contexts.items() if len(hashes) > 1]
         report["labels"][label] = {
+            "language": manifest.get("language", "ko"),
             "split": manifest["split"], "agent_version": manifest["agent"]["version"],
             "dataset_hash": manifest["dataset_hash"], "prompt_hash": manifest["prompt_hash"],
             "models": summary, "different_context_cases": differing,
@@ -521,6 +547,7 @@ def feedback(label: str, row_id: str, reason: str, reviewer: str = "human") -> N
     record = {
         **case,
         "lineage": {
+            "language": manifest.get("language", "ko"),
             "source_trace_id": row["trace_id"], "source_row_id": row_id,
             "agent_version": row["agent_version"], "model_key": row["model_key"],
             "prompt_hash": row["prompt_hash"], "context_hash": row["context_hash"],
@@ -568,8 +595,10 @@ def verify_evidence(baseline: str, candidate: str, holdout: str) -> dict[str, An
     criteria_hashes = set()
     for label, (manifest, rows) in loaded.items():
         evaluation = read_json(label_dir(label) / "evaluation.json")
+        require_run_language(evaluation)
         results = read_json(label_dir(label) / "evaluation-results.json")
         telemetry = read_json(label_dir(label) / "telemetry.json")
+        require_run_language(telemetry)
         suite = read_json(FOUNDRY_DIR / "suites" / f"{label}.json")
         criteria_hashes.add(digest(suite["testing_criteria"]))
         counts = evaluation["run"]["result_counts"]
@@ -608,6 +637,7 @@ def verify_evidence(baseline: str, candidate: str, holdout: str) -> dict[str, An
         raise ValueError("Evaluator definitions changed during the comparison.")
     comparison = compare(labels)
     evidence = {
+        "language": workshop_language(),
         "component_execution_verified": True, "primary_model_outputs": 64,
         "distinct_verified_traces": 64, "models": MODEL_SPECS, "runs": runs,
         "reused_baseline_trace_ids": sorted(reused_traces),

@@ -5,7 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -16,6 +16,22 @@ from provision_environment import check_group_ownership, owned_tags, principal_f
 
 
 class EnvironmentOwnershipTests(unittest.TestCase):
+    def test_explicit_preservation_only_audits_existing_groups(self):
+        provisioner = provision_environment.Provisioner.__new__(provision_environment.Provisioner)
+        provisioner.config = {"resource_group": "rg-new", "old_resource_group": "rg-shared"}
+        provisioner.state = {}
+        provisioner.save = Mock()
+        provisioner.az = Mock(return_value=[
+            {"name": "rg-foundry-evaluation-old", "tags": {"workshop": "foundry-evaluation", "cleanup-scope": "exclusive"}},
+        ])
+        with patch("builtins.print"):
+            provisioner.ownership(preserve_existing=True)
+        provisioner.az.assert_called_once_with("group", "list")
+        self.assertTrue(provisioner.state["ownership_audit"]["existing_groups_explicitly_preserved"])
+        self.assertEqual(provisioner.state["ownership_audit"]["groups_deleted"], [])
+        with patch("builtins.print"), self.assertRaises(ValueError):
+            provisioner.ownership()
+
     def test_principal_uses_the_explicit_subscription_token_without_logging_it(self):
         principal = "11111111-1111-4111-8111-111111111111"
         payload = base64.urlsafe_b64encode(json.dumps({
@@ -73,6 +89,7 @@ class EnvironmentPreparationTests(unittest.TestCase):
         config = json.loads((self.directory / "config.json").read_text())
         self.assertEqual(config["prefix"], "ll-test-run")
         self.assertEqual(config["region"], "swedencentral")
+        self.assertEqual(config["language"], "ko")
         self.assertFalse((self.directory / "actions.json").exists())
         self.assertEqual((self.directory / "config.json").stat().st_mode & 0o777, 0o600)
 
@@ -122,6 +139,16 @@ class EnvironmentPreparationTests(unittest.TestCase):
     def test_completed_snapshot_cannot_be_overwritten(self):
         prepare_environment.initialize(self.directory)
         prepare_environment.prepare(self.directory)
+
+    def test_english_workspace_is_explicit_and_keeps_the_korean_source_configuration(self):
+        original = (self.root / ".env").read_bytes()
+        prepare_environment.initialize(self.directory, "en")
+        prepare_environment.prepare(self.directory)
+        config = json.loads((self.directory / "config.json").read_text())
+        values = prepare_environment.dotenv_values(self.directory / "workshop/.env")
+        self.assertEqual(config["language"], "en")
+        self.assertEqual(values["LAB_LANGUAGE"], "en")
+        self.assertEqual((self.root / ".env").read_bytes(), original)
         with self.assertRaises(ValueError):
             prepare_environment.prepare(self.directory)
 

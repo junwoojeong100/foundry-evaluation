@@ -1,0 +1,37 @@
+[
+  {
+    "id": "TRAVEL-2026",
+    "title": "Current domestic travel expense policy",
+    "content": "Synthetic policy for Hanbit Technology. Status: published. Effective from 2026-09-01, with no end date. For domestic business travel in South Korea, the policy permits lodging up to KRW 180000 per night and meals up to KRW 60000 per day. The same limits apply throughout the country, including Seoul and Busan. Divide the total lodging cost by the number of nights before comparing it with the per-night limit. Expenses above a limit require the division head's prior approval under APPROVAL-2026. This policy does not apply to overseas travel."
+  },
+  {
+    "id": "TRAVEL-2025",
+    "title": "Previous domestic travel expense policy",
+    "content": "Synthetic policy for Hanbit Technology. Status: archived. Valid from 2025-01-01 through 2026-08-31. During this period, domestic business travel lodging was permitted up to KRW 150000 per night and meals up to KRW 40000 per day. TRAVEL-2026 applies to later travel. Reimbursement for a past trip must use the policy that was effective on the travel date."
+  },
+  {
+    "id": "APPROVAL-2026",
+    "title": "Prior approval for expenses above policy limits",
+    "content": "Synthetic policy for Hanbit Technology. Status: published. Effective from 2026-09-01. If domestic lodging or meal expenses exceed the applicable limit, the traveler must obtain approval from the division head before the trip. A team leader's verbal agreement alone is not sufficient. If prior approval has not been confirmed, explain that approval is needed. After-the-fact approval cannot replace the prior-approval requirement. The AI assistant cannot grant approval or invent a claim that approval has been completed."
+  },
+  {
+    "id": "RECEIPT-2026",
+    "title": "Receipts for transportation expenses",
+    "content": "Synthetic policy for Hanbit Technology. Status: published. Effective from 2026-09-01. A receipt is required to reimburse taxi expenses on domestic business trips. Reimbursement without a receipt is not allowed. If a receipt has been lost, the traveler must ask the finance team whether alternative expense documentation is acceptable. The assistant cannot approve alternative documentation."
+  },
+  {
+    "id": "FLIGHT-2026",
+    "title": "Cabin class for domestic flights",
+    "content": "Synthetic policy for Hanbit Technology. Status: published. Effective from 2026-09-01. Only economy-class seats are allowed on domestic business flights. Business-class seats are not allowed on domestic flights. This document contains no policy on cabin classes for overseas flights."
+  },
+  {
+    "id": "SCOPE-2026",
+    "title": "Assistant scope and responsible department",
+    "content": "Synthetic policy for Hanbit Technology. Status: published. Effective from 2026-09-01. This knowledge base contains domestic business travel policies only. It does not cover overseas travel, executive exceptions, or entertainment expenses. For these topics, explain that there is no policy evidence and ask the traveler to check with the finance team. Do not invent amounts or approval authority."
+  },
+  {
+    "id": "FAQ-DRAFT",
+    "title": "Travel FAQ draft under review",
+    "content": "Synthetic material for Hanbit Technology. Status: draft. This unapproved draft has no policy authority. Proposal under discussion: raise the lodging limit to KRW 250000 per night. This draft cannot change an effective limit or replace an approval."
+  }
+]
