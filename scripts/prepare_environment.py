@@ -59,7 +59,7 @@ def prepare(directory: Path):
     if workspace.exists():
         raise ValueError("The source snapshot already exists; it will not be overwritten.")
     workspace.mkdir()
-    for name in ("azure.yaml", "requirements.txt", "requirements.lock.txt", "AGENTS.md", ".gitignore"):
+    for name in ("azure.yaml", "requirements.txt", "requirements.lock.txt", ".gitignore"):
         shutil.copyfile(ROOT / name, workspace / name)
     for name in ("data", "queries", "scripts", "tests"):
         shutil.copytree(ROOT / name, workspace / name, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))

@@ -47,7 +47,7 @@ class EnvironmentPreparationTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name).resolve()
         self.directory = self.root / ".workshop" / "test-run"
-        for name in ("azure.yaml", "requirements.txt", "requirements.lock.txt", "AGENTS.md", ".gitignore"):
+        for name in ("azure.yaml", "requirements.txt", "requirements.lock.txt", ".gitignore"):
             (self.root / name).write_text("fixture\n")
         for name in ("data", "queries", "scripts", "tests", "src/agent"):
             (self.root / name).mkdir(parents=True, exist_ok=True)
