@@ -5,16 +5,15 @@
 이 실습에서는 같은 출장 질문을 네 모델에 보내고, 실패 원인을 확인한 뒤 V1/V2를 비교합니다.
 마지막에 **실제 응답 64개, 평가 결과, trace, 개선 이유**가 남습니다.
 
-[전체 실습 요약 영상 1개 — 21분 55초, 클릭해서 재생](https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010)
-
-영상은 온라인으로 재생합니다. 저장소에는 동일한 MP4 복사본을 포함하지 않습니다.
-
 **시작 조건:** 강사에게 실습 계정과 완성된 `.env`를 받았다면 **1단계부터** 진행합니다.
 Azure 환경이나 모델이 아직 없다면 [강사 준비](docs/instructor.ko.md)를 먼저 완료합니다.
 
-**필요한 환경:** Python 3.13, Azure CLI, azd + `microsoft.foundry` 확장, Bash(macOS/Linux/WSL).
+**필요한 환경:** Git, Python 3.13, Azure CLI, azd + `microsoft.foundry` 확장.
+macOS/Linux는 터미널, Windows는 **WSL 터미널**에서 Bash로 실행합니다. 도구 설치가 안 되어 있으면 강사 준비부터 완료합니다.
 
 **진행 순서:** [준비](#start) → [지식 검색](#lab-a) → [로컬 실행](#local) → [배포](#deploy) → [baseline](#lab-c) → [실패 검토](#lab-d) → [V2](#lab-e) → [holdout](#lab-f) → [운영 확인](#lab-g) → [정리](#cleanup)
+
+README를 위에서 아래로 진행하면 됩니다. [요약 영상](#summary-video)은 선택 자료이며 먼저 시청할 필요는 없습니다.
 
 > **처음부터 지킬 것:** 합성 데이터만 사용합니다. 모델은 Sol/Terra/Luna/Astra로 고정하며 실패한 모델을 다른 모델로 바꾸지 않습니다. `data/holdout.jsonl`은 **8단계 전까지 열지 않습니다.**
 
@@ -27,10 +26,19 @@ Azure 환경이나 모델이 아직 없다면 [강사 준비](docs/instructor.ko
 
 **할 일:** 새 실습 폴더를 열고, 내 계정·모델·프로젝트가 맞는지 확인합니다.
 
-**터미널 A**에서 먼저 `bash`를 실행합니다. 이미 clone했거나 ZIP을 풀었다면 해당 폴더를 열고 1-1의 clone 블록은 건너뜁니다.
-코드는 **한 블록씩** 복사합니다. `&&`로 연결한 명령은 앞 명령이 성공해야 다음 명령을 실행합니다.
+실습 명령을 입력할 창을 **터미널 A**라고 부릅니다. 먼저 아래 한 줄을 실행합니다.
+
+```bash
+bash
+```
+
+코드는 **한 블록씩** 복사하고, **완료 확인이 맞을 때만** 다음 단계로 넘어갑니다.
+`&&`는 앞 명령이 성공해야 다음 명령을 실행한다는 뜻입니다. 오류가 나면 블록 전체를 다시 붙여넣지 말고 [실패한 명령부터 복구](docs/troubleshooting.ko.md#resume)합니다.
 
 ### 1-1. 코드와 설정 파일 준비
+
+아직 실습하지 않은 clone 또는 ZIP 폴더가 있다면 그 폴더를 열고 clone 블록만 건너뜁니다.
+이전에 사용한 결과 폴더·`.azure`·`.foundry`를 삭제해서 새 실습처럼 만들지 않습니다. 기존 실습을 이어가는 경우에는 [복구 안내](docs/troubleshooting.ko.md#resume)를 따릅니다.
 
 ```bash
 git clone https://github.com/junwoojeong100/foundry-evaluation.git &&
@@ -39,7 +47,7 @@ cd foundry-evaluation
 
 강사가 준 `.env`를 **`README.md`와 같은 위치**에 둡니다. 기존 `.env`를 덮어쓰지 않습니다.
 구독·tenant, 프로젝트·Search, 모델 배포 이름, 조별 `LAB_PREFIX`와 `LAB_AGENT_NAME`이 들어 있어야 합니다.
-암호·API key·access token은 넣지 않습니다.
+`LAB_PREFIX`와 `LAB_AGENT_NAME`은 이번 조가 아직 사용하지 않은 이름이어야 합니다. 암호·API key·access token은 넣지 않습니다.
 
 ### 1-2. 가상환경과 로컬 테스트
 
@@ -129,6 +137,7 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 ## 2. 조직의 지식 넣기 — 실습 A
 
 **할 일:** `data/policies.json`에서 현행·과거 규정의 적용일과 숙박 한도를 읽고, 실제 IQ 검색을 실행합니다.
+이 실습에서는 정책 파일을 **읽기만 하고 수정하지 않습니다.**
 
 ```bash
 python scripts/workshop.py prepare-iq &&
@@ -139,7 +148,8 @@ python scripts/workshop.py retrieve --query "2026년 9월 국내 출장 숙박�
 현재·과거 문서가 함께 나오면 적용일을 비교합니다. 다른 조의 객체를 덮어쓰지 않습니다.
 
 **포털은 여기서 처음 엽니다.** [Foundry 포털](https://ai.azure.com/)에 접속해 `.env`의 `AZURE_EXPECTED_USERNAME` 계정으로 로그인합니다. CLI 로그인과는 별도입니다.
-`AZURE_AI_ACCOUNT_NAME`과 `AZURE_AI_PROJECT_NAME`에 맞는 계정·프로젝트를 선택한 뒤 **Knowledge → Knowledge bases**에서 내 KB와 source를 확인합니다.
+**Foundry 리소스 이름** `AZURE_AI_ACCOUNT_NAME`과 **프로젝트 이름** `AZURE_AI_PROJECT_NAME`을 대조한 뒤 **Knowledge → Knowledge bases**에서 내 KB와 source를 확인합니다.
+이후의 포털 안내도 이 프로젝트 안에서 진행합니다. “내 agent”는 `.env`의 `LAB_AGENT_NAME`입니다.
 
 **화면에서 볼 것:** 내 KB 이름과 연결된 source입니다. 이름은 예시가 아니라 `.env`의 내 접두사와 대조합니다.
 
@@ -152,23 +162,38 @@ python scripts/workshop.py retrieve --query "2026년 9월 국내 출장 숙박�
 
 **할 일:** V1 지침으로 서버를 띄우고, 실제 검색과 모델 응답을 확인합니다.
 
-**터미널 A**에서 실행한 뒤 이 터미널을 그대로 둡니다.
+**터미널 A**에서 먼저 현재 실습 폴더의 절대 경로를 확인해 복사해 둡니다. 잠시 후 터미널 B에서 같은 폴더로 이동할 때 사용합니다.
+
+```bash
+pwd
+```
+
+이어서 터미널 A에서 서버를 시작하고 **그대로 실행해 둡니다.**
 
 ```bash
 python scripts/workshop.py set-prompt v1 &&
 azd ai agent run --no-client
 ```
 
-터미널 A에 **ready 로그가 나온 뒤**, 같은 저장소 폴더에서 **터미널 B**를 새로 열고 `bash`를 실행한 다음 아래를 입력합니다.
+터미널 A에 **ready 로그가 나온 뒤**, 새 창 **터미널 B**에서 Bash를 실행합니다.
 
 ```bash
+bash
+```
+
+아래 경로 질문에는 방금 `pwd`로 확인한 **실습 폴더의 절대 경로를 따옴표 없이** 붙여넣습니다.
+새 터미널은 터미널 A의 현재 폴더·가상환경·CLI 경로 설정을 자동으로 이어받지 않습니다.
+
+```bash
+read -r -p "터미널 A에서 확인한 실습 폴더 경로: " WORKSHOP_DIR &&
+cd "$WORKSHOP_DIR" &&
 source src/agent/.venv/bin/activate &&
 export AZURE_CONFIG_DIR="$PWD/.azure-cli" &&
-curl --fail http://127.0.0.1:8088/readiness &&
+curl --fail --show-error --write-out '\nHTTP %{http_code}\n' http://127.0.0.1:8088/readiness &&
 python scripts/workshop.py smoke --local
 ```
 
-**완료 확인:** ready 로그와 readiness HTTP 200, 실제 답변, `model_key: sol`, `prompt_version: v1`을 확인합니다.
+**완료 확인:** 터미널 A의 ready 로그, 터미널 B의 **`HTTP 200`**, 실제 답변, `model_key: sol`, `prompt_version: v1`을 확인합니다.
 readiness만 성공한 것은 모델 응답 성공이 아닙니다.
 
 확인 후 **터미널 A에서 `Ctrl+C`**로 로컬 서버를 종료합니다. 터미널 B는 닫아도 됩니다.
@@ -208,6 +233,17 @@ python scripts/workshop.py smoke
 ## 5. 네 모델의 baseline 평가하기 — 실습 C
 
 **할 일:** dev 6문항을 네 모델에 보내고, 변경 전 결과를 `baseline`으로 저장합니다.
+`--label`은 **실행 결과 폴더 이름**입니다. 기본 경로에서는 `baseline` → `improved` → `holdout`을 그대로 사용합니다.
+
+```bash
+python scripts/workshop.py collect --split dev --label baseline &&
+python scripts/workshop.py evaluate --label baseline
+```
+
+**완료 확인:** 수집이 오류 없이 **`24/24`**로 끝나고, 평가가 **`Foundry evaluation completed: ... (24 rows)`**를 출력합니다.
+`src/agent/.foundry/results/baseline/business-summary.json`에는 모델 네 개가 각각 `total: 6`이어야 합니다.
+
+**평가만 실패했다면:** 완료된 `collect`를 다시 실행하지 않습니다. [기존 응답의 평가만 복구](docs/troubleshooting.ko.md#evaluation-retry)합니다.
 
 ### 무엇을 평가하나요?
 
@@ -222,14 +258,6 @@ python scripts/workshop.py smoke
 
 `collect`는 실제 Hosted Agent를 호출하고 업무 검사를 수행합니다. `evaluate`는 **이미 수집한 같은 응답**을 Foundry에 제출합니다. 평가 때 agent를 다시 호출하지 않습니다.
 JSONL에 정답도 보관하지만, 이 두 native evaluator의 입력 매핑에는 `ground_truth`·`decision`·`citations`가 없습니다. **높은 groundedness만으로 업무 정답이나 인용 ID까지 합격했다고 판단하면 안 됩니다.**
-
-```bash
-python scripts/workshop.py collect --split dev --label baseline &&
-python scripts/workshop.py evaluate --label baseline
-```
-
-**완료 확인:** `src/agent/.foundry/results/baseline/`에 **24행**의 응답과 완료된 평가 run이 있습니다.
-`business-summary.json`에서 모델별 `total: 6`을 확인합니다.
 
 **포털 확인:** 왼쪽 전역 **Evaluations**에서 내 baseline run을 엽니다. 에이전트 상세의 Evaluation 탭과 구분합니다.
 
@@ -252,7 +280,7 @@ python scripts/workshop.py monitor --label baseline
 ```
 
 1. `compare` 출력의 **`labels → baseline → business_failures`**에서 한 행을 고릅니다. `row_id`, `trace_id`, false인 `checks`를 읽습니다.
-2. `src/agent/.foundry/results/baseline/responses.jsonl`에서 같은 `row_id`의 **답변·인용·검색 문서**를 대조합니다.
+2. 편집기로 `src/agent/.foundry/results/baseline/responses.jsonl`을 엽니다. 찾기(`Ctrl+F`, macOS는 `⌘F`)로 같은 `row_id`를 찾아, 그 행의 **`answer`·`decision`·`citations`·`source_ids`**를 대조합니다. 줄이 길면 화면의 자동 줄바꿈만 켜고, 파일 자체는 수정하거나 재정렬하지 않습니다.
 3. 포털 **내 agent → Traces**에서 해당 `trace_id`로 검색합니다. 기간을 맞추고 Graph view의 검색·모델 span을 확인합니다.
 4. 조원과 **무엇이 실패했는지 / 근거가 있었는지 / 무엇을 바꿀지** 설명합니다.
 
@@ -296,6 +324,7 @@ python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
 
 **할 일:** `src/agent/prompts/v1.txt`와 `v2.txt`를 비교합니다. V2는 적용일·문서 ID 인용·근거 부족 시 보류를 명확히 한 **제공된 개선 후보**입니다.
 6단계의 원인과 맞는지 먼저 확인합니다. 맞지 않으면 적용을 멈추고 강사와 개선 대상을 다시 정합니다.
+두 파일을 직접 편집하는 실습이 아닙니다. 아래 `set-prompt v2`로 제공된 V2를 선택합니다.
 
 ### V2에서는 무엇을 바꾸나요?
 
@@ -318,8 +347,12 @@ python scripts/workshop.py evaluate --label improved &&
 python scripts/workshop.py compare --labels baseline improved
 ```
 
-**완료 확인:** 새 `agent_version`, `prompt_version: v2`, `improved`의 **24행**을 확인합니다.
+**완료 확인:** 새 `agent_version`, `prompt_version: v2`, 수집 **`24/24`**, 평가 완료 메시지의 **`(24 rows)`**를 확인합니다.
 dev·모델·KB·평가 기준은 그대로 두고 결과를 비교합니다. 수집 동시성도 전후에 같아야 합니다.
+
+**내 결과를 읽는 위치:** `compare` 출력의 **`labels → baseline 또는 improved → models → sol/terra/luna/astra`**를 엽니다.
+`business_passed`(업무 통과 건수)와 `total`(전체 건수), `required_citation_passed`와 `required_citation_total`(필수 인용 통과/전체)을 전후로 비교합니다.
+`foundry_evaluators`에서는 각 evaluator의 `native_mean_score`(평균)와 `native_passed`(통과 건수)도 함께 봅니다. 아래 촬영 예시 표를 본인 결과로 대신하지 않습니다.
 
 **판단:** 좋아지지 않았거나 악화됐다면 그대로 기록합니다. V2를 자동 채택하거나 평가 기준을 낮추지 않습니다.
 
@@ -356,7 +389,8 @@ python scripts/workshop.py evaluate --label holdout &&
 python scripts/workshop.py compare --labels baseline improved holdout
 ```
 
-**완료 확인:** holdout **16행**과 같은 V2 버전을 확인합니다. 결과를 본 뒤 prompt를 고치고 같은 holdout을 다시 “미사용 검증”으로 제출하지 않습니다.
+**완료 확인:** 수집 **`16/16`**, 평가 완료 메시지의 **`(16 rows)`**, 7단계와 **같은 `agent_version` 및 `prompt_version: v2`**를 확인합니다.
+결과를 본 뒤 prompt를 고치고 같은 holdout을 다시 “미사용 검증”으로 제출하지 않습니다.
 이 저장소의 4문항은 교육용이며, 재실행 결과가 새로운 독립 검증셋이나 운영 품질을 보장하지 않습니다.
 
 **촬영 실행의 결과:** 고정 V2의 holdout은 업무 검사·groundedness·relevance가 각각 **16/16**이었습니다.
@@ -435,6 +469,15 @@ Search 가동·로그 보존·기반 서비스 비용은 남을 수 있습니다
 
 **실습의 결론:** 모델만 고르는 것이 아니라, **지식·평가 기준·실패 이력을 남기며 개선하는 방법**을 익힙니다.
 작은 합성 실험을 운영 승인이나 모델의 통계적 우월성으로 확대 해석하지 않습니다.
+
+<a id="summary-video"></a>
+
+## 전체 흐름을 영상으로 다시 보기 — 선택 사항
+
+[전체 실습 요약 영상 1개 — 21분 55초, 클릭해서 재생](https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010)
+
+영상은 온라인으로 재생합니다. 저장소에는 동일한 MP4 복사본을 포함하지 않습니다.
+촬영 당시의 경로·이름을 복사하지 말고, 실행 명령은 위 단계의 본문을 사용합니다.
 
 ## 필요한 참고 문서
 

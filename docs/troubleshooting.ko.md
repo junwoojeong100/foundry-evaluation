@@ -14,11 +14,31 @@
 강사에게는 **실패한 명령, 오류 문구, 현재 단계, 결과 폴더 이름**을 전달합니다.
 암호·토큰·`.env` 전체·개인 정보가 있는 화면을 공유 채팅이나 공개 이슈에 올리지 않습니다.
 
+<a id="resume"></a>
+
+## 실패한 명령부터 이어가기
+
+**코드 블록 전체를 반복하지 않습니다.** 예를 들어 `collect`는 성공했고 `evaluate`만 멈췄다면 `collect`부터 다시 실행하면 안 됩니다.
+아래에서 멈춘 위치를 고르고, 같은 결과 폴더와 label을 유지합니다.
+
+| 멈춘 위치 / 메시지 | 이어갈 곳 |
+|---|---|
+| `collect` 중 오류, `manifest.json`의 `status: failed` | [응답 수집 복구](#collection-retry). 실패한 결과는 보존하고 새 label로 전체 수집 |
+| `Evaluation is still running` | [평가 복구](#evaluation-retry). 같은 label의 `evaluate`만 다시 실행 |
+| Foundry run이 failed/canceled이거나 오류 행이 있음 | 원인을 해결한 뒤 [평가 복구](#evaluation-retry)의 `--retry-failed` 사용 |
+| `Telemetry is incomplete` | 같은 label의 `monitor`만 다시 실행. `collect`·`evaluate`를 다시 시작하지 않음 |
+| `Label ... already exists` | 기존 `manifest.json`을 읽기만 해서 상태 확인. `completed`면 평가 단계부터, `failed`면 수집 복구. `running`이면 기존 실행의 진행·중단 여부를 강사와 확인 |
+| `feedback`에서 이미 같은 회귀 기록이 존재 | 기존 행 ID·검토 이유·출처가 이번에 검토한 내용과 일치할 때만 다음 단계 진행. 다르면 중단하고 확인하며 파일을 지워 우회하지 않음 |
+
+새 터미널이라면 먼저 실습 폴더로 이동하고 README의 가상환경·`AZURE_CONFIG_DIR` 설정을 다시 적용합니다.
+다른 실습을 새로 시작할 때는 강사에게 새 조별 이름과 설정을 받아 새 폴더에서 진행합니다. 과거 소유권·응답·trace 파일을 지워 재실행 오류를 우회하지 않습니다.
+
 ## 증상별 확인
 
 | 증상 | 확인 / 조치 |
 |---|---|
 | `.env`가 없거나 필수 값 누락 | 저장소 루트에 강사가 준 파일을 둡니다. 다른 조의 이름·배포를 추측해 채우지 않습니다. |
+| `read: -p: no coprocess` 또는 경로/activate 파일 오류 | 먼저 `bash`를 실행했는지, 터미널 A의 `pwd` 경로로 이동했는지 확인합니다. 로그인 파일이 없다고 다른 계정으로 바꾸지 않습니다. |
 | `preflight`의 `missing_models`가 비어 있지 않음 | 강사에게 네 지정 배포의 접근·할당량·준비 상태 확인을 요청합니다. 다른 모델로 대체하지 않습니다. |
 | 로그인 안 됨 / tenant 오류 / 다른 계정 | [README 1-3](../README.md#login)에서 두 CLI에 로그인하고 `user`·`email`·`tenant`·`subscription`을 `.env`와 대조합니다. `az account set`으로 기본 구독을 바꾸지 않습니다. |
 | 새 터미널에서만 로그인이 풀린 것처럼 보임 | 같은 실습 폴더에서 `export AZURE_CONFIG_DIR="$PWD/.azure-cli"`를 다시 지정합니다. 이전 터미널의 경로 설정은 새 터미널에 자동으로 전달되지 않습니다. |
@@ -53,6 +73,8 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 조직 정책이 device-code 로그인을 막으면 우회하지 말고 강사에게 승인된 로그인 환경을 요청합니다.
 공식 설명: [Azure CLI 대화형 로그인](https://learn.microsoft.com/cli/azure/authenticate-azure-cli-interactively) · [CLI 설정 경로](https://learn.microsoft.com/cli/azure/azure-cli-configuration#cli-configuration-file).
 
+<a id="collection-retry"></a>
+
 ## 응답 수집에 실패했다면
 
 `collect`가 실패한 label의 `failure.json`, manifest, 원문 응답을 **그대로 보존**합니다.
@@ -73,6 +95,8 @@ improved/holdout 수집에도 `--concurrency 2`를 유지합니다. label 일부
 이미 완료된 baseline과 회귀 검토가 있다면 baseline을 다시 만들지 말고 **실패한 단계부터** 복구합니다.
 새 실험이 필요하면 강사와 새 폴더·고유 접두사를 준비합니다. 과거 결과·회귀 trace를 지워 출발점을 꾸미지 않습니다.
 
+<a id="evaluation-retry"></a>
+
 ## Foundry 평가만 실패했다면
 
 응답 수집이 온전히 완료됐는지 먼저 확인합니다. **아직 실행 중인 평가와 실제 실패한 평가의 복구 명령은 다릅니다.**
@@ -91,6 +115,7 @@ python scripts/workshop.py evaluate --label baseline --retry-failed
 
 `--retry-failed`는 낮은 점수를 숨기는 옵션이 아닙니다. **실행 오류를 해결한 경우에만** 사용합니다.
 label이 다르면 위 예시도 실제 label로 바꿉니다.
+복구를 마치면 중단했던 README 단계의 **완료 확인**을 마친 뒤 다음 단계로 진행합니다.
 
 <a id="no-failures"></a>
 

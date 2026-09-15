@@ -3,7 +3,7 @@
 **목표:** Sweden Central에 실습 전용 그룹·Foundry·Search·관측·모델을 준비하고, 참가자에게 조별 `.env`를 전달합니다.
 이미 준비된 환경을 받았다면 이 문서를 건너뛰고 [참가자 1단계](../README.md#start)로 이동하세요.
 
-Python 3.13, Azure CLI, azd + `microsoft.foundry` 확장, Bash가 필요합니다. 도구 설치와 권한은 [강사 준비](instructor.ko.md)를 먼저 확인합니다.
+Git, Python 3.13, Azure CLI, azd + `microsoft.foundry` 확장, Bash가 필요합니다. 도구 설치와 권한은 [강사 준비](instructor.ko.md)를 먼저 확인합니다.
 아래는 **같은 Bash 터미널에서 한 블록씩** 실행합니다. 오류가 나면 다음 블록으로 넘어가지 않습니다.
 
 > 새 서비스에는 비용이 발생합니다. 합성 데이터만 사용하고, 공유 자원과 기본 Azure CLI 구독은 변경하지 않습니다.
@@ -12,6 +12,7 @@ Python 3.13, Azure CLI, azd + `microsoft.foundry` 확장, Bash가 필요합니�
 ## 1. 새 실행 폴더 준비
 
 **할 일:** clone한 저장소 루트에 `.env.example`을 참고해 `.env`를 준비합니다. 기존 파일은 덮어쓰지 않습니다.
+이 환경 준비 도구는 Git commit으로 소스 버전을 확인하므로 ZIP 폴더가 아니라 **Git으로 clone한 폴더**에서 실행합니다.
 
 | 먼저 채울 값 | 내용 |
 |---|---|
