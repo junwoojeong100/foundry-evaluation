@@ -30,6 +30,7 @@ async def retrieve(
                 "gen_ai.operation.name": "execute_tool",
                 "gen_ai.tool.name": "foundry_iq_retrieve",
                 "lab.knowledge_base": config.kb_name,
+                "lab.language": config.language,
             }
         )
         access_token = await asyncio.to_thread(token_credential.get_token, SEARCH_SCOPE)

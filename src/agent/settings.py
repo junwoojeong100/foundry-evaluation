@@ -3,6 +3,7 @@ import re
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+from typing import Literal
 from urllib.parse import urlparse
 
 from azure.core.credentials import TokenCredential
@@ -16,11 +17,30 @@ from contracts import MODEL_SPECS
 
 SOURCE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SOURCE_DIR.parent.parent
+Language = Literal["ko", "en"]
 
 
 def load_settings_env() -> None:
     load_dotenv(REPO_ROOT / ".env", override=False)
     load_dotenv(SOURCE_DIR / ".env", override=False)
+
+
+def validate_language(value: str) -> Language:
+    if value == "ko":
+        return "ko"
+    if value == "en":
+        return "en"
+    raise ValueError("LAB_LANGUAGE must be ko or en.")
+
+
+def workshop_language() -> Language:
+    return validate_language(os.environ.get("LAB_LANGUAGE", "ko"))
+
+
+def data_directory(language: Language | None = None) -> Path:
+    selected = workshop_language() if language is None else validate_language(language)
+    directory = REPO_ROOT / "data"
+    return directory / "en" if selected == "en" else directory
 
 
 def required(name: str) -> str:
@@ -94,6 +114,7 @@ class RuntimeConfig:
     prompt_version: str
     as_of_date: str
     max_output_tokens: int
+    language: Language = "ko"
 
     @classmethod
     def from_env(cls) -> "RuntimeConfig":
@@ -131,6 +152,7 @@ class RuntimeConfig:
             prompt_version=version,
             as_of_date=as_of,
             max_output_tokens=token_limit,
+            language=workshop_language(),
         )
 
     @property

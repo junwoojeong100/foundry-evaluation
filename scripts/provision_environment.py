@@ -120,7 +120,7 @@ class Provisioner:
         group = self.az("group", "show", "--name", self.config["resource_group"])
         check_group_ownership(group, self.config, self.state.get("group_id"))
 
-    def ownership(self):
+    def ownership(self, preserve_existing: bool = False):
         groups = self.az("group", "list")
         candidates = [
             group for group in groups
@@ -144,11 +144,12 @@ class Provisioner:
                 if (group.get("tags") or {}).get("workshop") == "microsoft-foundry-v2-labs"
             ],
             "groups_deleted": [],
+            "existing_groups_explicitly_preserved": preserve_existing,
         }
         self.state["ownership_audit"] = report
         self.save()
         print(json.dumps(report, ensure_ascii=False, indent=2))
-        if candidates:
+        if candidates and not preserve_existing:
             raise ValueError("Inspect the exact candidate inventories before any group deletion.")
 
     def group(self):
@@ -278,13 +279,15 @@ class Provisioner:
         self.save()
         print(json.dumps(report, indent=2))
 
-    def execute(self, operation: str):
+    def execute(self, operation: str, preserve_existing: bool = False):
         config = self.config
         tags = owned_tags(config["run_id"])
         located = {"location": "swedencentral", "tags": tags}
         account_suffix = f"Microsoft.CognitiveServices/accounts/{config['account']}"
         project_suffix = account_suffix + f"/projects/{config['project']}"
-        if operation in {"identity", "ownership", "group"}:
+        if operation == "ownership":
+            self.ownership(preserve_existing)
+        elif operation in {"identity", "group"}:
             getattr(self, operation)()
         elif operation == "model-capacity":
             self.model_capacity()
@@ -407,11 +410,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("operation", choices=OPERATIONS)
     parser.add_argument("--run-dir", required=True, type=Path)
+    parser.add_argument("--preserve-existing", action="store_true", help="For ownership: explicitly retain every existing group; never delete them.")
     args = parser.parse_args()
     directory = args.run_dir.resolve()
     if not directory.is_relative_to(ROOT / ".workshop"):
         raise ValueError("Use an isolated .workshop directory in this repository.")
-    Provisioner(directory).execute(args.operation)
+    if args.preserve_existing and args.operation != "ownership":
+        parser.error("--preserve-existing is only valid with ownership.")
+    Provisioner(directory).execute(args.operation, args.preserve_existing)
 
 
 if __name__ == "__main__":
