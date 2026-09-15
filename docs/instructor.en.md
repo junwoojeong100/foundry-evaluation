@@ -1,6 +1,6 @@
 # Instructor prerequisites for the English workshop
 
-Participants follow [README.en.md](../README.en.md#start). Keep infrastructure creation and recording production out of their 120-minute path. Use [new-environment setup](environment.en.md) when the required Azure foundation does not yet exist.
+Participants follow [README.md](../README.md#start). Keep infrastructure creation and recording production out of their 120-minute path. Use [new-environment setup](environment.en.md) when the required Azure foundation does not yet exist.
 
 ## What to hand to each team
 
@@ -60,7 +60,7 @@ Installation references: [Azure CLI](https://learn.microsoft.com/cli/azure/insta
 ## Safe preparation with an existing foundation
 
 1. Prepare the rehearsal `.env` with `LAB_LANGUAGE=en` and actual resource/deployment values.
-2. Complete [README step 1-3](../README.en.md#login), including both CLI sign-ins and the identity checks. Keep the configured subscription explicit.
+2. Complete [README step 1-3](../README.md#login), including both CLI sign-ins and the identity checks. Keep the configured subscription explicit.
 3. Run `python scripts/workshop.py preflight --allow-missing-models`.
 4. If the four candidates are missing, use `python scripts/workshop.py prepare-models` to create only the owned, prefixed deployments.
 5. Run `python scripts/workshop.py preflight` again and require `language: en` and `missing_models: []`.

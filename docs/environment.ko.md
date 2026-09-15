@@ -1,7 +1,7 @@
 # 강사 전용: 새 Azure 환경 준비하기
 
 **목표:** Sweden Central에 실습 전용 그룹·Foundry·Search·관측·모델을 준비하고, 참가자에게 조별 `.env`를 전달합니다.
-이미 준비된 환경을 받았다면 이 문서를 건너뛰고 [참가자 1단계](../README.md#start)로 이동하세요.
+이미 준비된 환경을 받았다면 이 문서를 건너뛰고 [참가자 1단계](../README.ko.md#start)로 이동하세요.
 
 Git, Python 3.13, Azure CLI, azd + `microsoft.foundry` 확장, Bash가 필요합니다. 도구 설치와 권한은 [강사 준비](instructor.ko.md)를 먼저 확인합니다.
 아래는 **같은 Bash 터미널에서 한 블록씩** 실행합니다. 오류가 나면 다음 블록으로 넘어가지 않습니다.
@@ -63,7 +63,7 @@ python -m unittest discover -s tests -v
 
 ## 2. 로그인·소유권·용량 확인
 
-**할 일:** 지금 폴더에서 [README 1-3의 로그인 절차](../README.md#login)를 실행합니다.
+**할 일:** 지금 폴더에서 [README 1-3의 로그인 절차](../README.ko.md#login)를 실행합니다.
 실습용 CLI 경로 지정 → tenant·구독 입력 → `az login` → `azd auth login` → 두 계정 확인까지 마친 뒤 **이 문서로 돌아옵니다.**
 기반 서비스가 아직 없으므로 README 1-4의 `preflight`·`bind`는 실행하지 않습니다. 로그인·암호·토큰은 녹화하지 않습니다.
 
@@ -154,7 +154,7 @@ python scripts/provision_environment.py search-connection --run-dir "$RUN_DIR"
 프로젝트 identity에는 새 관측 자원의 Logs 읽기 권한이 있고, Search는 `AAD`, App Insights는 실제 `ResourceId` metadata를 가진 연결입니다.
 
 **사용자·프로젝트 identity·agent instance identity는 다릅니다.**
-배포 후 agent의 Search 읽기·모델 추론 역할은 [참가자 4단계](../README.md#deploy)의 `grant-agent-access`에서 부여합니다. Owner를 일괄 추가하지 않습니다.
+배포 후 agent의 Search 읽기·모델 추론 역할은 [참가자 4단계](../README.ko.md#deploy)의 `grant-agent-access`에서 부여합니다. Owner를 일괄 추가하지 않습니다.
 
 ## 5. 보조 모델과 실제 endpoint 확인
 
@@ -184,7 +184,7 @@ python scripts/workshop.py calibrate
 **완료 확인:** Sol/Terra/Luna/Astra의 고정 모델 ID·버전, `deployed: true`, `missing_models: []`, calibration 통과를 확인합니다.
 Calibration 예제 2개는 본평가 64응답이 아닙니다. 모델 접근·할당량이 부족하면 다른 모델로 대체하지 않고 준비를 중단합니다.
 
-이 폴더에서 계속 리허설한다면 [참가자 1단계](../README.md#start)의 **1-4 프로젝트 연결부터** 진행합니다. 로그인은 위 2단계에서 이미 완료했습니다.
+이 폴더에서 계속 리허설한다면 [참가자 1단계](../README.ko.md#start)의 **1-4 프로젝트 연결부터** 진행합니다. 로그인은 위 2단계에서 이미 완료했습니다.
 새 참가자 폴더에는 완성된 `.env`를 주되, **미사용 `LAB_PREFIX` / `LAB_AGENT_NAME`**을 조별로 지정합니다.
 실제 모델 배포 이름은 유지하고 `.azure`·`.foundry` 소유권 파일·결과는 전달하지 않습니다.
 자세한 전달 항목과 리허설 분리는 [강사 체크리스트](instructor.ko.md#참가자에게-전달할-것)를 따릅니다.
@@ -204,6 +204,6 @@ Calibration 예제 2개는 본평가 64응답이 아닙니다. 모델 접근·�
 참가자의 `cleanup`은 그 폴더에서 소유한 agent·세션·모델·KB 객체·역할만 정리합니다.
 **강사가 준비한 기반 서비스와 모델까지 모두 삭제하지 않습니다.** 남은 Search·로그 보존·보조 모델의 비용과 최종 정리는 강사가 별도로 관리합니다.
 
-이후 실행은 [README](../README.md), 점수와 개선의 해석은 [평가 방법과 개선 결과](validation.ko.md)를 따릅니다.
+이후 실행은 [README](../README.ko.md), 점수와 개선의 해석은 [평가 방법과 개선 결과](validation.ko.md)를 따릅니다.
 
 구성 근거: [공식 Foundry 기본 인프라 예제](https://github.com/Azure-Samples/azd-ai-starter-basic/tree/main/infra) · [Search knowledge retrieval 과금 설정](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-enable-disable).

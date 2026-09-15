@@ -6,7 +6,7 @@
 
 ## 참가자에게 전달할 것
 
-참가자는 [README의 1–10단계](../README.md#start)만 따라간다. 녹화 제작이나 Azure 인프라 생성 절차를 참가자의 선행 과제로 섞지 않는다.
+참가자는 [README의 1–10단계](../README.ko.md#start)만 따라간다. 녹화 제작이나 Azure 인프라 생성 절차를 참가자의 선행 과제로 섞지 않는다.
 
 | 전달 항목 | 강사가 확인할 내용 |
 |---|---|
@@ -79,7 +79,7 @@ python -m unittest discover -s tests -v
 ## 설정과 안전한 준비
 
 1. `.env.example`을 참고해 `.env`에 **실습 환경의 값**을 채운다. 기존 파일은 덮어쓰지 않는다.
-2. 테스트가 `OK`인 같은 폴더에서 [README 1-3 로그인](../README.md#login)을 실행한다. 실습용 CLI 경로를 지정하고 두 CLI에 로그인한 뒤, 계정·tenant·구독·인증 상태를 대조한다. 다른 작업의 기본 CLI 구독은 바꾸지 않는다.
+2. 테스트가 `OK`인 같은 폴더에서 [README 1-3 로그인](../README.ko.md#login)을 실행한다. 실습용 CLI 경로를 지정하고 두 CLI에 로그인한 뒤, 계정·tenant·구독·인증 상태를 대조한다. 다른 작업의 기본 CLI 구독은 바꾸지 않는다.
 3. `python scripts/workshop.py preflight --allow-missing-models`로 환경과 네 모델의 지역별 지원·할당량을 읽기 전용 확인한다.
 4. 모델이 없다면 `python scripts/workshop.py prepare-models`로 **고유 접두사**를 가진 네 배포만 만든다.
 5. `python scripts/workshop.py preflight`를 다시 통과시킨다.

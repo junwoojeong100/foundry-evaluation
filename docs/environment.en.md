@@ -2,7 +2,7 @@
 
 **Outcome:** an English-only workshop group in **Sweden Central**, with Foundry, Search, telemetry, four candidate models, and a fixed auxiliary planner/judge.
 
-Participants with a prepared `.env` should skip this document and start at [README step 1](../README.en.md#start). Use Git, Python 3.13, Azure CLI, azd with the Foundry extension, and Bash/WSL.
+Participants with a prepared `.env` should skip this document and start at [README step 1](../README.md#start). Use Git, Python 3.13, Azure CLI, azd with the Foundry extension, and Bash/WSL.
 
 > New services incur costs. Use synthetic data, preserve shared/Korean resources, and never change the default Azure CLI subscription used by other work. Sweden Central resource placement does not mean GlobalStandard model inference is confined to that region.
 
@@ -54,7 +54,7 @@ Stay in `$RUN_DIR/workshop` for sign-in so the later English agent uses the same
 
 ## 2. Verify identity, preservation, and capacity
 
-Complete only [README step 1-3](../README.en.md#login): CLI profile, tenant/subscription inputs, Azure CLI sign-in, azd sign-in, and both account checks. Return here afterward. Do **not** run README preflight/bind yet; the foundation is not ready.
+Complete only [README step 1-3](../README.md#login): CLI profile, tenant/subscription inputs, Azure CLI sign-in, azd sign-in, and both account checks. Return here afterward. Do **not** run README preflight/bind yet; the foundation is not ready.
 
 Then return to the original repository root:
 
@@ -120,7 +120,7 @@ python scripts/provision_environment.py search-connection --run-dir "$RUN_DIR"
 
 **Checkpoint:** user roles are scoped to the new project/account/Search; the project identity can read the new telemetry. Search uses an Entra connection, and the App Insights connection has its actual `ResourceId` metadata.
 
-The agent's instance identity is created later. Grant its Search/model access in [README step 4](../README.en.md#deploy), not by assigning broad Owner permissions to it.
+The agent's instance identity is created later. Grant its Search/model access in [README step 4](../README.md#deploy), not by assigning broad Owner permissions to it.
 
 ## 5. Deploy the fixed auxiliary model and verify endpoints
 

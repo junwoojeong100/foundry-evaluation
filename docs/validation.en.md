@@ -4,7 +4,7 @@
 
 These are measured English results from **September 16, 2026 (KST)**, run `en-20260916-0240`, not translated Korean scores. All **64 responses and 64 distinct real traces** were verified. One V2 dev decision still failed the frozen business rubric; the candidate is **not approved for production**.
 
-[English participant guide](../README.en.md#lab-c) · [Korean execution and methodology](validation.ko.md)
+[English participant guide](../README.md#lab-c) · [Korean execution and methodology](validation.ko.md)
 
 ## 1. Controlled English experiment
 

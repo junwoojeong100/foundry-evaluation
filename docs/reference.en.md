@@ -1,6 +1,6 @@
 # Architecture, model contracts, and evaluation concepts
 
-Follow [the English README](../README.en.md) for the execution path. This document explains the implementation choices and their boundaries.
+Follow [the English README](../README.md) for the execution path. This document explains the implementation choices and their boundaries.
 
 ## Terms used in the workshop
 

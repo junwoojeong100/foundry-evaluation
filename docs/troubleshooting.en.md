@@ -1,6 +1,6 @@
 # If a step fails: stop, identify the cause, and resume safely
 
-[Return to the English guide](../README.en.md)
+[Return to the English guide](../README.md)
 
 Distinguish **execution failure** from **low quality**. An exception, missing/duplicate response, evaluator error, or absent trace is not success. A completed evaluation with low valid scores is evidence for the review step.
 
@@ -33,7 +33,7 @@ For a new experiment or another language, obtain unused names and use a separate
 | `read: -p: no coprocess` or activation path missing | Start Bash and use Terminal A's absolute `pwd` path |
 | Language mismatch | Use the original language/workspace. `LAB_LANGUAGE=en` selects English; a missing setting preserves legacy Korean behavior. Never mix the two sets of results. |
 | Nonempty `missing_models` | Ask the instructor to confirm all four exact deployments, versions, access, and quota; no substitutes |
-| Wrong account or tenant | Repeat [the two sign-ins and checks](../README.en.md#login); do not change a global default subscription |
+| Wrong account or tenant | Repeat [the two sign-ins and checks](../README.md#login); do not change a global default subscription |
 | Login appears missing only in a new terminal | Restore `export AZURE_CONFIG_DIR="$PWD/.azure-cli"` in the correct folder |
 | `bind` or `set-prompt` environment error | Confirm that `bind` ran in this folder and targets the expected project/language |
 | Port 8088 unavailable | Check Terminal A and its readiness log; do not terminate an unrelated process |
@@ -52,7 +52,7 @@ For a new experiment or another language, obtain unused names and use a separate
 
 ## If the authentication browser does not open
 
-First run the **CLI-profile and tenant/subscription input block** from [README step 1-3](../README.en.md#login) in the same terminal.
+First run the **CLI-profile and tenant/subscription input block** from [README step 1-3](../README.md#login) in the same terminal.
 
 ```bash
 az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" \
