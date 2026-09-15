@@ -11,7 +11,7 @@
 | 전달 항목 | 강사가 확인할 내용 |
 |---|---|
 | 실행 가능한 계정 | 참가자 계정의 조회·배포 권한. 실제 CLI 로그인은 참가자가 README 1-3에서 수행 |
-| 조별 `.env` | `.env.example`의 모든 값을 채움. 암호·API key·token은 없음 |
+| 조별 `.env` | `.env.example`의 모든 값을 채움. 한국어는 `LAB_LANGUAGE=ko`, 영어는 `en`. 암호·API key·token은 없음 |
 | 준비된 서비스 | Foundry 프로젝트, Search, 연결된 App Insights, 네 후보와 별도 planner/judge |
 | 고유한 이름 | 참가자가 아직 사용하지 않은 `LAB_PREFIX`, `LAB_AGENT_NAME` |
 | 준비된 도구 | Python 3.13, Azure CLI, azd 확장, Bash 또는 WSL |
@@ -25,6 +25,7 @@
 
 준비된 모델을 공유하는 경우 `.env`의 `MODEL_*_DEPLOYMENT`에는 그 **실제 배포 이름**을 유지한다. 바꾸는 것은 조별 지식 객체·agent 이름이며, 모델을 임의로 교체하지 않는다.
 다른 사람의 `.azure`, `.foundry` 소유권 파일, 실행 결과나 인증 저장소를 복사해서 오류를 우회하지 않는다.
+언어별 실습도 폴더·접두사·agent 이름을 분리한다. 영어 자료는 `data/en/`과 `src/agent/prompts/en/`에 있으며, 실행기는 다른 언어의 소유권·응답·평가·회귀 데이터를 섞는 것을 거부한다.
 
 참가자의 `cleanup`은 **그 폴더에 생성 기록이 있는 대상만** 정리한다. 강사가 미리 준비한 모델·기반 서비스의 최종 비용과 정리는 강사가 따로 관리한다.
 

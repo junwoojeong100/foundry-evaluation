@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from settings import REPO_ROOT, RuntimeConfig, SOURCE_DIR, load_settings_env, required
+from settings import REPO_ROOT, RuntimeConfig, SOURCE_DIR, load_settings_env, required, workshop_language
 
 FOUNDRY_DIR = SOURCE_DIR / ".foundry"
 RESULTS_DIR = FOUNDRY_DIR / "results"
@@ -75,18 +75,23 @@ def scope() -> dict[str, str]:
 
 def load_state() -> dict[str, Any]:
     expected = scope()
+    language = workshop_language()
     if not STATE_PATH.exists():
-        return {"scope": expected, "owned_models": [], "owned_search_paths": [], "owned_roles": []}
+        return {"scope": expected, "language": language, "owned_models": [], "owned_search_paths": [], "owned_roles": []}
     state = read_json(STATE_PATH)
     if state.get("scope") != expected:
         raise ValueError("Local ownership state belongs to a different Azure scope. Refusing changes.")
+    if state.get("language", "ko") != language:
+        raise ValueError("This workspace belongs to another language. Use a separate folder and workshop prefix.")
     return state
 
 
 def save_state(state: dict[str, Any]) -> None:
     if state.get("scope") != scope():
         raise ValueError("Cannot persist ownership for a different Azure scope.")
-    write_json(STATE_PATH, state)
+    if state.get("language", "ko") != workshop_language():
+        raise ValueError("Cannot change the language of an existing ownership record.")
+    write_json(STATE_PATH, {**state, "language": workshop_language()})
 
 
 def command(args: list[str], *, timeout: int = 600) -> str:
@@ -167,6 +172,7 @@ def runtime_env() -> dict[str, str]:
         "LAB_PREFIX": config.prefix,
         "LAB_AGENT_NAME": config.agent_name,
         "LAB_PROMPT_VERSION": config.prompt_version,
+        "LAB_LANGUAGE": config.language,
         "LAB_AS_OF_DATE": config.as_of_date,
         "LAB_MAX_OUTPUT_TOKENS": str(config.max_output_tokens),
         **{f"MODEL_{key.upper()}_DEPLOYMENT": value for key, value in config.deployments.items()},
@@ -180,6 +186,8 @@ def binding() -> dict[str, str]:
         raise ValueError("azd is bound to a different subscription.")
     if values.get("FOUNDRY_PROJECT_ENDPOINT") != config.project_endpoint:
         raise ValueError("azd is bound to a different project.")
+    if values.get("LAB_LANGUAGE", "ko") != config.language:
+        raise ValueError("azd is bound to a different language. Run bind in the correct language workspace.")
     prefix = "AGENT_" + config.agent_name.upper().replace("-", "_")
     version = values.get(prefix + "_VERSION")
     endpoint = values.get(prefix + "_INVOCATIONS_ENDPOINT")

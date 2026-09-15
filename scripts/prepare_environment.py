@@ -19,12 +19,15 @@ def write_json(path: Path, value):
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n")
 
 
-def initialize(directory: Path):
+def initialize(directory: Path, language: str | None = None):
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,31}", directory.name):
         raise ValueError("Use a 1-32 character lowercase/digit/hyphen run ID.")
     if directory.exists():
         raise ValueError("The workshop directory already exists; choose another run.")
     values = dotenv_values(ROOT / ".env")
+    selected_language = language if language is not None else values.get("LAB_LANGUAGE", "ko")
+    if selected_language not in {"ko", "en"}:
+        raise ValueError("Workshop language must be ko or en.")
     if not all(values.get(key) for key in (
         "AZURE_SUBSCRIPTION_ID", "AZURE_TENANT_ID", "AZURE_EXPECTED_USERNAME",
     )):
@@ -32,6 +35,7 @@ def initialize(directory: Path):
     directory.mkdir(parents=True)
     config = {
         "run_id": directory.name, "workspace": str(directory / "workshop"),
+        "language": selected_language,
         "prefix": "ll-" + directory.name, "region": "swedencentral",
         "resource_group": "rg-foundry-evaluation-" + directory.name,
         "account": "fe-" + directory.name, "project": "learning-loop",
@@ -48,11 +52,14 @@ def initialize(directory: Path):
     }
     write_json(directory / "config.json", config)
     os.chmod(directory / "config.json", 0o600)
-    print(json.dumps({key: config[key] for key in ("run_id", "resource_group", "region", "prefix")}))
+    print(json.dumps({key: config[key] for key in ("run_id", "resource_group", "region", "prefix", "language")}))
 
 
 def prepare(directory: Path):
     config = json.loads((directory / "config.json").read_text())
+    language = config.get("language", "ko")
+    if language not in {"ko", "en"}:
+        raise ValueError("Workshop language must be ko or en.")
     workspace = directory / "workshop"
     if Path(config["workspace"]).resolve() != workspace.resolve():
         raise ValueError("The configured source must stay inside this workshop directory.")
@@ -80,6 +87,7 @@ def prepare(directory: Path):
         "LAB_PREFIX": config["prefix"], "LAB_AGENT_NAME": config["prefix"] + "-agent",
         "LAB_AUX_DEPLOYMENT": config["prefix"] + "-judge",
         "LAB_PROMPT_VERSION": "v1", "LAB_AUTH_MODE": "cli",
+        "LAB_LANGUAGE": language,
     })
     for key in ("SOL", "TERRA", "LUNA", "ASTRA"):
         values[f"MODEL_{key}_DEPLOYMENT"] = config["prefix"] + "-" + key.lower()
@@ -105,11 +113,17 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("operation", choices=["init", "prepare"])
     parser.add_argument("--run-dir", type=Path, required=True)
+    parser.add_argument("--language", choices=["ko", "en"], help="Language for init; prepare reuses the saved configuration.")
     args = parser.parse_args()
     directory = args.run_dir.resolve()
     if not directory.is_relative_to(ROOT / ".workshop"):
         raise ValueError("Use a workspace under the repository's ignored .workshop folder.")
-    (initialize if args.operation == "init" else prepare)(directory)
+    if args.operation == "init":
+        initialize(directory, args.language)
+    else:
+        if args.language is not None:
+            parser.error("--language is only valid with init.")
+        prepare(directory)
 
 
 if __name__ == "__main__":

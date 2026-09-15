@@ -21,7 +21,7 @@ from settings import RuntimeConfig, credential, load_settings_env
 
 def main() -> None:
     load_settings_env()
-    parser = argparse.ArgumentParser(description="Korean Foundry learning-loop workshop; no mocked cloud results.")
+    parser = argparse.ArgumentParser(description="Korean/English Foundry learning-loop workshop; no mocked cloud results.")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("preflight").add_argument("--allow-missing-models", action="store_true")
     sub.add_parser("prepare-models")

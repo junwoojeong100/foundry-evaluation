@@ -49,6 +49,7 @@ def monitor(label: str) -> None:
     wanted = {row["trace_id"] for row in responses}
     observed = {row["trace_id"] for row in rows}
     result: dict[str, Any] = {
+        "language": config.language,
         "run_id": manifest["run_id"],
         "app_insights_resource_id": found["app_insights"]["id"],
         "query": query, "rows": rows,

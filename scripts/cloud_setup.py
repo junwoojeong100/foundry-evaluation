@@ -15,7 +15,7 @@ from common import (
 )
 from contracts import MODEL_SPECS
 from knowledge import SEARCH_API_VERSION, SEARCH_SCOPE
-from settings import RuntimeConfig, credential, required
+from settings import RuntimeConfig, credential, data_directory, required
 
 ROLE_SEARCH_READER = "1407120a-92aa-4202-b7e9-c0e197c71c8f"
 ROLE_COGNITIVE_USER = "a97b65f3-24c7-4388-baec-2e87135dc908"
@@ -62,6 +62,7 @@ def verify_deployment(item: dict[str, Any], key: str) -> None:
 
 def preflight(allow_missing: bool = False) -> dict[str, Any]:
     config = RuntimeConfig.from_env()
+    load_state()
     found = resources()
     catalog = az("cognitiveservices", "model", "list", "--location", found["account"]["location"])
     usage = az("cognitiveservices", "usage", "list", "--location", found["account"]["location"])
@@ -117,6 +118,7 @@ def preflight(allow_missing: bool = False) -> dict[str, Any]:
         "models": model_records,
         "auxiliary_model": auxiliary["properties"]["model"],
         "missing_models": missing,
+        "language": config.language,
     }
     write_json(RESULTS_DIR / "preflight.json", result)
     print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -178,7 +180,7 @@ def prepare_iq() -> None:
     config = RuntimeConfig.from_env()
     found = resources()
     state = load_state()
-    documents = read_json(REPO_ROOT / "data" / "policies.json")
+    documents = read_json(data_directory(config.language) / "policies.json")
     corpus_hash = digest(documents)
     if state.get("corpus_hash") not in (None, corpus_hash):
         raise ValueError("The knowledge corpus changed; create a new workshop prefix for a new experiment.")
@@ -210,7 +212,11 @@ def prepare_iq() -> None:
         }),
         (f"knowledgebases/{config.kb_name}", {
             "name": config.kb_name,
-            "description": "Synthetic Korean policy workshop. No customer data.",
+            "description": (
+                "Synthetic English policy workshop. No customer data."
+                if config.language == "en"
+                else "Synthetic Korean policy workshop. No customer data."
+            ),
             "knowledgeSources": [{"name": config.source_name}],
             "outputMode": "extractiveData",
             "retrievalReasoningEffort": {"kind": "low"},
@@ -337,6 +343,9 @@ def bind() -> None:
         if service.get("project", "").removeprefix("./") != "src/agent":
             raise ValueError("Unexpected agent source directory.")
         service["name"] = config.agent_name
+        service.setdefault("env", {})["LAB_LANGUAGE"] = config.language
+        if config.language == "en":
+            service["description"] = "Synthetic English travel policy assistant with Foundry IQ, four fixed models and evaluation lineage."
         services[config.agent_name] = service
         manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
         if not (REPO_ROOT / ".azure" / "config.json").exists():

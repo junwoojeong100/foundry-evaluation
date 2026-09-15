@@ -37,7 +37,7 @@ python -m pip install -r requirements.lock.txt
 REPO_ROOT="$(pwd)"
 RUN_ID="$(date -u +%Y%m%d-%H%M%S)"
 RUN_DIR="$REPO_ROOT/.workshop/$RUN_ID"
-python scripts/prepare_environment.py init --run-dir "$RUN_DIR" &&
+python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language ko &&
 python scripts/prepare_environment.py prepare --run-dir "$RUN_DIR"
 ```
 
@@ -82,6 +82,7 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 
 `ownership`은 **조사만 하며 그룹을 삭제하지 않습니다.** 이전 후보를 발견해 중단되면 실제 자원 목록·생성 기록·소유자를 확인합니다.
 태그나 이름만 보고 삭제하거나, 오류를 무시하고 새 그룹 생성으로 넘어가지 않습니다. 삭제는 별도 범위 확인과 승인이 필요합니다.
+기존 그룹을 모두 보존하기로 확인했다면 `ownership --preserve-existing`을 사용해 그 결정을 명시할 수 있습니다. 이 옵션도 그룹이나 자원을 삭제하지 않습니다.
 
 <details>
 <summary>녹화 예시 — 계정 대조와 기존 그룹 보존</summary>

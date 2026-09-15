@@ -39,6 +39,7 @@
 
 **시작 조건:** 강사에게 실습 계정과 완성된 `.env`를 받았다면 **1단계부터** 진행합니다.
 Azure 환경이나 모델이 아직 없다면 [강사 준비](docs/instructor.ko.md)를 먼저 완료합니다.
+이 문서는 `LAB_LANGUAGE=ko` 기준입니다. 값을 생략해도 기존 한국어 동작을 유지합니다. 영어 실습은 `LAB_LANGUAGE=en`인 **별도 폴더·접두사·agent 이름**을 사용하며, 실행을 시작한 폴더의 언어를 바꾸지 않습니다.
 
 **필요한 환경:** Git, Python 3.13, Azure CLI, azd + `microsoft.foundry` 확장.
 macOS/Linux는 터미널, Windows는 **WSL 터미널**에서 Bash로 실행합니다. 도구 설치가 안 되어 있으면 강사 준비부터 완료합니다.
