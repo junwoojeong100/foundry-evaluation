@@ -1,5 +1,7 @@
 # 출장 규정 에이전트를 실행하고, 평가하고, 개선하기
 
+[English guide](README.en.md)
+
 **Microsoft Foundry + Agent Framework Python · 한국어 · 준비된 환경에서 120분**
 
 배경을 이미 읽었다면 [1단계: 시작 준비](#start)로 바로 이동합니다.

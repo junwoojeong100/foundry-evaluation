@@ -1,0 +1,198 @@
+# English evaluation method and actual results
+
+**Result:** the actual English run improved business-contract passes from **0/24 to 23/24**, with **16/16 on holdout**. Required citation validity improved from **0/20 to 20/20**. Groundedness passes stayed at **24/24**; relevance passes improved from **21/24 to 23/24**.
+
+These are measured English results from **September 16, 2026 (KST)**, run `en-20260916-0240`, not translated Korean scores. All **64 responses and 64 distinct real traces** were verified. One V2 dev decision still failed the frozen business rubric; the candidate is **not approved for production**.
+
+[English participant guide](../README.en.md#lab-c) · [Korean execution and methodology](validation.ko.md)
+
+## 1. Controlled English experiment
+
+| Component | Contract |
+|---|---|
+| Scenario | Synthetic domestic travel policy for Hanbit Technology in South Korea |
+| Currency and applicability | KRW, original effective dates, original approval/citation rules |
+| Language | `LAB_LANGUAGE=en`, separately owned workspace, agent, and knowledge objects |
+| Candidates | `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna` version `2026-07-09`; `gpt-6-astra` version `2026-09-03` |
+| Judge/planner | Separate `gpt-5.4-mini` version `2026-03-17` |
+| Baseline | English V1, six dev questions × four models |
+| Candidate | English V2, the same six dev questions × four models |
+| Holdout | Frozen V2, four separate questions × four models |
+| Concurrency | Four, held constant across compared cohorts |
+| Primary denominator | Exactly 24 + 24 + 16 = 64 real model responses |
+
+The English files are language variants of the existing synthetic business scenario. They preserve document IDs, dates, decision labels, amounts, and allowed citations, but have their own text and content hashes. They are not a newly independent benchmark.
+
+The executed source revision was `3c6dcb0`. Offline tests passed before cloud execution. The Korean environment, policies, prompt hashes, and previous results were preserved.
+
+## 2. What each evaluation layer receives
+
+`collect` invokes the actual Hosted Agent and preserves the response, model routing, prompt hash, retrieved context, and trace. `evaluate` sends the **same answer text** to Foundry rather than generating another answer.
+
+| Layer | Inputs | Pass criterion |
+|---|---|---|
+| `decision` | Structured decision and frozen expected value | Exact match |
+| `required_numbers` | Answer text and required monetary values | All required amounts present after normalization |
+| `citations_retrieved` | Citation values and that request's retrieved source IDs | Every citation was retrieved |
+| `citations_relevant` | Citation values and the case's allowed ID list | Every citation is allowed for the case |
+| `citation_present` | Citation-required flag and citation array | Nonempty when required |
+| Native groundedness | Question, answer text, and actual retrieved context | 1–5 scale; pass at 4 or above |
+| Native relevance | Question and answer text | 1–5 scale; pass at 4 or above |
+
+All five business conditions must hold for one response to pass. Cases with no required amounts pass the empty amount condition. A case that does not require citations may return an empty array; citations it does return must still be valid.
+
+The amount check tests the presence of normalized numbers, not the full semantic correctness of every sentence. Citation-required rows have a different denominator from all response rows.
+
+Native `response` maps to `answer`, not the complete response JSON. These two native evaluators do not directly receive the structured `decision` or `citations` array. `ground_truth` is retained in JSONL but is not mapped into either native evaluator. This is why native scores and business-contract results must be interpreted separately.
+
+The actual native definitions were **`builtin.groundedness` version 17** and **`builtin.relevance` version 12**, with threshold **4** throughout. Two fixed English calibration examples received groundedness **5** for the supported KRW 180000 limit and **2** for an unsupported KRW 990000 claim. Calibration passed; it is not part of the 64 candidate responses.
+
+## 3. What changed between V1 and V2
+
+V1 is an intentionally incomplete educational starting point. In particular, it tells the assistant not to display internal document identifiers, which can conflict with the citation-ID contract.
+
+V2 explicitly distinguishes effective dates and document status, defines the decision labels, requires original retrieved document IDs, handles insufficient evidence, and rejects instructions to ignore policy or invent completed approval.
+
+This is a provided prompt candidate, not a model substitution, fine-tuning job, or automatic prompt optimizer. The actual change was English V1 to V2 and Hosted Agent version **1 to 2**. Dev questions, reference answers, corpus, four candidates, judge, evaluator definitions, and concurrency stayed fixed.
+
+## 4. Actual results
+
+| Cohort | Agent version | Responses / distinct traces | Business pass | Required citations valid | Groundedness pass | Relevance pass |
+|---|---:|---:|---:|---:|---:|---:|
+| V1 dev | 1 | 24 / 24 | 0/24 | 0/20 | 24/24 | 21/24 |
+| V2 dev | 2 | 24 / 24 | **23/24** | 20/20 | 24/24 | 23/24 |
+| V2 holdout | 2 | 16 / 16 | 16/16 | 16/16 | 16/16 | 16/16 |
+
+| Model | V1 business | V2 business | V2 groundedness | V2 relevance | Holdout business |
+|---|---:|---:|---:|---:|---:|
+| Sol | 0/6 | **5/6** | 6/6 | **5/6** | 4/4 |
+| Terra | 0/6 | 6/6 | 6/6 | 6/6 | 4/4 |
+| Luna | 0/6 | 6/6 | 6/6 | 6/6 | 4/4 |
+| Astra | 0/6 | 6/6 | 6/6 | 6/6 | 4/4 |
+
+Every baseline response failed the citation-ID contract, even when its answer contained the correct amount. Therefore **0/24 is not a claim that every V1 answer was factually wrong**, and 23/24 is not a general accuracy measurement.
+
+All three native jobs completed with the expected row counts and no evaluation error rows. Low valid scores remain failures; they were not converted into errors, removed, or rerun to obtain a better grade.
+
+### The remaining business failure: Sol D02
+
+`improved-sol-D02`, trace `2572a0c968ce924227d89e5eae315ed7`, correctly explained that **KRW 190,000 exceeds the KRW 180,000 limit**, that prior division-head approval was required, and that missing prior approval prevents immediate reimbursement. It returned **`decision: not_allowed`**, while the frozen reference requires **`needs_approval`**.
+
+Its amounts and citations passed; only the decision-label check failed. We did not change the label, rubric, prompt, or response after seeing the result. A business expert should review this distinction before designing a new experiment.
+
+### The remaining native relevance failure is a different row
+
+`improved-sol-D04`, trace `fe6307d074ad54d1e1b3858aa65ad147`, answered that the supplied policies do not cover overseas hotel limits and referred the traveler to finance. Its business result passed with **`not_covered`** and **`SCOPE-2026`**.
+
+The relevance judge gave **3/5**, explaining that the answer was related to the question but did not provide the actual limit. Baseline Sol, Terra, and Luna also received relevance 3 for D04. The business contract requires the assistant **not to invent an unsupported overseas limit**; the generic relevance judge instead penalized incompleteness.
+
+This is a reason to design a business-specific evaluation for justified deferral in a future experiment, not to retroactively turn these grades into passes.
+
+## 5. The reviewed case and its real trace
+
+The review selected **`baseline-sol-D01`**. Its answer correctly allowed KRW 170,000 lodging under the KRW 180,000 limit, but its citation was a document **title**, not the retrieved source ID.
+
+| Evidence | V1 baseline | V2 candidate |
+|---|---|---|
+| Row | `baseline-sol-D01` | `improved-sol-D01` |
+| Trace | `45a22634ba2341b85135f0badfbe7256` | `62bf09f96402e835373b21002d9ad514` |
+| Decision | `allowed` | `allowed` |
+| Citation | `Current domestic travel expense policy` | `TRAVEL-2026` |
+| Correct source available | `TRAVEL-2026` in `source_ids` | `TRAVEL-2026` in `source_ids` |
+| Business result | Failed citation checks | All five checks passed |
+
+The actual Foundry trace view showed **11 spans**, one chat call, and one tool call. The chat span's metadata identified **`gpt-5.6-sol-2026-07-09`**, with **743 input / 51 output tokens**. This was an inspected real trace, not a fabricated trace identifier.
+
+`feedback` copied the frozen dev question, reference answer, and rubric, then added the reviewed row, original trace, language, prompt/context hashes, and an English review reason. It did **not** promote the agent's answer to ground truth. This automated review used **`--reviewer assistant`**, not a claimed human review.
+
+The V2 manifest and matching response retained the baseline source trace. The regression case did not add a seventh dev question or inflate the denominator.
+
+The optional Playground screenshot shows **additional real portal invocations**, not those two dataset rows. In the observed comparison UI, **one Send invokes both versions**. Two sends produced four extra comparison responses, preserved separately. Calibration, three smoke calls, one earlier V1 portal call, and those four comparison calls are excluded from the primary 64.
+
+## 6. Tokens and latency: improvement has tradeoffs
+
+These totals include only tokens reported by the four candidate models in the primary response matrix.
+
+| Cohort | Candidate input tokens | Candidate output tokens |
+|---|---:|---:|
+| V1 dev, 24 responses | 20,922 | 2,003 |
+| V2 dev, 24 responses | 27,861 | 2,392 |
+| V2 holdout, 16 responses | 18,128 | 1,774 |
+
+For the same dev set, input tokens rose **33.2%** and output tokens rose **19.4%**. V2 has longer instructions, and retrieved contexts can vary between calls. Do not attribute the whole change to prompt length alone.
+
+Planner/judge calls, calibration, smoke, portal requests, hosting, Search uptime, and log retention are excluded. These are **not the total Azure bill** or a cost-saving percentage.
+
+The following values measure **retrieval plus model processing inside the request**, not external HTTP round-trip time.
+
+| Model | V1 p50 / p95, seconds | V2 p50 / p95, seconds |
+|---|---:|---:|
+| Sol | 3.852 / 4.319 | 4.098 / 5.384 |
+| Terra | 4.128 / 4.668 | 3.931 / 5.144 |
+| Luna | 4.269 / 5.669 | 4.483 / 4.985 |
+| Astra | 4.952 / 8.867 | 5.049 / 6.240 |
+
+Not every model became faster. With only six observations per model, p95 is effectively the slowest request, not a reliable production SLO estimate.
+
+## 7. Execution, quality, and approval are different
+
+The business gate requires **at least 80% passing responses and all required citations valid**. Sol's 5/6 dev result clears that gate without making its remaining failure disappear.
+
+| Check | Actual result |
+|---|---|
+| `component_execution_verified` | `true` |
+| `primary_model_outputs` | `64` |
+| `distinct_verified_traces` | `64`, all unsampled with weight 1 |
+| V2 dev and holdout business gates | Passed for all four models |
+| All V2 business rows passed | **No: Sol D02 failed** |
+| All V2 native scores passed | **No: Sol D04 relevance failed** |
+| Reviewed baseline provenance reused | Yes |
+| `production_release_approved` | **`false`** |
+
+Some retrieved contexts differed even with the same frozen corpus. These are end-to-end retrieval-and-answer results, not isolated model rankings. Six dev and four translated educational holdout cases do not establish statistical superiority or production readiness. A repeated holdout is not new independent validation.
+
+## 8. Read operational and setup errors honestly
+
+At capture time, the actual **Monitor → Last Day** view showed **71 agent runs**, about **159.7K tokens**, and an **8.91% error-rate indicator**. Its different charts had different counts, and it included smoke and additional portal activity. None of those dashboard totals replaces the verified 64-response matrix.
+
+A bounded, read-only query of this run's dedicated App Insights found **nine failed `GET /metadata/instance/compute` dependency records outside the 64 primary traces**. The 64 primary request records and their returned dependency groups were successful. This does not establish the portal indicator's exact denominator or justify claiming that the entire environment had zero errors. The displayed estimated cost of `$0` is not proof of free execution.
+
+Two separate automatic ARM deployment-history failures were also inspected in Azure Portal and through the CLI:
+
+| Deployment purpose | Actual failure | Treatment |
+|---|---|---|
+| Failure-anomalies alert rule | `MissingSubscriptionRegistration`: `Microsoft.AlertsManagement` was not registered | Preserved and reported; no shared provider registration changed |
+| Governance diagnostic settings | `ResourceNotFound`: the policy targeted a missing governance Log Analytics workspace | Preserved and reported; no shared policy or governance resource changed |
+
+These alert/governance failures are not successful workshop components and were not counted as model-evaluation failures. The dedicated Foundry, Search, and telemetry path used by the 64 responses was verified separately.
+
+## 9. Minimum reproducibility and lineage identifiers
+
+| Cohort | Evaluation ID | Evaluation run ID |
+|---|---|---|
+| baseline | `eval_64b5f9c585ad431da19d75154a87810a` | `evalrun_7b1ca3bbe7c64e5998915e60db40b197` |
+| improved | `eval_518cd11fee3749b9ac139e99b2b76153` | `evalrun_0a4f9498cd404739a2e6500be5078329` |
+| holdout | `eval_0e034945014d4091ae80999d287347f4` | `evalrun_3d221b2a589b40aba2145867261d1729` |
+
+Collection run IDs were `baseline-20260915T193036Z`, `improved-20260915T200630Z`, and `holdout-20260915T201337Z`. These timestamps are UTC, corresponding to September 16 in Korea.
+
+| Input | SHA-256 |
+|---|---|
+| English dev | `73830035a636dc0bfd4fd19c348fe22b8133168f6bc68a7052d4e73963e55743` |
+| English holdout | `65e5300bf8eefe94e8f0a69bbe38b4d189c0ca7dac65c67a50515568fb164bb9` |
+| English policy corpus | `8e63a0d85dd0adb32903d00ed48ecb49310c7c35f389e8aa74101405e40cf6e1` |
+| Effective English V1 instructions | `368f228625e4e565d28f2711da1634a4628a72a827bc056931627a10921bc6d6` |
+| Effective English V2 instructions | `4f451a8514f0f0d7f84803de01d963e6bcc712fa3a6d0faec15225877b0f2eaf` |
+| Shared evaluation suite | `445f8983b82175cf5378177d137a4cc0d5be009ad03f171ae41820d31f4d1a7a` |
+
+Dataset/corpus hashes use the runner's normalized JSON representation. Prompt hashes include the shared output contract; they are not simple file-byte hashes.
+
+## 10. Isolated Azure scope and completed cleanup
+
+The English run used **`rg-foundry-evaluation-en-20260916-0240` in Sweden Central**. The previous Korean group and all shared/other-repository groups were preserved. Resource placement does not mean GlobalStandard inference is restricted to Sweden Central.
+
+After reviewing the actual cleanup plan, the workshop removed and verified the absence of **one English agent, four candidate model deployments, three Search objects, and three runtime role assignments**. The primary batch sessions had already been stopped after telemetry verification. Agent cleanup removed the remaining owned agent runtime.
+
+The English Foundry project, Search service, Application Insights/Logs, connections, preparation access, and auxiliary planner/judge remain. **Retained services can still incur costs**; the environment owner manages their final lifecycle. No default CLI subscription or shared Azure setting was changed.
+
+Implementation: [collection, evaluation, feedback, and verification](../scripts/experiments.py) · [business grading](../scripts/grading.py) · [model calls and latency](../src/agent/policy_agent.py) · [language configuration](../src/agent/settings.py).
