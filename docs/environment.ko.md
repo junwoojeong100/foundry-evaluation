@@ -1,179 +1,209 @@
-# 새 Azure 환경부터 시작하기
+# 강사 전용: 새 Azure 환경 준비하기
 
-**참가자 120분에 앞서 강사가 준비하는 과정**입니다. 이미 준비된 조별 환경을 받았다면 [참가자 가이드](../README.md)의 시작 전 준비로 이동하세요.
+**목표:** Sweden Central에 실습 전용 그룹·Foundry·Search·관측·모델을 준비하고, 참가자에게 조별 `.env`를 전달합니다.
+이미 준비된 환경을 받았다면 이 문서를 건너뛰고 [참가자 1단계](../README.md#start)로 이동하세요.
 
-이번 재실행은 `swedencentral`에 **새 전용 그룹과 새 서비스**를 만들었습니다. 기존 IQ 실습 환경과 다른 리포의 그룹은 재사용하거나 삭제하지 않았습니다.
+Python 3.13, Azure CLI, azd + `microsoft.foundry` 확장, Bash가 필요합니다. 도구 설치와 권한은 [강사 준비](instructor.ko.md)를 먼저 확인합니다.
+아래는 **같은 Bash 터미널에서 한 블록씩** 실행합니다. 오류가 나면 다음 블록으로 넘어가지 않습니다.
 
-| 구분 | 이번 실행 |
+> 새 서비스에는 비용이 발생합니다. 합성 데이터만 사용하고, 공유 자원과 기본 Azure CLI 구독은 변경하지 않습니다.
+> 서비스 위치가 Sweden Central이어도 **GlobalStandard 모델의 추론이 그 리전 안에만 머문다는 뜻은 아닙니다.**
+
+## 1. 새 실행 폴더 준비
+
+**할 일:** clone한 저장소 루트에 `.env.example`을 참고해 `.env`를 준비합니다. 기존 파일은 덮어쓰지 않습니다.
+
+| 먼저 채울 값 | 내용 |
 |---|---|
-| 리소스 그룹 | `rg-foundry-evaluation-20260914-2034` |
-| Foundry 계정 / 프로젝트 | `fe-20260914-2034` / `learning-loop` |
-| Search | `fe-search-20260914-2034`, Basic, replica 1 / partition 1 |
-| 관측 | 새 Log Analytics와 Application Insights |
-| 후보 모델 | Sol / Terra / Luna / Astra, 기존 가이드의 모델·버전 유지 |
-| 보조 모델 | `gpt-5.4-mini` / `2026-03-17`, 별도 planner/judge |
-| 실행 분리 | `.recording/20260914-2034/workshop/`에 소스·설정·결과 분리 |
+| `AZURE_SUBSCRIPTION_ID` | 강사가 승인한 실습 구독 |
+| `AZURE_TENANT_ID` | 그 구독의 tenant |
+| `AZURE_EXPECTED_USERNAME` | 직접 로그인할 계정 |
+| `AZURE_RESOURCE_GROUP` | 조사할 이전 그룹 이름. 이전 그룹이 없으면 값만 비워 둠 |
 
-서비스 위치는 Sweden Central입니다. **GlobalStandard 모델의 추론까지 해당 리전 안에서만 처리된다는 뜻은 아닙니다.** 합성 데이터만 사용하며, 실제 운영에서는 데이터 처리 지역·비용·권한을 별도로 검토합니다.
-
-## 1. 새 실행 폴더와 Python 환경
-
-촬영 도구는 기존 소스를 새 폴더에 복사하고 파일별 SHA-256을 기록합니다. 이전 `.azure`, `.foundry`, `.venv`, 결과 파일을 새 실험에 섞지 않습니다.
-
-아래 도구는 Python·Azure CLI·azd와 이 리포의 Python 의존성이 설치된 강사 환경에서 사용합니다. 입력은 이 리포의 `.env`에 설정한 계정·구독·tenant입니다. **다른 환경에서 재실행할 때는 새 run ID를 사용**하고, 이후 예제의 `20260914-2034`도 그 ID로 바꿉니다. 기존 실행 폴더는 덮어쓰지 않습니다.
+새 서비스 이름·endpoint·조별 기본 이름은 아래 도구가 **별도 폴더의 `.env`에 생성**합니다.
+나머지는 `.env.example`의 설정을 유지합니다. 암호·API key·토큰은 넣지 않습니다.
 
 ```bash
-python recording/action_setup.py init --run-dir .recording/<new-run-id>
-python recording/action_setup.py prepare --run-dir .recording/<new-run-id>
-```
-
-새 소스 폴더에서 가상환경을 만들고 저장소의 고정 의존성을 설치합니다. 아래는 이번 실행 폴더의 예입니다.
-
-```bash
-cd .recording/20260914-2034/workshop
-python3.13 -m venv src/agent/.venv
-source src/agent/.venv/bin/activate
+python3.13 -m venv src/agent/.venv &&
+source src/agent/.venv/bin/activate &&
 python -m pip install -r requirements.lock.txt
-python -m unittest discover -s tests -v
-cd ../../..
 ```
+
+**실행 ID는 여기서 한 번만 정합니다.** 아래에서 만든 `RUN_DIR`를 끝까지 사용합니다.
+녹화에 나온 `20260914-2034`를 복사하거나 기존 실행 폴더를 재사용하지 않습니다.
+
+```bash
+REPO_ROOT="$(pwd)"
+RUN_ID="$(date -u +%Y%m%d-%H%M%S)"
+RUN_DIR="$REPO_ROOT/.recording/$RUN_ID"
+python recording/action_setup.py init --run-dir "$RUN_DIR" &&
+python recording/action_setup.py prepare --run-dir "$RUN_DIR"
+```
+
+새 소스 폴더에 독립 가상환경을 만들고, Azure를 호출하기 전에 테스트합니다.
+
+```bash
+cd "$RUN_DIR/workshop" &&
+python3.13 -m venv src/agent/.venv &&
+source src/agent/.venv/bin/activate &&
+python -m pip install -r requirements.lock.txt &&
+python -m unittest discover -s tests -v
+```
+
+**완료 확인:** 테스트가 `OK`입니다. `source-manifest.json`에 소스 revision과 파일별 SHA-256이 있고, 이전 `.azure`·`.foundry`·결과·가상환경을 재사용하지 않았습니다.
+다음 명령으로 **원래 저장소 루트**에 돌아옵니다. 이후 2–5단계는 이 위치에서 실행합니다.
+
+```bash
+cd "$REPO_ROOT"
+```
+
+<details>
+<summary>녹화 예시 — 새 소스 폴더 확인</summary>
 
 ![새 소스 스냅샷과 기존 실행 보존](assets/live-20260914-2034/screenshots/00-01-source-after.webp)
 
-**화면 확인:** 새 실행 폴더, source revision, 파일 수를 확인합니다. 설치 전 가상환경의 패키지 확인에서 발생한 `ModuleNotFoundError`도 기록에 남겼으며, 고정 의존성 설치 후 검사를 통과했습니다. 이것을 Azure 서비스 실패로 집계하지 않습니다.
+</details>
 
-## 2. 계정 확인과 이전 자원의 소유권 조사
+## 2. 로그인·소유권·용량 확인
 
-Azure CLI와 azd 로그인은 본인이 직접 완료합니다. 암호·토큰을 `.env`, 채팅, 녹화에 넣지 않습니다. `.env`의 구독·tenant·예상 사용자와 실제 인증 주체를 대조하고, **기본 Azure CLI 구독은 변경하지 않습니다.**
-
-`recording/provision.py`는 모든 Azure CLI 요청에 설정된 구독을 명시합니다. `identity`는 해당 구독으로 발급받은 ARM 토큰의 tenant와 principal도 대조하며, 토큰 자체를 출력하거나 저장하지 않습니다.
+**할 일:** Azure CLI와 azd에 본인이 직접 로그인합니다. 로그인·암호·토큰은 녹화하지 않습니다.
+`identity`는 설정한 구독·tenant·사용자를 ARM 토큰의 실제 principal과 대조하며 토큰을 저장하지 않습니다.
 
 ```bash
-python recording/provision.py identity --run-dir .recording/20260914-2034
-python recording/provision.py ownership --run-dir .recording/20260914-2034
+python recording/provision.py identity --run-dir "$RUN_DIR" &&
+python recording/provision.py ownership --run-dir "$RUN_DIR" &&
+python recording/provision.py model-capacity --run-dir "$RUN_DIR"
 ```
 
-![지정 계정·구독·tenant를 대조한 실제 결과](assets/live-20260914-2034/screenshots/00-10-identity-retry-after.webp)
+**완료 확인:** 세 `matches` 값이 `true`, 구독은 `Enabled`이며 지정한 네 모델과 보조 모델의 용량 레코드가 있습니다.
+각 Azure CLI 요청에는 설정한 구독이 명시됩니다. 실제 구독 할당량은 6단계의 `preflight`와 모델 준비에서 다시 확인합니다.
 
-**화면 확인:** 세 `matches` 값과 구독의 `Enabled` 상태를 읽습니다. 이름이 비슷한 계정을 선택한 것만으로 통과하지 않습니다.
+`ownership`은 **조사만 하며 그룹을 삭제하지 않습니다.** 이전 후보를 발견해 중단되면 실제 자원 목록·생성 기록·소유자를 확인합니다.
+태그나 이름만 보고 삭제하거나, 오류를 무시하고 새 그룹 생성으로 넘어가지 않습니다. 삭제는 별도 범위 확인과 승인이 필요합니다.
 
-![기존 전용 그룹과 공유 환경을 구분한 결과](assets/live-20260914-2034/screenshots/00-11-ownership-after.webp)
+<details>
+<summary>녹화 예시 — 계정 대조와 기존 그룹 보존</summary>
 
-**화면 확인:** 이번에는 `dedicated_old_groups`가 비어 있어 **기존 그룹 삭제는 0건**입니다. 이전 `rg-iq-foundry-lab-56d62b`는 공유 환경이며, `microsoft-foundry-v2-labs`의 두 그룹도 다른 리포의 자원이므로 보존했습니다. `.env`에 적혀 있다는 이유만으로 그룹 전체를 삭제하지 않습니다.
+![지정 계정·구독·tenant 대조](assets/live-20260914-2034/screenshots/00-10-identity-retry-after.webp)
+![이전 전용 그룹과 공유 환경 구분](assets/live-20260914-2034/screenshots/00-11-ownership-after.webp)
 
-## 3. 새 리소스 그룹 생성
+</details>
 
-이하 환경 준비 명령은 원래 저장소 루트에서 실행합니다. 촬영용 `config.json`에 기록한 새 이름만 사용하며, 생성 기록과 소유권 태그가 없는 그룹은 수정하지 않습니다.
+## 3. 새 전용 그룹과 서비스 생성
+
+**할 일:** `config.json`에 생성된 새 이름을 확인한 뒤 실행합니다. 같은 자원을 수동 `az ... create`로 한 번 더 만들지 않습니다.
 
 ```bash
-python recording/provision.py group --run-dir .recording/20260914-2034
+python recording/provision.py group --run-dir "$RUN_DIR" &&
+python recording/provision.py foundry --run-dir "$RUN_DIR" &&
+python recording/provision.py project --run-dir "$RUN_DIR" &&
+python recording/provision.py logs --run-dir "$RUN_DIR" &&
+python recording/provision.py insights --run-dir "$RUN_DIR" &&
+python recording/provision.py search --run-dir "$RUN_DIR"
 ```
 
-실제로 실행되는 Azure CLI의 핵심 형태는 다음과 같습니다. `<...>`는 강사가 확인한 값으로 바꿉니다.
+**완료 확인:** Azure Portal의 **새 리소스 그룹 → Resources**에 Foundry 계정·프로젝트·Search·Application Insights·Log Analytics가 있습니다.
+모두 새 그룹과 Sweden Central에 있어야 합니다. **Tags**에서 `workshop`, `cleanup-scope`, `run`을 대조합니다.
+도구는 태그뿐 아니라 이번 실행의 실제 생성 기록도 요구합니다.
+
+Search는 Basic 1 replica / 1 partition입니다. `semanticSearch`와 `knowledgeRetrieval`의 `free` 설정이 **Search 가동·모델 호출까지 무료라는 뜻은 아닙니다.**
+Portal의 ARM **Deployments** 목록은 Foundry 모델 배포 목록과 다릅니다.
+
+<details>
+<summary>Search 대기 시간만 초과했다면 — 같은 자원 확인</summary>
+
+실패한 대기 기록을 보존하고, 자원을 재생성하거나 리전을 바꾸지 않습니다.
 
 ```bash
-az group create \
-  --subscription "<configured-subscription>" \
-  --name "<new-dedicated-group>" \
-  --location swedencentral \
-  --tags workshop=foundry-evaluation cleanup-scope=exclusive \
-    purpose=synthetic-data-only run="<new-run-id>"
+python recording/provision.py search-status --run-dir "$RUN_DIR" &&
+python recording/provision.py wait-search --run-dir "$RUN_DIR" &&
+python recording/provision.py search-status --run-dir "$RUN_DIR"
 ```
 
-![실제 새 그룹 생성 결과](assets/live-20260914-2034/screenshots/00-12-group-after.webp)
+같은 자원의 `provisioning_state: Succeeded`, `status: running`을 확인한 뒤 4단계로 진행합니다.
 
-![Azure Portal에서 확인한 전용 소유권 태그](assets/live-20260914-2034/screenshots/00-P02-tags-after.webp)
+</details>
 
-**화면 확인:** `workshop`, `cleanup-scope`, `run`을 함께 봅니다. 태그만 붙이면 공유 자원을 삭제할 권한이 생기는 것은 아닙니다. 이 도구는 **이번 실행의 생성 기록도 함께 요구**합니다.
+<details>
+<summary>녹화 예시 — 전용 태그와 다섯 구성 자원</summary>
 
-## 4. Foundry·Search·관측 서비스 생성
+![새 그룹의 전용 소유권 태그](assets/live-20260914-2034/screenshots/00-P02-tags-after.webp)
+![새 그룹 안의 다섯 구성 자원](assets/live-20260914-2034/screenshots/00-P03-resources-after.webp)
+
+</details>
+
+## 4. 필요한 권한과 연결 준비
+
+**할 일:** 새 자원 범위에만 역할과 연결을 만듭니다. `user-*` 명령은 **2단계에서 검증한 사용자 한 명**에게 적용됩니다.
+다른 참가자는 [강사의 권한 체크리스트](instructor.ko.md#권한)에 따라 별도로 준비합니다.
 
 ```bash
-python recording/provision.py foundry --run-dir .recording/20260914-2034
-python recording/provision.py project --run-dir .recording/20260914-2034
-python recording/provision.py logs --run-dir .recording/20260914-2034
-python recording/provision.py insights --run-dir .recording/20260914-2034
-python recording/provision.py search --run-dir .recording/20260914-2034
+python recording/provision.py user-foundry --run-dir "$RUN_DIR" &&
+python recording/provision.py user-model --run-dir "$RUN_DIR" &&
+python recording/provision.py user-search-service --run-dir "$RUN_DIR" &&
+python recording/provision.py user-search-data --run-dir "$RUN_DIR" &&
+python recording/provision.py project-monitor --run-dir "$RUN_DIR" &&
+python recording/provision.py insights-connection --run-dir "$RUN_DIR" &&
+python recording/provision.py search-connection --run-dir "$RUN_DIR"
 ```
 
-![새 그룹 안의 실제 구성 자원 5개](assets/live-20260914-2034/screenshots/00-P03-resources-after.webp)
+**완료 확인:** 사용자에게 새 프로젝트의 Foundry User, 새 계정의 OpenAI User, 새 Search의 작성·적재 역할이 있습니다.
+프로젝트 identity에는 새 관측 자원의 Logs 읽기 권한이 있고, Search는 `AAD`, App Insights는 실제 `ResourceId` metadata를 가진 연결입니다.
 
-**화면 확인:** 계정, 프로젝트, Search, Application Insights, Log Analytics가 **모두 새 그룹과 Sweden Central에 있는지** 확인합니다. 여기의 `Deployments / No deployments`는 ARM 템플릿 배포 이력이며, Foundry의 모델 배포 개수를 뜻하지 않습니다.
+**사용자·프로젝트 identity·agent instance identity는 다릅니다.**
+배포 후 agent의 Search 읽기·모델 추론 역할은 [참가자 4단계](../README.md#deploy)의 `grant-agent-access`에서 부여합니다. Owner를 일괄 추가하지 않습니다.
 
-![새 Foundry 프로젝트의 실제 endpoint와 keyless 설정](assets/live-20260914-2034/screenshots/00-P06-project-home-after.webp)
+## 5. 보조 모델과 실제 endpoint 확인
 
-**화면 확인:** Project endpoint와 Azure OpenAI endpoint는 다릅니다. API key 인증이 비활성화된 상태를 확인했고, 이 가이드는 Entra 인증을 사용했습니다. 화면의 카탈로그 추천 모델을 이번 네 후보의 대체물로 선택하지 않습니다.
-
-Search의 `semanticSearch`와 `knowledgeRetrieval`은 서로 다른 설정입니다. 이번 작은 합성 실습에서는 둘 다 `free`로 명시했습니다. **Search Basic 서비스의 가동 비용이나 planner/judge 모델 호출까지 무료라는 뜻은 아닙니다.**
-
-### Search가 오래 준비 중이면
-
-이번에는 최초 대기 명령의 15분 제한에 도달한 뒤에도 Azure가 `Provisioning`을 반환했습니다. 실패한 대기 시도를 보존하고, 자원을 재생성하거나 다른 리전으로 바꾸지 않았습니다.
+**할 일:** 고정 planner/judge를 배포하고 Azure가 반환한 실제 endpoint를 새 실행 폴더에 반영합니다.
 
 ```bash
-python recording/provision.py search-status --run-dir .recording/20260914-2034
-python recording/provision.py wait-search --run-dir .recording/20260914-2034
+python recording/provision.py auxiliary --run-dir "$RUN_DIR" &&
+python recording/provision.py ready --run-dir "$RUN_DIR"
 ```
 
-![동일 Search 서비스의 실제 Succeeded 상태 확인](assets/live-20260914-2034/screenshots/00-17-search-status-after.webp)
+**완료 확인:** 새 그룹·프로젝트·Search와 두 endpoint를 확인합니다. Project endpoint와 Azure OpenAI endpoint는 용도가 다릅니다.
+보조 모델은 `gpt-5.4-mini` / `2026-03-17`이며 네 후보 모델 중 하나를 대신하지 않습니다.
 
-**화면 확인:** `provisioning_state: Succeeded`, `status: running`을 구분해 읽습니다. 로컬 대기 시간 초과는 서비스의 최종 실패 판정이 아닙니다. 이후 명령으로 **같은 리소스 ID의 상태를 다시 확인**해야 합니다.
+## 6. 네 후보 준비 후 참가자에게 전달
 
-## 5. 필요한 권한과 연결만 준비
-
-```bash
-python recording/provision.py user-foundry --run-dir .recording/20260914-2034
-python recording/provision.py user-model --run-dir .recording/20260914-2034
-python recording/provision.py user-search-service --run-dir .recording/20260914-2034
-python recording/provision.py user-search-data --run-dir .recording/20260914-2034
-python recording/provision.py project-monitor --run-dir .recording/20260914-2034
-python recording/provision.py insights-connection --run-dir .recording/20260914-2034
-python recording/provision.py search-connection --run-dir .recording/20260914-2034
-```
-
-| 주체 | 권한 / 연결 | 범위 |
-|---|---|---|
-| 참가자 | Foundry User | 새 프로젝트 |
-| 참가자 | Cognitive Services OpenAI User | 새 Foundry 계정 |
-| 지식 적재 담당자 | Search Service Contributor + Search Index Data Contributor | 새 Search |
-| 프로젝트 identity | Log Analytics Reader | 새 App Insights / Logs |
-| Foundry → Search | `AAD` 연결 | 새 Search |
-| Foundry → App Insights | 연결 문자열과 실제 `ResourceId` metadata | 새 App Insights |
-
-**사용자, 프로젝트 identity, 배포 후 생기는 agent instance identity는 다릅니다.** 마지막 주체의 Search 읽기·모델 추론 권한은 [실습 B](../README.md#6-실습-b--python-에이전트를-hosted-agent로-배포)의 `grant-agent-access`에서 따로 부여합니다.
-
-## 6. 모델을 확인하고 준비
+**할 일:** 새 소스 폴더로 이동해 모델을 준비하고 judge를 점검합니다.
 
 ```bash
-python recording/provision.py model-capacity --run-dir .recording/20260914-2034
-python recording/provision.py auxiliary --run-dir .recording/20260914-2034
-python recording/provision.py ready --run-dir .recording/20260914-2034
-```
-
-새 소스 폴더로 이동한 뒤 네 후보를 준비합니다.
-
-```bash
-cd .recording/20260914-2034/workshop
-source src/agent/.venv/bin/activate
-python scripts/workshop.py preflight --allow-missing-models
-python scripts/workshop.py prepare-models
-python scripts/workshop.py bind
-python scripts/workshop.py preflight
+cd "$RUN_DIR/workshop" &&
+source src/agent/.venv/bin/activate &&
+python scripts/workshop.py preflight --allow-missing-models &&
+python scripts/workshop.py prepare-models &&
+python scripts/workshop.py preflight &&
 python scripts/workshop.py calibrate
 ```
 
-![실제 네 모델과 프로젝트 시작 조건 확인](assets/live-20260914-2034/screenshots/00-30-ready-after.webp)
+**완료 확인:** Sol/Terra/Luna/Astra의 고정 모델 ID·버전, `deployed: true`, `missing_models: []`, calibration 통과를 확인합니다.
+Calibration 예제 2개는 본평가 64응답이 아닙니다. 모델 접근·할당량이 부족하면 다른 모델로 대체하지 않고 준비를 중단합니다.
 
-![포털에서 확인한 실제 다섯 배포](assets/live-20260914-2034/screenshots/00-P07-models-after.webp)
+이 폴더에서 계속 리허설한다면 [참가자 1단계](../README.md#start)의 **`bind`부터** 진행합니다.
+새 참가자 폴더에는 완성된 `.env`를 주되, **미사용 `LAB_PREFIX` / `LAB_AGENT_NAME`**을 조별로 지정합니다.
+실제 모델 배포 이름은 유지하고 `.azure`·`.foundry` 소유권 파일·결과는 전달하지 않습니다.
+자세한 전달 항목과 리허설 분리는 [강사 체크리스트](instructor.ko.md#참가자에게-전달할-것)를 따릅니다.
 
-**화면 확인:** 네 후보의 실제 모델 ID·버전, `deployed: true`, 빈 `missing_models`를 확인합니다. 별도 보조 모델을 후보 중 하나의 대체물로 사용하지 않습니다. Calibration의 고정 예제 2개도 본평가 64응답과 구분합니다.
+<details>
+<summary>녹화 예시 — 후보 네 개와 별도 보조 배포</summary>
 
-이후 [참가자 가이드의 실습 A](../README.md#5-실습-a--조직의-기억을-foundry-iq에-넣기)로 진행합니다.
+![실제 네 모델과 시작 조건 확인](assets/live-20260914-2034/screenshots/00-30-ready-after.webp)
+![포털에서 확인한 다섯 모델 배포](assets/live-20260914-2034/screenshots/00-P07-models-after.webp)
 
-## 근거와 비용 경계
+</details>
 
-구성은 [공식 Foundry 기본 인프라 예제](https://github.com/Azure-Samples/azd-ai-starter-basic/tree/main/infra)와 [Search의 knowledge retrieval 과금 설정](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-enable-disable)을 참고했습니다. 서비스와 SDK/API의 GA·Preview 상태를 같은 것으로 표현하지 않습니다.
+## 녹화 예시·검증·비용
 
-실습 마지막의 `cleanup`은 이 실행에서 추적한 agent·세션·네 후보 배포·KB 객체와 역할을 정리합니다. **기반 서비스까지 모두 없어진다는 뜻은 아닙니다.** 남은 새 Search, 관측 보존, Foundry 및 보조 모델의 상태와 실제 실행 한계는 [검증 보고서](validation.ko.md)에서 따로 확인합니다.
+화면은 과거 `rg-foundry-evaluation-20260914-2034` 실행입니다. **내 run ID·이름·결과는 다릅니다.**
+당시에는 삭제 가능한 이전 전용 그룹이 없어 삭제 0건이었고, 공유 환경과 다른 리포의 그룹은 보존했습니다.
 
-이번 구독에서는 자동 경보/거버넌스 관련 ARM 이력에 `MissingSubscriptionRegistration`과 `ResourceNotFound`도 남았습니다. 실제 실행·평가·정리와 별도로 기록했으며 공유 구독 설정을 임의로 수정하지 않았습니다. 따라서 새 환경의 모든 운영 거버넌스까지 준비됐다는 주장으로 해석하지 않습니다.
+참가자의 `cleanup`은 그 폴더에서 소유한 agent·세션·모델·KB 객체·역할만 정리합니다.
+**강사가 준비한 기반 서비스와 모델까지 모두 삭제하지 않습니다.** 남은 Search·로그 보존·보조 모델의 비용과 최종 정리는 강사가 별도로 관리합니다.
+
+실제 생성·대기 실패·평가·정리 결과는 [검증 기록](validation.ko.md), 모든 절차의 화면·영상은 [전체 캡처](action-captures.ko.md)에 있습니다.
+당시 별도 자동 경보·거버넌스 ARM 실패도 보존했으며 공유 구독 설정을 임의 수정하지 않았습니다.
+이 문서의 절차 정리를 새 Azure 재실행의 성공 기록으로 해석하지 않습니다.
+
+구성 근거: [공식 Foundry 기본 인프라 예제](https://github.com/Azure-Samples/azd-ai-starter-basic/tree/main/infra) · [Search knowledge retrieval 과금 설정](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-enable-disable).

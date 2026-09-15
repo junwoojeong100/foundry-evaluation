@@ -4,6 +4,30 @@
 
 이 문서는 참가자 120분에 포함하지 않는 **환경 준비**다. 빈 Azure 구독에서의 전체 소요 시간은 모델 접근 승인·할당량·권한 전파에 따라 달라진다.
 
+## 참가자에게 전달할 것
+
+참가자는 [README의 1–10단계](../README.md#start)만 따라간다. 녹화 제작이나 Azure 인프라 생성 절차를 참가자의 선행 과제로 섞지 않는다.
+
+| 전달 항목 | 강사가 확인할 내용 |
+|---|---|
+| 실행 가능한 계정 | 실제 참가자의 Azure CLI / azd 로그인과 필요한 조회·배포 권한 |
+| 조별 `.env` | `.env.example`의 모든 값을 채움. 암호·API key·token은 없음 |
+| 준비된 서비스 | Foundry 프로젝트, Search, 연결된 App Insights, 네 후보와 별도 planner/judge |
+| 고유한 이름 | 참가자가 아직 사용하지 않은 `LAB_PREFIX`, `LAB_AGENT_NAME` |
+| 준비된 도구 | Python 3.13, Azure CLI, azd 확장, Bash 또는 WSL |
+| 도움받을 담당자 | `grant-agent-access` 역할 부여·403·quota 오류를 처리할 담당자 |
+
+**중요:** `.env`만 전달한 새 clone에는 로컬 azd 환경이 없다. 참가자는 README 1단계의 **`bind`를 자기 폴더에서 실행**한다. 강사 PC에서 바인딩했다는 이유로 이 단계를 생략하지 않는다.
+
+## 리허설과 참가자 실행을 분리
+
+리허설은 **별도 폴더와 별도 `LAB_PREFIX` / `LAB_AGENT_NAME`**으로 수행한다. 참가자의 접두사로 KB·source·index·agent를 미리 만들면, 새 참가자 폴더의 소유권 검사에서 덮어쓰기를 거부할 수 있다.
+
+준비된 모델을 공유하는 경우 `.env`의 `MODEL_*_DEPLOYMENT`에는 그 **실제 배포 이름**을 유지한다. 바꾸는 것은 조별 지식 객체·agent 이름이며, 모델을 임의로 교체하지 않는다.
+다른 사람의 `.azure`, `.foundry` 소유권 파일, 실행 결과나 인증 저장소를 복사해서 오류를 우회하지 않는다.
+
+참가자의 `cleanup`은 **그 폴더에 생성 기록이 있는 대상만** 정리한다. 강사가 미리 준비한 모델·기반 서비스의 최종 비용과 정리는 강사가 따로 관리한다.
+
 ## 사전 준비
 
 | 항목 | 준비 상태 |
@@ -38,9 +62,22 @@ Foundry 역할의 이전 이름인 Azure AI User 등이 UI에 남아 있을 수 
 
 최종 계정 endpoint 추론 경로는 agent에 프로젝트의 `Foundry User`나 Owner를 부여하지 않는다. 사용자/준비 담당자의 Foundry 역할과 agent identity의 두 데이터 접근 역할을 구분한다. 진단 중 시험한 추가 역할은 검증 환경 정리 시 함께 제거한다.
 
+## 로컬 설치와 테스트
+
+리허설용 저장소 루트에서 실행한다. **마지막에 `OK`가 나온 뒤에만** 아래 Azure 준비로 넘어간다.
+
+```bash
+python3.13 -m venv src/agent/.venv &&
+source src/agent/.venv/bin/activate &&
+python -m pip install -r requirements.txt &&
+python -m unittest discover -s tests -v
+```
+
+프레임워크와 Foundry SDK의 버전 상한이 다를 수 있다. Agent Framework Foundry 1.11.0, core 1.16.0, OpenAI adapter 1.14.1, Azure AI Projects 2.3.0, Agent Server Invocations 1.1.0을 고정했다. 무조건 모든 패키지를 최신 버전으로 올리지 않는다. `requirements.lock.txt`는 검증 환경의 전체 의존성 스냅샷이다. 같은 Python 환경을 재현할 때 `python -m pip install -r requirements.lock.txt`를 사용할 수 있다.
+
 ## 설정과 안전한 준비
 
-1. `.env.example`을 `.env`로 복사하고 **실습 환경의 값**을 채운다.
+1. `.env.example`을 참고해 `.env`에 **실습 환경의 값**을 채운다. 기존 파일은 덮어쓰지 않는다.
 2. 기본 Azure CLI 구독을 바꾸는 대신 지정 구독으로 조회·인증한다.
 3. `python scripts/workshop.py preflight --allow-missing-models`로 환경과 네 모델의 지역별 지원·할당량을 읽기 전용 확인한다.
 4. 모델이 없다면 `python scripts/workshop.py prepare-models`로 **고유 접두사**를 가진 네 배포만 만든다.
@@ -49,7 +86,7 @@ Foundry 역할의 이전 이름인 Azure AI User 등이 UI에 남아 있을 수 
 7. azd를 아래 절차로 바인딩하고 로컬·원격 smoke test를 완료한다.
 8. `python scripts/workshop.py calibrate`로 명시적으로 정의한 정답/오답 예제 2건을 Foundry에서 평가한다. 실제 네 모델 응답과 섞지 않는 judge 점검이며, groundedness가 근거 없는 금액을 구분하는지 확인한다.
 
-평가가 `AppInsights connection is missing ResourceId metadata`로 실패하면 `python scripts/workshop.py repair-observability --confirm`으로 기존 연결에 **실제 Application Insights ARM ID 메타데이터만** 추가한다. target/credential은 변경하지 않는다. 이 비파괴 연결 보완은 cleanup 후에도 유지된다. 이후 `calibrate --retry-failed`로 실패 run을 보존한 채 새 run을 만든다.
+평가가 `AppInsights connection is missing ResourceId metadata`로 실패하면 강사가 연결의 소유권과 범위를 먼저 확인한다. **공유 연결은 참가자가 직접 변경하지 않는다.** 수정이 허용된 실습 전용 연결에만 `python scripts/workshop.py repair-observability --confirm`으로 실제 Application Insights ARM ID 메타데이터를 추가한다. target/credential은 변경하지 않으며 보완 기록은 cleanup 후에도 유지된다. 이후 `calibrate --retry-failed`로 실패 run을 보존한 채 새 run을 만든다.
 
 모델은 `GlobalStandard` 사용량 기반 배포를 사용한다. PTU를 예약하거나 할당량 증설을 자동 신청하지 않는다. 실제 모델/SKU/할당량 검사를 통과하지 못하면 강사가 먼저 해결한다.
 
@@ -67,19 +104,20 @@ python scripts/workshop.py bind
 
 로컬 서버는 신뢰할 수 있는 개발 환경에서만 잠깐 실행하고 즉시 종료한다. 공개망에 노출하지 않는다. 로컬 테스트 서버와 Azure 플랫폼이 인증을 처리하는 hosted endpoint는 서로 다른 보안 경계다.
 
-## 설치와 실행
-
-```bash
-python3.13 -m venv src/agent/.venv
-source src/agent/.venv/bin/activate
-python -m pip install -r requirements.txt
-python -m unittest discover -s tests -v
-python scripts/workshop.py preflight
-```
-
-프레임워크와 Foundry SDK의 버전 상한이 다를 수 있다. Agent Framework Foundry 1.11.0, core 1.16.0, OpenAI adapter 1.14.1, Azure AI Projects 2.3.0, Agent Server Invocations 1.1.0을 고정했다. 무조건 모든 패키지를 최신 버전으로 올리지 않는다. `requirements.lock.txt`는 검증 환경의 전체 의존성 스냅샷이다. 같은 Python 환경을 재현할 때 `python -m pip install -r requirements.lock.txt`를 사용할 수 있다.
-
 ## 실습 시간 리허설
+
+| 시간 | 참가자 단계 | 확인할 결과 |
+|---|---|---|
+| 00–10분 | 1. 시작 준비 | 테스트·preflight·로컬 bind |
+| 10–25분 | 2. 지식 검색 A | 실제 IQ 문서 ID와 activity |
+| 25–40분 | 3–4. 로컬·배포 B | 로컬과 원격의 실제 응답 |
+| 40–55분 | 5. baseline C | dev 24행과 Foundry 평가 |
+| 55–70분 | 6. 실패 검토 D | 실제 trace와 검토된 회귀 데이터 |
+| 70–85분 | 7. V2 재평가 E | 새 버전·같은 dev 24행 |
+| 85–100분 | 8. holdout F | 고정 후보의 16행 |
+| 100–110분 | 9. 운영·검증 G | 64응답·64trace·lineage |
+| 110–115분 | 10. 정리 | 소유 대상만 정리 |
+| 115–120분 | 버퍼 | 비동기 평가·telemetry 반영 |
 
 한 조의 전체 실행을 사전 리허설한다. 특히 다음 대기 시간을 측정한다.
 
@@ -97,3 +135,12 @@ python scripts/workshop.py preflight
 ## 정리 원칙
 
 공유 resource group 전체를 삭제하지 않는다. `cleanup --dry-run`으로 소유권 기록과 정확한 이름을 먼저 보고 `--confirm`으로 실습 자원만 정리한다. 기존 Search 서비스와 Foundry 프로젝트는 계속 비용이 발생할 수 있으므로 환경 소유자가 별도로 관리한다.
+
+## 가이드 수정 시 확인
+
+원래 저장소 루트의 가상환경에서 아래를 실행한다. 문서 검사는 명령을 실제 파서로 확인하되 **Azure 호출 전에 중단**하며, 순서·링크·복사 블록의 오류 중단을 확인한다.
+문서가 없는 실행용 소스 스냅샷에서도 핵심 테스트가 동작하도록 `tests_docs`를 `tests`와 분리했다.
+
+```bash
+python -m unittest discover -s tests_docs -v
+```
