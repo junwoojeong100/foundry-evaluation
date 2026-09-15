@@ -430,7 +430,7 @@ These files are inputs to later workshop commands, not disposable success screen
 
 [Play the English summary video — 11m39s](https://github.com/user-attachments/assets/97562443-49da-45d0-9554-3ce740e26e7c)
 
-Actual English **CLI, Azure Portal, and Foundry Portal** footage, edited into guide order. **Silent, with English on-screen explanations.** Long waits are shortened and actual result frames are held for reading; authentication and MFA are not recorded.
+**11m39s of actual English CLI, Azure Portal, and Foundry Portal footage**, edited into guide order. **Silent, with English on-screen explanations.** Long waits are shortened and actual result frames are held for reading; authentication and MFA are not recorded.
 
 Instructor setup starts at **00:13**. If your environment is already prepared, move the player's time slider to **03:07**.
 
