@@ -122,6 +122,7 @@ class DatasetTests(unittest.TestCase):
         modified[0]["expected_decision"] = "not_allowed"
         self.assertNotEqual(digest(original), digest(modified))
 
+    @patch.dict("os.environ", {"LAB_LANGUAGE": "ko"})
     def test_reviewed_regression_is_reused_without_changing_frozen_cases(self):
         cases = read_jsonl(ROOT / "data" / "dev.jsonl")
         record = {**cases[0], "lineage": {"source_trace_id": "a" * 32}}
