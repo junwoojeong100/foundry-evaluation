@@ -5,6 +5,8 @@
 이 실습에서는 같은 출장 질문을 네 모델에 보내고, 실패 원인을 확인한 뒤 V1/V2를 비교합니다.
 마지막에 **실제 응답 64개, 평가 결과, trace, 개선 이유**가 남습니다.
 
+[전체 실습 요약 영상 1개 — 21분 55초, 클릭해서 재생](https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010)
+
 **시작 조건:** 강사에게 실습 계정과 완성된 `.env`를 받았다면 **1단계부터** 진행합니다.
 Azure 환경이나 모델이 아직 없다면 [강사 준비](docs/instructor.ko.md)를 먼저 완료합니다.
 
@@ -13,6 +15,8 @@ Azure 환경이나 모델이 아직 없다면 [강사 준비](docs/instructor.ko
 **진행 순서:** [준비](#start) → [지식 검색](#lab-a) → [로컬 실행](#local) → [배포](#deploy) → [baseline](#lab-c) → [실패 검토](#lab-d) → [V2](#lab-e) → [holdout](#lab-f) → [운영 확인](#lab-g) → [정리](#cleanup)
 
 > **처음부터 지킬 것:** 합성 데이터만 사용합니다. 모델은 Sol/Terra/Luna/Astra로 고정하며 실패한 모델을 다른 모델로 바꾸지 않습니다. `data/holdout.jsonl`은 **8단계 전까지 열지 않습니다.**
+
+화면은 2026-09-14–15에 실제 실행한 예시입니다. **명령은 본문에서 복사하고, 계정·이름·점수는 본인 실행값으로 확인**합니다. 로그인·MFA 화면은 촬영하지 않았습니다.
 
 <a id="start"></a>
 <a id="4-시작-전-준비"></a>
@@ -113,6 +117,10 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 명령이 오류로 끝나면 다음 단계로 넘어가지 말고 [문제 해결](docs/troubleshooting.ko.md)을 확인합니다.
 기본 Azure CLI 구독을 바꾸는 `az account set`은 사용하지 않습니다.
 
+**화면에서 볼 것:** 로그인 뒤의 `preflight`에서 네 모델의 `deployed: true`와 빈 `missing_models`를 확인합니다.
+
+![로그인 후 네 모델과 프로젝트 준비 상태 확인](docs/assets/live-20260914-2034/screenshots/00-30-ready-after.webp)
+
 <a id="lab-a"></a>
 <a id="5-실습-a--조직의-기억을-foundry-iq에-넣기"></a>
 
@@ -131,12 +139,9 @@ python scripts/workshop.py retrieve --query "2026년 9월 국내 출장 숙박�
 **포털은 여기서 처음 엽니다.** [Foundry 포털](https://ai.azure.com/)에 접속해 `.env`의 `AZURE_EXPECTED_USERNAME` 계정으로 로그인합니다. CLI 로그인과는 별도입니다.
 `AZURE_AI_ACCOUNT_NAME`과 `AZURE_AI_PROJECT_NAME`에 맞는 계정·프로젝트를 선택한 뒤 **Knowledge → Knowledge bases**에서 내 KB와 source를 확인합니다.
 
-<details>
-<summary>예시 화면 보기 — 내 KB 이름과 비교하세요</summary>
+**화면에서 볼 것:** 내 KB 이름과 연결된 source입니다. 이름은 예시가 아니라 `.env`의 내 접두사와 대조합니다.
 
 ![실제 KB와 source](docs/assets/live-20260914-2034/screenshots/A-P01-knowledge-after.webp)
-
-</details>
 
 <a id="local"></a>
 <a id="6-실습-b--python-에이전트를-hosted-agent로-배포"></a>
@@ -167,12 +172,9 @@ readiness만 성공한 것은 모델 응답 성공이 아닙니다.
 확인 후 **터미널 A에서 `Ctrl+C`**로 로컬 서버를 종료합니다. 터미널 B는 닫아도 됩니다.
 4단계부터는 다시 터미널 A를 사용합니다.
 
-<details>
-<summary>예시 화면 보기 — 답변·근거·모델을 확인하세요</summary>
+**화면에서 볼 것:** readiness 상태만이 아니라 실제 답변·인용·`model_key`·`prompt_version`까지 확인합니다.
 
 ![실제 로컬 응답](docs/assets/live-20260914-2034/screenshots/B06-local-smoke-retry-after.webp)
-
-</details>
 
 <a id="deploy"></a>
 
@@ -194,12 +196,9 @@ python scripts/workshop.py smoke
 
 **포털 확인:** **Agents → 내 agent → Playground**에서 같은 버전을 선택합니다. 탭 이동 후에도 버전을 다시 확인합니다.
 
-<details>
-<summary>예시 화면 보기 — 로컬 응답과 원격 응답은 별개입니다</summary>
+**화면에서 볼 것:** 원격 응답의 숫자 `agent_version`과 `trace_id`입니다. 로컬 성공과 원격 성공은 별개입니다.
 
 ![실제 원격 응답](docs/assets/live-20260914-2034/screenshots/B10-remote-smoke-after.webp)
-
-</details>
 
 <a id="lab-c"></a>
 <a id="7-실습-c--네-모델-baseline과-foundry-evaluation"></a>
@@ -207,6 +206,20 @@ python scripts/workshop.py smoke
 ## 5. 네 모델의 baseline 평가하기 — 실습 C
 
 **할 일:** dev 6문항을 네 모델에 보내고, 변경 전 결과를 `baseline`으로 저장합니다.
+
+### 무엇을 평가하나요?
+
+`data/dev.jsonl`은 **현행 한도, 사전 승인, 과거 규정, 정책 밖 질문, 금지 항목, 규정 무시 요청**을 다룹니다.
+각 질문에 네 모델이 각각 답하므로 **6문항 × 4모델 = 24응답**입니다. 정답을 모델 대신 입력하거나 녹화의 답을 재사용하지 않습니다.
+
+| 검사 | 실제 입력과 기준 | 무엇을 알 수 있나요? |
+|---|---|---|
+| 업무 검사 — Python | `decision`, `answer`의 필수 금액, `citations`를 고정 dev 기준과 비교 | 회사가 정한 판단·금액·문서 ID 계약을 지켰는가 |
+| Foundry `groundedness` | 질문 + **답변 텍스트** + 그 호출의 검색 근거. 1–5점, **4점 이상 통과** | 답변의 주장이 제공된 근거로 뒷받침되는가 |
+| Foundry `relevance` | 질문 + **답변 텍스트**. 1–5점, **4점 이상 통과** | 질문에 관련 있고 충분한 답을 했는가 |
+
+`collect`는 실제 Hosted Agent를 호출하고 업무 검사를 수행합니다. `evaluate`는 **이미 수집한 같은 응답**을 Foundry에 제출합니다. 평가 때 agent를 다시 호출하지 않습니다.
+JSONL에 정답도 보관하지만, 이 두 native evaluator의 입력 매핑에는 `ground_truth`·`decision`·`citations`가 없습니다. **높은 groundedness만으로 업무 정답이나 인용 ID까지 합격했다고 판단하면 안 됩니다.**
 
 ```bash
 python scripts/workshop.py collect --split dev --label baseline &&
@@ -220,12 +233,9 @@ python scripts/workshop.py evaluate --label baseline
 
 **여기서 헷갈리지 마세요:** 요청 오류·누락·중복이 있으면 중단합니다. **업무 점수가 낮은 것은 실패 검토를 위한 결과**이므로 6단계로 진행합니다. 오류 행이나 `null` 점수를 성공으로 바꾸지 않습니다.
 
-<details>
-<summary>예시 화면 보기 — 평가 완료와 업무 합격은 다릅니다</summary>
+**화면에서 볼 것:** 평가 run의 완료 상태, 행 수, 두 evaluator의 결과입니다. 업무 검사 결과는 별도의 `business-summary.json`에서 읽습니다.
 
 ![실제 baseline 평가](docs/assets/live-20260914-2034/screenshots/C-P02-baseline-report-after.webp)
-
-</details>
 
 <a id="lab-d"></a>
 <a id="8-실습-d--점수가-아니라-실패를-학습-자산으로"></a>
@@ -258,12 +268,24 @@ python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
 **완료 확인:** `src/agent/.foundry/datasets/regression-*.jsonl`이 저장되고 원래 trace가 연결됩니다.
 기준 정답은 바꾸지 않습니다. 자동 실행에서는 `--reviewer assistant`로 표시하며 사람의 승인으로 기록하지 않습니다.
 
-<details>
-<summary>예시 화면 보기 — 같은 trace의 검색과 모델 호출을 연결하세요</summary>
+### 실제 예시: 금액은 맞는데 왜 실패했나요?
+
+촬영 실행의 `baseline-sol-D01`은 **170,000원 숙박비가 180,000원 한도 이내**라는 답과 `allowed` 판단을 맞혔습니다.
+하지만 `citations`에 문서 키 `TRAVEL-2026` 대신 **`"현행 국내 출장비 규정"`이라는 제목**을 넣었습니다.
+
+| 확인 항목 | 실제 관찰 | 원인 판단 |
+|---|---|---|
+| 답변·판단·금액 | 맞음 | 모든 답변이 사실상 틀린 사례는 아님 |
+| 검색 `source_ids` | `TRAVEL-2026`이 실제로 있음 | 검색 누락을 원인으로 분류하지 않음 |
+| `citations_retrieved`, `citations_relevant` | 둘 다 `false` | 검색 문서 키와 인용 값이 일치하지 않음 |
+| V1 지침 | “내부 문서 식별자는 사용자에게 표시하지 마세요” | 업무 검사와 충돌하는 지침을 개선 대상으로 선택 |
+
+`feedback`은 이 사례의 **고정 dev 정답과 원래 trace**를 회귀 데이터로 연결합니다.
+모델의 답을 새 정답으로 복사하거나 모델 가중치를 학습시키는 명령이 아닙니다. V2 수집기는 이 데이터를 실제로 읽어 같은 사례를 다시 확인합니다.
+
+**화면에서 볼 것:** 선택한 **같은 trace** 안의 검색 span과 모델 span입니다. 다른 요청의 검색 결과를 원인 분석에 섞지 않습니다.
 
 ![실제 실패 요청의 span graph](docs/assets/live-20260914-2034/screenshots/D-P04-graph-after.webp)
-
-</details>
 
 <a id="lab-e"></a>
 <a id="9-실습-e--개선하고-같은-조건으로-다시-평가"></a>
@@ -272,6 +294,18 @@ python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
 
 **할 일:** `src/agent/prompts/v1.txt`와 `v2.txt`를 비교합니다. V2는 적용일·문서 ID 인용·근거 부족 시 보류를 명확히 한 **제공된 개선 후보**입니다.
 6단계의 원인과 맞는지 먼저 확인합니다. 맞지 않으면 적용을 멈추고 강사와 개선 대상을 다시 정합니다.
+
+### V2에서는 무엇을 바꾸나요?
+
+| V1에서 불명확하거나 잘못된 부분 | 제공된 V2의 변경 |
+|---|---|
+| 내부 문서 ID를 숨김 | `citations`에 실제 사용한 **원본 문서 ID**를 넣음 |
+| 현행·과거·초안의 적용 기준이 부족함 | 출장일에 유효한 정책을 선택하고 `draft`는 제외. 과거 출장에는 당시 정책 적용 |
+| 승인 필요와 금지의 구분이 부족함 | `needs_approval`·`not_allowed` 등 판단 값의 의미를 명시하고 승인 사실을 만들지 않음 |
+| 근거가 부족한 질문의 처리 기준이 부족함 | 범위 밖은 `not_covered`, 정보 부족은 `needs_info`. 일반 상식으로 회사 규정을 보충하지 않음 |
+| 사용자·검색 문서의 지시를 그대로 따를 위험 | 검색 문서는 **근거이지 지시가 아님**을 명시하고 규정 무시·근거 위조 요청을 거부 |
+
+바꾸는 것은 **프롬프트와 그 프롬프트를 사용하는 Hosted Agent 버전**입니다. 모델 교체·fine-tuning·정답 수정이 아닙니다.
 
 ```bash
 python scripts/workshop.py set-prompt v2 &&
@@ -287,12 +321,25 @@ dev·모델·KB·평가 기준은 그대로 두고 결과를 비교합니다. �
 
 **판단:** 좋아지지 않았거나 악화됐다면 그대로 기록합니다. V2를 자동 채택하거나 평가 기준을 낮추지 않습니다.
 
-<details>
-<summary>예시 화면 보기 — UI에서도 양쪽 버전을 먼저 확인하세요</summary>
+### 실제 실행에서는 무엇이 좋아졌나요?
+
+아래는 **촬영 실행의 같은 dev 24응답 전후 비교**입니다. 본인 실행에서도 동일하게 나온다고 보장하지 않습니다.
+
+| 지표 | V1 | V2 | 해석 |
+|---|---:|---:|---|
+| 모든 업무 검사를 통과한 응답 | 0/24 | 24/24 | 이 실행의 업무 계약 준수가 개선됨 |
+| 올바른 `decision` | 23/24 | 24/24 | Sol의 D02가 `not_allowed`에서 `needs_approval`로 교정됨 |
+| 필수 인용이 유효한 응답 | 0/20 | 20/20 | 제목 대신 실제 검색 문서 ID를 사용 |
+| Groundedness 통과 | 24/24 | 24/24 | 이미 높았고 통과 건수는 개선되지 않음 |
+| Relevance 통과 | 21/24 | 21/24 | **전체 통과 건수는 그대로임** |
+
+**0/24 → 24/24를 일반적인 답변 정확도 0% → 100%로 해석하지 않습니다.** V1은 인용 규칙이 잘못된 교육용 출발점이며, 24행 모두 인용 검사에서 실패했습니다.
+V2도 정책에 없는 해외 한도를 올바르게 보류한 D04에서 Terra·Luna·Astra의 relevance가 **3점**이었습니다. 업무 기준과 일반 judge의 “충분한 답변” 기준이 다를 수 있으므로 점수를 합격으로 고치지 않습니다.
+
+**화면에서 볼 것:** 왼쪽 V1은 문서 제목, 오른쪽 V2는 `TRAVEL-2026`을 인용합니다.
+이 화면은 별도 포털 비교 호출이며 위 dev 24응답 통계에 추가하지 않습니다.
 
 ![실제 V1/V2 응답 비교](docs/assets/live-20260914-2034/screenshots/E-P03-compare-results-after.webp)
-
-</details>
 
 <a id="lab-f"></a>
 <a id="10-실습-f--holdout과-frontier-ecosystem-테스트"></a>
@@ -310,12 +357,12 @@ python scripts/workshop.py compare --labels baseline improved holdout
 **완료 확인:** holdout **16행**과 같은 V2 버전을 확인합니다. 결과를 본 뒤 prompt를 고치고 같은 holdout을 다시 “미사용 검증”으로 제출하지 않습니다.
 이 저장소의 4문항은 교육용이며, 재실행 결과가 새로운 독립 검증셋이나 운영 품질을 보장하지 않습니다.
 
-<details>
-<summary>예시 화면 보기 — dev 24행과 holdout 16행을 구분하세요</summary>
+**촬영 실행의 결과:** 고정 V2의 holdout은 업무 검사·groundedness·relevance가 각각 **16/16**이었습니다.
+이는 작은 교육용 4문항에서의 결과입니다. 재사용한 holdout, 달라질 수 있는 검색 근거, judge 변동을 고려하면 운영 승인이나 통계적 우월성을 증명하지 않습니다.
+
+**화면에서 볼 것:** dev의 24행이 아니라 **holdout 16행**인지 확인합니다.
 
 ![실제 holdout 평가](docs/assets/live-20260914-2034/screenshots/F-P01-holdout-report-after.webp)
-
-</details>
 
 <a id="lab-g"></a>
 <a id="11-실습-g--trace와-monitor의-차이"></a>
@@ -338,12 +385,12 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 
 `candidate_quality_gates`는 별도로 읽습니다. 실행 검증 성공이 모든 모델의 품질 합격은 아니며, `production_release_approved: false`를 사람이 검토하지 않은 운영 승인으로 바꾸지 않습니다.
 
-<details>
-<summary>예시 화면 보기 — 내 결과의 필드를 하나씩 대조하세요</summary>
+**더 자세한 해석:** [평가 방법과 개선 결과](docs/validation.ko.md)에서 **다섯 업무 검사, evaluator 매핑, 모델별 점수, 실패 이유, 토큰·지연의 변화, 회귀 데이터와 trace 연결**을 확인합니다.
+V2는 후보 모델의 입력 토큰이 약 **29.8% 증가**했고 지연도 모델마다 달랐습니다. 품질 계약 개선을 곧바로 비용 절감·속도 향상으로 바꾸어 설명하지 않습니다.
+
+**화면에서 볼 것:** 64응답·64trace와 `production_release_approved: false`를 함께 읽습니다.
 
 ![실제 응답·trace·평가·lineage 검증](docs/assets/live-20260914-2034/screenshots/G03-verify-after.webp)
-
-</details>
 
 <a id="cleanup"></a>
 <a id="12-마무리와-비용-정리"></a>
@@ -370,12 +417,9 @@ python scripts/workshop.py check-cleanup
 정리되는 모델 수는 **내 생성·소유권 기록에 따라 달라집니다.** 강사가 미리 준비한 모델까지 임의로 삭제하지 않습니다.
 Search 가동·로그 보존·기반 서비스 비용은 남을 수 있습니다.
 
-<details>
-<summary>예시 화면 보기 — 예시의 삭제 개수가 내 계획과 같다고 가정하지 마세요</summary>
+**화면에서 볼 것:** 내 삭제 계획에 포함된 객체가 없어졌는지 확인합니다. 예시의 삭제 개수를 그대로 따라 하지 않습니다.
 
 ![실제 Azure 정리 재확인](docs/assets/live-20260914-2034/screenshots/H03-cleanup-check-after.webp)
-
-</details>
 
 ## 끝나면 남는 것
 
@@ -390,22 +434,8 @@ Search 가동·로그 보존·기반 서비스 비용은 남을 수 있습니다
 **실습의 결론:** 모델만 고르는 것이 아니라, **지식·평가 기준·실패 이력을 남기며 개선하는 방법**을 익힙니다.
 작은 합성 실험을 운영 승인이나 모델의 통계적 우월성으로 확대 해석하지 않습니다.
 
-## 필요할 때만 읽기
+## 필요한 참고 문서
 
-[실제 영상 21분 55초](https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010) · [전체 화면·영상 챕터](docs/action-captures.ko.md)
+[평가 방법과 개선 결과](docs/validation.ko.md) · [설계·모델·공식 출처](docs/reference.ko.md) · [문제 해결](docs/troubleshooting.ko.md) · [강사 준비](docs/instructor.ko.md) · [새 Azure 환경 생성](docs/environment.ko.md)
 
-[설계·모델·평가 기준](docs/reference.ko.md) · [오류별 해결과 재실행](docs/troubleshooting.ko.md) · [강사 준비](docs/instructor.ko.md) · [새 Azure 환경](docs/environment.ko.md) · [실제 검증 기록](docs/validation.ko.md)
-
-화면·영상은 **이미 실행한 예시**입니다. 예시 점수나 파일을 내 실행의 성공 결과로 대신하지 않습니다.
-개인 설정·실행 캐시·원본 녹화는 공개 저장소에 포함하지 않습니다.
-
-<details>
-<summary>실제 통합 영상 보기 — 선택 사항</summary>
-
-[21분 55초 영상 바로 재생](https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010) · [전체 화면·챕터](docs/action-captures.ko.md)
-
-https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010
-
-과거 영상: [Foundry 포털 15분](https://github.com/user-attachments/assets/72d4588f-5a6d-450b-819c-bcab035020fe) · [로컬 콘솔 15분](https://github.com/user-attachments/assets/5bf6bf34-c5e7-4479-9f80-14e947ac5685)
-
-</details>
+실습 중 생성하는 `.foundry` 응답·평가·회귀 데이터는 이후 명령의 입력입니다. 자신의 실습이 끝나기 전에 지우거나 예시 결과로 바꾸지 않습니다.

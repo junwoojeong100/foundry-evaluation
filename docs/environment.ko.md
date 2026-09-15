@@ -35,9 +35,9 @@ python -m pip install -r requirements.lock.txt
 ```bash
 REPO_ROOT="$(pwd)"
 RUN_ID="$(date -u +%Y%m%d-%H%M%S)"
-RUN_DIR="$REPO_ROOT/.recording/$RUN_ID"
-python recording/action_setup.py init --run-dir "$RUN_DIR" &&
-python recording/action_setup.py prepare --run-dir "$RUN_DIR"
+RUN_DIR="$REPO_ROOT/.workshop/$RUN_ID"
+python scripts/prepare_environment.py init --run-dir "$RUN_DIR" &&
+python scripts/prepare_environment.py prepare --run-dir "$RUN_DIR"
 ```
 
 새 소스 폴더에 독립 가상환경을 만들고, Azure를 호출하기 전에 테스트합니다.
@@ -71,9 +71,9 @@ python -m unittest discover -s tests -v
 
 ```bash
 cd "$REPO_ROOT" &&
-python recording/provision.py identity --run-dir "$RUN_DIR" &&
-python recording/provision.py ownership --run-dir "$RUN_DIR" &&
-python recording/provision.py model-capacity --run-dir "$RUN_DIR"
+python scripts/provision_environment.py identity --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py ownership --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 ```
 
 **완료 확인:** 세 `matches` 값이 `true`, 구독은 `Enabled`이며 지정한 네 모델과 보조 모델의 용량 레코드가 있습니다.
@@ -95,12 +95,12 @@ python recording/provision.py model-capacity --run-dir "$RUN_DIR"
 **할 일:** `config.json`에 생성된 새 이름을 확인한 뒤 실행합니다. 같은 자원을 수동 `az ... create`로 한 번 더 만들지 않습니다.
 
 ```bash
-python recording/provision.py group --run-dir "$RUN_DIR" &&
-python recording/provision.py foundry --run-dir "$RUN_DIR" &&
-python recording/provision.py project --run-dir "$RUN_DIR" &&
-python recording/provision.py logs --run-dir "$RUN_DIR" &&
-python recording/provision.py insights --run-dir "$RUN_DIR" &&
-python recording/provision.py search --run-dir "$RUN_DIR"
+python scripts/provision_environment.py group --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py foundry --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py project --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py logs --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py insights --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py search --run-dir "$RUN_DIR"
 ```
 
 **완료 확인:** Azure Portal의 **새 리소스 그룹 → Resources**에 Foundry 계정·프로젝트·Search·Application Insights·Log Analytics가 있습니다.
@@ -116,9 +116,9 @@ Portal의 ARM **Deployments** 목록은 Foundry 모델 배포 목록과 다릅�
 실패한 대기 기록을 보존하고, 자원을 재생성하거나 리전을 바꾸지 않습니다.
 
 ```bash
-python recording/provision.py search-status --run-dir "$RUN_DIR" &&
-python recording/provision.py wait-search --run-dir "$RUN_DIR" &&
-python recording/provision.py search-status --run-dir "$RUN_DIR"
+python scripts/provision_environment.py search-status --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py wait-search --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py search-status --run-dir "$RUN_DIR"
 ```
 
 같은 자원의 `provisioning_state: Succeeded`, `status: running`을 확인한 뒤 4단계로 진행합니다.
@@ -139,13 +139,13 @@ python recording/provision.py search-status --run-dir "$RUN_DIR"
 다른 참가자는 [강사의 권한 체크리스트](instructor.ko.md#권한)에 따라 별도로 준비합니다.
 
 ```bash
-python recording/provision.py user-foundry --run-dir "$RUN_DIR" &&
-python recording/provision.py user-model --run-dir "$RUN_DIR" &&
-python recording/provision.py user-search-service --run-dir "$RUN_DIR" &&
-python recording/provision.py user-search-data --run-dir "$RUN_DIR" &&
-python recording/provision.py project-monitor --run-dir "$RUN_DIR" &&
-python recording/provision.py insights-connection --run-dir "$RUN_DIR" &&
-python recording/provision.py search-connection --run-dir "$RUN_DIR"
+python scripts/provision_environment.py user-foundry --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py user-model --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py user-search-service --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py user-search-data --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py project-monitor --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py insights-connection --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py search-connection --run-dir "$RUN_DIR"
 ```
 
 **완료 확인:** 사용자에게 새 프로젝트의 Foundry User, 새 계정의 OpenAI User, 새 Search의 작성·적재 역할이 있습니다.
@@ -159,8 +159,8 @@ python recording/provision.py search-connection --run-dir "$RUN_DIR"
 **할 일:** 고정 planner/judge를 배포하고 Azure가 반환한 실제 endpoint를 새 실행 폴더에 반영합니다.
 
 ```bash
-python recording/provision.py auxiliary --run-dir "$RUN_DIR" &&
-python recording/provision.py ready --run-dir "$RUN_DIR"
+python scripts/provision_environment.py auxiliary --run-dir "$RUN_DIR" &&
+python scripts/provision_environment.py ready --run-dir "$RUN_DIR"
 ```
 
 **완료 확인:** 새 그룹·프로젝트·Search와 두 endpoint를 확인합니다. Project endpoint와 Azure OpenAI endpoint는 용도가 다릅니다.
@@ -195,16 +195,13 @@ Calibration 예제 2개는 본평가 64응답이 아닙니다. 모델 접근·�
 
 </details>
 
-## 녹화 예시·검증·비용
+## 종료와 비용 관리
 
 화면은 과거 `rg-foundry-evaluation-20260914-2034` 실행입니다. **내 run ID·이름·결과는 다릅니다.**
-당시에는 삭제 가능한 이전 전용 그룹이 없어 삭제 0건이었고, 공유 환경과 다른 리포의 그룹은 보존했습니다.
 
 참가자의 `cleanup`은 그 폴더에서 소유한 agent·세션·모델·KB 객체·역할만 정리합니다.
 **강사가 준비한 기반 서비스와 모델까지 모두 삭제하지 않습니다.** 남은 Search·로그 보존·보조 모델의 비용과 최종 정리는 강사가 별도로 관리합니다.
 
-실제 생성·대기 실패·평가·정리 결과는 [검증 기록](validation.ko.md), 모든 절차의 화면·영상은 [전체 캡처](action-captures.ko.md)에 있습니다.
-당시 별도 자동 경보·거버넌스 ARM 실패도 보존했으며 공유 구독 설정을 임의 수정하지 않았습니다.
-이 문서의 절차 정리를 새 Azure 재실행의 성공 기록으로 해석하지 않습니다.
+이후 실행은 [README](../README.md), 점수와 개선의 해석은 [평가 방법과 개선 결과](validation.ko.md)를 따릅니다.
 
 구성 근거: [공식 Foundry 기본 인프라 예제](https://github.com/Azure-Samples/azd-ai-starter-basic/tree/main/infra) · [Search knowledge retrieval 과금 설정](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-enable-disable).

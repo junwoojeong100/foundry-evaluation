@@ -1,1 +1,0 @@
-azure-monitor-query>=1.4,<3

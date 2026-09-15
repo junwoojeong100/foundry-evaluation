@@ -12,7 +12,7 @@ from unittest.mock import patch
 from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path[:0] = [str(ROOT / "scripts"), str(ROOT / "recording")]
+sys.path.insert(0, str(ROOT / "scripts"))
 GUIDES = [
     ROOT / "README.md",
     *(ROOT / "docs" / name for name in (
@@ -91,16 +91,15 @@ class GuideTests(unittest.TestCase):
                 self.assertIn("**할 일:**", body)
                 self.assertIn("**완료 확인:**", body)
                 self.assertTrue(bash_blocks(body))
-                self.assertLessEqual(body.count("!["), 1)
+                self.assertEqual(body.count("!["), 1)
 
-    def test_required_commands_are_visible_and_images_are_optional(self):
+    def test_commands_and_stage_screenshots_are_visible_without_expanding(self):
         details = re.findall(r"<details>.*?</details>", self.readme, re.DOTALL)
-        self.assertTrue(details)
         for detail in details:
             self.assertFalse(bash_blocks(detail))
+            self.assertNotIn("![", detail)
         visible = re.sub(r"<details>.*?</details>", "", self.readme, flags=re.DOTALL)
-        self.assertNotIn("![", visible)
-        self.assertLessEqual(self.readme.count("!["), 10)
+        self.assertEqual(visible.count("!["), 10)
 
     def test_bash_examples_have_valid_syntax_without_execution(self):
         for path in GUIDES:
@@ -126,8 +125,8 @@ class GuideTests(unittest.TestCase):
     def test_python_examples_match_real_parsers_before_any_dispatch(self):
         modules = {
             "scripts/workshop.py": importlib.import_module("workshop"),
-            "recording/action_setup.py": importlib.import_module("action_setup"),
-            "recording/provision.py": importlib.import_module("provision"),
+            "scripts/prepare_environment.py": importlib.import_module("prepare_environment"),
+            "scripts/provision_environment.py": importlib.import_module("provision_environment"),
         }
         for path in GUIDES:
             for block in bash_blocks(path.read_text()):
@@ -221,7 +220,7 @@ class GuideTests(unittest.TestCase):
         cache_paths = [
             ".azure-cli/azureProfile.json",
             ".azure-cli/msal_token_cache.json",
-            ".recording/example/workshop/.azure-cli/msal_token_cache.json",
+            ".workshop/example/workshop/.azure-cli/msal_token_cache.json",
         ]
         ignored = subprocess.run(
             ["git", "check-ignore", "--stdin"], cwd=ROOT,
@@ -252,10 +251,27 @@ class GuideTests(unittest.TestCase):
         self.assertNotIn("20260914-2034", "\n".join(blocks))
         self.assertNotIn("cd ../../..", "\n".join(blocks))
         local_check = next(i for i, block in enumerate(blocks) if "unittest discover -s tests -v" in block)
-        first_cloud = next(i for i, block in enumerate(blocks) if "provision.py identity" in block)
+        first_cloud = next(i for i, block in enumerate(blocks) if "provision_environment.py identity" in block)
         self.assertLess(local_check, first_cloud)
         environment = (ROOT / "docs/environment.ko.md").read_text()
-        self.assertLess(environment.index("../README.md#login"), environment.index("provision.py identity"))
+        self.assertLess(environment.index("../README.md#login"), environment.index("provision_environment.py identity"))
+
+    def test_evaluation_explanation_preserves_the_frozen_lineage(self):
+        from common import digest, read_json, read_jsonl
+        from prompting import load_prompt
+
+        explanation = (ROOT / "docs/validation.ko.md").read_text()
+        for split in ("dev", "holdout"):
+            self.assertIn(digest(read_jsonl(ROOT / "data" / f"{split}.jsonl")), explanation)
+        self.assertIn(digest(read_json(ROOT / "data/policies.json")), explanation)
+        for version in ("v1", "v2"):
+            self.assertIn(load_prompt(version)[1], explanation)
+        for field in (
+            "citations_retrieved", "citations_relevant", "citation_present",
+            "required_numbers", "ground_truth", "data_mapping",
+            "production_release_approved: false",
+        ):
+            self.assertIn(field, explanation)
 
     def test_all_public_local_links_and_anchors_resolve(self):
         documents = [ROOT / "README.md", *sorted((ROOT / "docs").glob("*.md"))]

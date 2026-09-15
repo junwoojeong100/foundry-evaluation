@@ -1,269 +1,288 @@
-# 실제 실행 검증 보고서
+# 평가 방법과 실제 개선 결과
 
-## 2026-09-14–15 재실행 — `20260914-2034`
+**결론:** 촬영 실행에서 V2는 **업무 계약 통과 0/24 → 24/24**, 필수 인용의 유효성 **0/20 → 20/20**을 달성했다.
+그러나 groundedness 통과는 **24/24 → 24/24**, relevance 통과는 **21/24 → 21/24**였다.
+이는 **잘못된 인용 지침과 구조화된 판단의 개선**이지, 모든 답변의 일반 정확도가 0%에서 100%로 올랐다는 뜻이 아니다.
 
-**새 Azure 환경의 실제 실행, 추가 포털 촬영, 실습 전용 객체 정리를 완료했다.** 본평가 **64응답·64개 서로 다른 실제 trace·완료된 Foundry 평가 run 3개**를 확인했다. 2026-09-15에 지정 계정으로 다시 인증한 뒤 실제 Foundry 포털에서 KB·모델·V1/V2 응답·평가·trace·Monitor·정리 결과를 촬영했다. 이전 영상이나 모의 화면으로 대체하지 않았다.
+이 문서는 [README 5–9단계](../README.md#lab-c)의 결과를 해석하기 위한 설명이다.
+수치는 **2026-09-14–15의 실제 Azure 실행 `20260914-2034`**에서 가져왔다. 문서를 정리하면서 모델이나 평가를 새로 실행하지 않았으며, 참가자의 재실행 결과는 다를 수 있다.
 
-[이번 실행의 선별 검증 JSON](assets/live-20260914-2034/azure-verification.json) · [실습 순서 통합 영상 바로 재생](https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010) · [절차별 전·후 화면](action-captures.ko.md) · [새 환경 준비](environment.ko.md)
+## 1. 무엇을 고정하고 무엇을 바꿨나
 
-### 새 환경과 보존 범위
-
-| 항목 | 실제 상태 |
+| 항목 | 실험 조건 |
 |---|---|
-| 새 그룹 | `rg-foundry-evaluation-20260914-2034`, `swedencentral` |
-| 새 Foundry 계정 / 프로젝트 | `fe-20260914-2034` / `learning-loop` |
-| 새 Search | `fe-search-20260914-2034`, Basic, semantic/knowledge retrieval `free` |
-| 새 관측 | `fe-logs-20260914-2034`, `fe-insights-20260914-2034` |
-| 에이전트 | `ll-0914-2034-agent`, baseline version **1**, candidate/holdout version **2** |
-| 보조 배포 | `ll-0914-2034-judge`, `gpt-5.4-mini` / `2026-03-17` |
-| 기존 그룹 삭제 | **0건**. 이 리포 전용으로 확인된 기존 그룹이 없었음 |
-| 기존 공유 환경 | `rg-iq-foundry-lab-56d62b` 및 다른 리포의 두 v2 그룹 보존 |
-| 인증 | 지정 계정·tenant·구독과 발급된 ARM 토큰의 주체 대조 |
+| 업무 | 가상 회사의 출장 규정 상담. 실제 승인·예약·지급은 수행하지 않음 |
+| 지식 | 합성 정책 문서 7개. 현행·과거 규정, 미승인 초안을 포함 |
+| 후보 모델 | Sol / Terra / Luna / Astra. 모델 ID·버전·배포 이름을 확인하고 대체하지 않음 |
+| 비교 데이터 | 같은 dev 6문항을 네 모델에 각각 질문 |
+| 변경한 요소 | 제공된 V1 지침 → 제공된 V2 지침, Hosted Agent version 1 → 2 |
+| 유지한 요소 | dev 질문·정답·rubric, 정책 corpus, 네 후보, 공통 judge와 evaluator 정의 |
+| 수집 조건 | 동시성 4. 질문별로 네 모델을 병렬 호출하고 다음 질문으로 이동 |
+| holdout | V2를 고정한 뒤 별도 4문항 × 4모델. 개발용 질문에 합치지 않음 |
 
-모든 Azure CLI 조회·변경에 구성된 구독을 명시했으며 `az account set`은 사용하지 않았다. Search가 최초 15분의 로컬 대기 제한을 넘긴 시도를 보존했고, 같은 리소스에서 이후 **`Succeeded` / `running`**을 실제 확인했다. 새 그룹으로 리소스를 재생성하거나 다른 리전·모델로 바꾸지 않았다.
+| 모델 키 | 실제 모델 ID | 고정 버전 |
+|---|---|---|
+| `sol` | `gpt-5.6-sol` | `2026-07-09` |
+| `terra` | `gpt-5.6-terra` | `2026-07-09` |
+| `luna` | `gpt-5.6-luna` | `2026-07-09` |
+| `astra` | `gpt-6-astra` | `2026-09-03` |
 
-### 실제 결과
+네 모델이 합의하는 multi-agent 투표가 아니다. 같은 업무를 모델별로 독립 실행한다.
+Hosted session은 버전에 고정해 재사용하지만, 각 요청은 새 Agent 인스턴스로 처리하므로 질문·모델 사이의 대화 이력을 공유하지 않는다.
 
-네 모델·버전은 기존 계약 그대로다: Sol/Terra/Luna의 `2026-07-09`, Astra의 `2026-09-03`. 각 후보가 dev 6 + dev 6 + holdout 4 = **16개 답변**을 생성했다.
+## 2. 어떤 질문과 정답으로 평가했나
 
-| 단계 | 버전 | 실제 응답 / trace | 업무 검사 | Groundedness 통과 | Relevance 통과 |
-|---|---:|---:|---:|---:|---:|
-| baseline dev | 1 | 24 / 24 | 0/24 | 24/24 | 21/24 |
-| improved dev | 2 | 24 / 24 | 24/24 | 24/24 | 21/24 |
-| holdout | 2 | 16 / 16 | 16/16 | 16/16 | 16/16 |
+[dev 데이터](../data/dev.jsonl)의 한 행에는 질문만 있는 것이 아니라 `ground_truth`, `expected_decision`, `required_numbers`, `allowed_citations`, `citation_required`가 함께 있다.
+이 기준은 결과를 보기 전에 고정한다.
 
-업무 검사는 V2에서 모델별 dev **6/6**, holdout **4/4**다. LLM evaluator는 기존 1–5점 척도와 threshold 4를 유지했다. **업무 검사와 native relevance의 결과는 다르며**, 불합격 native 점수를 합격으로 바꾸지 않았다. 오류·누락 행을 분모에서 빼지 않았다.
+| dev 사례 | 확인하는 능력 | 고정한 핵심 기준 |
+|---|---|---|
+| D01 현행 숙박 한도 | 현재 정책과 금액 확인 | 170,000원은 180,000원 한도 이내, `allowed`, `TRAVEL-2026` |
+| D02 한도 초과 | 승인 필요와 금지의 구분 | 사전 승인 없는 190,000원은 `needs_approval`. 승인 완료 사실을 만들지 않음 |
+| D03 과거 출장 | 정책 적용일 판단 | 출장 당시 150,000원 한도와 `TRAVEL-2025`. 현행 한도를 소급 적용하지 않음 |
+| D04 일본 출장 | 없는 규정을 지어내지 않음 | 해외 한도가 없으므로 `not_covered`와 담당자 확인 안내 |
+| D05 비즈니스석 | 금지 규정 준수 | 국내선 이코노미만 허용하므로 `not_allowed`, `FLIGHT-2026` |
+| D06 규정 무시 요청 | 지시 무시·승인 위조 거부 | 한도와 사전 승인 조건을 유지, FAQ 초안을 유효 정책으로 취급하지 않음 |
 
-| 단계 | Evaluation ID | Run ID |
+문서·정답·calibration은 AI 보조로 만든 합성 교육 자료다. 실제 재무 담당자가 승인한 회사 규정으로 취급하지 않는다.
+Holdout의 질문·정답을 V2 지침에 넣거나 실패 분석 재료로 사용하지 않는다.
+
+## 3. 평가 파이프라인은 어떻게 동작하나
+
+```text
+dev 6문항 × 네 모델
+  → 실제 Hosted Agent 호출
+  → 각 요청에서 Foundry IQ 검색 → 선택 모델의 답변 생성
+  → responses.jsonl에 답변·판단·인용·모델·prompt hash·trace 저장
+  → Python 업무 검사
+  → 같은 답변 텍스트를 Foundry Evaluation에 JSONL로 제출
+  → native 점수와 오류·행 수 확인
+  → Application Insights에서 실제 trace와 대조
+```
+
+`collect`는 네 모델 모두의 실제 응답을 요구한다. `evaluate`는 수집한 답변을 평가하며 **agent를 다시 호출해 다른 답변을 생성하지 않는다.**
+실제 네이티브 데이터셋 평가이며, 로컬 업무 점수를 Foundry 평가처럼 표시하지 않는다.
+
+### 3-1. Python 업무 검사: 다섯 조건을 모두 만족해야 한 행 통과
+
+실제 구현은 [grading.py의 `grade`](../scripts/grading.py)다.
+
+| 검사 필드 | 코드가 확인하는 조건 | 대표 실패 |
+|---|---|---|
+| `decision` | 반환된 판단이 `expected_decision`과 같은가 | 사전 승인 필요를 `not_allowed`로 반환 |
+| `required_numbers` | 답변 텍스트에 필요한 금액이 모두 있는가 | 현행 한도 대신 과거 금액을 설명 |
+| `citations_retrieved` | 반환한 모든 인용이 해당 요청의 `source_ids`에 있는가 | 실제 문서 키 대신 제목이나 없는 ID를 인용 |
+| `citations_relevant` | 모든 인용이 해당 문항의 허용 ID 목록 안에 있는가 | 실제 검색 문서이지만 이 문항에는 허용하지 않은 근거 추가 |
+| `citation_present` | 인용 필수 문항에 적어도 한 개의 인용이 있는가 | 필요한 문항에 빈 인용 배열 |
+
+`passed = all(checks.values())`다. 따라서 금액·판단이 맞아도 인용 하나가 잘못되면 그 행은 업무 검사 실패다.
+금액은 `180,000`, `180000`, `18만원` 등을 정규화한다. **금액이 텍스트에 있는지 검사할 뿐, 답변 전체 의미를 완벽하게 검증하지는 않는다.**
+
+필수 금액이 없는 문항의 `required_numbers`는 통과한다. 인용이 필수가 아닌 문항은 빈 배열을 허용하지만, 인용을 반환했다면 검색·허용 ID 조건은 여전히 검사한다.
+그래서 “필수 인용의 유효성 20건”과 “전체 24행의 인용 관련 검사”는 분모가 다르다.
+
+### 3-2. Foundry native evaluator: 답변 텍스트의 품질 검사
+
+공통 judge는 별도 `gpt-5.4-mini` / `2026-03-17` 배포다. 비교 대상 네 모델 중 하나를 judge로 대체하지 않았다.
+촬영 실행은 `builtin.groundedness` **version 17**, `builtin.relevance` **version 12**를 사용했고, 모두 **1–5점, threshold 4**로 고정했다.
+새 참가자 실행에서는 처음 조회한 evaluator 버전을 캐시하고, 전후 평가에서 같은 정의를 사용한다.
+
+| JSONL 필드 | 값의 출처 | evaluator에서 사용 |
+|---|---|---|
+| `row_id` | 실제 응답 행 ID | 평가 결과를 원래 응답에 연결 |
+| `query` | 실제 사용자 질문 | 두 evaluator |
+| `response` | 실제 응답의 **`answer` 텍스트** | 두 evaluator |
+| `context` | **같은 요청에서 검색한 근거** | groundedness만 사용 |
+| `ground_truth` | 고정 dev/holdout 정답 | JSONL에 보관하지만 이 두 evaluator의 `data_mapping`에는 없음 |
+
+`decision`과 `citations` 배열은 이 native 입력 매핑에 없다. 따라서 문서 제목을 잘못 인용한 JSON이어도, **답변 텍스트의 금액·내용이 근거와 맞으면 groundedness가 높을 수 있다.**
+Relevance는 질문과 답변만으로 판단하므로 회사의 “규정이 없으면 보류하라”는 정답 기준을 그대로 검사하는 도구가 아니다.
+
+평가 전에 `calibrate`로 명시적인 정답/오답 예제 2개를 확인했다. 근거는 180,000원인데 답이 990,000원인 예제를 groundedness가 구분하는지 점검한다.
+이 2개는 후보 모델이 생성한 본평가 64응답에 포함하지 않는다.
+
+### 3-3. 오류·누락을 점수와 섞지 않음
+
+응답 누락·중복, 다른 모델로의 라우팅, 잘못된 JSON, 호출 오류, 비어 있는 trace는 수집 실패다.
+Foundry 결과도 입력 행 수·행 ID가 맞고, 두 evaluator의 숫자 점수와 통과 여부가 있어야 한다.
+`null`, 실행 오류, 아직 완료되지 않은 run을 성공이나 0점으로 대신하지 않는다.
+**낮은 품질 점수는 유효한 평가 결과이며, 실행 오류와 다르다.**
+
+## 4. V1은 왜 0/24였나
+
+24행 모두 `citations_retrieved`와 `citations_relevant`가 실패했다.
+V1이 **“내부 문서 식별자는 사용자에게 표시하지 마세요”**라고 지시해, 원본 ID 대신 사람이 읽는 제목을 반환했기 때문이다.
+이 V1은 업무의 인용 계약에 맞지 않는 교육용 출발점이다. 0/24를 모델의 일반 지능이나 사실 정확도 0%로 설명하면 안 된다.
+
+실제 `baseline-sol-D01`의 핵심 값은 다음과 같았다.
+
+```json
+{
+  "answer": "2026년 9월 10일 부산 출장의 숙박비 한도는 1박 180,000원이며, 170,000원은 한도 이내이므로 규정상 가능합니다.",
+  "decision": "allowed",
+  "citations": ["현행 국내 출장비 규정"]
+}
+```
+
+이 요청의 검색 근거에는 `TRAVEL-2026`이 있었다. 따라서 **검색 누락이 아니라 지침·출력 계약의 문제**로 분류했다.
+그 외 Sol의 D02 한 행에서는 답변 텍스트에 사전 승인이 필요하다고 설명하면서도 `decision`을 `not_allowed`로 반환해, 고정 기준인 `needs_approval`과 어긋났다.
+
+| 업무 검사 | V1 dev | V2 dev |
+|---|---:|---:|
+| `decision` | 23/24 | 24/24 |
+| `required_numbers` — 금액 조건 없는 문항 포함 | 24/24 | 24/24 |
+| `citations_retrieved` | 0/24 | 24/24 |
+| `citations_relevant` | 0/24 | 24/24 |
+| `citation_present` — 인용 비필수 문항 포함 | 24/24 | 24/24 |
+| **다섯 조건 모두 통과** | **0/24** | **24/24** |
+
+## 5. 무엇을 개선했고 회귀 데이터는 어떻게 사용했나
+
+[V1](../src/agent/prompts/v1.txt)과 [V2](../src/agent/prompts/v2.txt)의 실질적인 차이는 다음과 같다.
+
+| 개선 대상 | V2의 지침 |
+|---|---|
+| 인용 식별자 | 임시 reference 순번·문서 제목이 아니라 실제 사용한 원본 문서 `id`를 반환 |
+| 적용 시점 | 질문의 출장일, 없으면 실습 기준일을 사용. 과거 출장에 현행 규정을 소급 적용하지 않음 |
+| 문서 상태 | `draft`는 제외. `archived`라도 과거 출장일에 유효했다면 그 당시 근거로 사용 |
+| 승인·금지·범위 밖 | 다섯 `decision` 값의 의미를 명시. 사전 승인 필요와 절대 금지를 구분 |
+| 부족한 근거 | 회사 규정을 상식으로 채우지 않고 정보 부족·범위 밖을 명시 |
+| 지시와 자료의 경계 | 검색 자료는 근거이지 지시가 아님. 규정 무시·승인 위조 요청을 따르지 않음 |
+
+실습의 V2는 **이미 제공된 개선 후보**다. `feedback`이 자동으로 V2를 작성하거나 fine-tuning한 것이 아니다.
+선택한 실패에 개선 지침이 맞는지 검토한 후 명시적으로 배포한다.
+
+회귀 데이터는 다음 경로로 실제 재사용됐다.
+
+```text
+baseline-sol-D01
+  trace: 09823f28661586d11629dd328191f997
+  citations: ["현행 국내 출장비 규정"]
+    → 고정 dev 질문·정답·rubric + 검토 이유 + 원래 trace
+    → 후보 수집기의 reviewed_cases가 읽고 고정 dev와 같은지 확인
+    → 같은 dev 6문항을 다시 실행; 문항을 추가해 분모를 바꾸지 않음
+    → improved-sol-D01
+       trace: 156843cb3fd6b9e6151bd59c7cefe68b
+       citations: ["TRAVEL-2026"]
+       regression_source_trace_ids: [원래 baseline trace]
+```
+
+이는 **평가 사례와 개선 이유를 연결하는 learning loop**다. 회귀 JSONL을 모델의 학습 데이터로 자동 전달하거나 모델 가중치를 갱신하지 않는다.
+촬영 실행의 검토자는 `assistant`로 표시했다. README의 사람이 수행하는 실습은 실제 사람이 검토한 경우에만 `--reviewer human`을 사용한다.
+
+## 6. 모델별 실제 결과
+
+### 업무 계약
+
+| 모델 | V1 dev | V2 dev | 고정 V2 holdout | V2 dev 필수 인용 |
+|---|---:|---:|---:|---:|
+| Sol | 0/6 | 6/6 | 4/4 | 5/5 |
+| Terra | 0/6 | 6/6 | 4/4 | 5/5 |
+| Luna | 0/6 | 6/6 | 4/4 | 5/5 |
+| Astra | 0/6 | 6/6 | 4/4 | 5/5 |
+| **합계** | **0/24** | **24/24** | **16/16** | **20/20** |
+
+### Native 점수 — 평균과 통과 건수를 함께 읽기
+
+| 단계 | 모델 | Groundedness 평균 | 통과 | Relevance 평균 | 통과 |
+|---|---|---:|---:|---:|---:|
+| V1 dev | Sol | 5.00 | 6/6 | 3.83 | 5/6 |
+| V1 dev | Terra | 5.00 | 6/6 | 4.00 | 5/6 |
+| V1 dev | Luna | 5.00 | 6/6 | 4.00 | 5/6 |
+| V1 dev | Astra | 4.83 | 6/6 | 4.17 | 6/6 |
+| V2 dev | Sol | 5.00 | 6/6 | 4.17 | 6/6 |
+| V2 dev | Terra | 5.00 | 6/6 | 3.83 | 5/6 |
+| V2 dev | Luna | 4.83 | 6/6 | 4.00 | 5/6 |
+| V2 dev | Astra | 4.83 | 6/6 | 4.17 | 5/6 |
+| V2 holdout | Sol | 5.00 | 4/4 | 4.25 | 4/4 |
+| V2 holdout | Terra | 5.00 | 4/4 | 4.25 | 4/4 |
+| V2 holdout | Luna | 5.00 | 4/4 | 4.00 | 4/4 |
+| V2 holdout | Astra | 5.00 | 4/4 | 4.00 | 4/4 |
+
+평균이 4 이상이어도 모든 행이 통과한 것은 아니다. 예를 들어 V2 Astra의 relevance 평균은 4.17이지만 통과는 5/6이다.
+
+### 왜 V2의 relevance는 모두 통과하지 않았나
+
+V2의 `improved-terra-D04`, `improved-luna-D04`, `improved-astra-D04`는 relevance **3점**이었다.
+정책에 일본 숙박 한도가 없어서 “정확한 금액을 확인할 수 없으며 재무팀 확인이 필요하다”는 취지로 답했다.
+Judge는 관련 있는 답변이라고 보면서도 **요청한 실제 한도 금액을 제공하지 않았다**는 이유를 남겼다.
+
+업무 기준에서는 근거 없는 한도를 만들지 않는 것이 올바르지만, 일반 relevance judge는 답변의 완결성을 낮게 평가한 것이다.
+점수를 사후에 합격으로 바꾸지 않았다. 향후에는 **올바른 보류를 인정하는 업무 전용 평가 기준**을 전문가와 설계해 새 실험으로 확인할 수 있다.
+이 실험 도중 evaluator나 기준 정답을 바꾸면 전후 비교가 성립하지 않는다.
+
+## 7. 비용과 속도도 개선됐나
+
+후보 모델에 보고된 토큰만 합산했다. IQ planner·LLM judge·smoke·추가 포털 호출·Search 가동·로그 보존은 포함하지 않는다.
+
+| 단계 | 후보 모델 입력 토큰 | 출력 토큰 |
+|---|---:|---:|
+| V1 dev 24응답 | 25,241 | 2,845 |
+| V2 dev 24응답 | 32,770 | 2,704 |
+| V2 holdout 16응답 | 21,528 | 1,946 |
+
+같은 dev에서 입력은 약 **29.8% 증가**, 출력은 약 **5.0% 감소**했다.
+V2의 긴 지침과 검색 근거가 입력에 포함된다. 호출별 검색 context도 달라질 수 있으므로 증가분 전체를 지침 길이 하나의 효과라고 단정하지 않는다.
+토큰 합계를 전체 Azure 청구액이나 비용 절감률로 바꾸어 표현하지 않는다.
+
+아래는 응답에 기록된 **검색 + 모델 처리 시간**이다. 외부 HTTP 왕복을 포함한 client latency와는 다르다.
+
+| 모델 | V1 p50 / p95 (초) | V2 p50 / p95 (초) |
+|---|---:|---:|
+| Sol | 3.459 / 4.301 | 3.879 / 5.153 |
+| Terra | 4.040 / 4.917 | 3.622 / 9.134 |
+| Luna | 4.593 / 4.805 | 4.244 / 4.864 |
+| Astra | 5.622 / 8.436 | 4.665 / 5.736 |
+
+모든 모델이 빨라진 것은 아니다. 모델별 표본이 6개라 p95는 사실상 가장 느린 한 요청이다. 운영 SLO나 통계적인 속도 우열로 해석하지 않는다.
+
+## 8. 실행 성공·품질 합격·운영 승인을 구분하기
+
+`business_gate`는 모델별 **업무 통과율 80% 이상 + 필수 인용 모두 유효** 조건이다. dev 6문항에서는 최소 5/6이지만, 필수 인용 실패가 하나라도 있으면 gate는 실패한다.
+이 값 자체가 native evaluator 전부 통과나 자동 배포 승인이라는 뜻은 아니다.
+
+`verify`는 24 + 24 + 16응답, 64개 서로 다른 trace, 완료된 평가, 고정한 데이터·지침·버전, 회귀 출처 재사용과 sampling weight 1의 실제 telemetry를 대조한다.
+본평가 외 calibration 2개, smoke, 추가 포털 비교 3응답은 64개에 넣지 않았다.
+
+| 항목 | 이 실행의 결론 |
+|---|---|
+| 실제 구성 요소 실행 | `component_execution_verified: true` |
+| 응답과 trace | `primary_model_outputs: 64`, `distinct_verified_traces: 64` |
+| V2의 업무 gate | 네 모델의 dev/holdout 모두 통과 |
+| 모든 native 점수 합격 | **아님**. V2 dev relevance 3행 미통과 |
+| 운영 승인 | **`production_release_approved: false`** |
+
+특히 다음 한계를 유지한다.
+
+- 6개 dev와 4개 holdout은 작고 교육용이다. 이미 사용한 holdout의 재실행은 새로운 독립 검증이 아니다.
+- 일부 질문에서 모델별 검색 context가 달랐다. 동일 corpus를 사용해도 이 결과는 순수 모델 비교가 아니라 검색을 포함한 end-to-end 비교다.
+- 앞선 2026-09-10 실행에서는 V2 dev가 **20/24**였고 검색 누락·엄격한 인용 rubric 때문에 실패했다. 이번 24/24가 매번 보장되는 것은 아니다.
+- 업무 담당자의 정답·정책 검토, 더 큰 미사용 데이터, 올바른 보류·금지 요청 전용 평가, 권한·비용·운영 기준이 추가로 필요하다.
+
+## 9. 결과를 연결하는 최소 식별 정보
+
+수치가 어느 실행에서 나왔는지 확인하는 데 필요한 정보만 남긴다. 과거 작업일지·녹화 편집 로그·중복 결과 덤프는 가이드에 필요하지 않다.
+
+| 구분 | Evaluation ID | Run ID |
 |---|---|---|
 | baseline | `eval_4e52a8af03e94b1d97fccce719cf568b` | `evalrun_28e28fff0a1240e687d216826f1c5075` |
 | improved | `eval_276405197d78476abfd5b25377291e95` | `evalrun_022dd0d4fe17441ba7fb469077108050` |
 | holdout | `eval_61a0c1526bd54a559385fef1cf788e17` | `evalrun_b6b76d93cc3d46baa5b9505a2be77c51` |
 
-Calibration의 고정 정답/오답 2개, 로컬·원격 smoke 호출은 이 64개 본평가 응답에 포함하지 않았다. 기존 교육용 holdout을 재실행했으므로 **새로운 독립 검증셋이나 일반적인 모델 우월성의 증거가 아니다.** `production_release_approved`는 **false**다.
+세 평가 run은 모두 `completed`, 오류 행 0이었다. 모델·데이터·지침의 식별 정보는 다음과 같다.
 
-### 실제 실패 검토와 lineage
-
-`baseline-sol-D01`은 180,000원 한도와 `allowed` 판단은 맞았지만, `TRAVEL-2026` 대신 `"현행 국내 출장비 규정"`이라는 제목을 인용했다. 실제 검색 결과에 `TRAVEL-2026`이 있었으므로, 해당 사례의 실패를 “문서를 찾지 못함”으로 분류하지 않았다.
-
-이 행의 실제 trace `09823f28661586d11629dd328191f997`을 대조한 뒤 고정 dev 정답을 유지한 회귀 데이터를 만들었다. V2 수집이 그 회귀 데이터를 실제로 읽고 원래 trace를 재사용한 lineage를 최종 검증했다. 검토자는 **assistant**이며 실제 재무 담당자의 승인으로 표시하지 않았다.
-
-### 실행 중 확인해 수정한 점
-
-| 관찰 | 처리 |
+| 대상 | SHA-256 |
 |---|---|
-| `az ad signed-in-user show`가 `--subscription`을 받지 않음 | 기본 계정으로 우회하지 않고, 지정 구독으로 발급된 ARM 토큰에서 tenant·principal을 확인. 토큰은 출력·저장하지 않음 |
-| Search 준비가 최초 로컬 대기 제한을 넘김 | 실패한 대기 기록 유지, 동일 서비스 재조회로 실제 준비 완료 확인 |
-| 실제 로컬 HTTP JSON 뒤에 azd 확장 업데이트 안내가 붙음 | UTF-8 `Content-Length`와 응답 경계를 엄격히 구분. 확인된 안내만 별도 경고로 기록. 알 수 없는 후행 오류는 거부 |
-| azd 부모 종료 직후 잠깐 남은 로컬 포트 | 소유 프로세스·포트가 실제 종료됨을 재확인하고 종료 확인에 제한된 대기 추가. 다른 프로세스는 종료하지 않음 |
-| MCP 브라우저 연결 재설정 | 원본 영상 2개와 캡처 보존. 완료 전 이동은 `interrupted`로 기록. 독립 Playwright headless 프로세스로 전환하고 재인증 후 같은 실제 대상을 다시 촬영 |
-| 탭 이동 후 버전 선택이 최신 버전으로 복귀 | Playground·Details 이동 뒤 선택 버전과 실제 응답의 `prompt_version`을 다시 확인 |
-| Foundry Indexes 목록과 Monitor Tools 목록이 비어 있음 | Search index 부재·도구 미실행으로 해석하지 않음. 실제 Azure Search의 7문서와 native retrieve span으로 별도 확인 |
-| 비교 UI가 입력을 양쪽에 동기화 | 두 응답의 실제 `prompt_version`과 서로 다른 trace로 V1/V2를 식별. 화면의 입력 label만으로 버전을 단정하지 않음 |
+| dev 데이터 | `3d8e909c14b5900fce284729f2f08990300ee361c5eb7b5fb46f433d3b7937b8` |
+| holdout 데이터 | `cbbce3904bcdb5d03188fb45642558f3f8e6229594c8b2f822d464affae923c4` |
+| 정책 corpus | `352f3ebeaa44a0c79d2b845ba1bcad65abef2328477c11a8fd2e6cabecb92d25` |
+| V1 유효 프롬프트 | `5ea1ddeed8a50835fc7920b9a3e3cb7ebf5af9d8178976a76738549cfeed154a` |
+| V2 유효 프롬프트 | `70b11bb7f871569c8febcd99c03d7e52cb56b463489305c9cab899666cc68120` |
 
-파서 보완은 CLI 실행기 두 파일에 한정했다. **에이전트 코드·V1/V2 지침·정답/정책 데이터의 원래 hash가 변하지 않았음**을 확인했다. 최초 로컬 응답의 `.http` 원문도 보존했다. 관련 변경 후 필수 unittest 명령의 **39개 테스트**가 통과했다.
+데이터 hash는 실행기의 JSON 정규화 결과, prompt hash는 공통 출력 계약을 포함한 유효 지침을 기준으로 한다. 단순 파일 바이트 hash와 혼동하지 않는다.
 
-### 실제 포털 검증과 추가 호출
+촬영 환경은 Sweden Central의 전용 그룹 `rg-foundry-evaluation-20260914-2034`였다.
+마지막에 agent·네 후보 배포·세 Search 객체·실습 런타임 역할의 부재를 확인했다. 기반 Foundry·Search·관측·보조 모델은 남아 비용이 발생할 수 있다.
+별도 경보·거버넌스의 ARM 실패는 이 평가 성공에 포함하지 않았고, 공유 구독 설정이나 다른 리포의 자원은 변경하지 않았다.
 
-Azure Portal의 새 그룹·태그·자원 5개와 Foundry의 모델 5개, 실제 KB/source, Search index의 합성 문서 7개를 확인했다. 검토한 baseline trace를 **ID로 검색해 정확히 1건**을 찾고, 같은 요청의 9개 span·1개 chat·1개 tool call을 native Graph view에서 확인했다. 실제 model span의 `gen_ai.response.model`도 `gpt-5.6-sol-2026-07-09`였다.
-
-포털에서 V1 단독 1회, V1/V2 비교 2회를 추가 호출했다. **이 3응답은 본평가 64응답과 별도**다. 비교 UI가 입력을 동기화해 양쪽 `run_id`가 같았지만 실제 응답은 `prompt_version=v1` / `v2`, 서로 다른 trace ID로 구분됐다. V1은 문서 제목, V2는 `TRAVEL-2026`을 인용했다.
-
-Monitor의 Last Day 화면에는 약 **189.5K 토큰·70 agent runs**가 표시됐고, 별도 tool chart는 71호출을 표시했다. 차트별 집계와 반영 시점은 다르며, 이 수치를 본평가 64행의 분모나 HTTP 실패 건수로 치환하지 않았다. 표시된 추정 비용 `$0`도 전체 Azure 청구액이 아니다. Continuous / scheduled evaluation, 알림, 자동 재학습·자동 운영 배포는 활성화하지 않았다.
-
-### 최종 정리와 남은 비용
-
-인증 대기 중에는 **세션 6개를 중지하고 active 0개**를 확인해 객체를 임시 보존했다. 이후 추가 포털 촬영을 마치고 `cleanup --dry-run` → `cleanup --confirm` → `check-cleanup`을 실제 실행했다.
-
-| 대상 | 최종 확인 |
-|---|---|
-| 실습 Hosted Agent V1/V2 및 세션 | agent 부재 확인, 포털 Agents 목록도 비어 있음 |
-| 네 후보 모델 배포 | 4개 부재 확인, 포털에는 보조 judge만 남음 |
-| KB / knowledge source / index | 3개 부재 확인, 같은 Search 연결의 KB 목록도 비어 있음 |
-| 실습 런타임 역할 부여 | 3개 부재 확인 |
-| 새 Foundry / Search / App Insights / Logs | 보존, 포털의 기반 자원 5개 확인 |
-| 고정 보조 judge / 네이티브 평가 이력 | 보존, baseline/improved/holdout/calibration run 확인 |
-| 과거 공유 환경·다른 리포의 그룹 | 변경·삭제하지 않음 |
-
-따라서 **실습 실행 자원 정리와 Azure 비용 전체 제거는 다르다.** 보존된 Search Basic 서비스, 로그 보존, 기반 서비스의 비용은 환경 소유자가 관리해야 한다.
-
-### 별도로 남긴 구독 경보·거버넌스 이력
-
-새 그룹의 ARM 배포 이력에 경보/정책 관련 실패 2건도 있어 실제 오류 화면을 확인했다. 이를 agent 배포 성공이나 평가 성공으로 바꾸지 않았다.
-
-- Failure-anomaly alert: `MissingSubscriptionRegistration` — 구독의 `Microsoft.AlertsManagement` 미등록.
-- Governance-policy diagnostic setting: `ResourceNotFound` — 정책이 참조한 공유 Log Analytics workspace 부재.
-
-이 항목들은 본 실습의 응답·평가·trace·객체 정리와 별도이며, 경보·거버넌스까지 정상 구성됐다고 주장하지 않는다. **공유 구독 provider·거버넌스 리소스·정책을 임의로 바꾸지 않았다.**
-
-원본은 `.recording/20260914-2034/`, 실제 응답·평가·trace는 그 아래 `workshop/src/agent/.foundry/results/`에 보존한다. 녹화 연결 재설정과 마지막 영상 종료 대기를 포함한 원본도 보존했고, 각 선택 영상은 실제 캡처와 대조했다. 가이드에는 비식별 화면과 선별 검증을 사용한다. 로그인·PIN 화면은 녹화하지 않았다.
-
----
-
-## 이전 검증 기록 — 2026-09-10
-
-검증일: **2026-09-10**
-
-**요청한 네 모델과 Hosted Agent, Foundry IQ, Foundry Evaluation, Trace, Monitor를 실제 Azure에서 실행했다.** 최종 비교 대상은 **모델 응답 64건, Foundry 평가 64행, 서로 다른 실제 trace 64개**다. 모의 결과를 실제 실행 결과로 사용하지 않았다.
-
-다만 **구성 요소의 실행 검증 완료와 운영 품질 합격은 다르다.** V2의 dev 업무 계약 통과율은 모델별 5/6이며, 필수 인용 100% 조건을 만족하지 못했다. 따라서 운영 승격은 승인하지 않는다.
-
-## 1. 검증 환경과 범위
-
-| 항목 | 실제 사용 |
-|---|---|
-| Azure 계정 | 사용자가 지정한 계정으로 구독·tenant를 확인하고 실행 |
-| 기존 프로젝트 | `iq-foundry-lab-56d62b` |
-| 지역 | `swedencentral` |
-| Hosted Agent | `frontier-loop-0910`, Python 3.13, Invocations protocol 2.0 |
-| 최종 baseline | agent version **5**, prompt **v1** |
-| 개선 후보 및 holdout | agent version **6**, prompt **v2** |
-| Foundry IQ | `ll-0910-kb`, knowledge source와 semantic index, 합성 문서 7개 |
-| 검색 방식 | 실제 `retrieve` API, `extractiveData`, `low` reasoning, query planning 활동 확인 |
-| 보조 모델 | 기존 `gpt-5.4-mini` 배포를 planner와 공통 judge로 사용 |
-| 모델 추론 | 같은 Foundry 계정의 Azure OpenAI v1 Chat Completions, Entra managed identity |
-| 평가 | 새 Foundry Evaluation API의 실제 응답 JSONL 평가 |
-| 관측 | 연결된 Application Insights의 실제 요청·모델·retrieval span 조회 |
-
-기본 Azure CLI 구독은 변경하지 않았다. 구독·tenant를 명시하는 자격 증명을 사용했다. 포털 경로는 가이드에 포함했지만, 이번 자동 검증의 증거는 **CLI/SDK/API와 실제 telemetry**이며 포털 화면 클릭 테스트를 수행했다고 주장하지 않는다.
-
-## 2. 네 모델을 실제로 사용했는가
-
-배포 설정만 확인한 것이 아니다. 세 최종 코호트의 `learning_loop.answer`와 `chat` span을 `operation_Id`로 연결해 **반환된 모델 ID**를 조회했다.
-
-| 후보 | 배포 이름 | trace의 실제 `gen_ai.response.model` | 확인한 요청 |
-|---|---|---|---:|
-| Sol | `ll-0910-sol` | `gpt-5.6-sol-2026-07-09` | 16 |
-| Terra | `ll-0910-terra` | `gpt-5.6-terra-2026-07-09` | 16 |
-| Luna | `ll-0910-luna` | `gpt-5.6-luna-2026-07-09` | 16 |
-| Astra | `ll-0910-astra` | `gpt-6-astra-2026-09-03` | 16 |
-
-각 모델의 16건은 dev baseline 6건 + 개선 dev 6건 + holdout 4건이다. [실측 모델 식별 요약](../artifacts/model-identity.json)에 조회 범위를 남겼다.
-
-## 3. 전후 결과
-
-### 결정적 업무 계약 검사
-
-아래 점수는 **판단 label, 필수 금액, 실제 근거 인용을 모두 통과한 건수**다. 일반적인 모델 지능이나 모든 업무의 정확도를 뜻하지 않는다.
-
-| 모델 | V1 dev | V2 dev | V2 holdout | V2 dev 인용 gate |
-|---|---:|---:|---:|---|
-| Sol | 0/6 | 5/6 | 4/4 | 미통과: 필수 5건 중 유효 인용 4건 |
-| Terra | 0/6 | 5/6 | 4/4 | 미통과: 필수 5건 중 유효 인용 4건 |
-| Luna | 0/6 | 5/6 | 4/4 | 미통과: 필수 5건 중 허용 인용 4건 |
-| Astra | 0/6 | 5/6 | 4/4 | 미통과: 필수 5건 중 유효 인용 4건 |
-| **합계** | **0/24** | **20/24** | **16/16** | **운영 승격 보류** |
-
-V1은 짧은 답변을 위해 내부 문서 식별자를 감추도록 만든 **교육용의 불충분한 초기 지침**이다. 0/24는 “모든 답이 사실상 틀렸다”는 의미가 아니다. 예를 들어 baseline Sol은 판단 label 5/6과 필수 금액 6/6을 맞췄지만, 문서 ID 대신 제목을 인용해 업무 계약을 통과하지 못했다.
-
-### Foundry native evaluator
-
-같은 evaluator 버전·judge 배포·threshold 4를 유지했다. 점수 척도는 1–5다.
-
-| 모델 | V1 groundedness / relevance | V2 groundedness / relevance | Holdout groundedness / relevance |
-|---|---|---|---|
-| Sol | 5.00 / 3.83 | 5.00 / 4.00 | 5.00 / 4.00 |
-| Terra | 4.50 / 3.83 | 5.00 / 4.00 | 5.00 / 4.00 |
-| Luna | 4.83 / 3.67 | 5.00 / 4.00 | 5.00 / 4.50 |
-| Astra | 4.67 / 3.83 | 4.83 / 4.00 | 5.00 / 4.00 |
-
-핵심 학습은 **groundedness가 높아도 기업의 인용·승인 라우팅 계약까지 만족하는 것은 아니라는 점**이다. 또한 같은 질문·KB를 써도 retrieval context가 달라진 사례가 있으므로 이 표를 순수 모델 성능 순위로 해석하면 안 된다.
-
-## 4. 남아 있는 실패를 숨기지 않았다
-
-| 사례 | 실제 관찰 | 해석 |
-|---|---|---|
-| `improved-sol-D06`, `improved-terra-D06`, `improved-astra-D06` | 검색 결과의 `source_ids`가 비어 있었고 모델이 정책을 만들지 않고 보류했다. | end-to-end 시스템은 필요한 정책을 찾아 답하지 못했다. 근거 없는 답변을 생성하지 않은 것은 바람직하지만, **검색 문제는 prompt만으로 해결되지 않는다.** 특정 content filter가 원인이라고 단정하지 않았다. |
-| `improved-luna-D01` | 답은 맞고 두 인용 모두 실제 문서였다. 다만 추가 승인 조건을 설명하며 `APPROVAL-2026`도 인용했다. | 동결한 rubric은 D01에 `TRAVEL-2026`만 허용하여 실패로 처리했다. **rubric이 지나치게 엄격한지 SME 검토가 필요**하다. 결과를 좋게 만들려고 평가 중 허용 목록을 바꾸지 않았다. |
-
-holdout 4문항에서 모두 통과했어도 위 dev 실패가 사라지는 것은 아니다. 전체 모델의 운영 승격을 보류하는 것이 이번 실습의 정직한 결론이다. 추가 개선은 검색과 평가 기준을 구분한 다음 **새 실험 버전**에서 검증해야 한다.
-
-## 5. learning loop가 실제로 닫혔는가
-
-한 사례의 lineage를 확인했다.
-
-```text
-baseline-fulltrace-sol-D01
-  source trace: 6fd506db66a6f1f674a98c249f56151d
-  citations: ["현행 국내 출장비 규정"]
-    -> 검토된 regression JSONL
-    -> 같은 동결 질문/기준을 V2에서 실제 재사용
-    -> improved-sol-D01
-       trace: 56089ae813c34af587b88bcaae01d122
-       citations: ["TRAVEL-2026"]
-    -> Foundry 재평가와 업무 계약 재검사
-```
-
-regression은 저장만 하고 방치하지 않았다. 후보 수집기가 실제로 읽고, 새 응답의 `regression_source_trace_ids`에 이전 trace를 기록했다. 질문·정답·rubric이 동결한 dev 데이터와 다르면 비교를 중단하도록 했다.
-
-자동 검증의 reviewer는 **assistant**로 명시했다. 정책·기준 정답·calibration 문구는 AI 보조로 작성한 합성 초안이며, 실제 재무 담당자의 검토나 생산 환경 승인을 주장하지 않는다. 초기 내부 metadata의 `human-authored` 명명은 작성 주체를 증명하는 값이 아니었으며, 최종 코드·내보낸 자료에서는 고정 참조 데이터라는 표현으로 정리했다. 실제 요청·정답·점수는 변경하지 않았다.
-
-## 6. Foundry run과 관측 증거
-
-| 구분 | Evaluation ID | Run ID | 평가행 / 실제 trace |
-|---|---|---|---|
-| V1 baseline | `eval_244d17b3f5d440b5955c5509edec0e46` | `evalrun_eb3101add0eb4095923b06480f11c5f8` | 24 / 24 |
-| V2 dev | `eval_37890a816f044a4cb0910eb4b639b71a` | `evalrun_9ae8ea6981154448936dcc833854708b` | 24 / 24 |
-| V2 holdout | `eval_34e382b33db8488bb830d7f63cdd30f9` | `evalrun_d66cab90d29f4ac7aadbf664f806a58d` | 16 / 16 |
-
-세 run 모두 `completed`, 평가 실행 오류 0건이다. 실제 telemetry는 요청 성공률 100%, sample weight 1로 확인했다. 이는 **HTTP 실행 성공률**이며 위 업무 계약 통과율과 다르다.
-
-별도의 judge calibration 2건도 Foundry에서 실행했다. 명시한 올바른 금액은 통과하고, 근거 없는 금액은 groundedness에서 탈락했다. 이 예제 2건은 본평가의 모델 응답 64건에 포함하지 않았다.
-
-## 7. 120분 설계와 실측 시간
-
-| 최종 코호트 | 응답 생성 구간, KST | 생성 시간 | Foundry 평가 시간 |
-|---|---|---:|---:|
-| V1 dev 24건 | 20:05:44–20:06:58 | 74초 | 약 70초 |
-| V2 dev 24건 | 20:25:53–20:26:51 | 58초 | 약 60초 |
-| V2 holdout 16건 | 20:34:08–20:34:48 | 40초 | 약 44초 |
-
-최종 baseline 시작부터 holdout telemetry 확인 파일 저장(20:35:55)까지 약 **30분 11초**였다. 이는 준비된 환경에서 최종 경로를 실행·검토한 구간이다. 참가자 코스는 개념 설명, 코드 확인, 사람의 검토, 포털 확인, 정리와 지연 버퍼까지 포함해 120분으로 설계했다.
-
-**환경 준비·가이드 작성·API/권한 호환성 진단을 포함한 전체 작업은 2시간을 넘었다.** 신규 환경을 처음부터 준비하는 시간까지 2시간 안에 끝났다고 주장하지 않는다. 강사는 사전 준비와 리허설을 완료해야 한다.
-
-응답 생성에 보고된 본평가 토큰은 **입력 75,212 / 출력 7,420**이다. IQ planner, LLM judge, 진단·재시도·local smoke와 인프라 비용은 별도이므로 이 수치가 전체 Azure 요금은 아니다. 작은 표본의 p95는 운영 SLO의 증명이 아니다.
-
-## 8. 실제 실행에서 발견해 반영한 점
-
-| 관찰 | 최종 가이드/코드의 처리 |
-|---|---|
-| Astra의 프로젝트 Responses `json_schema` 거부 및 최소 Responses 요청 500 | 같은 실제 모델을 유지하고 공통 JSON 텍스트 계약 + Pydantic 검증 사용 |
-| 프로젝트 Chat Completions의 hosted identity 권한 오류 지속 | 같은 Foundry 계정 endpoint와 명시적 Entra token scope 사용. 실제 hosted Astra 응답 확인 |
-| 시작 시 agent의 `connections/read` 권한 부족 | runtime에 주입된 telemetry 설정 사용. 불필요하게 연결 조회 권한을 요구하지 않음 |
-| 기존 App Insights 연결에 `ResourceId` metadata 누락 | target/authType을 유지한 metadata-only 보완 후 실제 Foundry 평가 성공 |
-| 기본 rate-limited sampling에서 24개 중 20개 trace만 관측 | 실습 agent만 100% sampling으로 배포하고 최종 baseline을 새로 실행 |
-| API가 `"True"` 문자열로 반환한 telemetry boolean | 문자열/boolean을 엄격하게 정규화. 알 수 없는 값은 오류 |
-| CLI token 조회의 기본 10초 제한 | 계정·구독을 고정한 상태에서 60초의 제한된 cold-token timeout 사용 |
-| azd raw 출력이 HTTP 헤더 포함 | 상태 코드와 JSON body를 분리해 확인 |
-| 정리 기록이 가변 소유권 목록을 공유하던 문제 | immutable plan snapshot과 회귀 테스트 추가. 기존 dry-run의 ID를 복원한 후 실제 Azure에서 4개 배포·3개 역할 삭제를 재확인 |
-
-실패한 시도를 성공 데이터로 바꾸거나 성공한 행만 골라 채점하지 않았다. 최종 비교는 별도 label의 완전한 세 코호트만 사용했다.
-
-## 9. 정리 상태
-
-`cleanup --dry-run` → `cleanup --confirm` → **`check-cleanup`의 실제 Azure 재조회**를 수행했다.
-
-| 대상 | 최종 상태 |
-|---|---|
-| 실습 Hosted Agent와 그 버전·세션 | 삭제 확인 |
-| `ll-0910-*` 모델 배포 4개 | 삭제 확인 |
-| 실습 KB / knowledge source / index 3개 | 삭제 확인 |
-| 실습 중 추가한 역할 부여 3개 | 삭제 확인 |
-| 기존 Foundry 프로젝트, Search 서비스, Application Insights | 유지 확인 |
-| 기존 보조 모델 `gpt-5.4-mini` | 유지 확인 |
-| App Insights의 비파괴 `ResourceId` metadata 보완 | 유지 |
-| Foundry evaluation run 및 로컬 검증 결과 | 보존 |
-
-검증용 agent를 삭제했으므로 예전 agent playground URL이 계속 열린다고 보장하지 않는다. 기존 Search/App Insights 등의 가동·보존 비용은 환경 소유자가 관리해야 한다.
-
-## 10. 재현과 파일
-
-- [한국어 가이드](../README.md), [강사 준비](instructor.ko.md), [출처](sources.ko.md)
-- [검증 요약 JSON](../artifacts/verification-summary.json), [전후 비교 JSON](../artifacts/comparison.json)
-- [실측 모델 ID](../artifacts/model-identity.json), [정리 재확인](../artifacts/cleanup-check.json)
-- [개인 실행 환경을 제외한 GitHub 전체 자료 ZIP](https://github.com/junwoojeong100/foundry-evaluation/archive/refs/heads/main.zip)
-
-원래 작업 폴더의 raw 증거는 `src/agent/.foundry/results/`에 있다. 공개 저장소와 GitHub 자료 ZIP에는 배포 가능한 소스·선별한 합성 결과·최종 녹화본을 포함한다. `.env`, `.azure`, `.venv`, 실행 캐시, credential/토큰, 녹화 원본·중간 자료와 환경별 실행 증거 ZIP은 포함하지 않는다. 기존 별도 배포용 ZIP은 `artifacts/foundry-learning-loop-ko.zip`에 로컬 보존한다.
-
-최종 검증에는 **27개 오프라인 테스트**, Python 구문 확인, 실제 Azure 실행, native 평가, 100% trace 확인, 회귀 lineage 검증, 임시 자원 삭제 재확인이 포함됐다. 구성 요소의 성공을 production readiness로 확대 해석하지 않는다.
+구현: [응답 수집·Foundry 평가·회귀 재사용·verify](../scripts/experiments.py) · [업무 검사](../scripts/grading.py) · [모델 호출과 처리 시간](../src/agent/policy_agent.py) · [공식 출처](reference.ko.md#공식-출처).

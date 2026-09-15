@@ -114,6 +114,6 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 - Foundry **Indexes**가 비어 있어도 실제 Search index는 존재할 수 있습니다. **Knowledge bases의 source**와 Azure Search의 index를 따로 확인합니다.
 - **Monitor → Tools**가 비어 있어도 코드 내부의 IQ 호출은 trace에 있을 수 있습니다.
 - 오래된 trace는 시간 범위를 넓힌 뒤 실제 ID로 찾습니다. 임의 ID나 다른 agent의 trace를 성공 증거로 대신하지 않습니다.
-- 자동 경보·거버넌스의 별도 ARM 실패 이력은 [실제 검증 기록](validation.ko.md)에 있습니다. 공유 구독 설정을 바꿔서 영상과 화면을 맞추지 않습니다.
+- 구독 경보·정책의 ARM 오류는 모델 평가와 구분해 강사에게 확인합니다. 공유 구독 설정을 바꿔서 영상과 화면을 맞추지 않습니다.
 
 원인별 설계 배경은 [참고 설명](reference.ko.md), 권한·모델 준비는 [강사 가이드](instructor.ko.md)를 확인합니다.

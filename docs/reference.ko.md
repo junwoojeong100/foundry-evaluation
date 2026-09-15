@@ -38,8 +38,7 @@ flowchart LR
     P --> A
 ```
 
-모델을 교체해도 KB, 고정 정답, 평가 기준, 지침, 실패 이력은 조직의 자산으로 남습니다.
-[Satya Nadella의 글](https://x.com/satyanadella/status/2066182223213293753)의 learning loop 관점을 작은 실습으로 해석한 것이며, 특정 제품이 비전 전체를 구현한다는 뜻은 아닙니다.
+모델을 교체해도 KB, 고정 정답, 평가 기준, 지침, 검토한 실패 사례는 조직의 자산으로 남습니다.
 
 이 과정은 **지침과 검증 체계의 개선**입니다. 로그를 켠다고 모델 가중치가 학습되지 않으며 fine-tuning/RL·자동 재학습·자동 운영 배포를 수행하지 않습니다.
 
@@ -77,7 +76,7 @@ flowchart LR
 | 후보 모델 추론 | 같은 계정의 `AZURE_OPENAI_ENDPOINT` | `https://cognitiveservices.azure.com/.default` |
 | Foundry IQ retrieval | `AZURE_SEARCH_ENDPOINT` | `https://search.azure.com/.default` |
 
-서비스 GA와 개별 SDK/API의 Preview 여부는 구분합니다. 버전과 공식 문서는 [출처](sources.ko.md), 실제 오류와 결과는 [검증 기록](validation.ko.md)에 있습니다.
+서비스 GA와 개별 SDK/API의 Preview 여부는 구분합니다. 아래 공식 출처와 [평가 방법·개선 결과](validation.ko.md)를 함께 확인합니다.
 
 ## 검색 결과를 읽는 기준
 
@@ -130,7 +129,20 @@ Monitor의 Tools 목록이 비어도 코드 내부의 IQ 호출은 trace에 남�
 영상에서는 대기와 화면 탐색을 줄였으므로 영상 길이를 실제 Azure 소요 시간으로 해석하지 않습니다.
 조가 10분 이상 환경 문제로 지연되면 단계를 생략하거나 모델을 대체하지 말고 강사의 준비된 환경으로 복구합니다.
 
-[참가자 가이드](../README.md) · [강사 준비·시간표](instructor.ko.md) · [문제 해결](troubleshooting.ko.md) · [실제 검증](validation.ko.md) · [모든 화면](action-captures.ko.md)
+[참가자 가이드](../README.md) · [강사 준비·시간표](instructor.ko.md) · [문제 해결](troubleshooting.ko.md) · [평가 방법·개선 결과](validation.ko.md)
 
-과거 영상은 별도 기록입니다: [포털 영상 설명](portal-recording.ko.md) · [로컬 콘솔 영상 설명](recording.ko.md).
-공개 저장소에는 소스·합성 데이터·선별 증거·완성 영상을 포함하며, `.env`·개인 실행 캐시·원본 녹화·환경별 증거 ZIP은 포함하지 않습니다.
+## 공식 출처
+
+| 문서 | 실습에서 사용하는 내용 |
+|---|---|
+| [Foundry 모델 카탈로그](https://ai.azure.com/explore/models) · [Azure 판매 모델](https://learn.microsoft.com/azure/ai-foundry/foundry-models/concepts/models-sold-directly-by-azure) | 모델 ID·지역·배포 유형. 실제 접근·할당량은 지정 구독의 `preflight`로 확인 |
+| [Agent Framework Foundry hosting](https://learn.microsoft.com/agent-framework/hosting/foundry-hosted-agent?pivots=programming-language-python) | Python Hosted Agent와 Invocations hosting |
+| [OpenAI adapter](https://learn.microsoft.com/agent-framework/integrations/by-component/model-providers/openai) · [AIProjectClient](https://learn.microsoft.com/python/api/azure-ai-projects/azure.ai.projects.aiprojectclient) | 같은 Foundry 계정의 Chat Completions client와 인증된 endpoint override |
+| [Agent Server Core](https://learn.microsoft.com/python/api/overview/azure/ai-agentserver-core-readme?view=azure-python) · [Invocations](https://learn.microsoft.com/python/api/overview/azure/ai-agentserver-invocations-readme?view=azure-python) | readiness, request context, OpenTelemetry, 명시적 JSON 입출력 |
+| [Hosted session 관리](https://learn.microsoft.com/azure/foundry/agents/how-to/manage-hosted-sessions?pivots=python) | 버전에 고정한 session과 batch 요청 |
+| [구조화 출력](https://learn.microsoft.com/agent-framework/agents/structured-outputs?pivots=programming-language-python) | 서비스 강제 schema와 애플리케이션의 JSON 검증 구분 |
+| [Foundry IQ quickstart](https://learn.microsoft.com/azure/foundry/agents/quickstarts/quickstart-foundry-iq-hosted-agent) · [Retrieval pipeline](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-create-pipeline) · [Retrieve](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-retrieve) | 실제 source/base와 retrieve 호출, activity, 원본 문서 키 |
+| [데이터셋 cloud evaluation](https://learn.microsoft.com/azure/foundry/observability/how-to/cloud-evaluation-datasets) · [Hosted agent 평가](https://learn.microsoft.com/azure/foundry/observability/quickstarts/quickstart-evaluate-hosted-agent) | JSONL 데이터셋 평가와 agent-target 평가의 구분, judge와 field mapping |
+| [Tracing](https://learn.microsoft.com/azure/foundry/observability/how-to/trace-agent-setup) · [Monitor](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard) | 요청 trace와 운영 집계의 차이 |
+| [OpenTelemetry sampling](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-configuration#enable-sampling) | 실습 agent의 100% sampling과 운영 비용·개인정보 경계 |
+| [공식 Python Hosted Agent 예제](https://github.com/microsoft-foundry/foundry-samples/tree/main/samples/python/hosted-agents/agent-framework) | azd direct-code deployment와 protocol manifest |
