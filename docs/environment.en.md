@@ -1,10 +1,14 @@
 # Create a new English Azure environment — instructor or self-study
 
+[English workshop](../README.md) · [한국어](environment.ko.md)
+
 **Outcome:** an English-only workshop group in **Sweden Central**, with Foundry, Search, telemetry, four candidate models, and a fixed auxiliary planner/judge.
 
 Participants with a prepared `.env` should skip this document and start at [README step 1](../README.md#start). Use Git, Python 3.13, Azure CLI, azd with the Foundry extension, and Bash/WSL.
 
 For self-study, you are the environment owner. Complete the [tool and access prerequisites](instructor.en.md#tools) first. Keep this Bash terminal open throughout setup so its paths and login profile remain available.
+
+**Route:** complete steps 1–6 here, then choose the [self-study or class handoff](#handoff). Step 2 briefly uses the README's **sign-in section only**; do not start its deployment steps during setup. If the foundation services already exist, use [existing-foundation preparation](instructor.en.md#existing-foundation) instead of creating another environment.
 
 > New services incur costs. Use synthetic data, preserve shared/Korean resources, and never change the default Azure CLI subscription used by other work. Sweden Central resource placement does not mean GlobalStandard model inference is confined to that region.
 
@@ -40,12 +44,20 @@ python -m pip install -r requirements.lock.txt
 Choose a fresh run ID once and keep `RUN_DIR` throughout:
 
 ```bash
-REPO_ROOT="$(pwd)"
-RUN_ID="en-$(date -u +%Y%m%d-%H%M%S)"
-RUN_DIR="$REPO_ROOT/.workshop/$RUN_ID"
+REPO_ROOT="$(pwd)" &&
+RUN_ID="en-$(date -u +%Y%m%d-%H%M%S)" &&
+RUN_DIR="$REPO_ROOT/.workshop/$RUN_ID" &&
 python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language en &&
-python scripts/prepare_environment.py prepare --run-dir "$RUN_DIR"
+python scripts/prepare_environment.py prepare --run-dir "$RUN_DIR" &&
+printf 'RUN_DIR=%s\n' "$RUN_DIR"
 ```
+
+Save the printed absolute `RUN_DIR` path. **Do not run this block again to resume setup**; use [setup recovery](troubleshooting.en.md#setup-resume).
+
+| Folder | Purpose | When used |
+|---|---|---|
+| `REPO_ROOT` | Original clone with the guide and preparation tools | Initial setup, then provisioning in steps 2–5 |
+| `RUN_DIR/workshop` | Isolated runnable source, generated `.env`, Python environment, and CLI profile | Sign-in, step 6, and the participant exercise |
 
 Install and test the isolated source:
 
@@ -155,11 +167,17 @@ python scripts/workshop.py calibrate
 
 **Checkpoint:** `language: en`, the four exact candidate identities/versions, `deployed: true`, `missing_models: []`, and a successful judge calibration. The two calibration examples are not part of the 64 candidate outputs.
 
-**Self-study or rehearsal: continue at [README step 1-4](../README.md#project-binding) in `$RUN_DIR/workshop`.** Do not clone again or restart step 1-1: this folder already has the source, complete `.env`, Python environment, and CLI sign-ins. Read the preflight checkpoint before binding.
+<a id="handoff"></a>
 
-For other participants, supply complete English `.env` values and **unused** team prefixes/agent names, but retain the actual prepared model deployment names.
+**Choose one handoff:**
 
-Do not copy ownership, authentication, or result files to a participant's folder. Do not switch the Korean workspace's language or overwrite its knowledge objects.
+| Who continues | Folder and next action |
+|---|---|
+| You, for one-off self-study | Stay in **`$RUN_DIR/workshop`** and continue at [README step 1-4](../README.md#project-binding). Read the preflight checkpoint, then bind. Do not repeat cloning, installation, or sign-in. |
+| Instructor rehearsing for a class | Keep this folder for model ownership. Use a [separate rehearsal clone](instructor.en.md#rehearsal-workspace) with new runtime names so rehearsal cleanup cannot delete the shared models. |
+| A new participant | Give them a complete English `.env` with **unused** team names and the **actual prepared model deployment names**. They start at [README step 1](../README.md#start) in their own folder. |
+
+Do not copy ownership, authentication, or result files to a participant's folder. Do not switch the Korean workspace's language or overwrite its knowledge objects. Use the [team handoff checklist](instructor.en.md#handoff).
 
 ## Costs and boundaries
 

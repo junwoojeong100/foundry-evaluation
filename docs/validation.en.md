@@ -1,10 +1,28 @@
 # English evaluation method and actual results
 
+[English participant guide](../README.md#lab-c) · [한국어 실행 결과](validation.ko.md)
+
 **Result:** the actual English run improved business-contract passes from **0/24 to 23/24**, with **16/16 on holdout**. Required citation validity improved from **0/20 to 20/20**. Groundedness passes stayed at **24/24**; relevance passes improved from **21/24 to 23/24**.
 
 These are measured English results from **September 16, 2026 (KST)**, run `en-20260916-0240`, not translated Korean scores. All **64 responses and 64 distinct real traces** were verified. One V2 dev decision still failed the frozen business rubric; the candidate is **not approved for production**.
 
-[English participant guide](../README.md#lab-c) · [Korean execution and methodology](validation.ko.md)
+**Read only what you need:** [your result files](#read-your-results) · [recorded measurements](#measured-results) · [tokens and latency](#tradeoffs) · [execution versus quality](#execution-quality).
+
+<a id="read-your-results"></a>
+
+## Read your own results first
+
+All paths below are under **`src/agent/.foundry/results/`**. They describe **your local run**; the later tables describe the recorded run above. If you used retry labels, use those labels and paths instead.
+
+| Question | Open | Read |
+|---|---|---|
+| What changed for each model? | `comparison.json → labels → baseline / improved → models → sol/terra/luna/astra` | `business_passed` / `total`, then `required_citation_passed` / `required_citation_total`; under `foundry_evaluators`, compare both native means and pass counts |
+| Why did a specific answer fail? | `<label>/responses.jsonl` and `<label>/evaluation-results.json` | Match **the same `row_id`**; inspect the business `checks`, native score/reason, and source `trace_id` |
+| Did the full exercise execute, and did the candidate meet the quality gate? | `verified-evidence.json` | Read execution counts, `candidate_quality_gates`, and `production_release_approved` separately |
+
+Arrows indicate JSON fields, not portal menus. A native average of 4 does not mean every row passed. A business gate requires **at least 5/6 dev and 4/4 holdout business passes per model**, plus all required citations valid; it is not production approval.
+
+The rest of this document explains the method and **recorded examples**, not scores your run must reproduce.
 
 ## 1. Controlled English experiment
 
@@ -54,6 +72,8 @@ V1 is an intentionally incomplete educational starting point. In particular, it 
 V2 explicitly distinguishes effective dates and document status, defines the decision labels, requires original retrieved document IDs, handles insufficient evidence, and rejects instructions to ignore policy or invent completed approval.
 
 This is a provided prompt candidate, not a model substitution, fine-tuning job, or automatic prompt optimizer. The actual change was English V1 to V2 and Hosted Agent version **1 to 2**. Dev questions, reference answers, corpus, four candidates, judge, evaluator definitions, and concurrency stayed fixed.
+
+<a id="measured-results"></a>
 
 ## 4. Actual results
 
@@ -109,6 +129,8 @@ The V2 manifest and matching response retained the baseline source trace. The re
 
 The optional Playground screenshot shows **additional real portal invocations**, not those two dataset rows. In the observed comparison UI, **one Send invokes both versions**. Two sends produced four extra comparison responses, preserved separately. Calibration, three smoke calls, one earlier V1 portal call, and those four comparison calls are excluded from the primary 64.
 
+<a id="tradeoffs"></a>
+
 ## 6. Tokens and latency: improvement has tradeoffs
 
 These totals include only tokens reported by the four candidate models in the primary response matrix.
@@ -133,6 +155,8 @@ The following values measure **retrieval plus model processing inside the reques
 | Astra | 4.952 / 8.867 | 5.049 / 6.240 |
 
 Not every model became faster. With only six observations per model, p95 is effectively the slowest request, not a reliable production SLO estimate.
+
+<a id="execution-quality"></a>
 
 ## 7. Execution, quality, and approval are different
 

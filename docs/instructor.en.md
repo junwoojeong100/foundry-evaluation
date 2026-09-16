@@ -1,8 +1,17 @@
 # Instructor prerequisites for the English workshop
 
+[English workshop](../README.md) · [한국어](instructor.ko.md)
+
 Participants follow [README.md](../README.md#start). Keep infrastructure creation and recording production out of their 120-minute path. Use [new-environment setup](environment.en.md) when the required Azure foundation does not yet exist.
 
 **Self-study:** “instructor” means the environment owner, which can be you. Complete preparation once, then use the participant path. You still need an approved subscription, model access/capacity, and the permissions below; this guide cannot grant them.
+
+**Preparation order:** [tools](#tools) → [access](#access) → choose the setup path below → [separate rehearsal](#rehearsal-workspace) → [team handoff](#handoff).
+
+| Azure foundation | Setup path |
+|---|---|
+| Foundry, Search, or connected telemetry is not ready | [Create a dedicated environment](environment.en.md); do not run both setup paths |
+| Those services already exist; models/access still need checking | [Prepare with the existing foundation](#existing-foundation) |
 
 <a id="tools"></a>
 
@@ -38,9 +47,15 @@ Then confirm the agent commands are available:
 azd ai agent --help
 ```
 
-Require the command list to include `run` and `invoke`. An update notice is not itself a failure of the installed commands; do not run “update all” or downgrade tools mid-experiment. If the installed commands fail, resolve the compatible azd/extension versions before starting. Return to [README step 1](../README.md#start) for a prepared environment, or [create the environment](environment.en.md).
+Require the command list to include `run` and `invoke`. An update notice is not itself a failure of the installed commands; do not run “update all” or downgrade tools mid-experiment. If the installed commands fail, resolve the compatible azd/extension versions before starting.
+
+Participants with ready services and a complete `.env` return to [README step 1](../README.md#start). Environment owners continue with [access](#access), then choose the setup path above.
+
+<a id="handoff"></a>
 
 ## What to hand to each team
+
+Use this checklist **after rehearsal**, not as a replacement for provisioning.
 
 | Item | Instructor responsibility |
 |---|---|
@@ -55,13 +70,33 @@ A new participant clone has no local azd binding. The participant must run **`bi
 
 English and Korean must use **separate folders, prefixes, agent names, and knowledge objects**. Do not flip `LAB_LANGUAGE` in a workspace that already owns resources or contains experiment results. The runtime rejects mixed-language ownership, responses, evaluations, and regression lineage.
 
-## Separate rehearsal from participant execution
+<a id="rehearsal-workspace"></a>
+<a id="separate-rehearsal-from-participant-execution"></a>
 
-Use a separate folder, prefix, and agent name for rehearsal. Do not create a participant's KB, source, index, or agent in advance under their reserved names; a fresh participant folder will correctly refuse to overwrite unowned objects.
+## Separate model preparation, rehearsal, and participant execution
+
+**For a class, keep model ownership in the preparation folder.** Do not rehearse the full exercise in that folder: its step-10 cleanup can delete the models you intend to share with participants.
+
+After model preparation completes, create a separate rehearsal clone. If the example folder already exists, use another unused name; do not delete the existing folder.
+
+```bash
+git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evaluation-rehearsal-en &&
+cd foundry-evaluation-rehearsal-en
+```
+
+Copy **only the completed `.env`** into this clone using your editor. Keep `LAB_LANGUAGE=en` and the actual project, endpoints, and model deployment names. Change **`LAB_PREFIX` and `LAB_AGENT_NAME` to unused rehearsal names**. Then follow [README steps 1–10](../README.md#start), skipping its clone block because this folder is already ready.
+
+Reserve different prefixes and agent names for participants. Do not create their KB, source, index, or agent in advance; a fresh participant folder will correctly refuse to overwrite unowned objects.
 
 If model deployments are shared within the approved workshop foundation, keep their **actual deployment names** in `MODEL_*_DEPLOYMENT`. Do not rename a deployment in `.env` to a resource that does not exist.
 
 Do not copy someone else's `.azure`, `.foundry` ownership files, authentication cache, or results to bypass a guard. A participant's cleanup deletes only objects recorded as owned by that folder. The instructor remains responsible for prepared models and foundation-service costs.
+
+**After rehearsal cleanup, before handoff:** return to the model-preparation folder and its CLI profile, run `python scripts/workshop.py preflight`, and require all four deployments plus `missing_models: []`. If a model is missing, stop handoff and restore preparation first. Do not clean up the preparation folder's models while teams still use them.
+
+Use the [rehearsal timing](#rehearsal) below. For **one-off self-study with no later participants**, staying in the preparation folder is valid; its owned-model cleanup is then intentional.
+
+<a id="access"></a>
 
 ## Access boundaries
 
@@ -80,9 +115,14 @@ Users, the project identity, and the agent's **instance identity** are not inter
 
 This exercise uses synthetic documents shared by the team. It does not implement per-document authorization, tenant-isolated end-user retrieval, or on-behalf-of identity propagation for a production product.
 
-## Install and verify locally
+<a id="existing-foundation"></a>
+<a id="install-and-verify-locally"></a>
 
-From the rehearsal repository root:
+## Install and verify locally — existing foundation
+
+Use this path only when the foundation services already exist. If you completed the new-environment guide, use its handoff instead; do not repeat this setup.
+
+Use an unused clone as your **model-preparation folder**. If needed, use the clone block in [README step 1-1](../README.md#source-setup), then return here. Run from that clone's root:
 
 ```bash
 python3.13 -m venv src/agent/.venv &&
@@ -99,17 +139,28 @@ Installation references: [Azure CLI](https://learn.microsoft.com/cli/azure/insta
 
 ## Safe preparation with an existing foundation
 
-1. Prepare the rehearsal `.env` with `LAB_LANGUAGE=en` and actual resource/deployment values.
+1. Prepare this folder's `.env` with `LAB_LANGUAGE=en`, unused preparation names, and actual resource/deployment values.
 2. Complete [README step 1-3](../README.md#login), including both CLI sign-ins and the identity checks. Keep the configured subscription explicit.
 3. Run `python scripts/workshop.py preflight --allow-missing-models`.
 4. If the four candidates are missing, use `python scripts/workshop.py prepare-models` to create only the owned, prefixed deployments.
 5. Run `python scripts/workshop.py preflight` again and require `language: en` and `missing_models: []`.
-6. Bind the project, create English IQ objects, and complete actual local and hosted smoke invocations using the README order.
-7. Run `python scripts/workshop.py calibrate` before interpreting native scores. README step 5 also makes this check explicit in each participant workspace; matching completed calibration is reused. The two fixed examples are not part of the 64 candidate responses.
+6. Run `python scripts/workshop.py calibrate` and require **`Judge calibration passed`**. README step 5 repeats this check in each participant workspace; matching completed calibration is reused. The two fixed examples are not part of the 64 candidate responses.
+7. For a class, use the [separate rehearsal folder](#rehearsal-workspace), then hand off to participants. For one-off self-study, stay here and continue at [README step 1-4](../README.md#project-binding): bind → IQ retrieval → local smoke → deployment/access → hosted smoke. Do not run both paths.
 
 If evaluation reports missing App Insights `ResourceId` metadata, inspect connection ownership first. Only an authorized instructor may use `repair-observability --confirm` on a dedicated workshop connection. Do not modify a shared connection to make an example work.
 
 An execution failure can be retried with preserved inputs and evidence. A low quality score is not a reason to use `--retry-failed`, lower the rubric, or substitute a different model.
+
+<details>
+<summary>What bind does — explanation, not another step to execute</summary>
+
+`bind` uses the provided `azure.yaml` to create or reuse this folder's azd environment and set its team-specific service/agent name. It does not reprovision the Foundry project. Do not run `azd ai agent init` again, copy another folder's state, or ignore subscription/project conflicts.
+
+Keep the local server in a trusted development environment, never expose it publicly, and stop it after the local check. Local and platform-authenticated hosted endpoints have different security boundaries.
+
+</details>
+
+<a id="rehearsal"></a>
 
 ## Rehearsal timing
 

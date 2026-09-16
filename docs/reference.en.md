@@ -1,19 +1,28 @@
 # Architecture, model contracts, and evaluation concepts
 
+[English workshop](../README.md) · [한국어](reference.ko.md)
+
 Follow [the English README](../README.md) for the execution path. This document explains the implementation choices and their boundaries.
+
+<a id="terms"></a>
 
 ## Terms used in the workshop
 
 | Term | Meaning here |
 |---|---|
+| Agent / model | One Python agent calls one of Sol, Terra, Luna, or Astra for each request; the models do not vote |
+| Foundry / Agent Framework | Foundry provides Azure services and the portal; Agent Framework is the library used by the Python agent |
 | Knowledge base / KB | Searchable organizational policy evidence |
 | Hosted Agent | Python code executed in a managed Azure environment |
-| Baseline | Results before the instruction change |
+| V1 / V2 / `agent_version` | Two supplied instruction versions; each deployment also has a numeric hosted agent version |
+| Baseline / `improved` | The result labels before and after selecting V2 |
 | Dev | Six frozen questions available for review and improvement |
 | Holdout | Four separate questions used after freezing the candidate |
+| Judge / calibration | A separate model scores answer text; two supplied examples check that it distinguishes supported and unsupported claims |
 | Trace | The connected retrieval, model, and response spans for one request |
 | Regression case | A reviewed case with a fixed reference and original trace |
 | Lineage | The relationship among language, model, prompt, data, version, and result |
+| JSON / JSONL | JSON is a structured document; JSONL stores one JSON object per line. Find a response by `row_id`, not its line number. |
 
 ## Scenario and retained assets
 
@@ -74,6 +83,8 @@ Application-side JSON validation is different from a model service enforcing Str
 
 Do not conflate a generally available hosting service with the GA/preview status of every SDK or API used with it.
 
+<a id="language"></a>
+
 ## Language isolation
 
 `LAB_LANGUAGE=ko` is the backward-compatible default. `LAB_LANGUAGE=en` selects English policies, questions, prompt text, model request labels, calibration examples, and hosted response metadata.
@@ -129,6 +140,31 @@ The workshop agent uses `microsoft.fixed_percentage` with `1.0` for complete tra
 Portal dashboards may include smoke or additional UI invocations beyond the 64 primary responses. A displayed estimated cost of `$0` is not a complete Azure bill. An empty Tools chart does not prove that code-level IQ spans were absent.
 
 Production requires separately designed sampling, privacy, retention, alerting, cost, and authorization policies.
+
+<a id="background"></a>
+<a id="background-learning-loops-and-frontier-ecosystems"></a>
+
+## Background: learning loops and frontier ecosystems — optional
+
+**You should be able to change the model without losing your organization's knowledge, judgment, and improvement history.**
+
+In [his original discussion of the future of the firm](https://x.com/satyanadella/status/2066182223213293753), Satya Nadella argues that the opportunity goes beyond choosing the best model. Organizations need to own a learning loop in which human expertise and their own AI capabilities reinforce each other. *Human capital* is people's expertise, judgment, and relationships; *token capital* means AI capability that a firm builds and owns, not simply the number of tokens it consumes.
+
+A **learning loop** connects real work, business-specific evaluation, human judgment, and subsequent improvements. Queryable institutional knowledge, private evaluations, and traces help an organization retain what it learns.
+
+**Frontier ecosystems** extend this idea beyond a single frontier model: organizations, industries, and countries should be able to develop their own expertise and create value, rather than depend entirely on one model's capabilities.
+
+This workshop is a small educational interpretation of that perspective:
+
+| Idea | What you will do | What remains reusable |
+|---|---|---|
+| Institutional memory | Retrieve synthetic travel policies with Foundry IQ | Policy documents, IDs, and applicability rules |
+| Business-specific learning loop | Generate real answers, evaluate them, review a trace, and compare V1/V2 | Reference answers, evaluation criteria, reviewed cases, and improvement reasons |
+| Separate models from organizational assets | Compare four fixed models with the same policy corpus and questions | Data, instructions, and trace lineage managed independently of a model choice |
+
+This is **prompt and evaluation-system improvement**, not fine-tuning, reinforcement learning, or automatic production deployment. All four candidates are OpenAI models; the workshop does not claim to validate interoperability across model providers.
+
+[Continue with workshop step 1](../README.md#start).
 
 ## Official sources
 

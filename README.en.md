@@ -1,5 +1,5 @@
 # English workshop guide
 
-The English guide is now the default **[README.md](README.md)**.
+**Start with [README.md](README.md)** for the current 10-step English workshop, screenshots, and summary video.
 
-Use that guide for the complete workshop, screenshots, and summary video. This link is retained for earlier references, including the recorded video.
+This file is only a compatibility link for earlier references, including the recorded video; it is not a second set of steps. [한국어 가이드](README.ko.md).

@@ -1,11 +1,15 @@
 # 새 Azure 환경 준비하기 — 강사 또는 개인 실습
 
+[한국어 실습](../README.ko.md) · [English](environment.en.md)
+
 **목표:** Sweden Central에 실습 전용 그룹·Foundry·Search·관측·모델을 준비하고, 참가자에게 조별 `.env`를 전달합니다.
 이미 준비된 환경을 받았다면 이 문서를 건너뛰고 [참가자 1단계](../README.ko.md#start)로 이동하세요.
 
 Git, Python 3.13, Azure CLI, azd + `microsoft.foundry` 확장, Bash가 필요합니다. 도구 설치와 권한은 [강사 준비](instructor.ko.md)를 먼저 확인합니다.
 아래는 **같은 Bash 터미널에서 한 블록씩** 실행합니다. 오류가 나면 다음 블록으로 넘어가지 않습니다.
 혼자 실습한다면 본인이 환경 소유자를 맡습니다. [도구·권한 준비](instructor.ko.md#tools)를 먼저 마치고, 경로 변수와 로그인 프로필을 유지하도록 준비가 끝날 때까지 이 터미널을 열어 둡니다.
+
+**진행 경로:** 이 문서의 1–6단계를 마친 뒤 [개인 실습 또는 수업 전달 경로](#handoff)를 선택합니다. 2단계에서만 README의 **로그인 부분**을 사용하며, 준비 중에 참가자 배포 단계까지 진행하지 않습니다. 기반 서비스가 이미 있으면 새로 만들지 말고 [기존 환경 준비](instructor.ko.md#existing-foundation)를 따릅니다.
 
 > 새 서비스에는 비용이 발생합니다. 합성 데이터만 사용하고, 공유 자원과 기본 Azure CLI 구독은 변경하지 않습니다.
 > 서비스 위치가 Sweden Central이어도 **GlobalStandard 모델의 추론이 그 리전 안에만 머문다는 뜻은 아닙니다.**
@@ -43,12 +47,20 @@ python -m pip install -r requirements.lock.txt
 녹화에 나온 `20260914-2034`를 복사하거나 기존 실행 폴더를 재사용하지 않습니다.
 
 ```bash
-REPO_ROOT="$(pwd)"
-RUN_ID="$(date -u +%Y%m%d-%H%M%S)"
-RUN_DIR="$REPO_ROOT/.workshop/$RUN_ID"
+REPO_ROOT="$(pwd)" &&
+RUN_ID="$(date -u +%Y%m%d-%H%M%S)" &&
+RUN_DIR="$REPO_ROOT/.workshop/$RUN_ID" &&
 python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language ko &&
-python scripts/prepare_environment.py prepare --run-dir "$RUN_DIR"
+python scripts/prepare_environment.py prepare --run-dir "$RUN_DIR" &&
+printf 'RUN_DIR=%s\n' "$RUN_DIR"
 ```
+
+출력된 `RUN_DIR`의 절대 경로를 보관합니다. **중단한 준비를 이어가려고 이 블록을 다시 실행하지 않습니다.** [환경 준비 복구](troubleshooting.ko.md#setup-resume)를 따릅니다.
+
+| 폴더 | 역할 | 사용하는 단계 |
+|---|---|---|
+| `REPO_ROOT` | 가이드와 준비 도구가 있는 원래 clone | 초기 준비, 이후 2–5단계의 서비스 생성 |
+| `RUN_DIR/workshop` | 생성된 `.env`·Python 환경·CLI 프로필을 쓰는 실제 실행 폴더 | 로그인, 6단계, 이후 참가자 실습 |
 
 새 소스 폴더에 독립 가상환경을 만들고, Azure를 호출하기 전에 테스트합니다.
 
@@ -189,13 +201,20 @@ python scripts/workshop.py preflight &&
 python scripts/workshop.py calibrate
 ```
 
-**완료 확인:** Sol/Terra/Luna/Astra의 고정 모델 ID·버전, `deployed: true`, `missing_models: []`, calibration 통과를 확인합니다.
+**완료 확인:** `language: ko`, Sol/Terra/Luna/Astra의 고정 모델 ID·버전, `deployed: true`, `missing_models: []`, **`Judge calibration passed`**를 확인합니다.
 Calibration 예제 2개는 본평가 64응답이 아닙니다. 모델 접근·할당량이 부족하면 다른 모델로 대체하지 않고 준비를 중단합니다.
 
-**개인 실습·리허설은 `$RUN_DIR/workshop`에서 [README 1-4 프로젝트 연결](../README.ko.md#project-binding)로 이어갑니다.** 소스·완성된 `.env`·가상환경·CLI 로그인이 이미 있으므로 다시 clone하거나 1-1부터 반복하지 않습니다. Preflight 완료 기준을 확인한 뒤 bind합니다.
-새 참가자 폴더에는 완성된 `.env`를 주되, **미사용 `LAB_PREFIX` / `LAB_AGENT_NAME`**을 조별로 지정합니다.
-실제 모델 배포 이름은 유지하고 `.azure`·`.foundry` 소유권 파일·결과는 전달하지 않습니다.
-자세한 전달 항목과 리허설 분리는 [강사 체크리스트](instructor.ko.md#참가자에게-전달할-것)를 따릅니다.
+<a id="handoff"></a>
+
+**다음 경로를 하나만 선택합니다.**
+
+| 이어서 실행할 사람 | 사용할 폴더와 다음 행동 |
+|---|---|
+| 본인 — 일회성 개인 실습 | **`$RUN_DIR/workshop`**을 유지하고 [README 1-4](../README.ko.md#project-binding)에서 preflight 기준을 확인한 뒤 bind. Clone·설치·로그인을 반복하지 않습니다. |
+| 수업을 준비하는 강사 | 이 폴더에는 모델 소유권을 남기고, 새 실행 이름을 쓰는 [별도 리허설 clone](instructor.ko.md#rehearsal-workspace)에서 실습. 리허설 cleanup으로 공유 모델을 지우지 않도록 분리합니다. |
+| 새 참가자 | **미사용 조별 이름**과 **실제 준비된 모델 배포 이름**을 담은 완성된 `.env`를 전달. 참가자는 자기 폴더에서 [README 1단계](../README.ko.md#start)부터 진행합니다. |
+
+`.azure`·`.foundry` 소유권 파일·인증 캐시·결과는 전달하지 않습니다. 언어를 바꾸어 기존 지식 객체를 덮어쓰지 않습니다. 자세한 전달 항목은 [강사 체크리스트](instructor.ko.md#handoff)를 따릅니다.
 
 <details>
 <summary>녹화 예시 — 후보 네 개와 별도 보조 배포</summary>

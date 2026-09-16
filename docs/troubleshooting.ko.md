@@ -1,6 +1,6 @@
 # 막혔을 때: 멈추고, 원인을 확인하고, 같은 기준으로 재시도
 
-[참가자 가이드로 돌아가기](../README.ko.md)
+[참가자 가이드로 돌아가기](../README.ko.md) · [English](troubleshooting.en.md)
 
 **명령 오류와 낮은 평가 점수부터 구분하세요.**
 
@@ -30,10 +30,11 @@
 | `Label ... already exists` | 기존 `manifest.json`을 읽기만 해서 상태 확인. `completed`면 평가 단계부터, `failed`면 수집 복구. `running`이면 기존 실행의 진행·중단 여부를 강사와 확인 |
 | `feedback`에서 이미 같은 회귀 기록이 존재 | 기존 행 ID·검토 이유·출처가 이번에 검토한 내용과 일치할 때만 다음 단계 진행. 다르면 중단하고 확인하며 파일을 지워 우회하지 않음 |
 
-새 터미널이라면 먼저 실습 폴더로 이동하고 README의 가상환경·`AZURE_CONFIG_DIR` 설정을 다시 적용합니다.
-다른 실습을 새로 시작할 때는 강사에게 새 조별 이름과 설정을 받아 새 폴더에서 진행합니다. 과거 소유권·응답·trace 파일을 지워 재실행 오류를 우회하지 않습니다.
+**터미널을 다시 열었나요?** 새 clone이 아니라 **기존 실습 폴더**를 열고 [터미널 복원 블록](../README.ko.md#resume-shell)을 따릅니다. 빈 터미널이라는 이유로 `init`·`bind`·배포·수집을 반복하지 않습니다.
 
-터미널을 닫았다면 새 clone이 아니라 **기존 실습 폴더**를 엽니다. README 1단계의 가상환경·CLI 경로를 복원하고 **`src/agent/.foundry/results/<label>/manifest.json`**에서 어디까지 완료됐는지 확인합니다. 새 터미널이 비어 있다는 이유로 `init`·`bind`·배포·수집부터 반복하지 않습니다.
+**`src/agent/.foundry/results/<label>/`**의 `manifest.json`은 **수집 상태만** 나타냅니다. 평가는 `evaluation.json`, trace 수집은 `telemetry.json`을 확인합니다. 수집 완료가 평가 완료를 뜻하지는 않습니다.
+
+다른 실습이나 언어를 시작할 때만 미사용 이름을 받아 새 폴더를 사용합니다. 소유권·응답·trace를 지워 오류를 우회하지 않습니다. 응답 수집이 아니라 Azure 환경을 만들다가 중단했다면 [환경 준비 복구](#setup-resume)를 따릅니다.
 
 ## 증상별 확인
 
@@ -55,6 +56,8 @@
 | Hosted 424 / cold start | 실제 배포 상태와 해당 session 로그를 확인하고 준비 뒤 같은 버전으로 재시도합니다. |
 | 시작 시 `connections/read` 거부 | 플랫폼이 주입한 telemetry 설정을 사용하는지 확인합니다. 무작정 넓은 연결 조회 권한을 주지 않습니다. |
 | 평가 완료인데 오류 행이나 `null` 점수 | job 상태와 각 행을 함께 확인합니다. 오류를 0점·합격으로 변환하지 않습니다. |
+| `verify`는 성공했는데 `candidate_quality_gates`에 `false`가 있음 | 유효한 실행의 품질 미통과 결과입니다. [완료 후 판단](../README.ko.md#completion-decision)에 따라 그대로 보고하고 정리하며, 점수를 높이려고 재실행하지 않습니다. |
+| `production_release_approved: false` | 업무 gate를 통과해도 정상입니다. 권한 오류나 편집할 값이 아닙니다. [세 결과의 다음 행동](../README.ko.md#completion-decision)을 확인합니다. |
 | JSON 뒤의 azd 업데이트 안내 | 제공 실행기는 UTF-8 HTTP 본문과 확인된 안내만 분리합니다. 확장/SDK를 수업 중 무조건 업그레이드하지 않습니다. |
 | CLI credential 시간 초과 | 실제 로그인 실패와 토큰 갱신 지연을 구분합니다. 제공 코드의 60초 제한을 무한 대기로 바꾸지 않습니다. |
 | `ResourceId metadata` 평가 오류 | 강사에게 실습 전용 App Insights 연결 metadata 확인을 요청합니다. 참가자가 공유 연결을 직접 변경하지 않습니다. |
@@ -118,7 +121,17 @@ Agent와 run 필터는 그대로이며 trace 누락·중복·다른 trace·sampl
 `collect`가 실패한 label의 `failure.json`, manifest, 원문 응답을 **그대로 보존**합니다.
 해당 label에 다시 쓰거나 성공한 행만 추려서 평가하지 않습니다.
 
-강사와 원인을 해결한 뒤 새 label로 전체 질문을 다시 수집합니다. 예를 들어 **실패한 첫 baseline을 다시 수집**할 때는:
+**실패한 단계만 복구합니다.** 해당 단계의 모델·정책·질문·지침·agent 버전은 유지합니다. 원인을 해결한 뒤 새 label로 그 단계의 전체 질문을 다시 수집합니다.
+
+| 실패한 단계 | 아래 예시의 새 label | 이후 적용할 곳 |
+|---|---|---|
+| 첫 V1 baseline | `baseline-retry` | Feedback과 `verify --baseline baseline-retry` |
+| V2 dev 후보 | `improved-retry` | 비교와 `verify --candidate improved-retry` |
+| 고정 V2 holdout | `holdout-retry` | 비교와 `verify --holdout holdout-retry` |
+
+**새 label**로 평가·monitor를 실행하고, 이후 명령 **및 파일 경로**에도 적용합니다. 예시의 재시도 label이 이미 있다면 다른 미사용 label로 모두 바꿉니다. 다른 완료된 label과 검토 출처는 유지합니다.
+
+**완료된 비교가 없는 첫 baseline 실패:** 원인 해결을 위해 동시성을 2로 낮추는 경우의 예시입니다.
 
 ```bash
 python scripts/workshop.py collect --split dev --label baseline-retry --concurrency 2 &&
@@ -130,8 +143,19 @@ python scripts/workshop.py monitor --label baseline-retry
 이 경우 이후 `feedback`, `compare`, `verify --baseline`도 **같은 `baseline-retry`**를 사용합니다.
 improved/holdout 수집에도 `--concurrency 2`를 유지합니다. label 일부만 바꾸면 비교 대상이 섞입니다.
 
-이미 완료된 baseline과 회귀 검토가 있다면 baseline을 다시 만들지 말고 **실패한 단계부터** 복구합니다.
-새 실험이 필요하면 강사와 새 폴더·고유 접두사를 준비합니다. 과거 결과·회귀 trace를 지워 출발점을 꾸미지 않습니다.
+**Baseline 완료 후 V2 dev나 holdout 실패:** baseline의 `manifest.json`에 기록된 `concurrency`를 유지합니다. 아래는 **4**인 경우이며, 다르면 실제 값으로 바꿉니다. 실패한 단계의 명령 **하나만** 선택합니다.
+
+```bash
+python scripts/workshop.py collect --split dev --label improved-retry --concurrency 4
+```
+
+```bash
+python scripts/workshop.py collect --split holdout --label holdout-retry --concurrency 4
+```
+
+V2 dev가 **24/24**로 끝나면 바로 [7단계 평가·비교](../README.ko.md#candidate-evaluation)부터 `improved`를 `improved-retry`로 바꾸어 이어갑니다. Holdout이 **16/16**으로 끝나면 바로 [8단계 평가](../README.ko.md#holdout-evaluation)부터 `holdout`을 `holdout-retry`로 바꾸어 이어갑니다. 해당 단계 처음의 배포·수집은 반복하지 않습니다.
+
+재배포하거나, holdout을 보고 지침을 바꾸거나, 완료된 baseline과 회귀 검토를 다시 만들지 않습니다. Holdout 실행 오류를 복구한 결과는 **새 미사용 검증셋이 아닙니다.** Baseline 완료 후 동시성까지 바꿔야 한다면 별도로 통제한 새 실험을 시작하며 원래 증거는 지우지 않습니다.
 
 <a id="evaluation-retry"></a>
 
@@ -181,3 +205,32 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 - 구독 경보·정책의 ARM 오류는 모델 평가와 구분해 강사에게 확인합니다. 공유 구독 설정을 바꿔서 영상과 화면을 맞추지 않습니다.
 
 원인별 설계 배경은 [참고 설명](reference.ko.md), 권한·모델 준비는 [강사 가이드](instructor.ko.md)를 확인합니다.
+
+<a id="setup-resume"></a>
+
+## 환경 소유자: 터미널을 닫은 뒤 준비 이어가기
+
+[환경 준비 1단계](environment.ko.md)에서 소스 스냅샷과 Python 환경을 완성한 경우에만 사용합니다. 새 `RUN_ID`를 만들거나 `init` / `prepare`를 반복하지 않습니다.
+
+`bash`를 실행한 뒤, **원래 clone 경로**와 **준비 중 출력된 기존 `RUN_DIR` 경로**를 따옴표 없이 입력합니다.
+
+```bash
+read -r -p "원래 환경 준비 clone의 절대 경로: " REPO_ROOT &&
+cd "$REPO_ROOT" &&
+read -r -p "기존 RUN_DIR의 절대 경로: " RUN_DIR &&
+ls "$RUN_DIR/config.json" "$RUN_DIR/source-manifest.json" &&
+cd "$RUN_DIR/workshop" &&
+source src/agent/.venv/bin/activate &&
+export AZURE_CONFIG_DIR="$PWD/.azure-cli"
+```
+
+**완료 확인:** 두 기록 파일이 있고, 가상환경이 활성화되며, CLI 프로필은 기존 실행 폴더를 가리킵니다. 파일이 없으면 중단하고 환경 소유자와 미완성 상태를 확인합니다. Manifest를 임의로 만들어 채우지 않습니다.
+
+| 중단한 준비 단계 | 이어갈 위치 |
+|---|---|
+| 로그인 | 지금 폴더에서 [README 1-3](../README.ko.md#login)을 수행한 뒤 환경 준비 2단계로 복귀 |
+| 환경 준비 2–5단계의 서비스 생성 | `cd "$REPO_ROOT"`로 이동. `AZURE_CONFIG_DIR`는 유지하고 같은 `--run-dir "$RUN_DIR"`로 실패한 명령만 실행 |
+| 환경 준비 6단계의 후보 모델 준비 | 지금 `"$RUN_DIR/workshop"` 폴더에서 실패한 명령부터 재개 |
+| 환경 준비는 이미 완료됨 | [개인 실습 또는 수업 전달 경로](environment.ko.md#handoff)를 선택. 준비를 반복하지 않음 |
+
+로그인이 만료됐다면 설정된 계정으로 복구합니다. 다른 계정·새 자원 이름·소유권 기록 삭제로 오류를 우회하지 않습니다.

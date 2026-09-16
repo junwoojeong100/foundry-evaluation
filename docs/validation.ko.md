@@ -1,5 +1,7 @@
 # 평가 방법과 실제 개선 결과
 
+[한국어 참가자 가이드](../README.ko.md#lab-c) · [English results](validation.en.md)
+
 **결론:** 촬영 실행에서 V2는 **업무 계약 통과 0/24 → 24/24**, 필수 인용의 유효성 **0/20 → 20/20**을 달성했다.
 그러나 groundedness 통과는 **24/24 → 24/24**, relevance 통과는 **21/24 → 21/24**였다.
 이는 **잘못된 인용 지침과 구조화된 판단의 개선**이지, 모든 답변의 일반 정확도가 0%에서 100%로 올랐다는 뜻이 아니다.
@@ -8,6 +10,24 @@
 수치는 **2026-09-14–15의 실제 Azure 실행 `20260914-2034`**에서 가져왔다. 문서를 정리하면서 모델이나 평가를 새로 실행하지 않았으며, 참가자의 재실행 결과는 다를 수 있다.
 
 **별도 영문 실행:** 2026-09-16에는 영문 정책·질문·지침으로 Azure에서 다시 실행했다. 업무 통과는 **0/24 → 23/24**, holdout은 **16/16**이었고, 실제 응답·trace 각 64개를 확인했다. 한국어 점수를 번역한 결과가 아니며, [영문 실행의 잔여 실패·평가·정리 결과](validation.en.md)를 별도로 기록했다. 아래 한국어 실행 수치와 혼합하지 않는다.
+
+**필요한 부분만 읽기:** [내 결과 파일](#read-your-results) · [촬영 실행의 측정값](#measured-results) · [토큰·지연](#tradeoffs) · [실행과 품질의 구분](#execution-quality).
+
+<a id="read-your-results"></a>
+
+## 내 실행 결과부터 읽기
+
+아래 경로는 모두 **`src/agent/.foundry/results/`** 아래이며 **내 실행 결과**다. 뒤의 수치 표는 촬영 실행의 기록이다. 복구 label을 사용했다면 그 이름과 경로로 읽는다.
+
+| 알고 싶은 것 | 열 곳 | 읽을 값 |
+|---|---|---|
+| 모델별로 무엇이 바뀌었나? | `comparison.json → labels → baseline / improved → models → sol/terra/luna/astra` | `business_passed` / `total`, `required_citation_passed` / `required_citation_total`, `foundry_evaluators`의 평균과 통과 건수 |
+| 특정 답이 왜 실패했나? | `<label>/responses.jsonl`, `<label>/evaluation-results.json` | **같은 `row_id`**로 업무 `checks`, native 점수·이유, 원래 `trace_id`를 대조 |
+| 전체 실행과 후보 품질이 각각 통과했나? | `verified-evidence.json` | 실행 건수, `candidate_quality_gates`, `production_release_approved`를 별도로 확인 |
+
+화살표는 포털 메뉴가 아니라 JSON 필드다. Native 평균 4점이 모든 행의 통과를 뜻하지는 않는다. 업무 gate는 **모델마다 dev 최소 5/6, holdout 4/4 업무 통과 + 필수 인용 전부 유효** 조건이며 운영 승인은 아니다.
+
+이하 내용은 평가 방법과 **촬영 예시**의 해석이다. 내 실행을 아래 점수에 맞출 필요는 없다.
 
 ## 1. 무엇을 고정하고 무엇을 바꿨나
 
@@ -172,6 +192,8 @@ baseline-sol-D01
 이는 **평가 사례와 개선 이유를 연결하는 learning loop**다. 회귀 JSONL을 모델의 학습 데이터로 자동 전달하거나 모델 가중치를 갱신하지 않는다.
 촬영 실행의 검토자는 `assistant`로 표시했다. README의 사람이 수행하는 실습은 실제 사람이 검토한 경우에만 `--reviewer human`을 사용한다.
 
+<a id="measured-results"></a>
+
 ## 6. 모델별 실제 결과
 
 ### 업무 계약
@@ -213,6 +235,8 @@ Judge는 관련 있는 답변이라고 보면서도 **요청한 실제 한도 �
 점수를 사후에 합격으로 바꾸지 않았다. 향후에는 **올바른 보류를 인정하는 업무 전용 평가 기준**을 전문가와 설계해 새 실험으로 확인할 수 있다.
 이 실험 도중 evaluator나 기준 정답을 바꾸면 전후 비교가 성립하지 않는다.
 
+<a id="tradeoffs"></a>
+
 ## 7. 비용과 속도도 개선됐나
 
 후보 모델에 보고된 토큰만 합산했다. IQ planner·LLM judge·smoke·추가 포털 호출·Search 가동·로그 보존은 포함하지 않는다.
@@ -237,6 +261,8 @@ V2의 긴 지침과 검색 근거가 입력에 포함된다. 호출별 검색 co
 | Astra | 5.622 / 8.436 | 4.665 / 5.736 |
 
 모든 모델이 빨라진 것은 아니다. 모델별 표본이 6개라 p95는 사실상 가장 느린 한 요청이다. 운영 SLO나 통계적인 속도 우열로 해석하지 않는다.
+
+<a id="execution-quality"></a>
 
 ## 8. 실행 성공·품질 합격·운영 승인을 구분하기
 
