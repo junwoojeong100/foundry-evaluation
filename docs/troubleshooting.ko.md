@@ -7,7 +7,8 @@
 | 보이는 결과 | 지금 할 일 |
 |---|---|
 | 명령이 예외·오류로 끝남, 응답 누락·중복·실행 오류 | 다음 단계를 중단하고 아래에서 원인을 해결 |
-| 평가 job은 완료됐지만 업무/native 점수가 낮음 | 점수를 고치지 않고 [실패 검토](../README.ko.md#lab-d) 진행 |
+| `collect`가 `business=False`를 출력함 | 업무 검사 미통과 표시이지 실행 오류가 아님. 수집이 오류 없이 끝나면 해당 단계의 평가로 진행 |
+| 평가 job은 완료됐지만 업무/native 점수가 낮음 | 점수는 그대로 기록하고 해당 단계의 완료·포털 확인을 마침. `baseline`은 [6단계 검토](../README.ko.md#lab-d), `improved`는 [7-4 비교](../README.ko.md#compare-results), `holdout`은 [9단계 검증](../README.ko.md#lab-g)으로 진행 |
 | trace가 아직 0건이거나 일부만 보임 | 정상 운영으로 판정하지 않고 수집 지연·필터·권한 확인 |
 | 녹화 화면만 봄 | 직접 실행 완료가 아니라 관찰로 기록 |
 
@@ -76,7 +77,7 @@ az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" \
 azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 ```
 
-두 명령이 끝나면 README 1-3의 **두 로그인 결과 확인** 블록으로 돌아갑니다. 코드는 채팅·문서·녹화에 공유하지 않습니다.
+두 명령이 끝나면 README 1-3의 [두 로그인 결과 확인](../README.ko.md#login-check) 블록으로 돌아갑니다. 로그인 명령을 다시 실행할 필요는 없습니다. 코드는 채팅·문서·녹화에 공유하지 않습니다.
 조직 정책이 device-code 로그인을 막으면 우회하지 말고 강사에게 승인된 로그인 환경을 요청합니다.
 공식 설명: [Azure CLI 대화형 로그인](https://learn.microsoft.com/cli/azure/authenticate-azure-cli-interactively) · [CLI 설정 경로](https://learn.microsoft.com/cli/azure/azure-cli-configuration#cli-configuration-file).
 
@@ -142,6 +143,7 @@ python scripts/workshop.py monitor --label baseline-retry
 
 이 경우 이후 `feedback`, `compare`, `verify --baseline`도 **같은 `baseline-retry`**를 사용합니다.
 improved/holdout 수집에도 `--concurrency 2`를 유지합니다. label 일부만 바꾸면 비교 대상이 섞입니다.
+위 네 명령이 모두 끝나면 **새 평가의 report URL로 5단계 포털 확인**을 마치고 [6-2 사례 선택](../README.ko.md#review-case)부터 이 label로 이어갑니다. 완료한 수집·평가·monitor는 반복하지 않습니다.
 
 **Baseline 완료 후 V2 dev나 holdout 실패:** baseline의 `manifest.json`에 기록된 `concurrency`를 유지합니다. 아래는 **4**인 경우이며, 다르면 실제 값으로 바꿉니다. 실패한 단계의 명령 **하나만** 선택합니다.
 
@@ -185,10 +187,10 @@ label이 다르면 위 예시도 실제 label로 바꿉니다.
 
 실패가 없다는 것도 결과입니다. 실패를 만들거나 답변·정답을 수정하지 않습니다.
 
-1. `src/agent/.foundry/results/baseline/responses.jsonl`에서 가장 불확실한 **dev 행** 하나를 고릅니다.
-2. 같은 `trace_id`의 근거와 응답을 확인하고, “전부 통과했으며 무엇을 추가로 검토했는지”를 기록합니다.
-3. 제공 V2를 비교할 이유가 타당한지 강사와 판단합니다. 비교하더라도 품질 개선을 미리 주장하지 않습니다.
-4. `feedback`의 실제 `row_id`와 검토 이유를 사용합니다. 이 명령은 통과한 dev 행도 검토 기록으로 남길 수 있습니다.
+1. `src/agent/.foundry/results/baseline/responses.jsonl`에서 검토할 **dev 응답 하나**를 고릅니다. `row_id`·`case_id`·`model_key`·`trace_id`를 적어 둡니다.
+2. [README 6-2의 2–4번](../README.ko.md#review-case)처럼 같은 응답·고정 dev 기준·trace를 대조합니다.
+3. “업무 검사는 전부 통과했고 무엇을 추가로 검토했는지”와 제공 V2를 비교할 이유를 설명합니다. 실패나 품질 개선을 미리 주장하지 않습니다.
+4. [6-3 검토 기록 저장](../README.ko.md#save-review)으로 돌아갑니다. `feedback`은 통과한 dev 응답도 기록할 수 있습니다. 저장 후 7단계에서 V2의 타당성을 검토합니다.
 
 최종 `verify`는 **검토된 baseline trace가 후보 실행에서 재사용됐는지** 확인합니다.
 holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금지합니다.

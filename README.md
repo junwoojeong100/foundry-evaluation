@@ -125,6 +125,8 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID"
 
 Use the same account. Never record passwords, MFA responses, or login codes. If sign-in stalls, use [authentication troubleshooting](docs/troubleshooting.en.md#login).
 
+<a id="login-check"></a>
+
 **Verify both sign-ins:**
 
 ```bash
@@ -300,6 +302,8 @@ python scripts/workshop.py collect --split dev --label baseline
 
 Require collection to finish without errors at **`24/24`**. `src/agent/.foundry/results/baseline/business-summary.json` must contain four model entries with `total: 6` each.
 
+**`business=False` means that response failed a business check, not that the command failed.** Once collection completes, continue to 5-3. Do not recollect for a better score.
+
 <a id="baseline-evaluation"></a>
 
 ### 5-3. Evaluate the saved responses
@@ -353,16 +357,17 @@ python scripts/workshop.py monitor --label baseline
 
 **Checkpoint:** `monitor` reports `complete: true`, `expected_trace_count: 24`, and `observed_trace_count: 24`. If not, [recover monitoring](docs/troubleshooting.en.md#telemetry) before recording feedback.
 
+<a id="review-case"></a>
+
 ### 6-2. Choose and explain one case
 
 `compare` both prints the report and saves **`src/agent/.foundry/results/comparison.json`**. Open that file in your editor; the arrows below describe **JSON fields**, not portal menus.
 
-1. In **`labels → baseline → business_failures`**, choose a real `row_id`. Read its `trace_id` and false `checks`.
-2. Open `src/agent/.foundry/results/baseline/responses.jsonl`. Each line is one JSON object: find **`row_id`, not a line number**, and compare **`answer`, `decision`, `citations`, `source_ids`**. Use editor word wrap; do not edit.
-3. In **your agent → Traces**, search for the same `trace_id`. Adjust the time range and inspect its retrieval and model spans.
-4. Explain the cause and proposed change using this row's evidence.
-
-If the failure list is empty, do not invent a failure. Follow [the all-passed baseline path](docs/troubleshooting.en.md#no-failures).
+1. In **`labels → baseline → business_failures`**, choose a real `row_id`. Read its `trace_id` and false `checks`. If the list is empty, [review one passing dev case](docs/troubleshooting.en.md#no-failures); do not invent a failure.
+2. Open `src/agent/.foundry/results/baseline/responses.jsonl` and find **the same `row_id`, not a line number**. Also note its **`case_id` and `model_key`**: these identify the same question/model in V2.
+3. Find **that `case_id`** in `data/en/dev.jsonl`. Compare the response's `answer`, `decision`, and `citations` with the fixed `ground_truth`, `expected_decision`, `required_numbers`, and `allowed_citations`. Check that its citation IDs also appear in that response's `source_ids`. Use editor word wrap; do not edit either file.
+4. In **your agent → Traces**, search for the same `trace_id`. Adjust the time range and inspect its retrieval and model spans.
+5. Explain the cause and proposed change using **the response → fixed reference → retrieval/model trace**, not another request's evidence.
 
 <a id="how-to-distinguish-retrieval-and-instruction-problems"></a>
 
@@ -375,18 +380,20 @@ Check your own row before using that explanation. `feedback` preserves a referen
 
 </details>
 
+<a id="save-review"></a>
+
 ### 6-3. Save your review
 
 Enter **your reviewed `row_id` and a reason of at least 10 characters**: “observation → evidence → proposed change.” Do not copy an example ID or reason.
 
 ```bash
 read -r -p "Reviewed row_id: " ROW_ID &&
-read -r -p "Observed issue, evidence, and proposed correction: " REVIEW_REASON &&
+read -r -p "Observation, evidence, and proposed change (at least 10 characters): " REVIEW_REASON &&
 python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
   --reason "$REVIEW_REASON" --reviewer human
 ```
 
-**Checkpoint:** a `src/agent/.foundry/datasets/regression-*.jsonl` file links the frozen dev case to the original trace. Do not turn the model's answer into a new ground truth. Automated reviews must use `--reviewer assistant`, not `human`.
+**Checkpoint:** open the printed `src/agent/.foundry/datasets/regression-*.jsonl` file. **`lineage → source_row_id / source_trace_id`** must match the response and trace you just reviewed. Do not turn the model's answer into a new ground truth. Automated reviews must use `--reviewer assistant`, not `human`.
 
 ![Real English trace review](docs/assets/live-en-20260916-0240/screenshots/06-trace.webp)
 
@@ -440,9 +447,13 @@ python scripts/workshop.py compare --labels baseline improved
 
 **Checkpoint:** evaluation **`(24 rows)`** and an updated **`src/agent/.foundry/results/comparison.json`**. Keep the same concurrency before and after.
 
+<a id="compare-results"></a>
+
 ### 7-4. Read your before-and-after comparison
 
-**Read your own comparison:** open **`labels → baseline or improved → models → sol/terra/luna/astra`** in that file. At each model, read:
+**First revisit your reviewed case:** use the **same `case_id` + `model_key`** noted in step 6 to find its V2 response in `src/agent/.foundry/results/improved/responses.jsonl`. V1 and V2 have **different `row_id` values** because their labels differ. Compare the answer, decision, citations, and `business_grade → checks`. Confirm that V2's `regression_source_trace_ids` includes the reviewed **V1 `trace_id`**.
+
+**Then compare all four models:** open **`labels → baseline or improved → models → sol/terra/luna/astra`** in `src/agent/.foundry/results/comparison.json`. At each model, read:
 
 | Compare | Fields | Meaning |
 |---|---|---|
@@ -491,6 +502,8 @@ Click **Send once**: the comparison view sends the question to both versions. Ch
 ## 8. Freeze the candidate and evaluate holdout
 
 **Action:** stop changing V2's instructions, models, and retrieval configuration. **Holdout** is the separate set reserved until this point: evaluate its four cases with each model.
+
+**How to freeze:** keep the V2 deployment confirmed in 7-2 unchanged. There is no separate `freeze` command or additional deployment.
 
 ```bash
 python scripts/workshop.py collect --split holdout --label holdout
@@ -600,6 +613,7 @@ Search uptime, logs, retained foundation services, and the auxiliary model may s
 | `src/agent/.foundry/results/baseline/` | 24 actual English V1 responses and their evaluations |
 | `src/agent/.foundry/results/improved/` | 24 actual English V2 responses and their evaluations |
 | `src/agent/.foundry/results/holdout/` | 16 responses from the frozen candidate |
+| `src/agent/.foundry/results/comparison.json` | Before/after model metrics and failing cases |
 | `src/agent/.foundry/datasets/regression-*.jsonl` | Reviewed case, fixed reference answer, and source trace |
 | `src/agent/.foundry/results/verified-evidence.json` | Complete execution and lineage checks |
 

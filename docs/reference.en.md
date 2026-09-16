@@ -23,6 +23,7 @@ Follow [the English README](../README.md) for the execution path. This document 
 | Trace | The connected retrieval, model, and response spans for one request |
 | Regression case | A reviewed case with a fixed reference and original trace |
 | Lineage | The relationship among language, model, prompt, data, version, and result |
+| `case_id` / `row_id` | `case_id` identifies a fixed question; `row_id` identifies one response by label, model, and question. Match a case across V1/V2 with **`case_id` + `model_key`**. |
 | JSON / JSONL | JSON is a structured document; JSONL stores one JSON object per line. Find a response by `row_id`, not its line number. |
 
 ## Scenario and retained assets

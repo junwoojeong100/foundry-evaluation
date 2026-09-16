@@ -117,7 +117,8 @@ Do not print the full .env, passwords, tokens, or login codes.
 Check Azure CLI status only with this workshop's AZURE_CONFIG_DIR.
 If that path is not established yet, report sign-in as unchecked;
 do not inspect another task's default CLI profile instead.
-If sign-in is needed, explain the steps for me to complete manually and wait.
+If sign-in is needed, identify its stage and workspace in the plan.
+Do not run sign-in commands or wait for authentication at this planning stage.
 Do not open either data/holdout.jsonl or data/en/holdout.jsonl.
 
 Choose the appropriate path: use a prepared environment, complete an existing
@@ -127,7 +128,7 @@ and approvals needed. Ask only for missing values; do not guess them.
 Do not create, deploy, assign roles, or delete anything yet.
 ```
 
-**What you check:** the account, tenant, subscription, unused names, and scope/cost of new resources. Complete [README step 1-3](../README.md#login) in **your own terminal**, in the workspace specified by the selected path. New-environment setup signs in after creating its runnable snapshot; do not sign in early in the original clone or run `preflight` / `bind` before the foundation is ready.
+**Check now:** the plan's account, tenant, subscription, unused names, and scope/cost of new resources. **Do not sign in to Azure just to complete plan review.** Sign-in happens during execution in 3-2, after the selected workspace is ready. New-environment setup must first create its runnable snapshot; do not sign in early in the original clone or run `preflight` / `bind` there.
 
 ### 3-2. Request actual execution within the reviewed scope
 
@@ -140,7 +141,8 @@ Execute the English workshop within the scope we just reviewed.
   Continue in the workspace and at the return step specified there; do not create duplicates.
 - Before creating billable resources, assigning roles, or deleting anything,
   show the exact targets and scope and obtain approval for that action.
-  I will complete sign-in and MFA myself.
+- When sign-in is needed, show the absolute workspace path and README step 1-3,
+  then wait. I will complete sign-in and MFA in a separate terminal.
 - Check the working folder, virtual environment, and AZURE_CONFIG_DIR in each
   independent terminal. If Python setup is missing, follow the README installation first.
 - Keep LAB_LANGUAGE=en and preserve the models, policies, references, and evaluators.
@@ -151,14 +153,17 @@ Execute the English workshop within the scope we just reviewed.
   Record automated reviews with --reviewer assistant.
 - Preserve failed attempts and labels, and recover only the failed stage.
   Report unresolved blockers; do not rerun valid low scores to force a pass.
-- Tell me the portal locations and values I must check manually.
+- At each required portal check, show its location and expected values, then wait
+  for my confirmation. Do not continue to the next step or cleanup before that.
   Do not make recordings/videos or work in other repositories.
 - Verify 64 responses, 64 traces, evaluations, and reviewed baseline provenance.
   Report quality separately. production_release_approved remains false.
   Clean up only after reviewing the dry-run plan and obtaining approval.
 ```
 
-If you have [prepared portal automation](#playwright), replace only the portal instruction with:
+**Your part during execution:** keep the Copilot conversation open. When asked to sign in, **start `bash` in a separate terminal**, enter the indicated workspace, and complete only [README step 1-3](../README.md#login). After the [two-account check](../README.md#login-check), tell Copilot you finished. Confirm each requested portal check the same way. Do not execute the next README commands yourself while Copilot is running them.
+
+If you have [prepared portal automation](#playwright), replace only the execution prompt's **portal-check-and-wait instruction** with the following. Keep the restriction on recordings and other repositories.
 
 ```text
 Use the connected Playwright server for portal checks; I will handle sign-in and MFA.

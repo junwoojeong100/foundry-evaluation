@@ -24,7 +24,8 @@
 | 알고 싶은 것 | 열 곳 | 읽을 값 |
 |---|---|---|
 | 모델별로 무엇이 바뀌었나? | `comparison.json → labels → baseline / improved → models → sol/terra/luna/astra` | `business_passed` / `total`, `required_citation_passed` / `required_citation_total`, `foundry_evaluators`의 평균과 통과 건수 |
-| 특정 답이 왜 실패했나? | `<label>/responses.jsonl`, `<label>/evaluation-results.json` | **같은 `row_id`**로 `business_grade → checks`, 평가 `results`의 점수·이유, 원래 `trace_id`를 대조 |
+| 특정 답이 왜 실패했나? | `<label>/responses.jsonl`, `<label>/evaluation-results.json` | **한 label 안의 같은 `row_id`**로 `business_grade → checks`, 평가 `results`의 점수·이유, 원래 `trace_id`를 대조 |
+| 검토한 한 건이 V2에서 달라졌나? | `baseline/responses.jsonl`, `improved/responses.jsonl` | **같은 `case_id` + `model_key`**의 답변·업무 검사를 비교. V2의 `regression_source_trace_ids`에 검토한 V1 trace가 있는지 확인. [README 7-4](../README.ko.md#compare-results) |
 | 전체 실행과 후보 품질이 각각 통과했나? | `verified-evidence.json` | 실행 건수, `candidate_quality_gates`, `production_release_approved`를 별도로 확인 |
 
 화살표는 포털 메뉴가 아니라 JSON 필드다. Native 평균 4점이 모든 행의 통과를 뜻하지는 않는다. 업무 gate는 **모델마다 dev 최소 5/6, holdout 4/4 업무 통과 + 필수 인용 전부 유효** 조건이며 운영 승인은 아니다.

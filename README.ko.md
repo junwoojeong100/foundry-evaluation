@@ -85,7 +85,7 @@ cd foundry-evaluation
 
 강사가 준 `.env`를 **`README.ko.md`와 같은 위치**에 둡니다. 기존 `.env`를 덮어쓰지 않습니다.
 구독·tenant, 프로젝트·Search, 모델 배포 이름, 조별 `LAB_PREFIX`와 `LAB_AGENT_NAME`이 들어 있어야 합니다.
-`LAB_PREFIX`와 `LAB_AGENT_NAME`은 이번 조가 아직 사용하지 않은 이름이어야 합니다. 암호·API key·access token은 넣지 않습니다.
+**`LAB_LANGUAGE=ko`**로 설정하고, `LAB_PREFIX`와 `LAB_AGENT_NAME`은 이번 조가 아직 사용하지 않은 이름을 씁니다. 암호·API key·access token은 넣지 않습니다.
 
 **저장소 루트**에는 `azure.yaml`, `scripts/`, `src/`, `.env`가 있습니다. 숨김 파일 `.env`는 편집기의 **파일 열기**로 열며 `.env.txt`로 저장하지 않습니다. Python이 읽으므로 **실행하거나 `source .env`하지 않습니다.** `<subscription-id>` 같은 표시는 꺾쇠까지 실제 값으로 바꿉니다. 모르는 값은 추측하지 말고 준비부터 마칩니다.
 
@@ -134,6 +134,8 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID"
 
 브라우저가 열리면 **같은 계정**을 선택하고 인증을 마칩니다. 암호·MFA·로그인 코드는 터미널 명령이나 녹화에 넣지 않습니다.
 로그인이 완료되지 않았는데 브라우저도 열리지 않으면 [로그인 문제 해결](docs/troubleshooting.ko.md#login)을 따릅니다.
+
+<a id="login-check"></a>
 
 **두 로그인 결과를 확인합니다.**
 
@@ -325,6 +327,8 @@ python scripts/workshop.py collect --split dev --label baseline
 
 오류 없이 **`24/24`**로 끝나는지 확인합니다. `src/agent/.foundry/results/baseline/business-summary.json`의 네 모델이 각각 `total: 6`이어야 합니다.
 
+**출력의 `business=False`는 업무 검사 미통과이지 명령 실행 오류가 아닙니다.** 수집이 완료됐다면 그대로 5-3으로 진행합니다. 점수를 높이려고 다시 수집하지 않습니다.
+
 <a id="baseline-evaluation"></a>
 
 ### 5-3. 저장된 응답 평가
@@ -381,16 +385,17 @@ python scripts/workshop.py monitor --label baseline
 
 **완료 확인:** `monitor`의 `complete: true`, `expected_trace_count: 24`, `observed_trace_count: 24`입니다. 다르면 feedback 전에 [모니터링 복구](docs/troubleshooting.ko.md#telemetry)를 마칩니다.
 
+<a id="review-case"></a>
+
 ### 6-2. 한 사례를 골라 원인 설명
 
 `compare`는 보고서를 출력하고 **`src/agent/.foundry/results/comparison.json`**에도 저장합니다. 이 파일을 편집기로 엽니다. 아래 화살표는 포털 메뉴가 아니라 **JSON 필드의 위치**입니다.
 
-1. **`labels → baseline → business_failures`**에서 한 행을 고릅니다. `row_id`, `trace_id`, false인 `checks`를 읽습니다.
-2. 편집기로 `src/agent/.foundry/results/baseline/responses.jsonl`을 엽니다. 한 줄이 JSON 객체 하나이며, **줄 번호가 아닌 `row_id`**를 찾습니다(`Ctrl+F`, macOS는 `⌘F`). **`answer`·`decision`·`citations`·`source_ids`**를 대조합니다. 화면 자동 줄바꿈만 켜고 파일은 수정하지 않습니다.
-3. 포털 **내 agent → Traces**에서 해당 `trace_id`로 검색합니다. 기간을 맞추고 Graph view의 검색·모델 span을 확인합니다.
-4. 이 행의 근거로 **원인과 바꿀 점**을 설명합니다.
-
-`business_failures`가 비어 있으면 실패를 꾸미지 않습니다. [전부 통과했을 때의 검토 방법](docs/troubleshooting.ko.md#no-failures)을 따릅니다.
+1. **`labels → baseline → business_failures`**에서 한 행을 고릅니다. `row_id`, `trace_id`, false인 `checks`를 읽습니다. 목록이 비었으면 [통과한 dev 한 건을 검토](docs/troubleshooting.ko.md#no-failures)하며 실패를 꾸미지 않습니다.
+2. 편집기로 `src/agent/.foundry/results/baseline/responses.jsonl`을 열고 **줄 번호가 아닌 같은 `row_id`**를 찾습니다(`Ctrl+F`, macOS는 `⌘F`). 이 행의 **`case_id`와 `model_key`**도 적어 둡니다. V2에서 같은 질문·모델을 찾는 기준입니다.
+3. `data/dev.jsonl`에서 **같은 `case_id`**의 고정 기준을 찾습니다. 응답의 `answer`·`decision`·`citations`를 기준의 `ground_truth`·`expected_decision`·`required_numbers`·`allowed_citations`와 대조합니다. 인용 ID가 그 응답의 `source_ids`에도 있는지 봅니다. 화면 자동 줄바꿈만 켜고 파일은 수정하지 않습니다.
+4. 포털 **내 agent → Traces**에서 같은 `trace_id`로 검색합니다. 기간을 맞추고 Graph view의 검색·모델 span을 확인합니다.
+5. 이 행의 **응답 → 고정 기준 → 검색·모델 기록**을 근거로 원인과 바꿀 점을 설명합니다.
 
 <a id="실제-예시-금액은-맞는데-왜-실패했나요"></a>
 
@@ -412,18 +417,20 @@ python scripts/workshop.py monitor --label baseline
 
 </details>
 
+<a id="save-review"></a>
+
 ### 6-3. 내 검토 기록 저장
 
 **검토한 `row_id`와 10자 이상의 이유**를 입력합니다. “관찰 → 근거 → 바꿀 점” 순서로 쓰며, 예시 ID·설명을 그대로 복사하지 않습니다.
 
 ```bash
 read -r -p "검토한 row_id: " ROW_ID &&
-read -r -p "확인한 실패 원인과 근거: " REVIEW_REASON &&
+read -r -p "관찰·근거·바꿀 점 (10자 이상): " REVIEW_REASON &&
 python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
   --reason "$REVIEW_REASON" --reviewer human
 ```
 
-**완료 확인:** `src/agent/.foundry/datasets/regression-*.jsonl`이 저장되고 원래 trace가 연결됩니다.
+**완료 확인:** 출력된 `src/agent/.foundry/datasets/regression-*.jsonl`을 엽니다. **`lineage → source_row_id / source_trace_id`**가 방금 검토한 응답·trace와 일치해야 합니다.
 기준 정답은 바꾸지 않습니다. 자동 실행에서는 `--reviewer assistant`로 표시하며 사람의 승인으로 기록하지 않습니다.
 
 **화면에서 볼 것:** 선택한 **같은 trace** 안의 검색 span과 모델 span입니다. 다른 요청의 검색 결과를 원인 분석에 섞지 않습니다.
@@ -483,9 +490,13 @@ python scripts/workshop.py compare --labels baseline improved
 
 **완료 확인:** 평가 **`(24 rows)`**와 갱신된 **`src/agent/.foundry/results/comparison.json`**입니다. dev·모델·KB·평가 기준·수집 동시성은 전후에 같아야 합니다.
 
+<a id="compare-results"></a>
+
 ### 7-4. 내 전후 결과 비교
 
-**내 결과를 읽는 위치:** 이 파일의 **`labels → baseline 또는 improved → models → sol/terra/luna/astra`**를 엽니다.
+**먼저 검토한 한 건:** 6단계에서 적은 **같은 `case_id` + `model_key`**로 `src/agent/.foundry/results/improved/responses.jsonl`의 V2 응답을 찾습니다. V1과 V2는 label이 달라 **`row_id`가 다릅니다.** 답변·판단·인용과 `business_grade → checks`를 비교하고, V2의 `regression_source_trace_ids`에 검토한 **V1의 `trace_id`**가 들어 있는지 확인합니다.
+
+**그다음 네 모델 전체:** `src/agent/.foundry/results/comparison.json`의 **`labels → baseline 또는 improved → models → sol/terra/luna/astra`**를 엽니다.
 모델별로 아래 세 항목을 전후 비교합니다.
 
 | 비교할 항목 | 필드 | 뜻 |
@@ -549,6 +560,8 @@ V2도 정책에 없는 해외 한도를 올바르게 보류한 D04에서 Terra·
 ## 8. 후보를 고정하고 holdout 평가하기
 
 **할 일:** 이제부터 V2의 지침·모델·검색 설정을 바꾸지 않습니다. **Holdout**은 이 시점까지 열지 않은 별도 검증 질문입니다. 4문항을 네 모델로 평가합니다.
+
+**고정 방법:** 7-2에서 확인한 V2 배포를 그대로 사용합니다. 별도 `freeze` 명령이나 추가 배포는 하지 않습니다.
 
 ```bash
 python scripts/workshop.py collect --split holdout --label holdout
@@ -662,6 +675,7 @@ Search 가동·로그 보존·기반 서비스·보조 모델의 비용은 남�
 | `src/agent/.foundry/results/baseline/` | V1의 24응답과 평가 |
 | `src/agent/.foundry/results/improved/` | V2의 24응답과 평가 |
 | `src/agent/.foundry/results/holdout/` | 고정 후보의 16응답과 평가 |
+| `src/agent/.foundry/results/comparison.json` | 네 모델의 전후 지표와 미통과 사례 |
 | `src/agent/.foundry/datasets/regression-*.jsonl` | 검토 이유·고정 정답·원래 trace |
 | `src/agent/.foundry/results/verified-evidence.json` | 전체 실행·lineage 검증 |
 

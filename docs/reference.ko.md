@@ -23,6 +23,7 @@
 | trace | 한 요청의 검색·모델 호출·응답을 연결한 실행 기록 |
 | regression / 회귀 데이터 | 검토한 사례와 정답·원래 trace를 남겨 다음 버전에서 다시 확인하는 자료 |
 | lineage | 모델·지침·데이터·버전·실행 결과가 어디에서 왔는지 연결한 이력 |
+| `case_id` / `row_id` | `case_id`는 고정 질문 ID, `row_id`는 label·모델·질문을 조합한 응답 ID. V1/V2의 같은 사례는 **`case_id` + `model_key`**로 찾음 |
 | JSON / JSONL | JSON은 구조화된 문서, JSONL은 한 줄에 JSON 객체 하나를 저장한 형식. 응답은 줄 번호가 아니라 `row_id`로 찾음 |
 
 ## 시나리오와 남는 자산

@@ -7,7 +7,8 @@
 | What you see | Next action |
 |---|---|
 | Exception, missing/duplicate response, or evaluator error | Stop the next step and [recover the failed command](#resume) |
-| Completed evaluation with low valid scores | Preserve the scores and [review the case](../README.md#lab-d) |
+| `collect` prints `business=False` | A business check failed, not the command. If collection finishes without errors, continue to that stage's evaluation. |
+| Completed evaluation with low valid scores | Preserve the scores and finish that stage's checkpoint and portal check. For `baseline`, [review in step 6](../README.md#lab-d); for `improved`, [compare in 7-4](../README.md#compare-results); for `holdout`, [verify in step 9](../README.md#lab-g). |
 | Missing or incomplete traces | Check ingestion, access, and the [query window](#telemetry); do not claim complete evidence |
 | Only a recording of a successful run | Treat it as observation, not your own completed execution |
 
@@ -72,7 +73,7 @@ az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" \
 azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 ```
 
-Open the address shown by each command and enter the code from **your own terminal**. Sign in with the configured account, then return to the README's two-account verification block.
+Open the address shown by each command and enter the code from **your own terminal**. Sign in with the configured account, then return to the README's [two-account verification block](../README.md#login-check), without repeating the sign-in commands.
 
 Never share or record one-time codes. If organizational policy blocks device-code authentication, use an approved environment rather than bypassing the policy.
 
@@ -138,6 +139,7 @@ python scripts/workshop.py monitor --label baseline-retry
 ```
 
 Use **`baseline-retry` consistently** for later feedback, comparison, and `verify --baseline`. Use concurrency 2 for candidate and holdout too; changing only one cohort invalidates the comparison.
+After all four commands finish, **open the new evaluation's report URL for step 5's portal check**, then continue at [case selection in 6-2](../README.md#review-case) using this label. Do not repeat completed collection, evaluation, or monitoring.
 
 **Failed V2 dev or holdout after a completed baseline:** keep that baseline's recorded `concurrency` from `manifest.json`. The examples below assume **4**; use its actual value if different. Choose **one** command, not both:
 
@@ -177,11 +179,10 @@ python scripts/workshop.py evaluate --label baseline --retry-failed
 
 That is a legitimate result. Do not fabricate a failure or alter an answer/reference.
 
-1. Select an uncertain **English dev** row from `src/agent/.foundry/results/baseline/responses.jsonl`.
-2. Inspect its own trace, evidence, and answer.
-3. Explain that the baseline passed and what aspect warranted review.
-4. Decide whether comparing the provided V2 is justified; do not claim improvement in advance.
-5. Use the real row ID and review reason with `feedback`.
+1. Select **one English dev response** from `src/agent/.foundry/results/baseline/responses.jsonl`. Note its `row_id`, `case_id`, `model_key`, and `trace_id`.
+2. Follow [items 2–4 of README 6-2](../README.md#review-case) to compare that response, its fixed dev reference, and its trace.
+3. Explain that all business checks passed, what you inspected, and why comparing the provided V2 is useful. Do not claim a failure or improvement in advance.
+4. Return to [6-3 to save the review](../README.md#save-review). `feedback` accepts passing dev responses too. Then review V2's suitability in step 7.
 
 The final verification requires reviewed baseline provenance to be consumed by the candidate. Do not search the holdout for a failure to use during development.
 
