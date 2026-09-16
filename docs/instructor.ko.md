@@ -19,15 +19,39 @@
 
 ## 로컬 도구 설치와 확인
 
+**여기는 직접 실행할 때도 필요한 기본 환경이다.** GHCP에 환경 생성·실습 실행을 맡기는 추가 도구와 설정은 [별도 GHCP 안내](copilot.ko.md)를 따른다. GHCP·Node.js·Playwright를 기본 실습의 필수 도구로 혼동하지 않는다.
+
 | 도구 | 설치 안내 / 확인 조건 |
 |---|---|
 | Git | [Git 설치](https://git-scm.com/downloads) |
 | Python | [Python 설치](https://www.python.org/downloads/)에서 **3.13.x** 선택. 실습 터미널에서 `python3.13` 실행 가능 |
 | Azure CLI | [Azure CLI 설치](https://learn.microsoft.com/cli/azure/install-azure-cli) |
 | azd | [Azure Developer CLI 설치](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) |
+| Bash | macOS 기본 제공. Linux/WSL에서는 배포판 패키지로 설치하며 아래 Ubuntu 예시 참고. [GNU Bash](https://www.gnu.org/software/bash/) |
+| curl | macOS 기본 제공. Linux/WSL에서 없으면 아래 예시 또는 [배포판별 curl 다운로드](https://curl.se/download.html) 참고 |
+| 편집기 | [VS Code 설치](https://code.visualstudio.com/download) 또는 기존 텍스트 편집기. `.env`·JSON을 열 수 있으면 됨 |
+| 브라우저 | [Edge 설치](https://www.microsoft.com/edge/download) 또는 [Chrome 설치](https://www.google.com/chrome/). 로그인·Foundry 포털 확인에 사용 |
 | Windows 터미널 | [WSL 설치](https://learn.microsoft.com/windows/wsl/install). Windows에만 설치하지 말고 **WSL 안에 Linux용 도구도 설치** |
 
-macOS/Linux는 Bash(`bash`), Windows는 WSL의 Bash를 사용한다. `.env` 편집과 JSON 읽기에는 VS Code 같은 텍스트 편집기면 된다.
+macOS/Linux는 Bash(`bash`), Windows는 WSL의 Bash를 사용한다. 수동 포털 확인용 브라우저와 편집기는 Windows 쪽 앱을 사용해도 된다. CLI 도구는 실습을 실행할 WSL 안에서 확인한다.
+
+먼저 Bash와 curl을 확인한다.
+
+```bash
+bash --version &&
+curl --version
+```
+
+Ubuntu/WSL에서 명령이 없다면 `sudo apt-get update` 후 **없는 도구의 행만** 실행한다. 설치 승인은 사용자 터미널에서 처리하고 암호를 채팅에 전달하지 않는다.
+
+| 없는 도구 | 설치 명령 |
+|---|---|
+| Bash | `sudo apt-get install bash` |
+| curl | `sudo apt-get install curl` |
+
+macOS에서 기본 명령을 찾지 못하면 `/bin/bash`, `/usr/bin/curl`과 PATH를 먼저 확인한다. 다른 Linux 배포판은 해당 배포판의 패키지 관리자를 사용한다. 설치 후 위 버전 확인을 반복한다.
+
+그다음 나머지 CLI 도구를 확인한다. Python 패키지 설치는 [README 1-2](../README.ko.md#1-2-가상환경과-로컬-테스트)에서 수행한다.
 
 ```bash
 git --version &&
@@ -51,7 +75,13 @@ azd ai agent --help
 
 명령 목록에 `run`, `invoke`가 있어야 한다. 업데이트 안내 자체를 현재 명령의 실패로 보지 않으며, 실험 중 “모두 업데이트”나 임의 다운그레이드를 하지 않는다. 설치된 명령이 실패하면 호환되는 azd/확장 조합을 먼저 해결한다.
 
-준비된 서비스와 완성된 `.env`를 받은 참가자는 [README 1단계](../README.ko.md#start)로 돌아간다. 환경 소유자는 [권한](#access)을 확인한 뒤 위의 준비 경로를 선택한다.
+**도구 확인을 마쳤다면 맞는 경로 하나로 이동한다.** 아래 강사 준비 전체를 모든 참가자가 수행할 필요는 없다.
+
+| 진행 방식 | 다음으로 갈 곳 |
+|---|---|
+| 준비된 환경에서 직접 실습 | [README 1단계](../README.ko.md#start) |
+| GHCP에 실행을 맡김 | [GHCP 설치·시작 안내](copilot.ko.md#install). 기본 도구 설치는 반복하지 않음 |
+| 환경 소유자가 직접 Azure 준비 | [권한](#access) 확인 후 새 환경 / 기존 환경 경로 선택 |
 
 <a id="handoff"></a>
 
@@ -65,7 +95,7 @@ azd ai agent --help
 | 조별 `.env` | `.env.example`의 모든 값을 채움. 한국어는 `LAB_LANGUAGE=ko`, 영어는 `en`. 암호·API key·token은 없음 |
 | 준비된 서비스 | Foundry 프로젝트, Search, 연결된 App Insights, 네 후보와 별도 planner/judge |
 | 고유한 이름 | 참가자가 아직 사용하지 않은 `LAB_PREFIX`, `LAB_AGENT_NAME` |
-| 준비된 도구 | Python 3.13, Azure CLI, azd 확장, Bash 또는 WSL |
+| 준비된 도구 | [기본 도구 설치·확인](#tools) 통과. GHCP 사용 시 [추가 준비](copilot.ko.md)는 별도 수행 |
 | 도움받을 담당자 | `grant-agent-access` 역할 부여·403·quota 오류를 처리할 담당자 |
 
 **중요:** `.env`만 전달한 새 clone에는 로컬 azd 환경이 없다. 참가자는 README 1단계의 **`bind`를 자기 폴더에서 실행**한다. 강사 PC에서 바인딩했다는 이유로 이 단계를 생략하지 않는다.

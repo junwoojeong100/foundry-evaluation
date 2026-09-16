@@ -17,15 +17,39 @@ Participants follow [README.md](../README.md#start). Keep infrastructure creatio
 
 ## Install and check the local tools
 
+**This is the basic setup, even when you run commands yourself.** Additional tools and configuration for delegating environment creation and execution to GHCP are in the [separate GHCP guide](copilot.en.md). GHCP, Node.js, and Playwright are not prerequisites for manual workshop execution.
+
 | Tool | Installation reference / requirement |
 |---|---|
 | Git | [Install Git](https://git-scm.com/downloads) |
 | Python | [Install Python](https://www.python.org/downloads/), selecting **3.13.x**; `python3.13` must work in the workshop terminal |
 | Azure CLI | [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) |
 | azd | [Install Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) |
+| Bash | Included with macOS. On Linux/WSL, use your distribution's package manager; see the Ubuntu example below. [GNU Bash](https://www.gnu.org/software/bash/) |
+| curl | Included with macOS. If missing on Linux/WSL, use the example below or [curl packages for your platform](https://curl.se/download.html). |
+| Editor | [Install VS Code](https://code.visualstudio.com/download) or use an existing editor that can open `.env` and JSON files |
+| Browser | [Install Edge](https://www.microsoft.com/edge/download) or [Chrome](https://www.google.com/chrome/) for sign-in and Foundry portal checks |
 | Windows terminal | [Install WSL](https://learn.microsoft.com/windows/wsl/install); install the Linux tools **inside WSL**, not only on Windows |
 
-Use Bash (`bash`) on macOS/Linux, or a WSL Bash terminal on Windows. A text editor such as VS Code is enough for reading JSON and editing `.env`.
+Use Bash (`bash`) on macOS/Linux, or a WSL Bash terminal on Windows. Windows editors and browsers are fine for manual file/portal checks; verify CLI tools inside the WSL environment running the workshop.
+
+First check Bash and curl:
+
+```bash
+bash --version &&
+curl --version
+```
+
+If a command is missing on Ubuntu/WSL, run `sudo apt-get update`, then execute **only the row for the missing tool**. Handle installation approval in your own terminal; never send the password through chat.
+
+| Missing tool | Installation command |
+|---|---|
+| Bash | `sudo apt-get install bash` |
+| curl | `sudo apt-get install curl` |
+
+On macOS, check `/bin/bash`, `/usr/bin/curl`, and PATH before treating a built-in command as missing. Other Linux distributions should use their own package manager. Repeat the version check after installation.
+
+Then check the remaining CLI tools. Install the Python packages in [README step 1-2](../README.md#1-2-create-the-python-environment-and-run-offline-tests).
 
 ```bash
 git --version &&
@@ -49,7 +73,13 @@ azd ai agent --help
 
 Require the command list to include `run` and `invoke`. An update notice is not itself a failure of the installed commands; do not run “update all” or downgrade tools mid-experiment. If the installed commands fail, resolve the compatible azd/extension versions before starting.
 
-Participants with ready services and a complete `.env` return to [README step 1](../README.md#start). Environment owners continue with [access](#access), then choose the setup path above.
+**After checking the tools, choose one return path.** Participants do not all need to complete the remaining instructor sections.
+
+| How you will proceed | Next destination |
+|---|---|
+| Run a prepared workshop manually | [README step 1](../README.md#start) |
+| Delegate execution to GHCP | [GHCP installation and startup](copilot.en.md#install); do not repeat basic-tool installation |
+| Prepare Azure yourself as the environment owner | Check [access](#access), then choose new or existing infrastructure |
 
 <a id="handoff"></a>
 
@@ -63,7 +93,7 @@ Use this checklist **after rehearsal**, not as a replacement for provisioning.
 | Complete `.env` | Use `.env.example`, fill the actual values, and set **`LAB_LANGUAGE=en`**. Do not include passwords, API keys, or tokens. |
 | Ready services | Foundry project, Search, connected Application Insights, four fixed candidates, and the auxiliary planner/judge |
 | Unused names | A unique `LAB_PREFIX` and `LAB_AGENT_NAME` for each team |
-| Tools | Git, Python 3.13, Azure CLI, azd with the Foundry extension, and Bash/WSL |
+| Tools | Pass the [basic tool checks](#tools). Complete [additional GHCP setup](copilot.en.md) separately if using it. |
 | Access support | A person who can resolve narrowly scoped role assignment, 403, and capacity issues |
 
 A new participant clone has no local azd binding. The participant must run **`bind` in their own folder**, even if the instructor has already bound another copy.

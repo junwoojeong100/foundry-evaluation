@@ -10,6 +10,7 @@ Follow [the English README](../README.md) for the execution path. This document 
 
 | Term | Meaning here |
 |---|---|
+| Copilot CLI / workshop agent | Copilot CLI is the development tool that helps run commands; the workshop agent is the Python application deployed to Azure to answer policy questions |
 | Agent / model | One Python agent calls one of Sol, Terra, Luna, or Astra for each request; the models do not vote |
 | Foundry / Agent Framework | Foundry provides Azure services and the portal; Agent Framework is the library used by the Python agent |
 | Knowledge base / KB | Searchable organizational policy evidence |

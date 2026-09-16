@@ -8,6 +8,8 @@ Participants with a prepared `.env` should skip this document and start at [READ
 
 For self-study, you are the environment owner. Complete the [tool and access prerequisites](instructor.en.md#tools) first. Keep this Bash terminal open throughout setup so its paths and login profile remain available.
 
+**To delegate environment creation to GHCP:** start with the [separate installation and startup guide](copilot.en.md). Do not jump to execution prompts before installation and sign-in. Review the account, subscription, and billable scope; installing tools does not grant Azure permissions.
+
 **Route:** complete steps 1–6 here, then choose the [self-study or class handoff](#handoff). Step 2 briefly uses the README's **sign-in section only**; do not start its deployment steps during setup. If the foundation services already exist, use [existing-foundation preparation](instructor.en.md#existing-foundation) instead of creating another environment.
 
 > New services incur costs. Use synthetic data, preserve shared/Korean resources, and never change the default Azure CLI subscription used by other work. Sweden Central resource placement does not mean GlobalStandard model inference is confined to that region.
@@ -23,6 +25,8 @@ git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evalu
 cd foundry-evaluation-setup-en
 ```
 
+<a id="initial-settings"></a>
+
 In your editor, copy `.env.example` to a new **`.env` in this folder**, not `.env.txt`. Do not overwrite an existing configuration. For the initial IDs, sign in to [Azure Portal](https://portal.azure.com/) with the approved account: **Subscriptions → your subscription → Overview** provides the subscription ID; **Microsoft Entra ID → Overview** provides its directory's tenant ID. Portal sign-in does not sign in either CLI.
 
 | Initial field | Value |
@@ -34,6 +38,8 @@ In your editor, copy `.env.example` to a new **`.env` in this folder**, not `.en
 | `LAB_LANGUAGE` | `en` |
 
 Keep the other template settings. New service names, endpoints, and deployment names will be generated in the isolated folder. Do not put credentials in `.env`.
+
+**If the GHCP page sent you here only for initial settings, stop here and return to [plan review](copilot.en.md#plan-review).** Let GHCP run `init` / `prepare` after approval; do not run the same setup in both places. If preparing the environment manually, continue below.
 
 ```bash
 python3.13 -m venv src/agent/.venv &&

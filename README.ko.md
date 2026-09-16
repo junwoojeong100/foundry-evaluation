@@ -15,7 +15,9 @@
 | 준비된 Azure 환경이 없음 | [새 환경 준비](docs/environment.ko.md)를 마치고 그 문서가 지정하는 단계로 복귀. 혼자 실습하면 본인이 환경 소유자를 맡습니다. |
 | 이전 실행을 이어가는 중 | **같은 폴더**에서 [복구 안내](docs/troubleshooting.ko.md#resume)를 따름. 다시 clone하지 않습니다. |
 
-**필요한 도구:** Git, Python 3.13, Azure CLI, azd + `microsoft.foundry`, 텍스트 편집기. macOS/Linux는 Bash, Windows는 **WSL 안의 Bash**를 사용합니다. 도구가 없다면 [설치·확인](docs/instructor.ko.md#tools)부터 진행합니다.
+**기본 도구:** Git, Python 3.13, Azure CLI, azd + `microsoft.foundry`, Bash·curl, 편집기·브라우저. Windows의 CLI 도구는 **WSL 안에 설치**합니다. [기본 도구 설치·확인](docs/instructor.ko.md#tools)을 먼저 마칩니다.
+
+**GHCP에 실행을 맡길 때만:** [추가 도구 설치·연결·실습 요청 방법](docs/copilot.ko.md)을 따릅니다. 직접 실행에는 GHCP나 Playwright가 필요하지 않습니다.
 
 **비용과 언어:** **유료 Azure 서비스**가 필요하며 환경 준비는 120분에 포함하지 않습니다. `.env` 복사만으로 자원·권한이 생기지 않습니다. `LAB_LANGUAGE=ko`를 사용하고, 언어별 **폴더·미사용 `LAB_PREFIX` / `LAB_AGENT_NAME`**을 분리합니다. 기존 실행의 언어는 바꾸지 않습니다.
 
@@ -78,6 +80,8 @@ bash
 git clone https://github.com/junwoojeong100/foundry-evaluation.git &&
 cd foundry-evaluation
 ```
+
+<a id="workspace-settings"></a>
 
 강사가 준 `.env`를 **`README.ko.md`와 같은 위치**에 둡니다. 기존 `.env`를 덮어쓰지 않습니다.
 구독·tenant, 프로젝트·Search, 모델 배포 이름, 조별 `LAB_PREFIX`와 `LAB_AGENT_NAME`이 들어 있어야 합니다.
@@ -685,4 +689,4 @@ Search 가동·로그 보존·기반 서비스·보조 모델의 비용은 남�
 
 ## 필요한 참고 문서
 
-[평가 방법과 개선 결과](docs/validation.ko.md) · [설계·모델·공식 출처](docs/reference.ko.md) · [문제 해결](docs/troubleshooting.ko.md) · [강사 준비](docs/instructor.ko.md) · [새 Azure 환경 생성](docs/environment.ko.md)
+[평가 방법과 개선 결과](docs/validation.ko.md) · [설계·모델·공식 출처](docs/reference.ko.md) · [문제 해결](docs/troubleshooting.ko.md) · [강사 준비](docs/instructor.ko.md) · [새 Azure 환경 생성](docs/environment.ko.md) · [GHCP로 진행 — 선택](docs/copilot.ko.md)

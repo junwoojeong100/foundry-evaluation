@@ -9,6 +9,8 @@ Git, Python 3.13, Azure CLI, azd + `microsoft.foundry` 확장, Bash가 필요합
 아래는 **같은 Bash 터미널에서 한 블록씩** 실행합니다. 오류가 나면 다음 블록으로 넘어가지 않습니다.
 혼자 실습한다면 본인이 환경 소유자를 맡습니다. [도구·권한 준비](instructor.ko.md#tools)를 먼저 마치고, 경로 변수와 로그인 프로필을 유지하도록 준비가 끝날 때까지 이 터미널을 열어 둡니다.
 
+**GHCP에 환경 생성을 맡기려면:** [별도 도구 설치·시작 안내](copilot.ko.md)를 먼저 따릅니다. 설치·로그인 전 실행 요청 단계로 건너뛰지 않습니다. 계정·구독·과금 범위를 확인하고 승인하며, 도구 설치가 Azure 권한을 대신하지 않습니다.
+
 **진행 경로:** 이 문서의 1–6단계를 마친 뒤 [개인 실습 또는 수업 전달 경로](#handoff)를 선택합니다. 2단계에서만 README의 **로그인 부분**을 사용하며, 준비 중에 참가자 배포 단계까지 진행하지 않습니다. 기반 서비스가 이미 있으면 새로 만들지 말고 [기존 환경 준비](instructor.ko.md#existing-foundation)를 따릅니다.
 
 > 새 서비스에는 비용이 발생합니다. 합성 데이터만 사용하고, 공유 자원과 기본 Azure CLI 구독은 변경하지 않습니다.
@@ -23,6 +25,8 @@ git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evalu
 cd foundry-evaluation-setup-ko
 ```
 
+<a id="initial-settings"></a>
+
 편집기에서 `.env.example`을 복사해 **지금 폴더의 새 `.env`**로 저장합니다. `.env.txt`가 되거나 기존 설정을 덮어쓰지 않도록 합니다.
 초기 ID는 승인된 계정으로 [Azure Portal](https://portal.azure.com/)에 로그인한 뒤 **Subscriptions → 해당 구독 → Overview**에서 구독 ID, **Microsoft Entra ID → Overview**에서 그 구독 디렉터리의 tenant ID를 확인합니다. 포털 로그인은 두 CLI 로그인과 별개입니다.
 
@@ -36,6 +40,8 @@ cd foundry-evaluation-setup-ko
 
 새 서비스 이름·endpoint·조별 기본 이름은 아래 도구가 **별도 폴더의 `.env`에 생성**합니다.
 나머지는 `.env.example`의 설정을 유지합니다. 암호·API key·토큰은 넣지 않습니다.
+
+**GHCP 페이지에서 초기 설정만 준비하러 왔다면 여기까지 작성하고 [계획 확인](copilot.ko.md#plan-review)으로 돌아갑니다.** 아래 `init`·`prepare`는 승인 후 GHCP가 이어서 수행하게 하며, 양쪽에서 중복 실행하지 않습니다. 직접 환경을 준비하는 경우에는 아래부터 계속합니다.
 
 ```bash
 python3.13 -m venv src/agent/.venv &&

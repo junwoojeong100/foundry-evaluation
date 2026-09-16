@@ -15,7 +15,9 @@
 | You do not have a prepared Azure environment | [Create an environment](docs/environment.en.md), then return at the step it specifies. For self-study, you are the environment owner. |
 | You are resuming an earlier attempt | [Resume safely](docs/troubleshooting.en.md#resume) in the **same folder**; do not clone again |
 
-**Tools:** Git, Python 3.13, Azure CLI, azd + `microsoft.foundry`, and a text editor. Use Bash on macOS/Linux or **Bash inside WSL** on Windows. Missing tools: [install and check them first](docs/instructor.en.md#tools).
+**Basic tools:** Git, Python 3.13, Azure CLI, azd + `microsoft.foundry`, Bash/curl, an editor, and a browser. On Windows, install CLI tools **inside WSL**. Complete [basic tool installation and checks](docs/instructor.en.md#tools) first.
+
+**Only when delegating to GHCP:** follow the [additional tool setup, connections, and execution prompts](docs/copilot.en.md). Manual execution does not require GHCP or Playwright.
 
 **Cost and language:** **paid Azure services** are required; preparation is outside the 120 minutes. A copied `.env` creates no resources or access. Use `LAB_LANGUAGE=en` in a separate folder with unused `LAB_PREFIX` / `LAB_AGENT_NAME`. Never relabel an existing run.
 
@@ -75,6 +77,8 @@ With an unused clone or extracted ZIP, enter its root and skip this block. Never
 git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evaluation-en &&
 cd foundry-evaluation-en
 ```
+
+<a id="workspace-settings"></a>
 
 Place the instructor's complete `.env` **next to this README**, without overwriting another file. Check the account, subscription/tenant, project, Search, deployments, and unused team names. Set **`LAB_LANGUAGE=en`**. Never include passwords, API keys, or tokens.
 
@@ -632,4 +636,4 @@ Instructor setup starts at **00:13**. If your environment is already prepared, m
 
 ## Essential references
 
-[Evaluation method and English results](docs/validation.en.md) · [Architecture, models, and official sources](docs/reference.en.md) · [Troubleshooting](docs/troubleshooting.en.md) · [Instructor preparation](docs/instructor.en.md) · [Create a new English Azure environment](docs/environment.en.md)
+[Evaluation method and English results](docs/validation.en.md) · [Architecture, models, and official sources](docs/reference.en.md) · [Troubleshooting](docs/troubleshooting.en.md) · [Instructor preparation](docs/instructor.en.md) · [Create a new English Azure environment](docs/environment.en.md) · [Delegate to GHCP — optional](docs/copilot.en.md)

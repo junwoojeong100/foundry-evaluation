@@ -19,10 +19,12 @@
 
 아래 경로는 모두 **`src/agent/.foundry/results/`** 아래이며 **내 실행 결과**다. 뒤의 수치 표는 촬영 실행의 기록이다. 복구 label을 사용했다면 그 이름과 경로로 읽는다.
 
+파일은 각각 `collect`, `evaluate`, `compare`, `verify`를 실행한 뒤 생성된다. 해당 단계를 아직 하지 않은 새 clone에 파일이 없는 것은 정상이다. **완료된 명령의 파일이 없다면 복구가 필요하며**, 촬영 예시 파일을 복사해 채우지 않는다.
+
 | 알고 싶은 것 | 열 곳 | 읽을 값 |
 |---|---|---|
 | 모델별로 무엇이 바뀌었나? | `comparison.json → labels → baseline / improved → models → sol/terra/luna/astra` | `business_passed` / `total`, `required_citation_passed` / `required_citation_total`, `foundry_evaluators`의 평균과 통과 건수 |
-| 특정 답이 왜 실패했나? | `<label>/responses.jsonl`, `<label>/evaluation-results.json` | **같은 `row_id`**로 업무 `checks`, native 점수·이유, 원래 `trace_id`를 대조 |
+| 특정 답이 왜 실패했나? | `<label>/responses.jsonl`, `<label>/evaluation-results.json` | **같은 `row_id`**로 `business_grade → checks`, 평가 `results`의 점수·이유, 원래 `trace_id`를 대조 |
 | 전체 실행과 후보 품질이 각각 통과했나? | `verified-evidence.json` | 실행 건수, `candidate_quality_gates`, `production_release_approved`를 별도로 확인 |
 
 화살표는 포털 메뉴가 아니라 JSON 필드다. Native 평균 4점이 모든 행의 통과를 뜻하지는 않는다. 업무 gate는 **모델마다 dev 최소 5/6, holdout 4/4 업무 통과 + 필수 인용 전부 유효** 조건이며 운영 승인은 아니다.

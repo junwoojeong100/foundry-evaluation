@@ -10,6 +10,7 @@
 
 | 용어 | 이 실습에서의 뜻 |
 |---|---|
+| Copilot CLI / 실습 agent | Copilot CLI는 명령 실행을 돕는 개발 도구. 실습 agent는 Azure에 배포해 출장 규정에 답하게 하는 Python 앱 |
 | Agent / 모델 | Python agent 하나가 요청마다 Sol·Terra·Luna·Astra 중 하나를 호출하며, 모델끼리 투표하지 않음 |
 | Foundry / Agent Framework | Foundry는 Azure 서비스와 포털, Agent Framework는 Python agent가 사용하는 라이브러리 |
 | KB / knowledge base | 회사 문서를 검색하는 지식 계층 |
@@ -37,7 +38,7 @@ flowchart LR
     Q["합성 질문"] --> A["Python Hosted Agent"]
     A --> K["Foundry IQ\n정책 원문 검색"]
     K --> A
-    A --> M["같은 업무에\n네 후보 모델 교체"]
+    A --> M["고정한 네 모델 중 하나"]
     M --> R["답변 · 문서 ID · trace"]
     R --> E["Foundry 평가\n+ 업무 검사"]
     R --> T["Trace / Monitor"]
