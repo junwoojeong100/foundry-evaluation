@@ -237,6 +237,47 @@ Calibration 예제 2개는 본평가 64응답이 아닙니다. 모델 접근·�
 참가자의 `cleanup`은 그 폴더에서 소유한 agent·세션·모델·KB 객체·역할만 정리합니다.
 **강사가 준비한 기반 서비스와 모델까지 모두 삭제하지 않습니다.** 남은 Search·로그 보존·보조 모델의 비용과 최종 정리는 강사가 별도로 관리합니다.
 
-이후 실행은 [README](../README.ko.md), 점수와 개선의 해석은 [평가 방법과 개선 결과](validation.ko.md)를 따릅니다.
+실습 시작·복귀 위치는 [전달 경로](#handoff), 점수와 개선의 해석은 [평가 방법과 개선 결과](validation.ko.md)를 따릅니다.
+
+<a id="final-cleanup"></a>
+
+## 개인 전용 기반 환경까지 최종 정리하기 — 별도 선택
+
+**README 10단계의 `cleanup`·`check-cleanup`을 끝낸 환경 소유자만 진행합니다.** 개인 실습의 기반 서비스 삭제는 별도 선택이며, 참가자 정리나 GHCP 실행 요청이 그룹 전체 삭제의 승인은 아닙니다.
+
+| 환경 | 선택할 경로 |
+|---|---|
+| 기존·공유 환경 또는 다음 참가자/수업이 사용할 그룹 | **기반 서비스와 보조 배포를 보존.** 담당자가 잔여 비용·보존 기간·최종 종료일을 관리합니다. 아래 그룹 삭제는 하지 않습니다. |
+| 이 문서의 도구로 새로 만든 **본인 전용 그룹**, 다른 사용자·후속 실습 없음 | 아래 소유권 확인 후 **그 그룹만** 최종 삭제할 수 있습니다. |
+| 생성 기록이 없거나 소유권·사용자가 불명확함 | 중단하고 환경 소유자에게 확인합니다. 이름·태그만으로 삭제하지 않습니다. |
+
+### 1. 증거를 보관하고 삭제 범위 확인
+
+필요한 로컬 응답·평가·회귀 기록과 `verified-evidence.json`, `cleanup-check.json`을 보관합니다. 그룹 삭제 후 Foundry 보고서 URL과 Azure trace를 다시 열 수 있다고 가정하지 않습니다. 인증 캐시·암호·토큰은 공유하거나 커밋하지 않습니다.
+
+준비 때 보관한 **같은 `RUN_DIR`**의 `config.json`과 `infrastructure-state.json`을 편집기로 엽니다. 새 run을 만들지 않습니다.
+
+| 확인할 것 | 일치해야 하는 값 |
+|---|---|
+| 실행 | `config.json → run_id`와 `infrastructure-state.json → run` |
+| 삭제할 그룹 | `config.json → resource_group`. **`old_resource_group`는 보존 대상** |
+| 구독·Resource ID | `config.json → subscription`과 `infrastructure-state.json → group_id`의 구독·그룹 |
+| 생성된 서비스 | `infrastructure-state.json → resources`에 기록된 Resource ID |
+
+[Azure Portal](https://portal.azure.com/)에서 설정한 계정·tenant·구독을 확인하고 **Resource groups → 위 그룹**을 엽니다. **Overview / Properties**의 Resource ID가 기록된 `group_id`와 같고 위치가 **Sweden Central (`swedencentral`)**인지 확인합니다. **Tags**는 `workshop=foundry-evaluation`, `cleanup-scope=exclusive`, `purpose=synthetic-data-only`, `run=내 run_id`여야 합니다.
+
+**Resources와 사용 범위도 확인합니다.** 남은 Foundry 계정·프로젝트·Search·App Insights·Log Analytics·보조 배포가 이번 생성 기록에 속하고 다른 사람이 사용하지 않아야 합니다. 기록에 없는 자원, 다른 그룹과의 불명확한 종속성, 후속 수업 계획이 있으면 삭제하지 않습니다. 태그나 소유권 파일을 고쳐 조건을 맞추지 않습니다.
+
+### 2. 검토한 그룹만 삭제
+
+**그룹 전체와 남은 서비스가 삭제되며 그룹 자체는 복구할 수 없습니다.** 위 범위와 영향을 확인한 소유자가 삭제를 결정한 뒤에만 실행합니다. GHCP에 맡긴다면 **정확한 구독·그룹·삭제 영향에 대해 이 작업을 별도로 승인**합니다.
+
+같은 그룹 화면에서 **Delete resource group**을 선택하고, 확인란에 **검토한 그룹 이름**을 입력해 삭제를 확정합니다. 다른 그룹이나 공유 환경으로 범위를 넓히지 않습니다. [공식 그룹 삭제 절차](https://learn.microsoft.com/azure/azure-resource-manager/management/delete-resource-group#delete-resource-group)를 따릅니다.
+
+### 3. 삭제 완료와 남은 비용 확인
+
+포털의 **삭제 완료 알림**을 기다린 뒤, 같은 구독의 Resource groups 목록을 새로 고쳐 정확한 그룹 이름이 사라졌는지 확인합니다. 삭제 요청 제출만으로 완료로 기록하지 않습니다. 잠금·권한·종속성 오류가 나면 오류를 보존하고 담당자에게 확인하며 보호 설정을 임의 해제하지 않습니다.
+
+**이후 `check-cleanup`을 다시 실행하지 않습니다.** 그 명령은 기반 서비스가 보존된 README 10단계를 검사하므로, 전체 그룹 삭제 확인은 위 포털 결과로 합니다. 이미 발생한 사용료와 지연 반영 비용은 남을 수 있습니다. 구독의 **Cost Management → Cost analysis**에서 확인하며, 삭제 성공을 청구액 0으로 해석하지 않습니다.
 
 구성 근거: [공식 Foundry 기본 인프라 예제](https://github.com/Azure-Samples/azd-ai-starter-basic/tree/main/infra) · [Search knowledge retrieval 과금 설정](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-enable-disable).

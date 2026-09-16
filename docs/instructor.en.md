@@ -169,13 +169,51 @@ Installation references: [Azure CLI](https://learn.microsoft.com/cli/azure/insta
 
 ## Safe preparation with an existing foundation
 
+**Order:** configuration/sign-in → **auxiliary planner/judge** → four candidates → calibration → handoff.
+
+### 1. Configure and sign in
+
 1. Prepare this folder's `.env` with `LAB_LANGUAGE=en`, unused preparation names, and actual resource/deployment values.
 2. Complete [README step 1-3](../README.md#login), including both CLI sign-ins and the identity checks. Keep the configured subscription explicit.
-3. Run `python scripts/workshop.py preflight --allow-missing-models`.
-4. If the four candidates are missing, use `python scripts/workshop.py prepare-models` to create only the owned, prefixed deployments.
-5. Run `python scripts/workshop.py preflight` again and require `language: en` and `missing_models: []`.
-6. Run `python scripts/workshop.py calibrate` and require **`Judge calibration passed`**. README step 5 repeats this check in each participant workspace; matching completed calibration is reused. The two fixed examples are not part of the 64 candidate responses.
-7. For a class, use the [separate rehearsal folder](#rehearsal-workspace), then hand off to participants. For one-off self-study, stay here and continue at [README step 1-4](../README.md#project-binding): bind → IQ retrieval → local smoke → deployment/access → hosted smoke. Do not run both paths.
+
+<a id="auxiliary-model"></a>
+
+### 2. Prepare the auxiliary planner/judge first
+
+**The environment owner completes this before the exercise.** `--allow-missing-models` allows **only the four candidates** to be missing. It still stops if the auxiliary deployment is absent, and `prepare-models` does not create that deployment.
+
+Sign in to [Foundry](https://ai.azure.com/) with the configured account. In **New Foundry**, match `AZURE_AI_ACCOUNT_NAME` and `AZURE_AI_PROJECT_NAME`. Open **Build → Models** and inspect an existing deployment against these requirements:
+
+| Check | Fixed workshop requirement |
+|---|---|
+| Location | The **same Foundry account** configured in `.env` |
+| Model ID / version | `gpt-5.4-mini` / `2026-03-17` |
+| Deployment type | **Global Standard** (`GlobalStandard`), not a PTU reservation |
+| Version stability | No automatic version upgrades (`NoAutoUpgrade`) |
+| Deployment status | **`Succeeded`** |
+
+**Reuse a matching deployment.** Its name need not match the example. Do not create a duplicate or modify a shared deployment.
+
+**Create one only if no matching deployment exists.** After the owner checks and approves model access, available regional quota, and cost, open **Discover → Models → `gpt-5.4-mini` → Deploy → Custom settings**. Recheck the target account and select the model version/type above. Use an **unused name formed from your actual `LAB_PREFIX` plus `-judge`** and capacity within the approved available quota. Do not enable automatic version upgrades during the experiment. Select **Deploy** and wait for `Succeeded`.
+
+Stop if the exact model, version, deployment type, or quota is unavailable. Do not substitute a candidate as judge, reduce another user's allocation, or create a duplicate foundation as a workaround. See the [official model deployment guide](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/deploy-foundry-models) for the portal procedure.
+
+**Finally, record these values in this folder's `.env`:**
+
+| Key | Value to record |
+|---|---|
+| `LAB_AUX_DEPLOYMENT` | **Actual deployment name copied from Build → Models**. Use `gpt-5.4-mini` only if that is also its deployment name. |
+| `LAB_AUX_MODEL` | The model ID, **`gpt-5.4-mini`** |
+
+**Checkpoint:** the deployment in the same account meets the requirements above, and the two `.env` values match **the actual deployment name and model ID respectively**. IQ planning and evaluation judging share this deployment. The owner records the name and Resource ID of any auxiliary deployment created in the portal; do not assume participant `cleanup` will delete it.
+
+### 3. Check the candidates and judge, then hand off
+
+1. Run `python scripts/workshop.py preflight --allow-missing-models`. The auxiliary deployment must already be ready.
+2. If the four candidates are missing, use `python scripts/workshop.py prepare-models` to create only the owned, prefixed deployments.
+3. Run `python scripts/workshop.py preflight` again and require `language: en` and `missing_models: []`.
+4. Run `python scripts/workshop.py calibrate` and require **`Judge calibration passed`**. README step 5 repeats this check in each participant workspace; matching completed calibration is reused. The two fixed examples are not part of the 64 candidate responses.
+5. For a class, use the [separate rehearsal folder](#rehearsal-workspace), then hand off to participants. For one-off self-study, stay here and continue at [README step 1-4](../README.md#project-binding): bind → IQ retrieval → local smoke → deployment/access → hosted smoke. Do not run both paths.
 
 If evaluation reports missing App Insights `ResourceId` metadata, inspect connection ownership first. Only an authorized instructor may use `repair-observability --confirm` on a dedicated workshop connection. Do not modify a shared connection to make an example work.
 
@@ -201,7 +239,7 @@ Keep the local server in a trusted development environment, never expose it publ
 | 25–40 min | 3–4. Local and hosted | Real answers in both environments |
 | 40–55 min | 5. Baseline | 24 actual English responses and completed native evaluation |
 | 55–70 min | 6. Review | A real trace and reviewed regression case |
-| 70–85 min | 7. V2 | New version, same 24 dev cases |
+| 70–85 min | 7. V2 | New version, same 6 dev questions × 4 models = 24 responses |
 | 85–100 min | 8. Holdout | Frozen candidate and 16 responses |
 | 100–110 min | 9. Observe | 64 responses, 64 traces, and complete lineage |
 | 110–115 min | 10. Cleanup | Only the folder's owned objects removed |
@@ -212,6 +250,8 @@ The 120 minutes assume a prepared environment. Rehearse model deployment, cold s
 ## Cleanup and maintenance
 
 Review `cleanup --dry-run` before confirming. Never delete an entire shared resource group or run `azd down` against shared resources. Retained Search and logging resources may continue to cost money.
+
+For **one-off self-study in an exclusively owned group created by this repository's setup tools**, you may separately choose [final foundation cleanup](environment.en.md#final-cleanup) after README step 10. Do not use that path for an existing/shared environment or a group needed for a later class.
 
 Before changing Foundry agent code or instructions, read the `microsoft-foundry` skill guidance. Keep synthetic-data-only boundaries, the configured subscription, model identities, prompt/data versions, and trace lineage. Run the offline tests before cloud operations.
 

@@ -43,6 +43,7 @@ For a new experiment or another language, obtain unused names and use a separate
 | `read: -p: no coprocess` or activation path missing | Start Bash and use Terminal A's absolute `pwd` path |
 | Language mismatch | Use the original language/workspace. `LAB_LANGUAGE=en` selects English; a missing setting preserves legacy Korean behavior. Never mix the two sets of results. |
 | Nonempty `missing_models` | Ask the instructor to confirm all four exact deployments, versions, access, and quota; no substitutes |
+| `The fixed auxiliary planner/judge deployment is missing` | The owner completes [auxiliary model preparation](instructor.en.md#auxiliary-model) and checks the actual `LAB_AUX_DEPLOYMENT` in `.env`. Neither `--allow-missing-models` nor `prepare-models` skips or creates that deployment. |
 | Wrong account or tenant | Repeat [the two sign-ins and checks](../README.md#login); do not change a global default subscription |
 | Login appears missing only in a new terminal | Restore `export AZURE_CONFIG_DIR="$PWD/.azure-cli"` in the correct folder |
 | `bind` or `set-prompt` environment error | Confirm that `bind` ran in this folder and targets the expected project/language |

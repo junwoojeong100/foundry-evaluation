@@ -11,7 +11,7 @@
 | Your situation | Where to start |
 |---|---|
 | You have ready Azure services, access, and a complete team `.env` | [Step 1: prepare your workspace](#start) |
-| Foundation services exist, but models or access are not ready | [Prepare the existing foundation](docs/instructor.en.md#existing-foundation) as the environment owner |
+| Foundation services exist, but models or access are not ready | As the owner, [prepare the existing foundation](docs/instructor.en.md#existing-foundation): **auxiliary model first, then four candidates** |
 | You do not have a prepared Azure environment | [Create an environment](docs/environment.en.md), then return at the step it specifies. For self-study, you are the environment owner. |
 | You are resuming an earlier attempt | [Resume safely](docs/troubleshooting.en.md#resume) in the **same folder**; do not clone again |
 
@@ -598,6 +598,8 @@ python scripts/workshop.py check-cleanup
 **Checkpoint:** `temporary_hosted_agent_absent: true`, `existing_foundry_project_preserved: true`, and `existing_search_service_preserved: true`. Deleted-object counts must match **your plan**, not the screenshot. Instructor-prepared models are not automatically yours to delete.
 
 Search uptime, logs, retained foundation services, and the auxiliary model may still incur costs. The environment owner manages their final lifecycle separately.
+
+**For one-off self-study in a new dedicated environment you created:** after this checkpoint, you may separately choose [final foundation cleanup](docs/environment.en.md#final-cleanup). Do not delete an existing/shared group or one needed for a later class.
 
 <details>
 <summary>Example: cleanup confirmation</summary>

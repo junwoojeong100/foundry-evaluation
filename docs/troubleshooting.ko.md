@@ -45,6 +45,7 @@
 | 언어가 다르거나 language mismatch | 한국어는 `LAB_LANGUAGE=ko`, 영어는 `en`인 별도 작업 폴더를 사용합니다. 기존 실행의 언어·소유권·결과를 바꾸어 표시하지 않습니다. |
 | `read: -p: no coprocess` 또는 경로/activate 파일 오류 | 먼저 `bash`를 실행했는지, 터미널 A의 `pwd` 경로로 이동했는지 확인합니다. 로그인 파일이 없다고 다른 계정으로 바꾸지 않습니다. |
 | `preflight`의 `missing_models`가 비어 있지 않음 | 강사에게 네 지정 배포의 접근·할당량·준비 상태 확인을 요청합니다. 다른 모델로 대체하지 않습니다. |
+| `The fixed auxiliary planner/judge deployment is missing` | 환경 소유자가 [보조 모델 준비](instructor.ko.md#auxiliary-model)와 `.env`의 실제 `LAB_AUX_DEPLOYMENT`를 확인합니다. `--allow-missing-models`나 `prepare-models`로 보조 배포를 건너뛰거나 만들 수는 없습니다. |
 | 로그인 안 됨 / tenant 오류 / 다른 계정 | [README 1-3](../README.ko.md#login)에서 두 CLI에 로그인하고 `user`·`email`·`tenant`·`subscription`을 `.env`와 대조합니다. `az account set`으로 기본 구독을 바꾸지 않습니다. |
 | 새 터미널에서만 로그인이 풀린 것처럼 보임 | 같은 실습 폴더에서 `export AZURE_CONFIG_DIR="$PWD/.azure-cli"`를 다시 지정합니다. 이전 터미널의 경로 설정은 새 터미널에 자동으로 전달되지 않습니다. |
 | `bind` 또는 `set-prompt`에서 환경/프로젝트 오류 | 새 작업 폴더에서 `bind`를 먼저 실행했는지 확인합니다. 다른 프로젝트의 `.azure`나 소유권 파일을 복사하지 않습니다. |

@@ -11,7 +11,7 @@
 | 현재 상태 | 시작할 곳 |
 |---|---|
 | Azure 서비스·권한·완성된 조별 `.env`를 받음 | [1단계: 시작 준비](#start) |
-| 기반 서비스는 있지만 모델·권한 준비가 필요함 | 환경 소유자가 [기존 환경 준비](docs/instructor.ko.md#existing-foundation)를 진행 |
+| 기반 서비스는 있지만 모델·권한 준비가 필요함 | 환경 소유자가 [기존 환경 준비](docs/instructor.ko.md#existing-foundation)를 **보조 모델 → 네 후보 모델** 순서로 진행 |
 | 준비된 Azure 환경이 없음 | [새 환경 준비](docs/environment.ko.md)를 마치고 그 문서가 지정하는 단계로 복귀. 혼자 실습하면 본인이 환경 소유자를 맡습니다. |
 | 이전 실행을 이어가는 중 | **같은 폴더**에서 [복구 안내](docs/troubleshooting.ko.md#resume)를 따름. 다시 clone하지 않습니다. |
 
@@ -660,6 +660,8 @@ python scripts/workshop.py check-cleanup
 
 **완료 확인:** `temporary_hosted_agent_absent: true`, `existing_foundry_project_preserved: true`, `existing_search_service_preserved: true`입니다. 삭제 건수는 예시 화면이 아닌 **내 계획**과 대조합니다. 강사가 준비한 모델은 임의로 삭제하지 않습니다.
 Search 가동·로그 보존·기반 서비스·보조 모델의 비용은 남을 수 있으며, 환경 소유자가 최종 정리를 별도로 관리합니다.
+
+**직접 새 전용 환경을 만든 일회성 개인 실습이라면:** 여기까지 마친 뒤 [기반 서비스까지 최종 정리](docs/environment.ko.md#final-cleanup)를 별도로 선택할 수 있습니다. 기존·공유 환경이나 다음 수업에 쓸 그룹은 삭제하지 않습니다.
 
 <details>
 <summary>예시: 정리 완료 확인</summary>

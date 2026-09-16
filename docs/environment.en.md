@@ -191,4 +191,45 @@ Participant cleanup removes only that folder's owned runtime objects. It does no
 
 The actual English results and scope are explained in [English evaluation results](validation.en.md). Resource pictures and scores from another language/run are not substitutes for this execution.
 
+<a id="final-cleanup"></a>
+
+## Final cleanup of a personal foundation — a separate choice
+
+**Only the environment owner proceeds, after completing `cleanup` and `check-cleanup` in README step 10.** Deleting the foundation is a separate decision; participant cleanup or a GHCP execution request does not approve deleting an entire group.
+
+| Environment | Choose this path |
+|---|---|
+| Existing/shared environment, or a group needed by later participants/classes | **Preserve the foundation and auxiliary deployment.** The owner manages remaining costs, retention, and the final shutdown date. Do not delete the group below. |
+| An **exclusively owned group newly created by this guide's tools**, with no other users or future exercises | After verifying ownership below, you may delete **only that group**. |
+| Missing creation records or uncertain ownership/users | Stop and consult the owner. A name or tag alone does not authorize deletion. |
+
+### 1. Preserve evidence and verify the deletion scope
+
+Keep the required local responses, evaluations, regression records, `verified-evidence.json`, and `cleanup-check.json`. Do not assume Foundry report URLs or Azure traces will remain accessible after deletion. Do not share or commit authentication caches, passwords, or tokens.
+
+Open `config.json` and `infrastructure-state.json` from the **same recorded `RUN_DIR`** in your editor. Do not create a new run.
+
+| Check | Values that must match |
+|---|---|
+| Run | `config.json → run_id` and `infrastructure-state.json → run` |
+| Group to delete | `config.json → resource_group`. **Preserve `old_resource_group`.** |
+| Subscription / Resource ID | `config.json → subscription` and the subscription/group in `infrastructure-state.json → group_id` |
+| Created services | Resource IDs recorded under `infrastructure-state.json → resources` |
+
+In [Azure Portal](https://portal.azure.com/), verify the configured account, tenant, and subscription, then open **Resource groups → that group**. Its **Overview / Properties** Resource ID must match the recorded `group_id`, and its location must be **Sweden Central (`swedencentral`)**. Check **Tags**: `workshop=foundry-evaluation`, `cleanup-scope=exclusive`, `purpose=synthetic-data-only`, and `run=your run_id`.
+
+**Also inspect Resources and current usage.** The remaining Foundry account/project, Search, App Insights, Log Analytics, and auxiliary deployment must belong to this run's creation records and have no other users. Stop if there is an unrecorded resource, an unclear cross-group dependency, or a future class using this group. Do not edit tags or ownership files to make the checks pass.
+
+### 2. Delete only the reviewed group
+
+**This removes the entire group and its remaining services; the group itself cannot be recovered.** Proceed only after the owner reviews the exact scope and impact and decides to delete it. If GHCP performs the action, **approve this specific subscription, group, and deletion impact separately**.
+
+On that group's page, select **Delete resource group**, enter the **reviewed group name** in the confirmation field, and confirm deletion. Do not expand the scope to another group or shared environment. Follow the [official resource-group deletion procedure](https://learn.microsoft.com/azure/azure-resource-manager/management/delete-resource-group#delete-resource-group).
+
+### 3. Confirm deletion and review remaining charges
+
+Wait for the portal's **deletion-completed notification**, then refresh Resource groups in the same subscription and confirm that the exact group name is absent. Submitting the request is not completion. If locks, permissions, or dependencies prevent deletion, preserve the error and consult the owner; do not remove protections as a workaround.
+
+**Do not rerun `check-cleanup` afterward.** It checks README step 10, where the foundation remains; use the portal outcome above to verify full-group deletion. Previously incurred usage and delayed charges may still appear. Review the subscription's **Cost Management → Cost analysis**; successful deletion does not mean a zero bill.
+
 Sources: [Foundry basic infrastructure example](https://github.com/Azure-Samples/azd-ai-starter-basic/tree/main/infra) and [Search knowledge-retrieval billing settings](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-enable-disable).

@@ -184,13 +184,51 @@ python -m unittest discover -s tests -v
 
 ## 설정과 안전한 준비
 
+**순서:** 설정·로그인 → **보조 planner/judge** → 네 후보 모델 → calibration → 전달.
+
+### 1. 설정과 로그인
+
 1. `.env.example`을 참고해 이 폴더의 `.env`에 **`LAB_LANGUAGE=ko`, 미사용 준비용 이름, 실제 자원·모델 배포 값**을 채운다. 기존 파일은 덮어쓰지 않는다.
 2. 테스트가 `OK`인 같은 폴더에서 [README 1-3 로그인](../README.ko.md#login)을 실행한다. 실습용 CLI 경로를 지정하고 두 CLI에 로그인한 뒤, 계정·tenant·구독·인증 상태를 대조한다. 다른 작업의 기본 CLI 구독은 바꾸지 않는다.
-3. `python scripts/workshop.py preflight --allow-missing-models`로 환경과 네 모델의 지역별 지원·할당량을 읽기 전용 확인한다.
-4. 모델이 없다면 `python scripts/workshop.py prepare-models`로 **고유 접두사**를 가진 네 배포만 만든다.
-5. `python scripts/workshop.py preflight`를 다시 실행해 `language: ko`, `missing_models: []`를 확인한다.
-6. `python scripts/workshop.py calibrate`의 **`Judge calibration passed`**를 확인한다. 참가자 README 5단계에서도 점검하며, 같은 입력의 완료된 calibration은 재사용한다. 예제 2건은 네 모델의 본평가 64응답에 포함하지 않는다.
-7. 수업 준비라면 [별도 리허설 폴더](#rehearsal-workspace)를 거쳐 참가자에게 전달한다. 일회성 개인 실습이라면 이 폴더에서 [README 1-4](../README.ko.md#project-binding)로 이어간다. 순서는 bind → IQ 검색 → 로컬 smoke → 배포·권한 부여 → 원격 smoke다. 두 경로를 모두 실행하지 않는다.
+
+<a id="auxiliary-model"></a>
+
+### 2. 보조 planner/judge를 먼저 준비
+
+**환경 소유자가 실습 시작 전에 수행한다.** `--allow-missing-models`는 **네 후보 모델의 부재만** 허용한다. 보조 배포가 없으면 이 명령도 중단하며, `prepare-models`는 보조 모델을 만들지 않는다.
+
+[Foundry](https://ai.azure.com/)에 `.env`의 계정으로 로그인하고 **New Foundry**에서 `AZURE_AI_ACCOUNT_NAME`과 `AZURE_AI_PROJECT_NAME`을 대조한다. **Build → Models**에서 기존 배포를 열어 아래 조건을 확인한다.
+
+| 확인 항목 | 이 실습의 고정 조건 |
+|---|---|
+| 배포 위치 | `.env`에 지정한 **같은 Foundry 계정** |
+| 모델 ID / 버전 | `gpt-5.4-mini` / `2026-03-17` |
+| 배포 유형 | **Global Standard** (`GlobalStandard`). PTU 예약이 아님 |
+| 버전 유지 | 자동 버전 업그레이드 없음 (`NoAutoUpgrade`) |
+| 배포 상태 | **`Succeeded`** |
+
+**일치하는 배포가 있으면 재사용한다.** 이름이 예시와 달라도 되며, 새로 만들거나 공유 배포를 수정하지 않는다.
+
+**없을 때만 새로 배포한다.** 환경 소유자가 모델 접근·해당 리전의 가용 할당량·비용을 확인하고 승인한 뒤 **Discover → Models → `gpt-5.4-mini` → Deploy → Custom settings**를 연다. 대상 계정을 다시 확인하고 위 모델 버전·유형을 선택한다. 새 이름은 **실제 `LAB_PREFIX` 뒤에 `-judge`를 붙인 미사용 이름**, 용량은 승인된 가용 할당량 안의 값으로 설정한다. 실습 중 버전이 바뀌지 않도록 자동 버전 업그레이드를 사용하지 않는다. **Deploy** 후 `Succeeded`까지 기다린다.
+
+지정한 모델·버전·유형이 없거나 할당량이 부족하면 중단한다. 후보 모델을 judge로 대신 쓰거나, 다른 사람의 용량을 줄이거나, 새 기반 환경을 중복 생성해 우회하지 않는다. 포털 경로는 [공식 모델 배포 안내](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/deploy-foundry-models)를 따른다.
+
+**마지막으로 지금 폴더의 `.env`에 기록한다.**
+
+| 키 | 기록할 값 |
+|---|---|
+| `LAB_AUX_DEPLOYMENT` | **Build → Models에서 복사한 실제 배포 이름**. 모델 ID와 이름이 같은 경우에만 `gpt-5.4-mini` |
+| `LAB_AUX_MODEL` | 모델 ID인 **`gpt-5.4-mini`** |
+
+**완료 확인:** 같은 계정의 배포가 위 조건을 만족하고, `.env`의 두 값이 **각각 실제 배포 이름과 모델 ID**에 맞는다. 이 배포 하나를 IQ planner와 평가 judge가 함께 사용한다. 포털에서 새로 만든 보조 배포의 이름·Resource ID는 준비 담당자가 보관하며, 참가자 `cleanup`의 자동 삭제 대상으로 간주하지 않는다.
+
+### 3. 네 후보 모델과 judge 확인 후 전달
+
+1. `python scripts/workshop.py preflight --allow-missing-models`로 환경과 네 모델의 지역별 지원·할당량을 읽기 전용 확인한다. 보조 모델은 위에서 준비되어 있어야 한다.
+2. 후보 모델이 없다면 `python scripts/workshop.py prepare-models`로 **고유 접두사**를 가진 네 배포만 만든다.
+3. `python scripts/workshop.py preflight`를 다시 실행해 `language: ko`, `missing_models: []`를 확인한다.
+4. `python scripts/workshop.py calibrate`의 **`Judge calibration passed`**를 확인한다. 참가자 README 5단계에서도 점검하며, 같은 입력의 완료된 calibration은 재사용한다. 예제 2건은 네 모델의 본평가 64응답에 포함하지 않는다.
+5. 수업 준비라면 [별도 리허설 폴더](#rehearsal-workspace)를 거쳐 참가자에게 전달한다. 일회성 개인 실습이라면 이 폴더에서 [README 1-4](../README.ko.md#project-binding)로 이어간다. 순서는 bind → IQ 검색 → 로컬 smoke → 배포·권한 부여 → 원격 smoke다. 두 경로를 모두 실행하지 않는다.
 
 평가가 `AppInsights connection is missing ResourceId metadata`로 실패하면 강사가 연결의 소유권과 범위를 먼저 확인한다. **공유 연결은 참가자가 직접 변경하지 않는다.** 수정이 허용된 실습 전용 연결에만 `python scripts/workshop.py repair-observability --confirm`으로 실제 Application Insights ARM ID 메타데이터를 추가한다. target/credential은 변경하지 않으며 보완 기록은 cleanup 후에도 유지된다. 이후 `calibrate --retry-failed`로 실패 run을 보존한 채 새 run을 만든다.
 
@@ -222,7 +260,7 @@ python -m unittest discover -s tests -v
 | 25–40분 | 3–4. 로컬·배포 | 로컬과 원격의 실제 응답 |
 | 40–55분 | 5. Baseline | dev 24행과 Foundry 평가 |
 | 55–70분 | 6. 사례 검토 | 실제 trace와 검토된 회귀 데이터 |
-| 70–85분 | 7. V2 재평가 | 새 버전·같은 dev 24행 |
+| 70–85분 | 7. V2 재평가 | 새 버전·같은 dev 6문항 × 4모델 = 24응답 |
 | 85–100분 | 8. Holdout | 고정 후보의 16행 |
 | 100–110분 | 9. 운영·검증 | 64응답·64trace·lineage |
 | 110–115분 | 10. 정리 | 소유 대상만 정리 |
@@ -244,6 +282,8 @@ python -m unittest discover -s tests -v
 ## 정리 원칙
 
 공유 resource group 전체를 삭제하지 않는다. `cleanup --dry-run`으로 소유권 기록과 정확한 이름을 먼저 보고 `--confirm`으로 실습 자원만 정리한다. 기존 Search 서비스와 Foundry 프로젝트는 계속 비용이 발생할 수 있으므로 환경 소유자가 별도로 관리한다.
+
+이 저장소의 새 환경 도구로 **본인 전용 그룹을 만든 일회성 개인 실습**이라면, README 10단계를 마친 뒤 [전용 기반 환경의 최종 정리](environment.ko.md#final-cleanup)를 별도로 선택할 수 있다. 기존·공유 환경이나 다음 수업에 쓸 그룹에는 적용하지 않는다.
 
 ## 실습 파일을 수정할 때
 
