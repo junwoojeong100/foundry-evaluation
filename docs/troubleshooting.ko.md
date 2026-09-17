@@ -256,10 +256,11 @@ python scripts/workshop.py check-cleanup
 별도 승인으로 그룹 전체를 삭제한 뒤에는 `check-cleanup`이 아니라 [기반 환경의 최종 확인](environment.ko.md#final-cleanup-check)을 따릅니다.
 
 <a id="setup-resume"></a>
+<a id="환경-소유자-터미널을-닫은-뒤-준비-이어가기"></a>
 
-## 환경 소유자: 터미널을 닫은 뒤 준비 이어가기
+## 환경 소유자: 미완료 준비 이어가기
 
-[환경 준비 1단계](environment.ko.md#setup-workspace)에서 소스 스냅샷과 Python 환경을 완성한 경우에만 사용합니다. 새 `RUN_ID`를 만들거나 `init` / `prepare`를 반복하지 않습니다.
+Python 설치 전에 멈췄어도 원래 clone과 기록한 `RUN_DIR`를 유지합니다. 먼저 기존 준비 명령이 종료됐는지 확인합니다. 새 `RUN_ID` 생성, 성공한 `init` 반복, 소스 스냅샷 덮어쓰기는 하지 않습니다.
 
 `bash`를 실행한 뒤, **원래 clone 경로**와 **준비 중 출력된 기존 `RUN_DIR` 경로**를 따옴표 없이 입력합니다.
 
@@ -267,13 +268,27 @@ python scripts/workshop.py check-cleanup
 read -r -p "원래 환경 준비 clone의 절대 경로: " REPO_ROOT &&
 cd "$REPO_ROOT" &&
 read -r -p "기존 RUN_DIR의 절대 경로: " RUN_DIR &&
-ls "$RUN_DIR/config.json" "$RUN_DIR/source-manifest.json" &&
+ls "$RUN_DIR/config.json"
+```
+
+**실행 폴더를 활성화하기 전에 저장된 단계를 확인합니다.** 편집기로 **`$RUN_DIR/config.json`**을 열고 `workspace`가 **지금 `RUN_DIR/workshop`**인지 대조합니다. 파일이 없거나 다른 곳을 가리키면 실패한 초기화부터 확인하며, 기록을 임의로 만들지 않습니다.
+
+| 남아 있는 파일 / 완료한 작업 | 다음 행동 |
+|---|---|
+| `config.json`만 있고 `workshop/`은 없음 | 원래 clone에서 `source src/agent/.venv/bin/activate` 후, 이 `RUN_DIR`로 [`prepare` 명령만](environment.ko.md#setup-snapshot) 실행. 이후 독립 Python 준비로 진행 |
+| `workshop/`은 있지만 `source-manifest.json`은 없음 | 소스 복사가 중간에 멈춘 상태. 폴더·오류를 보존하고 환경 소유자와 확인. `prepare`는 덮어쓰기를 거부하므로 폴더를 지우거나 manifest를 만들어 우회하지 않음 |
+| 스냅샷·manifest는 있지만 독립 Python 설치·테스트가 미완료 | `"$RUN_DIR/workshop"`으로 이동. [독립 Python 준비](environment.ko.md#setup-python)에서 가상환경이 없을 때만 만들고 활성화한 뒤, 미완료 설치·테스트 재개. 로그인 전에 `OK` 필요 |
+| 스냅샷·독립 Python 설치·테스트 완료 | 아래에서 실행 폴더를 복원한 뒤 중단한 Azure 단계 선택 |
+
+**스냅샷과 Python 테스트가 완료된 경우에만:**
+
+```bash
 cd "$RUN_DIR/workshop" &&
 source src/agent/.venv/bin/activate &&
 export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 ```
 
-**완료 확인:** 두 기록 파일이 있고, 가상환경이 활성화되며, CLI 프로필은 기존 실행 폴더를 가리킵니다. 파일이 없으면 중단하고 환경 소유자와 미완성 상태를 확인합니다. Manifest를 임의로 만들어 채우지 않습니다.
+**완료 확인:** 가상환경이 활성화되며 CLI 프로필은 기존 실행 폴더를 가리킵니다. 터미널 복원은 새 소스·Azure 환경 생성이 아닙니다.
 
 | 중단한 준비 단계 | 이어갈 위치 |
 |---|---|

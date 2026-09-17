@@ -61,12 +61,21 @@ python -m pip install -r requirements.lock.txt
 REPO_ROOT="$(pwd)" &&
 RUN_ID="$(date -u +%Y%m%d-%H%M%S)" &&
 RUN_DIR="$REPO_ROOT/.workshop/$RUN_ID" &&
-python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language ko &&
-python scripts/prepare_environment.py prepare --run-dir "$RUN_DIR" &&
-printf 'RUN_DIR=%s\n' "$RUN_DIR"
+printf 'RUN_DIR=%s\n' "$RUN_DIR" &&
+python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language ko
 ```
 
-출력된 `RUN_DIR`의 절대 경로를 보관합니다. **중단한 준비를 이어가려고 이 블록을 다시 실행하지 않습니다.** [환경 준비 복구](troubleshooting.ko.md#setup-resume)를 따릅니다.
+출력된 `RUN_DIR`의 절대 경로를 지금 보관합니다. **완료 확인:** `init`이 끝나고 **`$RUN_DIR/config.json`**이 생깁니다. 새 이름을 기록한 것이며, 아직 소스 복사나 Azure 자원 생성은 하지 않았습니다.
+
+<a id="setup-snapshot"></a>
+
+이어서 실제 실행할 소스 스냅샷을 만듭니다.
+
+```bash
+python scripts/prepare_environment.py prepare --run-dir "$RUN_DIR"
+```
+
+**완료 확인:** **`$RUN_DIR/source-manifest.json`**과 **`$RUN_DIR/workshop/.env`**가 있습니다. 두 명령 중 하나라도 실패하면 새 `RUN_ID`를 만들지 말고, 이 경로를 유지한 채 [환경 준비 복구](troubleshooting.ko.md#setup-resume)를 따릅니다.
 
 | 폴더 | 역할 | 사용하는 단계 |
 |---|---|---|
@@ -75,6 +84,8 @@ printf 'RUN_DIR=%s\n' "$RUN_DIR"
 | `RUN_DIR/workshop` | 생성된 `.env`·Python 환경·CLI 프로필을 쓰는 실제 실행 폴더 | 로그인, 6단계, 이후 참가자 실습 |
 
 **이후 실습이 읽는 설정은 `RUN_DIR/workshop/.env`입니다.** 원래 clone의 `.env`를 수정해도 생성된 복사본은 바뀌지 않습니다. 재개할 때는 저장된 설정과 소유권 기록을 유지합니다.
+
+<a id="setup-python"></a>
 
 새 소스 폴더에 독립 가상환경을 만들고, Azure를 호출하기 전에 테스트합니다.
 

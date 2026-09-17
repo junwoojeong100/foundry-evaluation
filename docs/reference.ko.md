@@ -28,6 +28,22 @@
 | `case_id` / `row_id` | `case_id`는 고정 질문 ID, `row_id`는 label·모델·질문을 조합한 응답 ID. V1/V2의 같은 사례는 **`case_id` + `model_key`**로 찾음 |
 | JSON / JSONL | JSON은 구조화된 문서, JSONL은 한 줄에 JSON 객체 하나를 저장한 형식. 응답은 줄 번호가 아니라 `row_id`로 찾음 |
 
+<a id="decision-values"></a>
+
+## 답변 설명과 판단값을 따로 읽기
+
+**`answer`는 설명문, `decision`은 Python이 고정 기준 `expected_decision`과 대조하는 판단값**입니다. 설명이 타당해도 판단값은 틀릴 수 있습니다. 고정 기준과 제공 V2가 사용하는 다섯 값은 다음과 같습니다.
+
+| `decision` | 이 실습에서의 뜻 | 혼동하지 말 것 |
+|---|---|---|
+| `allowed` | 적용되는 정책과 명시된 조건 안에서 허용 | 실제 승인·예약·지급을 실행한 것이 아님 |
+| `needs_approval` | 사전 승인이 필요 | 절대 금지나 이미 승인받았다는 뜻이 아님 |
+| `not_allowed` | 정책에서 금지 | 필요한 승인을 기다리는 상태와 구분 |
+| `needs_info` | 판단에 필요한 요청 정보가 부족 | 제공 정책에 없는 주제와 구분 |
+| `not_covered` | 제공된 정책이 다루지 않는 범위 | 정책이 금지한다는 뜻이 아님 |
+
+불일치하면 설명·판단값·고정 기준을 따로 대조합니다. 응답에 맞추려고 `expected_decision`이나 평가 기준을 바꾸지 않습니다.
+
 ## 시나리오와 남는 자산
 
 가상의 **한빛기술 출장 규정 상담 에이전트**가 현행·과거 규정, 사전 승인, 영수증, 근거 없는 해외 출장 질문을 처리합니다.
@@ -94,6 +110,8 @@ Terra·Luna·Astra와 보조 배포도 같은 방식으로 구분합니다. 새 
 최종 검증 경로는 **같은 Foundry 계정의 Azure OpenAI v1 Chat Completions endpoint**입니다.
 `AIProjectClient.get_openai_client()`의 `base_url`/credential override와 Agent Framework의 `OpenAIChatCompletionClient`를 사용합니다.
 다른 모델이나 공개 OpenAI 서비스로 보내는 fallback이 아닙니다.
+
+<a id="endpoints"></a>
 
 | 연결 | 설정 | Entra 토큰 범위 |
 |---|---|---|

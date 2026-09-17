@@ -32,6 +32,16 @@
 
 화살표는 포털 메뉴가 아니라 JSON 필드다. `evaluation-results.json`은 `row_id`를 키로 한 객체가 아니라 **행의 목록**이므로, 해당 행을 먼저 찾고 그 안의 두 evaluator 결과를 읽는다. Native 평균 4점이 모든 행의 통과를 뜻하지는 않는다. 업무 gate는 **모델마다 dev 최소 5/6, holdout 4/4 업무 통과 + 필수 인용 전부 유효** 조건이며 운영 승인은 아니다.
 
+<a id="native-failures"></a>
+
+**Native 통과 건수가 전체보다 적을 때:**
+
+1. 해당 label의 `evaluation-results.json`에서 `results` 안에 **`passed: false`**가 있는 행을 찾는다. 각 `row_id`, evaluator `name`, `score`를 적는다.
+2. 같은 label의 `responses.jsonl`에서 **같은 `row_id`**를 찾고 `query`·`answer`·`business_grade → checks`를 대조한다. Groundedness는 그 응답의 `context`도 확인한다. Relevance에는 이 필드가 전달되지 않는다.
+3. 업무 검사·native 평가 중 어느 쪽이 실패했는지 따로 기록한다. 올바른 정책 보류가 낮은 relevance를 받을 수 있고, 근거 있는 설명에도 잘못된 [`decision` 판단값](reference.ko.md#decision-values)이 붙을 수 있다. 두 결과와 고정 기준을 유지한다.
+
+[README 7-4](../README.ko.md#compare-results)에서 왔다면 그 비교를 마친 뒤 holdout으로 진행한다. 유효한 점수가 낮다는 이유로 평가를 다시 실행하지 않는다.
+
 이하 내용은 평가 방법과 **촬영 예시**의 해석이다. 내 실행을 아래 점수에 맞출 필요는 없다.
 
 ## 1. 무엇을 고정하고 무엇을 바꿨나

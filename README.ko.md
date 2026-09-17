@@ -86,6 +86,8 @@ cd foundry-evaluation
 강사가 준 `.env`를 **`README.ko.md`와 같은 위치**에 둡니다. 기존 `.env`를 덮어쓰지 않습니다.
 승인된 계정·구독·tenant, 프로젝트·Search, 모델 배포 값이 들어 있어야 합니다. 암호·API key·access token은 넣지 않습니다.
 
+**기존 서비스의 설정 파일을 직접 준비한다면:** [설정값별 포털 확인 위치](docs/instructor.ko.md#existing-settings)를 따릅니다. 포털 페이지 주소, 프로젝트 endpoint, 모델 endpoint는 서로 다른 값입니다.
+
 | 설정 | 새 실습을 시작하기 전 확인할 것 |
 |---|---|
 | `LAB_LANGUAGE` / `LAB_PROMPT_VERSION` | `ko` / `v1`. 기존 실행을 재개할 때는 초기화하지 않습니다. |
@@ -369,7 +371,7 @@ python scripts/workshop.py evaluate --label baseline
 
 **다음 행동:** 실행 오류 없이 24행 평가가 끝났다면 **점수가 낮아도** 아래 포털 확인을 마치고 6단계로 진행합니다. 누락·중복·오류·`null` 점수는 [평가 복구](docs/troubleshooting.ko.md#evaluation-retry)가 필요합니다. 완료된 수집을 반복하지 않습니다.
 
-**두 검사 구분:** Python은 판단·금액·인용 ID를 검사합니다. Foundry는 답변 텍스트의 **groundedness(근거성)·relevance(관련성)**를 1–5점으로 평가하며 4점 이상 통과입니다. 한쪽의 통과가 다른 쪽의 통과를 뜻하지는 않습니다.
+**두 검사 구분:** Python은 [`decision` 판단값](docs/reference.ko.md#decision-values)·금액·인용 ID를 검사합니다. Foundry는 답변 텍스트의 **groundedness(근거성)·relevance(관련성)**를 1–5점으로 평가하며 4점 이상 통과입니다. 한쪽의 통과가 다른 쪽의 통과를 뜻하지는 않습니다.
 
 <a id="무엇을-평가하나요"></a>
 
@@ -537,6 +539,8 @@ python scripts/workshop.py compare --labels baseline improved
 | 업무 통과 | `business_passed` / `total` | 다섯 업무 검사를 모두 통과한 응답 수 / 전체 |
 | 필수 인용 | `required_citation_passed` / `required_citation_total` | 필수 인용이 유효한 응답 수 / 인용 필수 응답 수 |
 | Foundry 점수 | `foundry_evaluators → groundedness 또는 relevance` | `native_mean_score`(평균)와 `native_passed` / `total`(통과/전체)을 읽음. **각 행이 5점 만점에 4점 이상**이어야 통과하며, 평균 4점이 전부 통과를 뜻하지는 않음 |
+
+**Native 통과 건수가 전체보다 적다면:** 후보를 고정하기 전에 [미통과 행을 확인](docs/validation.ko.md#native-failures)합니다. 업무 검사와 native 평가가 서로 다른 응답에서 실패할 수 있으므로 점수·줄 순서가 아니라 `row_id`로 대조합니다.
 
 같은 파일의 **`comparison_notes`**도 읽습니다. 검색 근거가 달랐다면 검색과 답변을 합친 end-to-end 결과이며, 순수한 모델 순위로 해석하지 않습니다.
 

@@ -97,7 +97,7 @@ README.ko.md를 읽고 국문 실습의 1~10단계를 한 줄씩 요약해줘.
 
 | Azure 상태 | 여기서 준비할 설정 |
 |---|---|
-| 기반 서비스가 이미 있음 | [README의 `.env` 안내](../README.ko.md#workspace-settings)에 따라 실제 서비스 값과 미사용 실습 이름을 준비. 모델·권한 준비 여부는 아래 계획에서 확인 |
+| 기반 서비스가 이미 있음 | [README 1-1](../README.ko.md#workspace-settings)에 따라 소유자가 준 완성된 `.env`를 배치. 직접 준비한다면 [설정값별 포털 확인 위치](instructor.ko.md#existing-settings) 사용. 모델·권한 준비 여부는 아래 계획에서 확인 |
 | 새 기반 서비스를 만들어야 함 | [새 환경의 초기 설정](environment.ko.md#initial-settings)만 작성. 프로젝트·endpoint를 추측하거나 `init` / `prepare`까지 실행하지 않음 |
 
 <a id="plan-review"></a>
@@ -126,7 +126,7 @@ data/holdout.jsonl과 data/en/holdout.jsonl은 모두 읽지 마.
 아직 생성·배포·역할 부여·삭제는 하지 마.
 ```
 
-**지금 확인할 것:** 계획의 계정·tenant·구독, 미사용 이름, 새 자원의 범위와 비용입니다. **계획 확인을 위해 미리 Azure에 로그인하지 않습니다.** 로그인은 3-2의 실제 실행에서 해당 작업 폴더가 준비된 뒤 합니다. 특히 새 환경은 실행 스냅샷을 먼저 만들어야 하므로, 원래 clone에서 로그인하거나 `preflight` / `bind`를 실행하지 않습니다.
+**지금 확인할 것:** 계획의 계정·tenant·구독, 미사용 이름, 새 자원의 범위와 비용입니다. **계획 확인 때문에 Azure CLI·azd에 미리 로그인하지 않습니다.** 두 CLI 로그인은 3-2의 실제 실행에서 해당 작업 폴더가 준비된 뒤 하며, 설정값을 읽는 포털 로그인과 구분합니다. 특히 새 환경은 실행 스냅샷을 먼저 만들어야 하므로, 원래 clone에서 CLI 로그인이나 `preflight` / `bind`를 실행하지 않습니다.
 
 ### 3-2. 확인한 범위에서 실제 실행 요청
 
@@ -182,7 +182,7 @@ data/holdout.jsonl과 data/en/holdout.jsonl은 모두 읽지 마.
 |---|---|
 | 같은 실습의 Copilot 대화가 있음 | `copilot`을 열고 `/resume`으로 그 대화 선택 |
 | 수동으로 시작했고 Copilot 대화는 없음 | CLI 설치가 필요하면 1단계만 마친 뒤, 기존 실행 폴더에서 `copilot` 실행. 먼저 현재 상태를 읽기 전용으로 확인시키고 실패·미완료 단계만 재개 |
-| Azure 환경 준비 중 중단 | [준비 복구](troubleshooting.ko.md#setup-resume)로 기존 `RUN_DIR`와 로그인 프로필 복원 |
+| Azure 환경 준비 중 중단 | [준비 복구](troubleshooting.ko.md#setup-resume)에서 초기화·소스 복사·Python 테스트의 완료 여부를 먼저 확인한 뒤 기존 실행 폴더의 로그인 프로필 복원 |
 
 **대화 복원은 터미널 환경·Azure 실행 완료의 복원이 아닙니다.** [터미널 복원](../README.ko.md#resume-shell)과 기존 manifest·평가·trace 상태를 확인합니다. 실행 스냅샷에 가이드가 없다면 문서는 원래 clone에서 읽되, 명령은 기존 실행 폴더에서 수행합니다. 이미 끝난 clone·배포·수집은 반복하지 않습니다.
 
@@ -193,6 +193,8 @@ data/holdout.jsonl과 data/en/holdout.jsonl은 모두 읽지 마.
 파일·Azure 자원을 바꾸지 말고 저장된 준비·결과 상태만 확인해줘.
 가이드가 있는 폴더와 실제 실행 폴더를 구분해 알려줘.
 언어·배포 버전·결과 label·마지막으로 확인된 완료 기준을 정리해줘.
+준비가 미완료라면 config.json 생성·소스 복사·Python 준비 상태를 구분해줘.
+설정 파일만 있다는 이유로 실행 환경까지 준비됐다고 판단하지 마.
 재시도를 제안하기 전에 이전 명령이 아직 실행 중인지 확인해줘.
 이 실행 폴더의 AZURE_CONFIG_DIR만 사용하고, 모르면 로그인 상태를 미확인으로 보고해줘.
 .env 전체·인증 정보는 출력하지 말고, 두 언어의 holdout은 8단계 전 열지 마.

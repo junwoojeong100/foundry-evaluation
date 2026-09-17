@@ -138,10 +138,32 @@ python -m unittest discover -s tests -v
 
 **순서:** 설정·로그인 → **보조 planner/judge** → 네 후보 모델 → calibration → 전달.
 
-### 1. 설정과 로그인
+<a id="existing-settings"></a>
+<a id="1-설정과-로그인"></a>
 
-1. `.env.example`을 참고해 이 폴더의 `.env`에 **`LAB_LANGUAGE=ko`, 미사용 준비용 이름, 실제 자원·모델 배포 값**을 채운다. 기존 파일은 덮어쓰지 않는다.
-2. 테스트가 `OK`인 같은 폴더에서 [README 1-3 로그인](../README.ko.md#login)을 실행한다. 실습용 CLI 경로를 지정하고 두 CLI에 로그인한 뒤, 계정·tenant·구독·인증 상태를 대조한다. 다른 작업의 기본 CLI 구독은 바꾸지 않는다.
+### 1. 실제 설정값을 복사한 뒤 로그인
+
+**기존 서비스에서 새 실습을 시작할 때 사용한다.** 완성된 `.env`를 받았다면 교체하지 말고 확인한다. 직접 준비한다면 편집기로 `.env.example`을 **지금 clone 루트의 `.env`**로 복사하고 아래 값을 채운다. 새 환경은 이 표 대신 [초기 설정 목록](environment.ko.md#initial-settings)만 사용한다.
+
+승인된 계정으로 [Azure Portal](https://portal.azure.com/)과 [Foundry](https://ai.azure.com/)에 로그인한다. 브라우저 주소창의 URL이나 전체 Resource ID가 아니라 **이름·endpoint 값**을 복사한다.
+
+| `.env` 필드 | 값을 확인할 곳 |
+|---|---|
+| `AZURE_SUBSCRIPTION_ID` / `AZURE_TENANT_ID` | Azure Portal의 **Subscriptions → 해당 구독 → Overview**에서 구독 ID, **Microsoft Entra ID → Overview**에서 그 구독 디렉터리의 tenant ID |
+| `AZURE_EXPECTED_USERNAME` | 승인된 계정의 로그인 이름(UPN). 표시 이름이 아님 |
+| `AZURE_RESOURCE_GROUP` | 기존 실습 서비스가 있는 Azure Portal의 **리소스 그룹 이름** |
+| `AZURE_AI_ACCOUNT_NAME` / `AZURE_AI_PROJECT_NAME` | Foundry에서 선택한 프로젝트의 **리소스 이름 / 프로젝트 이름**. 리소스는 프로젝트의 상위 계정이며 프로젝트 자체가 아님 |
+| `FOUNDRY_PROJECT_ENDPOINT` | Foundry의 해당 프로젝트 **Overview → project endpoint**. `/api/projects/<project>`로 끝나는 값 |
+| `AZURE_OPENAI_ENDPOINT` | Azure Portal의 **같은 Foundry 계정 → Keys and Endpoint**에서 `.openai.azure.com`으로 끝나는 Azure OpenAI 기본 endpoint |
+| `AZURE_SEARCH_NAME` / `AZURE_SEARCH_ENDPOINT` | 사용할 **Search 서비스 → Overview**의 이름과 **URL**. URL은 `.search.windows.net`으로 끝남 |
+| `AZURE_APPLICATION_INSIGHTS_NAME` | 같은 그룹에서 **이 프로젝트에 연결된 Application Insights 리소스 이름**. Log Analytics workspace 이름이 아님 |
+| `MODEL_*_DEPLOYMENT` / `LAB_AUX_DEPLOYMENT` | Foundry **Build → Models**의 실제 배포 이름. 없는 모델은 이름만 채워 준비됐다고 하지 말고 아래 준비 단계에서 생성 |
+
+나머지는 템플릿 기본값을 유지하며 **`LAB_LANGUAGE=ko`, `LAB_PROMPT_VERSION=v1`, `LAB_AUTH_MODE=cli`**를 확인한다. 미사용 `LAB_PREFIX` / `LAB_AGENT_NAME`은 [README 1-1](../README.ko.md#workspace-settings)의 규칙으로 정한다. API key를 복사하거나, 모델 기본 endpoint에 `/openai/v1/`를 붙이거나, 프로젝트 endpoint를 모델 endpoint로 쓰지 않는다. 추론 경로는 코드가 붙인다. [Endpoint 구분](reference.ko.md#endpoints)
+
+**GHCP 페이지에서 설정값만 준비하러 왔다면 여기서 [계획 확인](copilot.ko.md#plan-review)으로 돌아간다.** CLI 로그인은 이후 실행 단계에서 한다. 직접 준비하는 경우에는 아래부터 계속한다.
+
+로컬 테스트가 `OK`인 뒤 [README 1-3 로그인](../README.ko.md#login)에서 두 CLI 로그인과 계정 대조까지만 마치고 **여기로 돌아온다.** 보조 모델 준비 전에 preflight·bind로 넘어가지 않는다.
 
 **Preflight 전에 후보 배포 이름을 정한다.**
 

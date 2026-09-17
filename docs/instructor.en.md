@@ -123,10 +123,32 @@ Hosting reference: [Hosted Agent quickstart](https://learn.microsoft.com/azure/f
 
 **Order:** configuration/sign-in → **auxiliary planner/judge** → four candidates → calibration → handoff.
 
-### 1. Configure and sign in
+<a id="existing-settings"></a>
+<a id="1-configure-and-sign-in"></a>
 
-1. Prepare this folder's `.env` with `LAB_LANGUAGE=en`, unused preparation names, and actual resource/deployment values.
-2. Complete [README step 1-3](../README.md#login), including both CLI sign-ins and the identity checks. Keep the configured subscription explicit.
+### 1. Copy the actual settings, then sign in
+
+**For a new run using existing services.** If you received a complete `.env`, check it rather than replacing it. Otherwise, copy `.env.example` to **`.env` at this clone's root** in your editor and fill the fields below. For a new environment, use its [shorter initial-settings list](environment.en.md#initial-settings) instead.
+
+Sign in to [Azure Portal](https://portal.azure.com/) and [Foundry](https://ai.azure.com/) with the approved account. Copy **names or endpoint values**, not browser address-bar URLs or full Resource IDs.
+
+| `.env` field | Where to get the value |
+|---|---|
+| `AZURE_SUBSCRIPTION_ID` / `AZURE_TENANT_ID` | Azure Portal: **Subscriptions → your subscription → Overview** for the subscription ID; **Microsoft Entra ID → Overview** for its directory's tenant ID |
+| `AZURE_EXPECTED_USERNAME` | The approved account's sign-in name (UPN), not its display name |
+| `AZURE_RESOURCE_GROUP` | Azure Portal: the **Resource group** containing the existing workshop services |
+| `AZURE_AI_ACCOUNT_NAME` / `AZURE_AI_PROJECT_NAME` | Foundry: the selected project's **resource name / project name**. The resource is the project's parent account, not the project itself. |
+| `FOUNDRY_PROJECT_ENDPOINT` | Foundry: the selected project's **Overview → project endpoint**, ending in `/api/projects/<project>` |
+| `AZURE_OPENAI_ENDPOINT` | Azure Portal: the **same Foundry account → Keys and Endpoint**, using its Azure OpenAI base endpoint ending in `.openai.azure.com` |
+| `AZURE_SEARCH_NAME` / `AZURE_SEARCH_ENDPOINT` | Azure Portal: the intended **Search service → Overview**, copying its name and **URL** ending in `.search.windows.net` |
+| `AZURE_APPLICATION_INSIGHTS_NAME` | Name of the **Application Insights resource connected to this project**, in the same group; not the Log Analytics workspace name |
+| `MODEL_*_DEPLOYMENT` / `LAB_AUX_DEPLOYMENT` | Foundry **Build → Models**, copying actual deployment names. For missing models, follow the preparation steps below rather than inventing existing deployments. |
+
+Keep the other template defaults, with **`LAB_LANGUAGE=en`, `LAB_PROMPT_VERSION=v1`, and `LAB_AUTH_MODE=cli`**. Choose unused `LAB_PREFIX` / `LAB_AGENT_NAME` as described in [README 1-1](../README.md#workspace-settings). Never copy API keys, add `/openai/v1/` to the model base endpoint, or use the project endpoint as the model endpoint; the runner adds the inference route. [Endpoint distinctions](reference.en.md#endpoints)
+
+**Came from the GHCP guide only to collect settings?** Return to [plan review](copilot.en.md#plan-review) now. CLI sign-in belongs to the later execution phase. For manual preparation, continue below.
+
+After the local tests pass, complete [README step 1-3](../README.md#login), including both CLI sign-ins and identity checks, then **return here**. Do not run preflight/bind until the auxiliary model is ready.
 
 **Choose candidate deployment names before preflight:**
 

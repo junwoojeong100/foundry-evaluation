@@ -28,6 +28,22 @@ Follow [the English README](../README.md) for the execution path. This document 
 | `case_id` / `row_id` | `case_id` identifies a fixed question; `row_id` identifies one response by label, model, and question. Match a case across V1/V2 with **`case_id` + `model_key`**. |
 | JSON / JSONL | JSON is a structured document; JSONL stores one JSON object per line. Find a response by `row_id`, not its line number. |
 
+<a id="decision-values"></a>
+
+## Read the answer and decision separately
+
+**`answer` is the explanation; `decision` is the label the Python check compares with `expected_decision`.** A useful explanation can still carry the wrong label. These are the five labels used by the fixed reference and supplied V2:
+
+| `decision` | Meaning here | Do not confuse it with |
+|---|---|---|
+| `allowed` | Permitted under the applicable policy and stated conditions | An actual approval, booking, or payment |
+| `needs_approval` | Prior approval is required | An absolute prohibition or proof that approval was granted |
+| `not_allowed` | The policy prohibits it | Merely waiting for the required approval |
+| `needs_info` | Information needed to decide is missing from the request | A topic outside the supplied policies |
+| `not_covered` | The supplied policies do not cover the topic | A policy prohibition |
+
+For a mismatch, compare the explanation, label, and fixed reference separately. Preserve `expected_decision`; do not rewrite the rubric to agree with the response.
+
 ## Scenario and retained assets
 
 The fictional Hanbit Technology assistant explains domestic business-travel policy for South Korea. Currency remains **Korean won (KRW)** in the English edition; translating the language does not change the monetary limits or business rules.
@@ -90,6 +106,8 @@ All four candidates are OpenAI models. This is not a cross-provider interoperabi
 The selected inference path is the **same Foundry account's Azure OpenAI v1 Chat Completions endpoint**. The code uses the supported `AIProjectClient.get_openai_client()` endpoint/credential override with `OpenAIChatCompletionClient`. It is not a fallback to another model or the public OpenAI service.
 
 Application-side JSON validation is different from a model service enforcing Structured Outputs. The existing model compatibility path is retained for both languages.
+
+<a id="endpoints"></a>
 
 | Purpose | Setting | Entra token scope |
 |---|---|---|

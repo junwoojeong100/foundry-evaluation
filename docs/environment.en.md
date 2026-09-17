@@ -59,12 +59,21 @@ Choose a fresh run ID once and keep `RUN_DIR` throughout:
 REPO_ROOT="$(pwd)" &&
 RUN_ID="en-$(date -u +%Y%m%d-%H%M%S)" &&
 RUN_DIR="$REPO_ROOT/.workshop/$RUN_ID" &&
-python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language en &&
-python scripts/prepare_environment.py prepare --run-dir "$RUN_DIR" &&
-printf 'RUN_DIR=%s\n' "$RUN_DIR"
+printf 'RUN_DIR=%s\n' "$RUN_DIR" &&
+python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language en
 ```
 
-Save the printed absolute `RUN_DIR` path. **Do not run this block again to resume setup**; use [setup recovery](troubleshooting.en.md#setup-resume).
+Save the printed absolute `RUN_DIR` path now. **Checkpoint:** `init` finishes and creates **`$RUN_DIR/config.json`**. It records the chosen names; it has not copied the source or created Azure resources.
+
+<a id="setup-snapshot"></a>
+
+Next, create the runnable source snapshot:
+
+```bash
+python scripts/prepare_environment.py prepare --run-dir "$RUN_DIR"
+```
+
+**Checkpoint:** **`$RUN_DIR/source-manifest.json`** and **`$RUN_DIR/workshop/.env`** exist. If either command failed, preserve this path and use [setup recovery](troubleshooting.en.md#setup-resume), not a new `RUN_ID`.
 
 | Folder | Purpose | When used |
 |---|---|---|
@@ -73,6 +82,8 @@ Save the printed absolute `RUN_DIR` path. **Do not run this block again to resum
 | `RUN_DIR/workshop` | Isolated runnable source, generated `.env`, Python environment, and CLI profile | Sign-in, step 6, and the participant exercise |
 
 **The runnable configuration is now `RUN_DIR/workshop/.env`.** Editing the original clone's `.env` does not update this generated copy. Keep the saved configuration and ownership records intact when resuming.
+
+<a id="setup-python"></a>
 
 Install and test the isolated source:
 

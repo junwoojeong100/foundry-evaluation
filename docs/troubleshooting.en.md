@@ -250,10 +250,11 @@ Require the [step 10-3 checkpoint](../README.md#cleanup-check). If an object sti
 After a separately approved full-group deletion, use [final foundation verification](environment.en.md#final-cleanup-check), not `check-cleanup`.
 
 <a id="setup-resume"></a>
+<a id="environment-owners-resume-setup-after-closing-the-terminal"></a>
 
-## Environment owners: resume setup after closing the terminal
+## Environment owners: resume incomplete setup
 
-Use this only if [environment step 1](environment.en.md#setup-workspace) completed the source snapshot and Python environment. Do **not** generate a new `RUN_ID` or run `init` / `prepare` again.
+Keep the original clone and recorded `RUN_DIR`, even if setup stopped before Python installation. First confirm that the original preparation command has stopped. Do **not** generate a new `RUN_ID`, repeat a successful `init`, or overwrite a source snapshot.
 
 Start `bash`, then enter the **original clone path** and the **existing `RUN_DIR` path** printed during setup, without quotation marks:
 
@@ -261,13 +262,27 @@ Start `bash`, then enter the **original clone path** and the **existing `RUN_DIR
 read -r -p "Absolute path of the original setup clone: " REPO_ROOT &&
 cd "$REPO_ROOT" &&
 read -r -p "Existing absolute RUN_DIR path: " RUN_DIR &&
-ls "$RUN_DIR/config.json" "$RUN_DIR/source-manifest.json" &&
+ls "$RUN_DIR/config.json"
+```
+
+**Check the saved stage before activating the runnable workspace.** Open **`$RUN_DIR/config.json`** in your editor and confirm that its `workspace` is **this `RUN_DIR/workshop`**. If the config is missing or points elsewhere, stop and inspect the failed initialization; do not create a replacement record.
+
+| Existing files / completed work | Next action |
+|---|---|
+| `config.json` exists; `workshop/` does not | From the original clone, activate `source src/agent/.venv/bin/activate`, then run only [the `prepare` command](environment.en.md#setup-snapshot) with this `RUN_DIR`. Continue to the isolated Python step afterward. |
+| `workshop/` exists but `source-manifest.json` is missing | Source copying stopped partway. Preserve the directory and error for owner review; `prepare` refuses to overwrite it. Do not delete the folder or invent a manifest. |
+| Snapshot/manifest exist; isolated Python installation or tests are unfinished | Enter `"$RUN_DIR/workshop"`. Use [the isolated Python step](environment.en.md#setup-python) to create the virtual environment only if missing, activate it, then resume installation/tests. Require `OK` before sign-in. |
+| Snapshot, isolated Python installation, and tests completed | Restore the runnable workspace below, then select the interrupted Azure stage. |
+
+**Only once the snapshot and Python tests are complete:**
+
+```bash
 cd "$RUN_DIR/workshop" &&
 source src/agent/.venv/bin/activate &&
 export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 ```
 
-**Checkpoint:** both recorded files exist, activation succeeds, and the CLI profile points to the existing runnable workspace. If a file is missing, stop and inspect that incomplete setup with the environment owner; do not manufacture a replacement manifest.
+**Checkpoint:** activation succeeds and the CLI profile points to the existing runnable workspace. No new source or Azure environment was created by restoring the terminal.
 
 | Interrupted setup stage | Where to resume |
 |---|---|

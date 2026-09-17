@@ -82,6 +82,8 @@ cd foundry-evaluation-en
 
 Place the instructor's complete `.env` **next to this README**, without overwriting another file. It must contain your approved account, subscription/tenant, project, Search, and model deployment values. Never include passwords, API keys, or tokens.
 
+**Preparing the file yourself for existing services?** Use the [setting-to-portal map](docs/instructor.en.md#existing-settings). A portal page URL, project endpoint, and model endpoint are different values.
+
 | Setting | Check before starting a new run |
 |---|---|
 | `LAB_LANGUAGE` / `LAB_PROMPT_VERSION` | `en` / `v1`. Do not reset these when resuming an existing run. |
@@ -346,7 +348,7 @@ python scripts/workshop.py evaluate --label baseline
 
 **Next:** if all 24 rows are evaluated without execution errors, check the report below and continue to step 6 **even if scores are low**. Missing, duplicate, error, or null-score rows require [evaluation recovery](docs/troubleshooting.en.md#evaluation-retry). Do not repeat a completed collection.
 
-**Two different checks:** Python checks decisions, amounts, and citation IDs. Foundry scores answer text for **groundedness** and **relevance** on a 1–5 scale, passing at 4 or above. Passing one layer does not mean passing the other.
+**Two different checks:** Python checks the [`decision` label](docs/reference.en.md#decision-values), amounts, and citation IDs. Foundry scores answer text for **groundedness** and **relevance** on a 1–5 scale, passing at 4 or above. Passing one layer does not mean passing the other.
 
 <a id="what-is-being-evaluated"></a>
 
@@ -495,6 +497,8 @@ python scripts/workshop.py compare --labels baseline improved
 | Business passes | `business_passed` / `total` | Responses passing all five business checks |
 | Required citations | `required_citation_passed` / `required_citation_total` | Citation-required responses with valid citations |
 | Foundry scores | `foundry_evaluators → groundedness or relevance` | Read `native_mean_score` and `native_passed` / `total`. Each row needs **at least 4 out of 5**; an average of 4 does not mean all rows passed. |
+
+**If a native pass count is below its total:** [inspect the failed rows](docs/validation.en.md#native-failures) before freezing the candidate. A business failure and a native failure can be different responses; match by `row_id`, not score or row position.
 
 Also read **`comparison_notes`** in the same file. Different retrieved contexts mean this is an end-to-end comparison of retrieval plus answering, not an isolated model ranking.
 
