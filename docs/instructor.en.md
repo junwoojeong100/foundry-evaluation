@@ -33,14 +33,19 @@ Participants follow [README.md](../README.md#start). Keep infrastructure creatio
 
 Use Bash (`bash`) on macOS/Linux, or a WSL Bash terminal on Windows. Windows editors and browsers are fine for manual file/portal checks; verify CLI tools inside the WSL environment running the workshop.
 
-First check Bash and curl:
+**Check all CLI tools in one block.** It stops at the first missing command; install only that tool, then repeat the check.
 
 ```bash
 bash --version &&
-curl --version
+curl --version &&
+git --version &&
+python3.13 --version &&
+az version &&
+azd version &&
+azd extension list
 ```
 
-If a command is missing on Ubuntu/WSL, run `sudo apt-get update`, then execute **only the row for the missing tool**. Handle installation approval in your own terminal; never send the password through chat.
+For missing Bash/curl on Ubuntu/WSL, run `sudo apt-get update`, then execute **only the applicable row**. Handle installation approval in your own terminal; never send the password through chat.
 
 | Missing tool | Installation command |
 |---|---|
@@ -49,17 +54,7 @@ If a command is missing on Ubuntu/WSL, run `sudo apt-get update`, then execute *
 
 On macOS, check `/bin/bash`, `/usr/bin/curl`, and PATH before treating a built-in command as missing. Other Linux distributions should use their own package manager. Repeat the version check after installation.
 
-Then check the remaining CLI tools. Install the Python packages in [README step 1-2](../README.md#1-2-create-the-python-environment-and-run-offline-tests).
-
-```bash
-git --version &&
-python3.13 --version &&
-az version &&
-azd version &&
-azd extension list
-```
-
-If a command is missing, install that tool and repeat this check. If `microsoft.foundry` has **no installed version**, install it once:
+Once the commands work, if `microsoft.foundry` has **no installed version**, install it once:
 
 ```bash
 azd extension install microsoft.foundry
@@ -73,7 +68,7 @@ azd ai agent --help
 
 Require the command list to include `run` and `invoke`. An update notice is not itself a failure of the installed commands; do not run “update all” or downgrade tools mid-experiment. If the installed commands fail, resolve the compatible azd/extension versions before starting.
 
-**After checking the tools, choose one return path.** Participants do not all need to complete the remaining instructor sections.
+**After checking the tools, choose one return path.** Install Python packages in that path's virtual-environment step, not globally here. Participants do not need to complete the remaining instructor sections.
 
 | How you will proceed | Next destination |
 |---|---|
@@ -122,7 +117,7 @@ Do not continue to Azure operations until the result is **`OK`**. The tests cove
 
 Use the pinned package versions. `requirements.lock.txt` is the validated dependency snapshot; do not upgrade frameworks, extensions, or SDKs indiscriminately during a workshop.
 
-Installation references: [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli), [azd](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd), and the [Hosted Agent quickstart](https://learn.microsoft.com/azure/foundry/agents/quickstarts/quickstart-hosted-agent).
+Hosting reference: [Hosted Agent quickstart](https://learn.microsoft.com/azure/foundry/agents/quickstarts/quickstart-hosted-agent).
 
 ## Safe preparation with an existing foundation
 
@@ -183,7 +178,7 @@ Stop if the exact model, version, deployment type, or quota is unavailable. Do n
 
 If evaluation reports missing App Insights `ResourceId` metadata, inspect connection ownership first. Only an authorized instructor may use `repair-observability --confirm` on a dedicated workshop connection. Do not modify a shared connection to make an example work.
 
-An execution failure can be retried with preserved inputs and evidence. A low quality score is not a reason to use `--retry-failed`, lower the rubric, or substitute a different model.
+After resolving the cause, choose [calibration recovery](troubleshooting.en.md#calibration) or [evaluation recovery](troubleshooting.en.md#evaluation-retry) based on the saved run status. A local error alone does not authorize `--retry-failed`; never retry a valid low score to force a pass.
 
 <details>
 <summary>What bind does — explanation, not another step to execute</summary>

@@ -35,14 +35,19 @@
 
 macOS/Linux는 Bash(`bash`), Windows는 WSL의 Bash를 사용한다. 수동 포털 확인용 브라우저와 편집기는 Windows 쪽 앱을 사용해도 된다. CLI 도구는 실습을 실행할 WSL 안에서 확인한다.
 
-먼저 Bash와 curl을 확인한다.
+**CLI 도구를 한 블록으로 확인한다.** 처음 없는 명령에서 멈추므로 해당 도구만 설치한 뒤 다시 확인한다.
 
 ```bash
 bash --version &&
-curl --version
+curl --version &&
+git --version &&
+python3.13 --version &&
+az version &&
+azd version &&
+azd extension list
 ```
 
-Ubuntu/WSL에서 명령이 없다면 `sudo apt-get update` 후 **없는 도구의 행만** 실행한다. 설치 승인은 사용자 터미널에서 처리하고 암호를 채팅에 전달하지 않는다.
+Ubuntu/WSL에서 Bash·curl이 없다면 `sudo apt-get update` 후 **해당 행만** 실행한다. 설치 승인은 사용자 터미널에서 처리하고 암호를 채팅에 전달하지 않는다.
 
 | 없는 도구 | 설치 명령 |
 |---|---|
@@ -51,17 +56,7 @@ Ubuntu/WSL에서 명령이 없다면 `sudo apt-get update` 후 **없는 도구�
 
 macOS에서 기본 명령을 찾지 못하면 `/bin/bash`, `/usr/bin/curl`과 PATH를 먼저 확인한다. 다른 Linux 배포판은 해당 배포판의 패키지 관리자를 사용한다. 설치 후 위 버전 확인을 반복한다.
 
-그다음 나머지 CLI 도구를 확인한다. Python 패키지 설치는 [README 1-2](../README.ko.md#1-2-가상환경과-로컬-테스트)에서 수행한다.
-
-```bash
-git --version &&
-python3.13 --version &&
-az version &&
-azd version &&
-azd extension list
-```
-
-없는 명령이 있으면 해당 도구를 설치하고 다시 확인한다. `microsoft.foundry`에 **설치된 버전이 없을 때만** 한 번 설치한다.
+명령이 모두 동작하면, `microsoft.foundry`에 **설치된 버전이 없을 때만** 한 번 설치한다.
 
 ```bash
 azd extension install microsoft.foundry
@@ -75,7 +70,7 @@ azd ai agent --help
 
 명령 목록에 `run`, `invoke`가 있어야 한다. 업데이트 안내 자체를 현재 명령의 실패로 보지 않으며, 실험 중 “모두 업데이트”나 임의 다운그레이드를 하지 않는다. 설치된 명령이 실패하면 호환되는 azd/확장 조합을 먼저 해결한다.
 
-**도구 확인을 마쳤다면 맞는 경로 하나로 이동한다.** 아래 강사 준비 전체를 모든 참가자가 수행할 필요는 없다.
+**도구 확인을 마쳤다면 맞는 경로 하나로 이동한다.** Python 패키지는 선택한 경로의 가상환경 설치 단계에서 설치하며, 지금 전역으로 설치하지 않는다. 참가자는 아래 강사 준비 전체를 수행할 필요가 없다.
 
 | 진행 방식 | 다음으로 갈 곳 |
 |---|---|
@@ -97,7 +92,7 @@ azd ai agent --help
 | 인증 | 참가자가 README 1-3에서 두 CLI에 로그인하고 MFA를 완료할 수 있음 |
 | 데이터 | 합성 문서만 사용, 실습 접두사는 조마다 다름 |
 
-도구 설치는 [azd 설치](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd), [Hosted Agent quickstart](https://learn.microsoft.com/azure/foundry/agents/quickstarts/quickstart-hosted-agent)를 따른다. agent hosting과 SDK 패키지의 GA/preview 상태를 혼동하지 않는다.
+지원 환경은 [Hosted Agent quickstart](https://learn.microsoft.com/azure/foundry/agents/quickstarts/quickstart-hosted-agent)를 참고한다. Agent hosting과 SDK 패키지의 GA/preview 상태를 혼동하지 않는다.
 
 <a id="access"></a>
 
@@ -196,7 +191,7 @@ python -m unittest discover -s tests -v
 4. `python scripts/workshop.py calibrate`의 **`Judge calibration passed`**를 확인한다. 참가자 README 5단계에서도 점검하며, 같은 입력의 완료된 calibration은 재사용한다. 예제 2건은 네 모델의 본평가 64응답에 포함하지 않는다.
 5. 수업 준비라면 [별도 리허설 폴더](#rehearsal-workspace)를 거쳐 참가자에게 전달한다. 일회성 개인 실습이라면 이 폴더에서 [README 1-4](../README.ko.md#project-binding)로 이어간다. 순서는 bind → IQ 검색 → 로컬 smoke → 배포·권한 부여 → 원격 smoke다. 두 경로를 모두 실행하지 않는다.
 
-평가가 `AppInsights connection is missing ResourceId metadata`로 실패하면 강사가 연결의 소유권과 범위를 먼저 확인한다. **공유 연결은 참가자가 직접 변경하지 않는다.** 수정이 허용된 실습 전용 연결에만 `python scripts/workshop.py repair-observability --confirm`으로 실제 Application Insights ARM ID 메타데이터를 추가한다. target/credential은 변경하지 않으며 보완 기록은 cleanup 후에도 유지된다. 이후 `calibrate --retry-failed`로 실패 run을 보존한 채 새 run을 만든다.
+평가가 `AppInsights connection is missing ResourceId metadata`로 실패하면 강사가 연결의 소유권과 범위를 먼저 확인한다. **공유 연결은 참가자가 직접 변경하지 않는다.** 수정이 허용된 실습 전용 연결에만 `python scripts/workshop.py repair-observability --confirm`으로 실제 Application Insights ARM ID 메타데이터를 추가한다. target/credential은 변경하지 않으며 보완 기록은 cleanup 후에도 유지된다. 이후 저장된 run 상태에 따라 [calibration 복구](troubleshooting.ko.md#calibration) 또는 [평가 복구](troubleshooting.ko.md#evaluation-retry)를 선택한다. 로컬 오류만으로 `--retry-failed`를 사용하거나 낮은 점수를 통과할 때까지 반복하지 않는다.
 
 모델은 `GlobalStandard` 사용량 기반 배포를 사용한다. PTU를 예약하거나 할당량 증설을 자동 신청하지 않는다. 실제 모델/SKU/할당량 검사를 통과하지 못하면 강사가 먼저 해결한다.
 

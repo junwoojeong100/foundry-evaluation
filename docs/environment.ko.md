@@ -10,10 +10,16 @@
 
 **GHCP에 환경 생성을 맡기려면:** [별도 도구 설치·시작 안내](copilot.ko.md)를 먼저 따릅니다. 설치·로그인 전 실행 요청 단계로 건너뛰지 않습니다. 계정·구독·과금 범위를 확인하고 승인하며, 도구 설치가 Azure 권한을 대신하지 않습니다.
 
-**진행 경로:** 이 문서의 1–6단계를 마친 뒤 [개인 실습 또는 수업 전달 경로](#handoff)를 선택합니다. 2단계에서만 README의 **로그인 부분**을 사용하며, 준비 중에 참가자 배포 단계까지 진행하지 않습니다. 기반 서비스가 이미 있으면 새로 만들지 말고 [기존 환경 준비](instructor.ko.md#existing-foundation)를 따릅니다.
+<a id="setup-route"></a>
+
+**순서:** [1. 실행 폴더](#setup-workspace) → [2. 계정·용량](#setup-identity) → [3. 서비스](#setup-foundation) → [4. 권한·연결](#setup-access) → [5. 보조 모델](#setup-auxiliary) → [6. 후보 모델](#setup-candidates) → [실습으로 복귀](#handoff).
+
+2단계에서는 README의 **로그인 부분만** 실행하고 이 문서로 돌아옵니다. 기반 서비스가 이미 있으면 새로 만들지 말고 [기존 환경 준비](instructor.ko.md#existing-foundation)를 따릅니다.
 
 > 새 서비스에는 비용이 발생합니다. 합성 데이터만 사용하고, 공유 자원과 기본 Azure CLI 구독은 변경하지 않습니다.
 > 서비스 위치가 Sweden Central이어도 **GlobalStandard 모델의 추론이 그 리전 안에만 머문다는 뜻은 아닙니다.**
+
+<a id="setup-workspace"></a>
 
 ## 1. 새 실행 폴더 준비
 
@@ -91,6 +97,8 @@ python -m unittest discover -s tests -v
 
 </details>
 
+<a id="setup-identity"></a>
+
 ## 2. 로그인·소유권·용량 확인
 
 **할 일:** 지금 폴더에서 [README 1-3의 로그인 절차](../README.ko.md#login)를 실행합니다.
@@ -119,6 +127,8 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 ![이전 전용 그룹과 공유 환경 구분](assets/live-20260914-2034/screenshots/00-11-ownership-after.webp)
 
 </details>
+
+<a id="setup-foundation"></a>
 
 ## 3. 새 전용 그룹과 서비스 생성
 
@@ -163,6 +173,8 @@ python scripts/provision_environment.py search-status --run-dir "$RUN_DIR"
 
 </details>
 
+<a id="setup-access"></a>
+
 ## 4. 필요한 권한과 연결 준비
 
 **할 일:** 새 자원 범위에만 역할과 연결을 만듭니다. `user-*` 명령은 **2단계에서 검증한 사용자 한 명**에게 적용됩니다.
@@ -184,6 +196,8 @@ python scripts/provision_environment.py search-connection --run-dir "$RUN_DIR"
 **사용자·프로젝트 identity·agent instance identity는 다릅니다.**
 배포 후 agent의 Search 읽기·모델 추론 역할은 [참가자 4단계](../README.ko.md#deploy)의 `grant-agent-access`에서 부여합니다. Owner를 일괄 추가하지 않습니다.
 
+<a id="setup-auxiliary"></a>
+
 ## 5. 보조 모델과 실제 endpoint 확인
 
 **할 일:** 고정 planner/judge를 배포하고 Azure가 반환한 실제 endpoint를 새 실행 폴더에 반영합니다.
@@ -195,6 +209,8 @@ python scripts/provision_environment.py ready --run-dir "$RUN_DIR"
 
 **완료 확인:** 새 그룹·프로젝트·Search와 두 endpoint를 확인합니다. Project endpoint와 Azure OpenAI endpoint는 용도가 다릅니다.
 보조 모델은 `gpt-5.4-mini` / `2026-03-17`이며 네 후보 모델 중 하나를 대신하지 않습니다.
+
+<a id="setup-candidates"></a>
 
 ## 6. 네 후보 준비 후 참가자에게 전달
 
@@ -275,6 +291,8 @@ Calibration 예제 2개는 본평가 64응답이 아닙니다. 모델 접근·�
 **그룹 전체와 남은 서비스가 삭제되며 그룹 자체는 복구할 수 없습니다.** 위 범위와 영향을 확인한 소유자가 삭제를 결정한 뒤에만 실행합니다. GHCP에 맡긴다면 **정확한 구독·그룹·삭제 영향에 대해 이 작업을 별도로 승인**합니다.
 
 같은 그룹 화면에서 **Delete resource group**을 선택하고, 확인란에 **검토한 그룹 이름**을 입력해 삭제를 확정합니다. 다른 그룹이나 공유 환경으로 범위를 넓히지 않습니다. [공식 그룹 삭제 절차](https://learn.microsoft.com/azure/azure-resource-manager/management/delete-resource-group#delete-resource-group)를 따릅니다.
+
+<a id="final-cleanup-check"></a>
 
 ### 3. 삭제 완료와 남은 비용 확인
 

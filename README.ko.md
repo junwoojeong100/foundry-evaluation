@@ -283,17 +283,34 @@ Readiness뿐 아니라 실제 답변·인용·`model_key`·`prompt_version`을 �
 
 **할 일:** 같은 코드를 Azure에 배포하고, 원격에서 실제로 호출합니다. 로컬 Docker는 필요 없습니다.
 
+### 4-1. 코드 배포
+
 ```bash
-azd deploy --no-prompt &&
-python scripts/workshop.py grant-agent-access &&
+azd deploy --no-prompt
+```
+
+배포가 성공해 터미널 A의 입력 프롬프트가 돌아오면 접근 권한을 부여합니다.
+
+<a id="agent-access"></a>
+
+### 4-2. Agent 접근 권한 부여
+
+```bash
+python scripts/workshop.py grant-agent-access
+```
+
+**`Search read and Foundry model inference access configured for ...`**에 내 agent 이름이 있는지 확인합니다. 권한 오류가 나면 **이번 agent의 instance identity에 필요한 역할 부여를 강사에게 요청**합니다. 다른 계정으로 바꾸거나 Owner 권한을 임의로 추가하지 않습니다.
+
+<a id="hosted-smoke"></a>
+
+### 4-3. 원격 응답 확인
+
+```bash
 python scripts/workshop.py smoke
 ```
 
 **완료 확인:** 실제 한국어 답변과 `trace_id`, `language: ko`, `prompt_version: v1`, **숫자로 된 `agent_version`**이 있습니다.
 버전 번호를 따로 적어 둡니다. 반드시 `1`이라고 가정하지 않습니다.
-
-`grant-agent-access`에서 권한 오류가 나면 **이번 agent의 instance identity에 필요한 역할 부여를 강사에게 요청**합니다.
-다른 계정으로 바꾸거나 Owner 권한을 임의로 추가하지 않습니다.
 
 **포털 확인:** **Agents → 내 agent → Playground**에서 같은 버전을 선택합니다. 탭 이동 후에도 버전을 다시 확인합니다.
 
@@ -404,7 +421,7 @@ python scripts/workshop.py monitor --label baseline
 
 1. **`labels → baseline → business_failures`**에서 한 행을 고릅니다. `row_id`, `trace_id`, false인 `checks`를 읽습니다. 목록이 비었으면 [통과한 dev 한 건을 검토](docs/troubleshooting.ko.md#no-failures)하며 실패를 꾸미지 않습니다.
 2. 편집기로 `src/agent/.foundry/results/baseline/responses.jsonl`을 열고 **줄 번호가 아닌 같은 `row_id`**를 찾습니다(`Ctrl+F`, macOS는 `⌘F`). 이 행의 **`case_id`와 `model_key`**도 적어 둡니다. V2에서 같은 질문·모델을 찾는 기준입니다.
-3. `data/dev.jsonl`에서 **같은 `case_id`**의 고정 기준을 찾습니다. 응답의 `answer`·`decision`·`citations`를 기준의 `ground_truth`·`expected_decision`·`required_numbers`·`allowed_citations`와 대조합니다. **`source_ids`는 이번 요청에서 검색된 문서, `citations`는 답변이 인용한 ID**입니다. 각 인용 ID가 `source_ids`에도 있어야 합니다. 화면 자동 줄바꿈만 켜고 파일은 수정하지 않습니다.
+3. `data/dev.jsonl`에서 **같은 `case_id`**의 고정 기준을 찾습니다. 응답의 `answer`·`decision`·`citations`를 기준의 `ground_truth`·`expected_decision`·`required_numbers`·`allowed_citations`와 대조합니다. **`source_ids`는 이번 요청에서 검색된 문서 ID, `citations`는 답변이 인용한 ID**입니다. 각 인용 ID가 `source_ids`에도 있어야 합니다. 화면 자동 줄바꿈만 켜고 파일은 수정하지 않습니다.
 4. 포털 **내 agent → Traces**에서 같은 `trace_id`로 검색합니다. 기간을 맞추고 Graph view의 검색·모델 span을 확인합니다.
 5. 이 행의 **응답 → 고정 기준 → 검색·모델 기록**을 근거로 원인과 바꿀 점을 설명합니다.
 
@@ -478,7 +495,12 @@ python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
 
 ```bash
 python scripts/workshop.py set-prompt v2 &&
-azd deploy --no-prompt &&
+azd deploy --no-prompt
+```
+
+배포가 성공하면 새 버전을 호출합니다. 호출만 실패했다면 재배포하지 말고 [`smoke`만 복구](docs/troubleshooting.ko.md#resume)합니다.
+
+```bash
 python scripts/workshop.py smoke
 ```
 
@@ -667,11 +689,23 @@ python scripts/workshop.py cleanup --dry-run
 ### 10-2. 검토한 계획만 실행
 
 ```bash
-python scripts/workshop.py cleanup --confirm &&
+python scripts/workshop.py cleanup --confirm
+```
+
+삭제 명령이 오류 없이 끝난 뒤에만 다음으로 진행합니다. 중단됐다면 [정리 복구](docs/troubleshooting.ko.md#cleanup-recovery)를 따릅니다.
+
+<a id="cleanup-check"></a>
+
+### 10-3. 삭제 여부를 별도로 확인
+
+```bash
 python scripts/workshop.py check-cleanup
 ```
 
-**완료 확인:** `temporary_hosted_agent_absent: true`, `existing_foundry_project_preserved: true`, `existing_search_service_preserved: true`입니다. 삭제 건수는 예시 화면이 아닌 **내 계획**과 대조합니다. 강사가 준비한 모델은 임의로 삭제하지 않습니다.
+**완료 확인:** `src/agent/.foundry/results/cleanup-check.json`의 `temporary_hosted_agent_absent: true`, `existing_foundry_project_preserved: true`, `existing_search_service_preserved: true`입니다. 삭제 건수는 예시 화면이 아닌 **내 계획**과 대조합니다. 강사가 준비한 모델은 임의로 삭제하지 않습니다.
+
+확인만 실패했다면 [확인 명령부터 복구](docs/troubleshooting.ko.md#cleanup-recovery)합니다. 성공한 `cleanup --confirm`을 반복하면 저장된 삭제 계획이 교체되므로 다시 실행하지 않습니다.
+
 Search 가동·로그 보존·기반 서비스·보조 모델의 비용은 남을 수 있으며, 환경 소유자가 최종 정리를 별도로 관리합니다.
 
 **직접 새 전용 환경을 만든 일회성 개인 실습이라면:** 여기까지 마친 뒤 [기반 서비스까지 최종 정리](docs/environment.ko.md#final-cleanup)를 별도로 선택할 수 있습니다. 기존·공유 환경이나 다음 수업에 쓸 그룹은 삭제하지 않습니다.
@@ -693,6 +727,7 @@ Search 가동·로그 보존·기반 서비스·보조 모델의 비용은 남�
 | `src/agent/.foundry/results/comparison.json` | 네 모델의 전후 지표와 미통과 사례 |
 | `src/agent/.foundry/datasets/regression-*.jsonl` | 검토 이유·고정 정답·원래 trace |
 | `src/agent/.foundry/results/verified-evidence.json` | 전체 실행·lineage 검증 |
+| `src/agent/.foundry/results/cleanup-check.json` | 삭제 확인 결과. 확인한 계획은 같은 폴더의 `cleanup.json` |
 
 이 파일들은 뒤 단계의 입력이므로 실습이 끝나기 전에 지우거나 예시 결과로 바꾸지 않습니다.
 

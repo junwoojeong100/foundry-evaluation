@@ -264,15 +264,33 @@ Press **`Ctrl+C` in Terminal A**. Require its input prompt to return before step
 
 **Action:** deploy the same code to Azure and invoke the remote version. Local Docker is not required.
 
+### 4-1. Deploy the code
+
 ```bash
-azd deploy --no-prompt &&
-python scripts/workshop.py grant-agent-access &&
+azd deploy --no-prompt
+```
+
+Wait for deployment to succeed and Terminal A's prompt to return before granting access.
+
+<a id="agent-access"></a>
+
+### 4-2. Grant the agent access
+
+```bash
+python scripts/workshop.py grant-agent-access
+```
+
+Require **`Search read and Foundry model inference access configured for ...`** to name your agent. If role assignment fails, ask the instructor to grant the required access to **this agent's instance identity**. Do not switch accounts or add broad Owner permissions.
+
+<a id="hosted-smoke"></a>
+
+### 4-3. Check the hosted response
+
+```bash
 python scripts/workshop.py smoke
 ```
 
 **Checkpoint:** an English answer, `language: en`, `prompt_version: v1`, a real `trace_id`, and a **numeric `agent_version`**. Record that version; it need not be `1`.
-
-If role assignment fails, ask the instructor to grant the required access to **this agent's instance identity**. Do not switch accounts or add broad Owner permissions.
 
 **Portal:** open **Agents → your agent → Playground**, and select the same version. Recheck the version after changing tabs.
 
@@ -377,7 +395,7 @@ python scripts/workshop.py monitor --label baseline
 
 1. In **`labels → baseline → business_failures`**, choose a real `row_id`. Read its `trace_id` and false `checks`. If the list is empty, [review one passing dev case](docs/troubleshooting.en.md#no-failures); do not invent a failure.
 2. Open `src/agent/.foundry/results/baseline/responses.jsonl` and find **the same `row_id`, not a line number**. Also note its **`case_id` and `model_key`**: these identify the same question/model in V2.
-3. Find **that `case_id`** in `data/en/dev.jsonl`. Compare the response's `answer`, `decision`, and `citations` with the fixed `ground_truth`, `expected_decision`, `required_numbers`, and `allowed_citations`. **`source_ids` are the documents retrieved for this request; `citations` are the IDs the answer chose to cite.** Each citation must also be in `source_ids`. Use editor word wrap; do not edit either file.
+3. Find **that `case_id`** in `data/en/dev.jsonl`. Compare the response's `answer`, `decision`, and `citations` with the fixed `ground_truth`, `expected_decision`, `required_numbers`, and `allowed_citations`. **`source_ids` are the IDs of documents retrieved for this request; `citations` are the IDs the answer chose to cite.** Each citation must also be in `source_ids`. Use editor word wrap; do not edit either file.
 4. In **your agent → Traces**, search for the same `trace_id`. Adjust the time range and inspect its retrieval and model spans.
 5. Explain the cause and proposed change using **the response → fixed reference → retrieval/model trace**, not another request's evidence.
 
@@ -436,7 +454,12 @@ Read `src/agent/prompts/en/v1.txt` and `src/agent/prompts/en/v2.txt`. V2 is **pr
 
 ```bash
 python scripts/workshop.py set-prompt v2 &&
-azd deploy --no-prompt &&
+azd deploy --no-prompt
+```
+
+After deployment succeeds, invoke the new version. If invocation fails, [recover only `smoke`](docs/troubleshooting.en.md#resume), not deployment.
+
+```bash
 python scripts/workshop.py smoke
 ```
 
@@ -605,11 +628,22 @@ Confirm that every listed agent, model, knowledge object, and role belongs to th
 ### 10-2. Confirm only the reviewed plan
 
 ```bash
-python scripts/workshop.py cleanup --confirm &&
+python scripts/workshop.py cleanup --confirm
+```
+
+Continue only when deletion finishes without an error. If it stops, use [cleanup recovery](docs/troubleshooting.en.md#cleanup-recovery).
+
+<a id="cleanup-check"></a>
+
+### 10-3. Verify deletion separately
+
+```bash
 python scripts/workshop.py check-cleanup
 ```
 
-**Checkpoint:** `temporary_hosted_agent_absent: true`, `existing_foundry_project_preserved: true`, and `existing_search_service_preserved: true`. Deleted-object counts must match **your plan**, not the screenshot. Instructor-prepared models are not automatically yours to delete.
+**Checkpoint:** `src/agent/.foundry/results/cleanup-check.json` contains `temporary_hosted_agent_absent: true`, `existing_foundry_project_preserved: true`, and `existing_search_service_preserved: true`. Deleted-object counts must match **your plan**, not the screenshot. Instructor-prepared models are not automatically yours to delete.
+
+If only this check fails, [recover the check](docs/troubleshooting.en.md#cleanup-recovery). Do not repeat a successful `cleanup --confirm`; it would replace the saved deletion plan.
 
 Search uptime, logs, retained foundation services, and the auxiliary model may still incur costs. The environment owner manages their final lifecycle separately.
 
@@ -632,6 +666,7 @@ Search uptime, logs, retained foundation services, and the auxiliary model may s
 | `src/agent/.foundry/results/comparison.json` | Before/after model metrics and failing cases |
 | `src/agent/.foundry/datasets/regression-*.jsonl` | Reviewed case, fixed reference answer, and source trace |
 | `src/agent/.foundry/results/verified-evidence.json` | Complete execution and lineage checks |
+| `src/agent/.foundry/results/cleanup-check.json` | Deletion verification; the checked plan is in the same folder's `cleanup.json` |
 
 These files are inputs to later workshop commands, not disposable success screenshots. Do not delete them prematurely or replace them with an example run.
 

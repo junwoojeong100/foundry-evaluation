@@ -197,12 +197,14 @@ Read the saved setup and result state without changing files or Azure resources.
 Report the actual execution folder separately from the folder containing the guides.
 Identify the language, deployed version, result labels, and last verified checkpoint.
 Check whether the previous command is still running before proposing a retry.
+Use only this execution folder's AZURE_CONFIG_DIR; if unknown, report sign-in as unchecked.
 Do not print the full .env or credentials, or open either language's holdout before step 8.
-Show only the next unfinished command and its checkpoint; do not execute it yet.
+Show only the next unfinished action (command or portal check), its location, and checkpoint.
+Do not execute it yet or infer that a portal check was done from a completed result file.
 Preserve completed work, failed attempts, review lineage, names, and concurrency.
 ```
 
-Review that next command, then request only that unfinished work using step 3-2's sign-in, approval, and portal-check rules. Do not send a request to restart all ten steps.
+Review that next action, then continue only that unfinished work using step 3-2's sign-in, approval, and portal-check rules. Confirm any outstanding portal review before cleanup; do not restart all ten steps.
 
 <a id="playwright"></a>
 

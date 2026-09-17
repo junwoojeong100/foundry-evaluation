@@ -27,10 +27,11 @@
 | 배포는 성공했지만 뒤의 `grant-agent-access` 또는 `smoke` 실패 | 원인을 해결하고 **실패한 명령만** 재실행. 재배포해 agent 버전을 하나 더 만들지 않음 |
 | `collect` 중 오류, `manifest.json`의 `status: failed` | [응답 수집 복구](#collection-retry). 실패한 결과는 보존하고 새 label로 전체 수집 |
 | `Evaluation is still running` | [평가 복구](#evaluation-retry). 같은 label의 `evaluate`만 다시 실행 |
-| Foundry run이 failed/canceled이거나 오류 행이 있음 | 원인을 해결한 뒤 [평가 복구](#evaluation-retry)의 `--retry-failed` 사용 |
+| Foundry 평가 실패 또는 결과 검증·다운로드 중단 | [저장 상태별 복구 표](#evaluation-retry)에서 선택. 모든 로컬 오류에 `--retry-failed`를 쓸 수 있는 것은 아님 |
 | `Telemetry is incomplete` | 수집 지연·권한과 [기본 2시간 조회 범위](#telemetry)를 확인한 뒤 같은 label의 `monitor`만 재실행 |
 | `Label ... already exists` | 아래 상태 파일 확인. 수집이 `completed`면 아직 끝나지 않은 평가·trace 단계로, `failed`면 수집 복구. `running`이면 원래 프로세스가 실행 중일 때 기다리고, **종료를 확인한 뒤에만** [수집 복구](#collection-retry) |
 | `feedback`에서 이미 같은 회귀 기록이 존재 | 기존 행 ID·검토 이유·출처가 이번에 검토한 내용과 일치할 때만 다음 단계 진행. 다르면 중단하고 확인하며 파일을 지워 우회하지 않음 |
+| 정리 또는 정리 확인 중단 | [정리 복구](#cleanup-recovery). 확인 실패를 해결하려고 성공한 삭제를 반복하지 않음 |
 
 **터미널을 다시 열었나요?** 새 clone이 아니라 **기존 실습 폴더**를 열고 [터미널 복원 블록](../README.ko.md#resume-shell)을 따릅니다. 빈 터미널이라는 이유로 `init`·`bind`·배포·수집을 반복하지 않습니다.
 
@@ -67,13 +68,13 @@
 | IQ 400 / schema 오류 | 고정한 API 버전, KB schema, 보조 planner 지원을 확인합니다. 일반 Search 결과를 IQ 성공으로 대신하지 않습니다. |
 | Hosted 424 / cold start | 실제 배포 상태와 해당 session 로그를 확인하고 준비 뒤 같은 버전으로 재시도합니다. |
 | 시작 시 `connections/read` 거부 | 플랫폼이 주입한 telemetry 설정을 사용하는지 확인합니다. 무작정 넓은 연결 조회 권한을 주지 않습니다. |
-| 평가 완료인데 오류 행이나 `null` 점수 | job 상태와 각 행을 함께 확인합니다. 오류를 0점·합격으로 변환하지 않습니다. |
+| 평가 완료인데 오류 행이나 `null` 점수 | [평가 복구](#evaluation-retry)를 따릅니다. 오류를 0점·합격으로 변환하지 않습니다. |
 | `verify`는 성공했는데 `candidate_quality_gates`에 `false`가 있음 | 유효한 실행의 품질 미통과 결과입니다. [완료 후 판단](../README.ko.md#completion-decision)에 따라 그대로 보고하고 정리하며, 점수를 높이려고 재실행하지 않습니다. |
 | `production_release_approved: false` | 업무 gate를 통과해도 정상입니다. 권한 오류나 편집할 값이 아닙니다. [세 결과의 다음 행동](../README.ko.md#completion-decision)을 확인합니다. |
 | JSON 뒤의 azd 업데이트 안내 | 제공 실행기는 UTF-8 HTTP 본문과 확인된 안내만 분리합니다. 확장/SDK를 수업 중 무조건 업그레이드하지 않습니다. |
 | CLI credential 시간 초과 | 실제 로그인 실패와 토큰 갱신 지연을 구분합니다. 제공 코드의 60초 제한을 무한 대기로 바꾸지 않습니다. |
 | `ResourceId metadata` 평가 오류 | 강사에게 실습 전용 App Insights 연결 metadata 확인을 요청합니다. 참가자가 공유 연결을 직접 변경하지 않습니다. |
-| 정리 대상이 내 이름과 다름 | 즉시 중단합니다. `.foundry` 소유권 기록을 지우거나 편집해서 삭제를 강행하지 않습니다. |
+| 정리 대상이 내 이름과 다름 | 즉시 중단하고 [정리 복구](#cleanup-recovery)를 따릅니다. 소유권 기록을 지우거나 편집해서 삭제를 강행하지 않습니다. |
 
 <a id="login"></a>
 
@@ -104,19 +105,19 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 
 ## Judge calibration이 통과하지 않는다면
 
-평가가 **아직 실행 중**이면 아래 명령만 반복합니다.
+파일이 있다면 **`src/agent/.foundry/results/judge-calibration/evaluation.json`**을 확인합니다. 평가가 **아직 실행 중**이거나 생성·다운로드 오류를 해결했다면 아래로 재개합니다.
 
 ```bash
 python scripts/workshop.py calibrate
 ```
 
-Native job이 실패·취소됐거나 오류 행이 있다면 원인을 먼저 해결한 뒤, 실패 job을 보존하고 재시도합니다.
+아래 명령은 저장된 `status`가 **`failed` / `canceled` / `cancelled`**이거나 **`run → result_counts → errored`가 0보다 클 때만** 사용합니다. 원인을 먼저 해결하며 실패 job은 보존됩니다.
 
 ```bash
 python scripts/workshop.py calibrate --retry-failed
 ```
 
-Job은 완료됐지만 judge가 제공된 근거 있는 금액과 근거 없는 금액을 **구분하지 못했다면** 중단하고 환경 소유자와 judge·설정을 검토합니다. 예제·threshold를 바꾸거나 정상적으로 나온 낮은 점수를 통과할 때까지 반복하지 않습니다. Calibration은 agent의 본평가 64응답과 별개입니다.
+실패·오류 run이 기록되지 않은 결과 형식 오류·누락은 이 calibration 폴더의 상태·원문 결과를 보존하고 환경 소유자에게 확인합니다. 재시도를 강행하지 않습니다. Judge가 평가를 마쳤지만 두 금액을 **구분하지 못했다면** 설정을 검토합니다. 예제·threshold를 바꾸거나 낮은 점수를 반복 실행하지 않습니다. Calibration은 본평가 64응답과 별개입니다.
 
 <a id="telemetry"></a>
 
@@ -183,23 +184,28 @@ V2 dev가 **24/24**로 끝나면 바로 [7단계 평가·비교](../README.ko.md
 
 ## Foundry 평가만 실패했다면
 
-응답 수집이 온전히 완료됐는지 먼저 확인합니다. **아직 실행 중인 평가와 실제 실패한 평가의 복구 명령은 다릅니다.**
+응답 수집이 온전히 완료됐는지 먼저 확인합니다. **`src/agent/.foundry/results/<label>/evaluation.json`**이 있다면 읽고 아래에서 하나를 선택합니다.
 
-`Evaluation is still running`으로 로컬 대기만 끝났다면 **같은 label**로 다시 조회합니다. 기존 평가 run을 이어서 기다리며 새 run을 만들지 않습니다.
+| 저장된 상태 / 오류 | 다음 행동 |
+|---|---|
+| 평가 run 생성 전 중단, 로컬 대기 시간 초과, 결과 다운로드 중단 | 원인을 해결한 뒤 **A**. 저장된 run을 재사용하며, 아직 run이 없을 때만 생성 |
+| `status: failed / canceled / cancelled` 또는 `run → result_counts → errored`가 0보다 큼 | 원인을 해결한 뒤 **B**. 실패한 시도를 보존하고 재시도 run 생성 |
+| 오류 행 없이 job은 완료됐지만 ID 누락·중복, `null` 점수, 결과 형식 검증에서 실패 | 중단하고 `evaluation.json`과, 있다면 `evaluation-output-raw.json`을 보존. 환경 소유자에게 결과 형식 확인을 요청하며 **B 강행·상태/점수 편집 금지** |
+| Job·행 검증은 정상 완료됐지만 유효한 점수가 낮음 | 재시도하지 않음. 보고서·포털 확인을 마치고 실습 계속 |
+
+**A — 같은 입력의 평가 시작 또는 재개:**
 
 ```bash
 python scripts/workshop.py evaluate --label baseline
 ```
 
-반면 상태가 `failed` / `canceled` / `cancelled`이거나 오류 행이 기록됐다면, 원인을 해결한 뒤 아래를 실행합니다. 실패한 시도는 보존하고 새 평가 run을 만듭니다.
+**B — 실패·오류 run이 기록된 경우에만 재시도:**
 
 ```bash
 python scripts/workshop.py evaluate --label baseline --retry-failed
 ```
 
-`--retry-failed`는 낮은 점수를 숨기는 옵션이 아닙니다. **실행 오류를 해결한 경우에만** 사용합니다.
-label이 다르면 위 예시도 실제 label로 바꿉니다.
-복구를 마치면 중단했던 README 단계의 **완료 확인**을 마친 뒤 다음 단계로 진행합니다.
+다른 단계라면 `baseline`을 실제 label로 바꿉니다. 평가 오류 때문에 `collect`를 반복하지 않습니다. 중단했던 **완료 확인**을 마친 뒤 다음 단계로 진행합니다.
 
 <a id="no-failures"></a>
 
@@ -228,11 +234,32 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 
 원인별 설계 배경은 [참고 설명](reference.ko.md), 권한·모델 준비는 [강사 가이드](instructor.ko.md)를 확인합니다.
 
+<a id="cleanup-recovery"></a>
+
+## 정리 또는 정리 확인이 중단됐다면
+
+같은 폴더·계정·소유권 기록을 유지합니다. 아래 파일은 **`src/agent/.foundry/results/`**에 있습니다.
+
+| 어디까지 끝났나 | 다음 행동 |
+|---|---|
+| `cleanup --confirm` 성공, `cleanup.json`에 `completed: true`가 있지만 `check-cleanup` 실패 | 그 파일과 `plan`을 보존. 보고된 접근·반영 지연 문제를 해결하고 **아래 확인 명령만** 반복 |
+| 삭제 자체가 중단되었거나 소유권·대상이 다름 | 자동 삭제 중단. 오류, 있다면 `cleanup-plan.json`, 소유권 상태를 보존. 추가 삭제 전 소유자가 원래 계획과 Azure 상태를 대조하며 부분 삭제 건수를 전체 정리 완료로 표시하지 않음 |
+
+**삭제 명령이 성공한 경우에만:**
+
+```bash
+python scripts/workshop.py check-cleanup
+```
+
+[10-3의 완료 기준](../README.ko.md#cleanup-check)을 확인합니다. 대상이 남아 있거나 보존할 서비스가 없다면 보고하며 완료로 처리하지 않습니다. `cleanup --confirm`을 반복하면 원래 삭제를 검증하는 대신 **남은 소유 대상 기준으로 계획이 교체**됩니다.
+
+별도 승인으로 그룹 전체를 삭제한 뒤에는 `check-cleanup`이 아니라 [기반 환경의 최종 확인](environment.ko.md#final-cleanup-check)을 따릅니다.
+
 <a id="setup-resume"></a>
 
 ## 환경 소유자: 터미널을 닫은 뒤 준비 이어가기
 
-[환경 준비 1단계](environment.ko.md)에서 소스 스냅샷과 Python 환경을 완성한 경우에만 사용합니다. 새 `RUN_ID`를 만들거나 `init` / `prepare`를 반복하지 않습니다.
+[환경 준비 1단계](environment.ko.md#setup-workspace)에서 소스 스냅샷과 Python 환경을 완성한 경우에만 사용합니다. 새 `RUN_ID`를 만들거나 `init` / `prepare`를 반복하지 않습니다.
 
 `bash`를 실행한 뒤, **원래 clone 경로**와 **준비 중 출력된 기존 `RUN_DIR` 경로**를 따옴표 없이 입력합니다.
 
@@ -250,9 +277,9 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 
 | 중단한 준비 단계 | 이어갈 위치 |
 |---|---|
-| 로그인 | 지금 폴더에서 [README 1-3](../README.ko.md#login)을 수행한 뒤 환경 준비 2단계로 복귀 |
-| 환경 준비 2–5단계의 서비스 생성 | `cd "$REPO_ROOT"`로 이동. `AZURE_CONFIG_DIR`는 유지하고 같은 `--run-dir "$RUN_DIR"`로 실패한 명령만 실행 |
-| 환경 준비 6단계의 후보 모델 준비 | 지금 `"$RUN_DIR/workshop"` 폴더에서 실패한 명령부터 재개 |
+| 로그인 | 지금 폴더에서 [README 1-3](../README.ko.md#login)을 수행한 뒤 [환경 준비 2단계](environment.ko.md#setup-identity)로 복귀 |
+| 환경 준비 2–5단계의 서비스 생성 | `cd "$REPO_ROOT"`로 이동하고 `AZURE_CONFIG_DIR`는 유지. [중단한 단계](environment.ko.md#setup-route)를 골라 같은 `--run-dir "$RUN_DIR"`로 실패한 명령만 실행 |
+| 환경 준비 6단계의 후보 모델 준비 | 지금 `"$RUN_DIR/workshop"` 폴더에서 [6단계](environment.ko.md#setup-candidates)의 실패한 명령부터 재개 |
 | 환경 준비는 이미 완료됨 | [개인 실습 또는 수업 전달 경로](environment.ko.md#handoff)를 선택. 준비를 반복하지 않음 |
 
 로그인이 만료됐다면 설정된 계정으로 복구합니다. 다른 계정·새 자원 이름·소유권 기록 삭제로 오류를 우회하지 않습니다.

@@ -25,10 +25,11 @@ If `collect` finished but `evaluate` stopped, do not paste the block again from 
 | Deployment succeeded; `grant-agent-access` or `smoke` failed afterward | Resolve the cause and repeat **only that failed command**. Do not redeploy and create another agent version. |
 | Collection failed; manifest status is `failed` | Follow [collection recovery](#collection-retry), preserving the failed attempt |
 | `Evaluation is still running` | Repeat only `evaluate` with the same label |
-| Evaluation is failed/canceled or has error rows | Resolve the cause, then follow [evaluation recovery](#evaluation-retry) with `--retry-failed` |
+| Evaluation failed, or result validation/download stopped | Use the [saved-status decision table](#evaluation-retry). Not every local error permits `--retry-failed`. |
 | `Telemetry is incomplete` | Check ingestion/access and the [two-hour query window](#telemetry); repeat only `monitor` for that label |
 | `Label ... already exists` | Read the status files below. If collection is `completed`, find the next unfinished evaluation/trace step. If `failed`, recover collection. If `running`, check the original process: wait while active; [recover collection](#collection-retry) only after confirming it stopped. |
 | Reviewed regression already exists | Verify its row, reason, language, and source trace. Continue only if they match the intended review; do not overwrite it. |
+| Cleanup or its verification stopped | Use [cleanup recovery](#cleanup-recovery); do not repeat successful deletion to fix a failed check. |
 
 **Reopened a terminal?** Open your **existing workshop folder**, not a new clone, and follow [the terminal restore block](../README.md#resume-shell). Do not repeat `init`, `bind`, deployment, or collection just because the terminal is empty.
 
@@ -65,12 +66,12 @@ For a new experiment or another language, obtain unused names and use a separate
 | IQ 400 | Inspect the pinned API/schema and planner deployment; a normal Search result is not an IQ replacement |
 | Hosted 424 / cold start | Inspect the actual deployed version and session logs; retry that version only when ready |
 | `connections/read` on startup | Use injected telemetry configuration rather than broadening access indiscriminately |
-| Completed job with errors or null scores | Inspect every output row; do not turn errors into zero scores or passes |
+| Completed job with errors or null scores | Follow [evaluation recovery](#evaluation-retry); do not turn errors into zero scores or passes |
 | `verify` succeeds but a `candidate_quality_gates` value is `false` | A valid execution can expose a quality failure. [Follow the completion decision](../README.md#completion-decision); report it and clean up, not rerun for a better score. |
 | `production_release_approved: false` | Expected, even when business gates pass. This is not a permission error or a field to edit. [Read the three outcomes](../README.md#completion-decision). |
 | CLI extension notice after JSON | The supplied parser separates recognized notices only. Do not upgrade the extension mid-experiment just to remove a notice. |
 | Missing App Insights `ResourceId` metadata | Ask an authorized instructor to inspect the dedicated connection; do not modify a shared connection |
-| Unfamiliar cleanup target | Stop. Do not edit or delete the ownership ledger to force deletion. |
+| Unfamiliar cleanup target | Stop and use [cleanup recovery](#cleanup-recovery). Do not edit or delete the ownership ledger to force deletion. |
 
 <a id="login"></a>
 
@@ -103,19 +104,19 @@ References: [interactive Azure CLI sign-in](https://learn.microsoft.com/cli/azur
 
 ## If judge calibration does not pass
 
-If the evaluation is **still running**, repeat only:
+Check **`src/agent/.foundry/results/judge-calibration/evaluation.json`** if it exists. If the job is **still running**, or a creation/download error has been resolved, resume with:
 
 ```bash
 python scripts/workshop.py calibrate
 ```
 
-If its native job failed, was canceled, or contains error rows, resolve the cause first, then preserve the failed job and retry:
+Use the following only when the saved `status` is **`failed` / `canceled` / `cancelled`**, or **`run → result_counts → errored` is greater than 0**. Resolve the cause first; the failed job is preserved.
 
 ```bash
 python scripts/workshop.py calibrate --retry-failed
 ```
 
-If the job completed but the judge did **not** distinguish the supplied supported and unsupported amounts, stop and review the judge/configuration with the environment owner. Do not edit the examples or threshold, or repeatedly rerun a valid low score until it passes. Calibration is separate from the 64 agent responses.
+Malformed/missing results without a recorded failed/errored run require owner review of this calibration folder's saved status and raw output, not a forced retry. If the judge completed but did **not** distinguish the supplied amounts, review its configuration with the owner. Do not edit the examples/threshold or rerun a valid low score. Calibration is separate from the 64 agent responses.
 
 <a id="telemetry"></a>
 
@@ -181,19 +182,28 @@ Do not redeploy, change the prompt after seeing holdout, or recreate the complet
 
 ## If only Foundry evaluation failed
 
-First require complete response collection. If only local polling timed out while the cloud run is still active, resume the **same evaluation**:
+First require complete response collection. Read **`src/agent/.foundry/results/<label>/evaluation.json`** if present, then choose one action:
+
+| Saved state / failure | Next action |
+|---|---|
+| No run was created, polling timed out, or a result download was interrupted | Resolve the cause, then use **A**. It reuses a saved run; it creates one only if none is recorded. |
+| `status: failed / canceled / cancelled`, or `run → result_counts → errored` greater than 0 | Resolve the cause, then use **B** to preserve the failed attempt and create a retry. |
+| Job completed with no errored rows, but validation rejects missing/duplicate IDs, null scores, or invalid output | Stop and preserve `evaluation.json` and any `evaluation-output-raw.json`. Ask the owner to inspect the result contract. **Do not force B or edit status/scores.** |
+| Job and rows completed correctly, but valid scores are low | Do not retry. Finish the report/portal checkpoint and continue the workshop. |
+
+**A — start or resume evaluation with the same inputs:**
 
 ```bash
 python scripts/workshop.py evaluate --label baseline
 ```
 
-If the stored run actually failed, was canceled, or returned error rows, resolve the cause and create a preserved retry:
+**B — retry only a recorded failed/errored run:**
 
 ```bash
 python scripts/workshop.py evaluate --label baseline --retry-failed
 ```
 
-`--retry-failed` is not for low quality scores. Replace `baseline` with the actual label when recovering another stage. Finish the interrupted step's checkpoint before continuing.
+Replace `baseline` with the actual label when recovering another stage. Never repeat `collect` for an evaluation failure. Finish the interrupted checkpoint before continuing.
 
 <a id="no-failures"></a>
 
@@ -218,11 +228,32 @@ Version comparison is under the **Version dropdown → Compare versions**, not t
 
 Search an older trace by its real ID after expanding the time range. Do not substitute another agent's trace, a Korean run, or a screenshot for English execution evidence. Treat separate subscription alert/policy errors separately and never change shared settings merely to match a screenshot.
 
+<a id="cleanup-recovery"></a>
+
+## If cleanup or its verification stopped
+
+Keep the same workspace, account, and ownership records. Files below are under **`src/agent/.foundry/results/`**.
+
+| What finished | Next action |
+|---|---|
+| `cleanup --confirm` succeeded; `cleanup.json` records `completed: true`, but `check-cleanup` failed | Preserve that file and its `plan`. Resolve the reported access/propagation problem, then repeat **only the check below**. |
+| Deletion itself stopped, or ownership/targets do not match | Stop automated deletion. Preserve the error, `cleanup-plan.json` if present, and ownership state. The owner must reconcile the original plan with Azure before any further deletion; partial counts are not complete cleanup. |
+
+**Only after the deletion command succeeded:**
+
+```bash
+python scripts/workshop.py check-cleanup
+```
+
+Require the [step 10-3 checkpoint](../README.md#cleanup-check). If an object still exists or a preserved service is missing, report it; do not claim completion. Repeating `cleanup --confirm` would replace the recorded plan with the remaining ownership set, not verify the original deletion.
+
+After a separately approved full-group deletion, use [final foundation verification](environment.en.md#final-cleanup-check), not `check-cleanup`.
+
 <a id="setup-resume"></a>
 
 ## Environment owners: resume setup after closing the terminal
 
-Use this only if [environment step 1](environment.en.md) completed the source snapshot and Python environment. Do **not** generate a new `RUN_ID` or run `init` / `prepare` again.
+Use this only if [environment step 1](environment.en.md#setup-workspace) completed the source snapshot and Python environment. Do **not** generate a new `RUN_ID` or run `init` / `prepare` again.
 
 Start `bash`, then enter the **original clone path** and the **existing `RUN_DIR` path** printed during setup, without quotation marks:
 
@@ -240,9 +271,9 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 
 | Interrupted setup stage | Where to resume |
 |---|---|
-| Sign-in | Stay in this workspace and follow [README step 1-3](../README.md#login), then return to environment step 2 |
-| Provisioning in environment steps 2–5 | Run `cd "$REPO_ROOT"`, keep `AZURE_CONFIG_DIR` unchanged, then resume only the failed command with the same `--run-dir "$RUN_DIR"` |
-| Candidate preparation in environment step 6 | Stay in `"$RUN_DIR/workshop"` and resume the failed command |
+| Sign-in | Stay in this workspace and follow [README step 1-3](../README.md#login), then return to [environment step 2](environment.en.md#setup-identity) |
+| Provisioning in environment steps 2–5 | Run `cd "$REPO_ROOT"`, keep `AZURE_CONFIG_DIR` unchanged, and [select the interrupted stage](environment.en.md#setup-route). Resume only its failed command with the same `--run-dir "$RUN_DIR"`. |
+| Candidate preparation in environment step 6 | Stay in `"$RUN_DIR/workshop"` and resume the failed command in [step 6](environment.en.md#setup-candidates) |
 | Environment already completed | Choose the [self-study or class handoff](environment.en.md#handoff); do not repeat preparation |
 
 If a login has expired, restore it using the configured account. Never use a different account, new resource names, or deleted ownership records to bypass an error.

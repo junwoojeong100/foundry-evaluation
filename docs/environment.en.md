@@ -10,9 +10,15 @@ For self-study, you are the environment owner. Complete the [basic tool checks](
 
 **To delegate environment creation to GHCP:** start with the [separate installation and startup guide](copilot.en.md). Do not jump to execution prompts before installation and sign-in. Review the account, subscription, and billable scope; installing tools does not grant Azure permissions.
 
-**Route:** complete steps 1–6 here, then choose the [self-study or class handoff](#handoff). Step 2 briefly uses the README's **sign-in section only**; do not start its deployment steps during setup. If the foundation services already exist, use [existing-foundation preparation](instructor.en.md#existing-foundation) instead of creating another environment.
+<a id="setup-route"></a>
+
+**Route:** [1. Workspace](#setup-workspace) → [2. Identity/capacity](#setup-identity) → [3. Services](#setup-foundation) → [4. Access/connections](#setup-access) → [5. Auxiliary model](#setup-auxiliary) → [6. Candidates](#setup-candidates) → [handoff](#handoff).
+
+Step 2 uses only the README's **sign-in section**, then returns here. If the foundation already exists, use [existing-foundation preparation](instructor.en.md#existing-foundation) instead.
 
 > New services incur costs. Use synthetic data, preserve shared/Korean resources, and never change the default Azure CLI subscription used by other work. Sweden Central resource placement does not mean GlobalStandard model inference is confined to that region.
+
+<a id="setup-workspace"></a>
 
 ## 1. Create an isolated English source workspace
 
@@ -82,6 +88,8 @@ python -m unittest discover -s tests -v
 
 Stay in **`$RUN_DIR/workshop`** for sign-in so the later English agent uses the same isolated CLI profile. This snapshot contains runnable source, not another copy of the guide; keep this guide open in your browser/editor.
 
+<a id="setup-identity"></a>
+
 ## 2. Verify identity, preservation, and capacity
 
 Complete only [README step 1-3](../README.md#login): CLI profile, tenant/subscription inputs, Azure CLI sign-in, azd sign-in, and both account checks. Return here afterward. Do **not** run README preflight/bind yet; the foundation is not ready.
@@ -100,6 +108,8 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 `--preserve-existing` means **keep all existing groups**, including the Korean workshop. This command does not delete groups. Without that flag, finding previous candidates stops the command for a manual ownership review.
 
 Each Azure CLI operation passes the configured subscription explicitly. Capacity availability and subscription quota are separate checks; model preparation validates quota again.
+
+<a id="setup-foundation"></a>
 
 ## 3. Create the new group and foundation services
 
@@ -134,6 +144,8 @@ python scripts/provision_environment.py search-status --run-dir "$RUN_DIR"
 
 Require `provisioning_state: Succeeded` and `status: running`; do not recreate the service or change region just to obtain a green screen.
 
+<a id="setup-access"></a>
+
 ## 4. Grant scoped access and create connections
 
 The `user-*` operations target **the user verified in step 2**, not every future participant. Prepare other users according to the [instructor access checklist](instructor.en.md#access-boundaries).
@@ -152,6 +164,8 @@ python scripts/provision_environment.py search-connection --run-dir "$RUN_DIR"
 
 The agent's instance identity is created later. Grant its Search/model access in [README step 4](../README.md#deploy), not by assigning broad Owner permissions to it.
 
+<a id="setup-auxiliary"></a>
+
 ## 5. Deploy the fixed auxiliary model and verify endpoints
 
 ```bash
@@ -162,6 +176,8 @@ python scripts/provision_environment.py ready --run-dir "$RUN_DIR"
 **Checkpoint:** the actual returned project and model endpoints match the new environment. They are different endpoints with different purposes.
 
 The auxiliary deployment is `gpt-5.4-mini` / `2026-03-17`. It is the planner/judge, not a replacement for one of the four candidates.
+
+<a id="setup-candidates"></a>
 
 ## 6. Prepare candidates and hand over the English configuration
 
@@ -228,6 +244,8 @@ In [Azure Portal](https://portal.azure.com/), verify the configured account, ten
 **This removes the entire group and its remaining services; the group itself cannot be recovered.** Proceed only after the owner reviews the exact scope and impact and decides to delete it. If GHCP performs the action, **approve this specific subscription, group, and deletion impact separately**.
 
 On that group's page, select **Delete resource group**, enter the **reviewed group name** in the confirmation field, and confirm deletion. Do not expand the scope to another group or shared environment. Follow the [official resource-group deletion procedure](https://learn.microsoft.com/azure/azure-resource-manager/management/delete-resource-group#delete-resource-group).
+
+<a id="final-cleanup-check"></a>
 
 ### 3. Confirm deletion and review remaining charges
 
