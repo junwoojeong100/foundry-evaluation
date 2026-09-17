@@ -190,12 +190,31 @@ Find `language: en` and `missing_models: []`. The full terminal output above the
 
 **Action:** create a searchable **knowledge base (KB)** from the policies and retrieve evidence. First read the dates, document status, and expense limits in `data/en/policies.json`; do not edit them during this comparison.
 
+First register the seven policies:
+
 ```bash
-python scripts/workshop.py prepare-iq &&
+python scripts/workshop.py prepare-iq
+```
+
+**Registration checkpoint:** `Foundry IQ ready: ...; 7 synthetic documents.` must name your `LAB_PREFIX` plus `-kb`. Registration and successful retrieval are separate checks.
+
+<a id="policy-retrieval"></a>
+
+After registration finishes, test retrieval with this question:
+
+```bash
 python scripts/workshop.py retrieve --query "What is the lodging limit for a domestic business trip in September 2026?"
 ```
 
-**Checkpoint:** your knowledge base exists, and retrieval returns `knowledge_base`, `document_ids`, and `activity`. If current and archived policies appear together, compare their effective dates.
+**Checkpoint:** require all three conditions below. Field names alone or empty lists `[]` do not establish successful retrieval.
+
+| Output field | Required value |
+|---|---|
+| `knowledge_base` | Your registered `LAB_PREFIX` plus `-kb` |
+| `document_ids` | Includes **`TRAVEL-2026`**, the current lodging policy for this question |
+| `activity` | A nonempty retrieval execution record |
+
+If current and archived policies appear together, compare their effective dates. If a condition fails, [recover retrieval](docs/troubleshooting.en.md#retrieval) before continuing. Do not overwrite another team's objects.
 
 **Portal:** open [Microsoft Foundry](https://ai.azure.com/) and sign in separately with the configured account. Match resource `AZURE_AI_ACCOUNT_NAME` and project `AZURE_AI_PROJECT_NAME`, then open **Knowledge → Knowledge bases**.
 
@@ -395,10 +414,10 @@ python scripts/workshop.py monitor --label baseline
 
 `compare` both prints the report and saves **`src/agent/.foundry/results/comparison.json`**. Open that file in your editor; the arrows below describe **JSON fields**, not portal menus.
 
-1. In **`labels → baseline → business_failures`**, choose a real `row_id`. Read its `trace_id` and false `checks`. If the list is empty, [review one passing dev case](docs/troubleshooting.en.md#no-failures); do not invent a failure.
+1. In **`labels → baseline → business_failures`**, choose a real `row_id`. Read its `trace_id` and false `checks`; use the [five business-check definitions](docs/validation.en.md#business-checks) to identify what failed. If the list is empty, [review one passing dev case](docs/troubleshooting.en.md#no-failures); do not invent a failure.
 2. Open `src/agent/.foundry/results/baseline/responses.jsonl` and find **the same `row_id`, not a line number**. Also note its **`case_id` and `model_key`**: these identify the same question/model in V2.
 3. Find **that `case_id`** in `data/en/dev.jsonl`. Compare the response's `answer`, `decision`, and `citations` with the fixed `ground_truth`, `expected_decision`, `required_numbers`, and `allowed_citations`. **`source_ids` are the IDs of documents retrieved for this request; `citations` are the IDs the answer chose to cite.** Each citation must also be in `source_ids`. Use editor word wrap; do not edit either file.
-4. In **your agent → Traces**, search for the same `trace_id`. Adjust the time range and inspect its retrieval and model spans.
+4. In **your agent → Traces**, search for the same `trace_id`. Adjust the time range and inspect its retrieval and model **spans (records of individual operations within that request)**.
 5. Explain the cause and proposed change using **the response → fixed reference → retrieval/model trace**, not another request's evidence.
 
 <a id="how-to-distinguish-retrieval-and-instruction-problems"></a>
@@ -490,13 +509,17 @@ python scripts/workshop.py compare --labels baseline improved
 
 **First revisit your reviewed case:** use the **same `case_id` + `model_key`** noted in step 6 to find its V2 response in `src/agent/.foundry/results/improved/responses.jsonl`. V1 and V2 have **different `row_id` values** because their labels differ. Compare the answer, decision, citations, and `business_grade → checks`. Confirm that V2's `regression_source_trace_ids` includes the reviewed **V1 `trace_id`**.
 
-**Then compare all four models:** open **`labels → baseline or improved → models → sol/terra/luna/astra`** in `src/agent/.foundry/results/comparison.json`. At each model, read:
+**Then compare all four models:** open **`labels → baseline or improved → models → sol/terra/luna/astra`** in `src/agent/.foundry/results/comparison.json`. Compare all five items per model; better quality does not automatically mean faster or cheaper responses.
 
 | Compare | Fields | Meaning |
 |---|---|---|
 | Business passes | `business_passed` / `total` | Responses passing all five business checks |
 | Required citations | `required_citation_passed` / `required_citation_total` | Citation-required responses with valid citations |
 | Foundry scores | `foundry_evaluators → groundedness or relevance` | Read `native_mean_score` and `native_passed` / `total`. Each row needs **at least 4 out of 5**; an average of 4 does not mean all rows passed. |
+| Input/output tokens | `input_tokens`, `output_tokens` | Totals for that model's **same six dev responses**. Excludes planner/judge and other costs; not the full Azure bill. |
+| Processing time | `latency_p50_seconds`, `latency_p95_seconds` | Retrieval + model processing p50/p95, in **seconds**, not external HTTP round-trip time |
+
+**Read latency correctly:** p50 represents the middle of the observations; p95 represents the slow end. With only six responses per model, p95 is the slowest response. Do not treat it as a production speed guarantee or claim total cost savings. [Measurement scope and examples](docs/validation.en.md#tradeoffs)
 
 **If a native pass count is below its total:** [inspect the failed rows](docs/validation.en.md#native-failures) before freezing the candidate. A business failure and a native failure can be different responses; match by `row_id`, not score or row position.
 
@@ -677,7 +700,7 @@ These files are inputs to later workshop commands, not disposable success screen
 **Finish with three points, using your saved results rather than the recording:**
 
 - **Review:** the `row_id`, original trace, observed problem, and supporting evidence.
-- **Change:** each model's before/after business passes, required citations, and native means/pass counts.
+- **Change:** each model's before/after business passes, required citations, native means/pass counts, tokens, and processing time.
 - **Decision:** holdout results, quality gates, and remaining limitations. This is not production approval.
 
 <a id="summary-video"></a>

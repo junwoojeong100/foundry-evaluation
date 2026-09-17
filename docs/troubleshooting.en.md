@@ -60,6 +60,7 @@ For a new experiment or another language, obtain unused names and use a separate
 | `bind` or `set-prompt` environment error | Confirm that `bind` ran in this folder and targets the expected project/language |
 | Port 8088 unavailable | Check Terminal A and its readiness log; do not terminate an unrelated process |
 | `prepare-iq` cannot create a role assignment | The Search identity needs planner access. Ask the environment owner to grant only that access; do not bypass ownership or grant Owner to the agent. |
+| `retrieve` finishes without documents or without `TRAVEL-2026` | [Recover retrieval](#retrieval), checking registration separately from retrieval. Do not continue to local execution with empty evidence. |
 | Model 404 | Distinguish the model catalog ID from the actual Azure deployment name |
 | 429 or request timeout | Preserve the attempt; inspect capacity and Retry-After. If concurrency changes, use the same value for all compared cohorts. |
 | Search 403 / role assignment failure | Check the user and agent instance identities separately; local success does not establish hosted permissions |
@@ -99,6 +100,18 @@ Open the address shown by each command and enter the code from **your own termin
 Never share or record one-time codes. If organizational policy blocks device-code authentication, use an approved environment rather than bypassing the policy.
 
 References: [interactive Azure CLI sign-in](https://learn.microsoft.com/cli/azure/authenticate-azure-cli-interactively) and [CLI configuration directories](https://learn.microsoft.com/cli/azure/azure-cli-configuration#cli-configuration-file).
+
+<a id="retrieval"></a>
+
+## If registered policies do not appear in retrieval
+
+Use this section when step 2's question returns no **`TRAVEL-2026` in `document_ids`**, or an empty `activity`. An error-free `retrieve` command does not by itself establish that the required policy was found.
+
+1. Confirm that `prepare-iq` ended with **`Foundry IQ ready: ...; 7 synthetic documents.`**. Retrieval's `knowledge_base` must also match your `LAB_PREFIX` plus `-kb`. If registration itself failed, resolve that error first.
+2. Open the **`saved` path** printed by `retrieve` in your editor and inspect `documents`, `references`, and `activity`. If registration just finished, allow the index to become queryable, then repeat **[only step 2's same `retrieve` command](../README.md#policy-retrieval)**. Do not repeat `prepare-iq`, deployment, or response collection just to check retrieval.
+3. If evidence is still missing, ask the environment owner to check your workshop's KB/source/index chain: **`LAB_PREFIX-kb` → `LAB_PREFIX-source` → `LAB_PREFIX-policies`**. Read `LAB_PREFIX` as the actual value from `.env`.
+
+Preserve the result file and KB name. Do not change policies/questions to pass the check or use another team's KB. After recovery, finish **step 2's checkpoint and portal check**, then continue to step 3.
 
 <a id="calibration"></a>
 

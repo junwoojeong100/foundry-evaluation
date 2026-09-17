@@ -24,6 +24,7 @@
 | 알고 싶은 것 | 열 곳 | 읽을 값 |
 |---|---|---|
 | 모델별로 무엇이 바뀌었나? | `comparison.json` | `labels → baseline / improved → models → sol/terra/luna/astra`에서 `business_passed` / `total`, `required_citation_passed` / `required_citation_total` 비교. `foundry_evaluators`에서는 평균과 통과 건수를 함께 읽음 |
+| 더 빠르거나 적은 토큰을 쓰게 됐나? | `comparison.json` | 같은 모델 위치에서 `input_tokens`·`output_tokens`(dev 합계), `latency_p50_seconds`·`latency_p95_seconds`(초) 비교. [측정 범위](#tradeoffs)를 유지하며 전체 비용으로 해석하지 않음 |
 | 어떤 업무 검사가 실패했나? | `<label>/responses.jsonl` | 해당 `row_id`의 `business_grade → checks`에서 `false`인 항목 확인. 같은 `case_id`·split의 고정 기준과 답변을 대조하고 원래 `trace_id` 확인 |
 | 어떤 Foundry 평가가 실패했나? | `<label>/evaluation-results.json` | **한 label 안의 같은 `row_id`**를 찾음. 그 행의 `results` 배열에서 `name: groundedness` 또는 `name: relevance`를 고른 뒤 `score`·`passed` 확인 |
 | 내 평가의 포털 보고서는 어디 있나? | `<label>/evaluation.json` | `run → report_url`을 엶. 촬영 예시가 아니라 같은 label의 URL 사용 |
@@ -100,6 +101,8 @@ dev 6문항 × 네 모델
 `collect`는 네 모델 모두의 실제 응답을 요구한다. `evaluate`는 수집한 답변을 평가하며 **agent를 다시 호출해 다른 답변을 생성하지 않는다.**
 실제 네이티브 데이터셋 평가이며, 로컬 업무 점수를 Foundry 평가처럼 표시하지 않는다.
 
+<a id="business-checks"></a>
+
 ### 3-1. Python 업무 검사: 다섯 조건을 모두 만족해야 한 행 통과
 
 실제 구현은 [grading.py의 `grade`](../scripts/grading.py)다.
@@ -117,6 +120,8 @@ dev 6문항 × 네 모델
 
 필수 금액이 없는 문항의 `required_numbers`는 통과한다. 인용이 필수가 아닌 문항은 빈 배열을 허용하지만, 인용을 반환했다면 검색·허용 ID 조건은 여전히 검사한다.
 그래서 “필수 인용의 유효성 20건”과 “전체 24행의 인용 관련 검사”는 분모가 다르다.
+
+**사례 검토 중이라면:** 실패한 필드의 뜻을 확인한 뒤 [README 6-2](../README.ko.md#review-case)로 돌아가 같은 응답·고정 기준·trace를 대조한다. 검사 실패만으로 원인이 검색인지 지침인지 단정하지 않는다.
 
 ### 3-2. Foundry native evaluator: 답변 텍스트의 품질 검사
 

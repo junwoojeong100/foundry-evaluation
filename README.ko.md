@@ -204,13 +204,31 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 **할 일:** 정책을 검색할 **지식베이스(KB)**를 만들고 근거를 조회합니다. 먼저 `data/policies.json`에서 적용일·문서 상태·숙박 한도를 읽습니다.
 비교 중에는 정책 파일을 **수정하지 않습니다.**
 
+먼저 정책 7개를 등록합니다.
+
 ```bash
-python scripts/workshop.py prepare-iq &&
+python scripts/workshop.py prepare-iq
+```
+
+**등록 확인:** `Foundry IQ ready: ...; 7 synthetic documents.`의 KB가 내 `LAB_PREFIX` 뒤에 `-kb`를 붙인 이름이어야 합니다. 등록 완료와 검색 성공은 별개입니다.
+
+<a id="policy-retrieval"></a>
+
+등록이 끝나면 아래 질문으로 실제 검색을 확인합니다.
+
+```bash
 python scripts/workshop.py retrieve --query "2026년 9월 국내 출장 숙박비 한도는 얼마인가요?"
 ```
 
-**완료 확인:** 내 접두사의 KB가 생성되고 검색 결과에 `knowledge_base`, `document_ids`, `activity`가 있습니다.
-현재·과거 문서가 함께 나오면 적용일을 비교합니다. 다른 조의 객체를 덮어쓰지 않습니다.
+**완료 확인:** 아래 세 조건을 모두 확인합니다. 필드만 있거나 빈 목록 `[]`이 반환된 것은 검색 성공이 아닙니다.
+
+| 출력 필드 | 확인할 값 |
+|---|---|
+| `knowledge_base` | 등록한 내 `LAB_PREFIX` + `-kb` |
+| `document_ids` | 위 질문의 현행 숙박 규정 **`TRAVEL-2026`**을 포함 |
+| `activity` | 비어 있지 않은 검색 실행 기록 |
+
+현재·과거 문서가 함께 나오면 적용일을 비교합니다. 위 조건이 맞지 않으면 [검색 복구](docs/troubleshooting.ko.md#retrieval)를 마친 뒤 진행합니다. 다른 조의 객체를 덮어쓰지 않습니다.
 
 **포털 확인:** [Foundry](https://ai.azure.com/)에 `AZURE_EXPECTED_USERNAME` 계정으로 별도 로그인합니다. 리소스 `AZURE_AI_ACCOUNT_NAME`과 프로젝트 `AZURE_AI_PROJECT_NAME`을 대조한 뒤 **Knowledge → Knowledge bases**를 엽니다.
 
@@ -421,10 +439,10 @@ python scripts/workshop.py monitor --label baseline
 
 `compare`는 보고서를 출력하고 **`src/agent/.foundry/results/comparison.json`**에도 저장합니다. 이 파일을 편집기로 엽니다. 아래 화살표는 포털 메뉴가 아니라 **JSON 필드의 위치**입니다.
 
-1. **`labels → baseline → business_failures`**에서 한 행을 고릅니다. `row_id`, `trace_id`, false인 `checks`를 읽습니다. 목록이 비었으면 [통과한 dev 한 건을 검토](docs/troubleshooting.ko.md#no-failures)하며 실패를 꾸미지 않습니다.
+1. **`labels → baseline → business_failures`**에서 한 행을 고릅니다. `row_id`, `trace_id`, false인 `checks`를 읽습니다. [다섯 검사 필드의 뜻](docs/validation.ko.md#business-checks)으로 무엇이 실패했는지 확인합니다. 목록이 비었으면 [통과한 dev 한 건을 검토](docs/troubleshooting.ko.md#no-failures)하며 실패를 꾸미지 않습니다.
 2. 편집기로 `src/agent/.foundry/results/baseline/responses.jsonl`을 열고 **줄 번호가 아닌 같은 `row_id`**를 찾습니다(`Ctrl+F`, macOS는 `⌘F`). 이 행의 **`case_id`와 `model_key`**도 적어 둡니다. V2에서 같은 질문·모델을 찾는 기준입니다.
 3. `data/dev.jsonl`에서 **같은 `case_id`**의 고정 기준을 찾습니다. 응답의 `answer`·`decision`·`citations`를 기준의 `ground_truth`·`expected_decision`·`required_numbers`·`allowed_citations`와 대조합니다. **`source_ids`는 이번 요청에서 검색된 문서 ID, `citations`는 답변이 인용한 ID**입니다. 각 인용 ID가 `source_ids`에도 있어야 합니다. 화면 자동 줄바꿈만 켜고 파일은 수정하지 않습니다.
-4. 포털 **내 agent → Traces**에서 같은 `trace_id`로 검색합니다. 기간을 맞추고 Graph view의 검색·모델 span을 확인합니다.
+4. 포털 **내 agent → Traces**에서 같은 `trace_id`로 검색합니다. 기간을 맞추고 Graph view의 검색·모델 **span(한 요청 안의 개별 작업 기록)**을 확인합니다.
 5. 이 행의 **응답 → 고정 기준 → 검색·모델 기록**을 근거로 원인과 바꿀 점을 설명합니다.
 
 <a id="실제-예시-금액은-맞는데-왜-실패했나요"></a>
@@ -532,13 +550,17 @@ python scripts/workshop.py compare --labels baseline improved
 **먼저 검토한 한 건:** 6단계에서 적은 **같은 `case_id` + `model_key`**로 `src/agent/.foundry/results/improved/responses.jsonl`의 V2 응답을 찾습니다. V1과 V2는 label이 달라 **`row_id`가 다릅니다.** 답변·판단·인용과 `business_grade → checks`를 비교하고, V2의 `regression_source_trace_ids`에 검토한 **V1의 `trace_id`**가 들어 있는지 확인합니다.
 
 **그다음 네 모델 전체:** `src/agent/.foundry/results/comparison.json`의 **`labels → baseline 또는 improved → models → sol/terra/luna/astra`**를 엽니다.
-모델별로 아래 세 항목을 전후 비교합니다.
+모델별로 아래 다섯 항목을 전후 비교합니다. 품질 점수가 높아져도 더 빠르거나 저렴해졌다고 가정하지 않습니다.
 
 | 비교할 항목 | 필드 | 뜻 |
 |---|---|---|
 | 업무 통과 | `business_passed` / `total` | 다섯 업무 검사를 모두 통과한 응답 수 / 전체 |
 | 필수 인용 | `required_citation_passed` / `required_citation_total` | 필수 인용이 유효한 응답 수 / 인용 필수 응답 수 |
 | Foundry 점수 | `foundry_evaluators → groundedness 또는 relevance` | `native_mean_score`(평균)와 `native_passed` / `total`(통과/전체)을 읽음. **각 행이 5점 만점에 4점 이상**이어야 통과하며, 평균 4점이 전부 통과를 뜻하지는 않음 |
+| 입력·출력 토큰 | `input_tokens`, `output_tokens` | 해당 모델의 **같은 dev 6응답 합계**. Planner·judge 등은 제외되며 Azure 전체 비용이 아님 |
+| 처리 시간 | `latency_p50_seconds`, `latency_p95_seconds` | 검색 + 모델 처리 시간의 p50/p95, **초 단위**. 외부 HTTP 왕복 시간과 구분 |
+
+**시간을 읽는 기준:** p50은 가운데 수준, p95는 느린 쪽의 값입니다. 여기서는 모델당 6응답뿐이므로 p95가 가장 느린 한 응답에 해당합니다. 운영 속도 보장이나 전체 비용 절감으로 확대 해석하지 않습니다. [측정 범위와 예시](docs/validation.ko.md#tradeoffs)
 
 **Native 통과 건수가 전체보다 적다면:** 후보를 고정하기 전에 [미통과 행을 확인](docs/validation.ko.md#native-failures)합니다. 업무 검사와 native 평가가 서로 다른 응답에서 실패할 수 있으므로 점수·줄 순서가 아니라 `row_id`로 대조합니다.
 
@@ -738,7 +760,7 @@ Search 가동·로그 보존·기반 서비스·보조 모델의 비용은 남�
 **촬영 점수가 아닌 내 저장 결과로 세 가지를 설명합니다.**
 
 - **검토:** `row_id`·원래 trace·관찰한 문제와 근거.
-- **변화:** 네 모델 각각의 업무 통과·필수 인용·native 평균과 통과 건수의 전후 차이.
+- **변화:** 네 모델 각각의 업무 통과·필수 인용·native 평균과 통과 건수, 토큰·처리 시간의 전후 차이.
 - **판단:** Holdout 결과·품질 gate·남은 한계. 운영 승인이나 모델의 통계적 우월성으로 확대 해석하지 않습니다.
 
 <a id="summary-video"></a>

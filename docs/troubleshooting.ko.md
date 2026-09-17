@@ -62,6 +62,7 @@
 | `bind` 또는 `set-prompt`에서 환경/프로젝트 오류 | 새 작업 폴더에서 `bind`를 먼저 실행했는지 확인합니다. 다른 프로젝트의 `.azure`나 소유권 파일을 복사하지 않습니다. |
 | 로컬 8088 연결 실패 | 터미널 A의 ready 로그를 확인합니다. 기존 프로세스를 임의 종료하지 않습니다. 포트가 이미 사용 중이면 강사와 실습 환경을 분리합니다. |
 | `prepare-iq`에서 역할 부여 거부 | Search identity의 planner 접근 권한을 환경 소유자에게 요청합니다. 소유권 검사를 우회하거나 agent에 Owner 권한을 주지 않습니다. |
+| `retrieve`가 끝났지만 문서가 없거나 `TRAVEL-2026`이 없음 | [검색 복구](#retrieval)에서 등록·검색 결과를 따로 확인합니다. 빈 결과로 로컬 실행에 넘어가지 않습니다. |
 | 모델 404 | 카탈로그 모델 ID와 실제 배포 이름을 구분합니다. `.env`와 azd가 같은 프로젝트·배포를 가리키는지 확인합니다. |
 | 429 / timeout | 원인을 보존한 뒤 용량·Retry-After·출력 한도를 확인합니다. 필요하면 수집 동시성을 낮추되 전후 비교에 같은 값을 사용합니다. |
 | Search 403 / 역할 부여 실패 | 사용자와 agent instance identity의 역할을 각각 확인합니다. 로컬 성공이 hosted 권한 성공은 아닙니다. 강사가 필요한 범위만 처리합니다. |
@@ -100,6 +101,18 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 필요한 로그인이 끝나면 README 1-3의 [두 로그인 결과 확인](../README.ko.md#login-check) 블록으로 돌아갑니다. 성공한 로그인은 반복하지 않습니다. 코드는 채팅·문서·녹화에 공유하지 않습니다.
 조직 정책이 device-code 로그인을 막으면 우회하지 말고 강사에게 승인된 로그인 환경을 요청합니다.
 공식 설명: [Azure CLI 대화형 로그인](https://learn.microsoft.com/cli/azure/authenticate-azure-cli-interactively) · [CLI 설정 경로](https://learn.microsoft.com/cli/azure/azure-cli-configuration#cli-configuration-file).
+
+<a id="retrieval"></a>
+
+## 정책을 등록했는데 검색 근거가 없다면
+
+2단계의 질문에서 `document_ids`에 **`TRAVEL-2026`이 없거나 `activity`가 비어 있다면** 여기서 확인합니다. `retrieve`가 오류 없이 끝났다는 사실만으로 필요한 정책을 찾았다고 판단하지 않습니다.
+
+1. `prepare-iq`가 **`Foundry IQ ready: ...; 7 synthetic documents.`**로 끝났는지 확인합니다. 검색 출력의 `knowledge_base`도 내 `LAB_PREFIX` + `-kb`여야 합니다. 등록 자체가 실패했다면 그 오류부터 해결합니다.
+2. `retrieve` 출력의 **`saved` 경로**를 편집기로 열어 `documents`, `references`, `activity`를 확인합니다. 등록 직후라면 index 반영을 기다린 뒤 **[2단계의 같은 `retrieve` 명령만](../README.ko.md#policy-retrieval)** 다시 실행합니다. 검색 확인을 위해 `prepare-iq`, 배포, 응답 수집까지 반복하지 않습니다.
+3. 여전히 근거가 없으면 환경 소유자와 KB·source·index 연결을 대조합니다. 내 실습의 **`LAB_PREFIX-kb` → `LAB_PREFIX-source` → `LAB_PREFIX-policies`**여야 하며, `LAB_PREFIX`는 `.env`의 실제 값으로 읽습니다.
+
+결과 파일과 KB 이름은 보존합니다. 정책·질문을 바꾸어 통과시키거나 다른 조의 KB를 사용하지 않습니다. 복구되면 **2단계 완료 기준과 포털 확인**을 마친 뒤 3단계로 진행합니다.
 
 <a id="calibration"></a>
 
