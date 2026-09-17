@@ -23,12 +23,14 @@
 
 | 알고 싶은 것 | 열 곳 | 읽을 값 |
 |---|---|---|
-| 모델별로 무엇이 바뀌었나? | `comparison.json → labels → baseline / improved → models → sol/terra/luna/astra` | `business_passed` / `total`, `required_citation_passed` / `required_citation_total`, `foundry_evaluators`의 평균과 통과 건수 |
-| 특정 답이 왜 실패했나? | `<label>/responses.jsonl`, `<label>/evaluation-results.json` | **한 label 안의 같은 `row_id`**로 `business_grade → checks`, 평가 `results`의 점수·이유, 원래 `trace_id`를 대조 |
+| 모델별로 무엇이 바뀌었나? | `comparison.json` | `labels → baseline / improved → models → sol/terra/luna/astra`에서 `business_passed` / `total`, `required_citation_passed` / `required_citation_total` 비교. `foundry_evaluators`에서는 평균과 통과 건수를 함께 읽음 |
+| 어떤 업무 검사가 실패했나? | `<label>/responses.jsonl` | 해당 `row_id`의 `business_grade → checks`에서 `false`인 항목 확인. 같은 `case_id`·split의 고정 기준과 답변을 대조하고 원래 `trace_id` 확인 |
+| 어떤 Foundry 평가가 실패했나? | `<label>/evaluation-results.json` | **한 label 안의 같은 `row_id`**를 찾음. 그 행의 `results` 배열에서 `name: groundedness` 또는 `name: relevance`를 고른 뒤 `score`·`passed` 확인 |
+| 내 평가의 포털 보고서는 어디 있나? | `<label>/evaluation.json` | `run → report_url`을 엶. 촬영 예시가 아니라 같은 label의 URL 사용 |
 | 검토한 한 건이 V2에서 달라졌나? | `baseline/responses.jsonl`, `improved/responses.jsonl` | **같은 `case_id` + `model_key`**의 답변·업무 검사를 비교. V2의 `regression_source_trace_ids`에 검토한 V1 trace가 있는지 확인. [README 7-4](../README.ko.md#compare-results) |
 | 전체 실행과 후보 품질이 각각 통과했나? | `verified-evidence.json` | 실행 건수, `candidate_quality_gates`, `production_release_approved`를 별도로 확인 |
 
-화살표는 포털 메뉴가 아니라 JSON 필드다. Native 평균 4점이 모든 행의 통과를 뜻하지는 않는다. 업무 gate는 **모델마다 dev 최소 5/6, holdout 4/4 업무 통과 + 필수 인용 전부 유효** 조건이며 운영 승인은 아니다.
+화살표는 포털 메뉴가 아니라 JSON 필드다. `evaluation-results.json`은 `row_id`를 키로 한 객체가 아니라 **행의 목록**이므로, 해당 행을 먼저 찾고 그 안의 두 evaluator 결과를 읽는다. Native 평균 4점이 모든 행의 통과를 뜻하지는 않는다. 업무 gate는 **모델마다 dev 최소 5/6, holdout 4/4 업무 통과 + 필수 인용 전부 유효** 조건이며 운영 승인은 아니다.
 
 이하 내용은 평가 방법과 **촬영 예시**의 해석이다. 내 실행을 아래 점수에 맞출 필요는 없다.
 

@@ -22,16 +22,26 @@ If `collect` finished but `evaluate` stopped, do not paste the block again from 
 
 | Stopping point | Correct next action |
 |---|---|
+| Deployment succeeded; `grant-agent-access` or `smoke` failed afterward | Resolve the cause and repeat **only that failed command**. Do not redeploy and create another agent version. |
 | Collection failed; manifest status is `failed` | Follow [collection recovery](#collection-retry), preserving the failed attempt |
 | `Evaluation is still running` | Repeat only `evaluate` with the same label |
 | Evaluation is failed/canceled or has error rows | Resolve the cause, then follow [evaluation recovery](#evaluation-retry) with `--retry-failed` |
 | `Telemetry is incomplete` | Check ingestion/access and the [two-hour query window](#telemetry); repeat only `monitor` for that label |
-| `Label ... already exists` | Read the manifest. For `completed`, continue with evaluation; for `failed`, recover collection. If `running`, establish whether the original process is still active before starting anything else. |
+| `Label ... already exists` | Read the status files below. If collection is `completed`, find the next unfinished evaluation/trace step. If `failed`, recover collection. If `running`, check the original process: wait while active; [recover collection](#collection-retry) only after confirming it stopped. |
 | Reviewed regression already exists | Verify its row, reason, language, and source trace. Continue only if they match the intended review; do not overwrite it. |
 
 **Reopened a terminal?** Open your **existing workshop folder**, not a new clone, and follow [the terminal restore block](../README.md#resume-shell). Do not repeat `init`, `bind`, deployment, or collection just because the terminal is empty.
 
-Under **`src/agent/.foundry/results/<label>/`**, `manifest.json` describes **collection only**. Check `evaluation.json` for evaluation status and `telemetry.json` for trace coverage; a completed collection is not a completed evaluation.
+Read these files under **`src/agent/.foundry/results/<label>/`** without editing them:
+
+| File | Completion evidence | What it covers |
+|---|---|---|
+| `manifest.json` | `status: completed` | Response collection only |
+| `evaluation.json` | `status: completed`, expected `run → result_counts → total`, no errored rows | Foundry job status |
+| `evaluation-results.json` | One row per response, with both evaluator results | Row-level evaluation, not trace coverage |
+| `telemetry.json` | `complete: true` and matching `expected_trace_count` / `observed_trace_count` | Trace coverage for this label |
+
+Use the first incomplete stage to choose the recovery section. A completed manifest does not mean the whole workshop completed.
 
 For a new experiment or another language, obtain unused names and use a separate folder. Deleting previous ownership or results is not a valid recovery strategy. If you were creating the Azure environment rather than collecting responses, use [setup recovery](#setup-resume).
 
@@ -68,9 +78,18 @@ For a new experiment or another language, obtain unused names and use a separate
 
 First run the **CLI-profile and tenant/subscription input block** from [README step 1-3](../README.md#login) in the same terminal.
 
+**Run only the command for the CLI whose sign-in failed.** If both need sign-in, run Azure CLI first, then azd.
+
+**Azure CLI:**
+
 ```bash
 az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" \
-  --use-device-code --output none &&
+  --use-device-code --output none
+```
+
+**azd:**
+
+```bash
 azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 ```
 
@@ -118,7 +137,9 @@ After recovery, return to the interrupted checkpoint. If you already performed c
 
 ## If response collection failed
 
-Keep the failed label's `failure.json`, manifest, and raw responses. Do not score only successful rows or overwrite that label.
+Use this path when collection failed, or when its original process **has been confirmed stopped** even though the manifest still says `running`. If it is active, wait; do not start a second collector.
+
+Keep the original label's manifest, raw responses, and `failure.json` if present. An interrupted process may not have written that error file. Do not edit its status, score only successful rows, or overwrite that label.
 
 **Recover only the failed stage.** Keep the models, corpus, questions, and instruction/version for that stage fixed. After addressing the cause, collect its complete matrix under a new label:
 

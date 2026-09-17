@@ -20,6 +20,8 @@ Follow [the English README](../README.md) for the execution path. This document 
 | Dev | Six frozen questions available for review and improvement |
 | Holdout | Four separate questions used after freezing the candidate |
 | Judge / calibration | A separate model scores answer text; two supplied examples check that it distinguishes supported and unsupported claims |
+| Native evaluation / business checks | Foundry scores answer text; Python checks the fixed decision, amount, and citation contract. Neither result replaces the other. |
+| Rubric / quality gate | The rubric defines how to judge a response; the gate decides whether a model's aggregate results meet the workshop threshold, not whether to release it. |
 | Trace | The connected retrieval, model, and response spans for one request |
 | Regression case | A reviewed case with a fixed reference and original trace |
 | Lineage | The relationship among language, model, prompt, data, version, and result |
@@ -51,7 +53,19 @@ flowchart LR
 
 The loop improves instructions and the validation system. Recording a trace does not train model weights. Fine-tuning, RL, continuous evaluation, automatic retraining, and automatic production promotion are outside this exercise.
 
+<a id="model-names"></a>
+
 ## Fixed model identities
+
+**Use the right name for the right field.**
+
+| Name | Example or source | Where used |
+|---|---|---|
+| Model key | `sol` | Agent request `model_key` and result grouping |
+| Model ID and version | `gpt-5.6-sol` / `2026-07-09` | The fixed model identity checked by `preflight` |
+| Azure deployment name | The actual prepared name from the instructor or Foundry **Build → Models** | `.env`'s `MODEL_SOL_DEPLOYMENT`; it need not equal the model key or ID |
+
+Apply the same distinction to Terra, Luna, Astra, and the auxiliary deployment. Changing `LAB_PREFIX` for a new team does not rename shared model deployments.
 
 | Key | Model ID | Version |
 |---|---|---|
@@ -173,7 +187,7 @@ This is **prompt and evaluation-system improvement**, not fine-tuning, reinforce
 | Source | Used for |
 |---|---|
 | [Nadella's learning-loop and frontier-ecosystem discussion](https://x.com/satyanadella/status/2066182223213293753) | Background perspective; the workshop is an educational interpretation |
-| [Model catalog](https://ai.azure.com/explore/models) · [Azure-sold models](https://learn.microsoft.com/azure/ai-foundry/foundry-models/concepts/models-sold-directly-by-azure) | Model IDs, regions, and deployment types |
+| [Model catalog](https://ai.azure.com/explore/models) · [Azure-sold models](https://learn.microsoft.com/azure/ai-foundry/foundry-models/concepts/models-sold-directly-by-azure) · [Endpoints and deployment names](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/endpoints) | Model IDs, regions, deployment types, and names used for inference |
 | [Foundry hosting](https://learn.microsoft.com/agent-framework/hosting/foundry-hosted-agent?pivots=programming-language-python) | Python Hosted Agents |
 | [OpenAI adapter](https://learn.microsoft.com/agent-framework/integrations/by-component/model-providers/openai) · [AIProjectClient](https://learn.microsoft.com/python/api/azure-ai-projects/azure.ai.projects.aiprojectclient) | Authenticated Chat Completions client integration |
 | [Agent Server Core](https://learn.microsoft.com/python/api/overview/azure/ai-agentserver-core-readme?view=azure-python) · [Invocations](https://learn.microsoft.com/python/api/overview/azure/ai-agentserver-invocations-readme?view=azure-python) | Readiness, request context, telemetry, and JSON input/output |

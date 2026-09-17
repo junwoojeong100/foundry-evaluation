@@ -8,7 +8,7 @@
 
 **혼자 실습한다면:** 여기서 “강사”는 환경 소유자를 뜻하며 본인이 맡아도 된다. 준비를 한 번 마친 뒤 참가자 경로로 진행한다. 다만 승인된 구독·모델 접근·용량·아래 권한이 필요하며 문서가 이를 대신 부여하지는 않는다.
 
-**준비 순서:** [도구](#tools) → [권한](#access) → 아래 환경 경로 선택 → [분리된 리허설](#rehearsal-workspace) → [조별 전달](#handoff).
+**준비 순서:** [도구](#tools) → [권한](#access) → 아래 환경 경로 선택. **수업 준비일 때만** [분리된 리허설](#rehearsal-workspace) → [조별 전달](#handoff)까지 진행한다. 개인 실습은 준비 경로가 지정하는 README 단계로 바로 복귀한다.
 
 | Azure 기반 서비스 | 준비 경로 |
 |---|---|
@@ -83,51 +83,6 @@ azd ai agent --help
 | GHCP에 실행을 맡김 | [GHCP 설치·시작 안내](copilot.ko.md#install). 기본 도구 설치는 반복하지 않음 |
 | 환경 소유자가 직접 Azure 준비 | [권한](#access) 확인 후 새 환경 / 기존 환경 경로 선택 |
 
-<a id="handoff"></a>
-
-## 참가자에게 전달할 것
-
-**리허설을 마친 뒤** 이 체크리스트로 전달한다. 참가자는 [README의 1–10단계](../README.ko.md#start)만 따라간다. 녹화 제작이나 Azure 인프라 생성 절차를 참가자의 선행 과제로 섞지 않는다.
-
-| 전달 항목 | 강사가 확인할 내용 |
-|---|---|
-| 실행 가능한 계정 | 참가자 계정의 조회·배포 권한. 실제 CLI 로그인은 참가자가 README 1-3에서 수행 |
-| 조별 `.env` | `.env.example`의 모든 값을 채움. 한국어는 `LAB_LANGUAGE=ko`, 영어는 `en`. 암호·API key·token은 없음 |
-| 준비된 서비스 | Foundry 프로젝트, Search, 연결된 App Insights, 네 후보와 별도 planner/judge |
-| 고유한 이름 | 참가자가 아직 사용하지 않은 `LAB_PREFIX`, `LAB_AGENT_NAME` |
-| 준비된 도구 | [기본 도구 설치·확인](#tools) 통과. GHCP 사용 시 [추가 준비](copilot.ko.md)는 별도 수행 |
-| 도움받을 담당자 | `grant-agent-access` 역할 부여·403·quota 오류를 처리할 담당자 |
-
-**중요:** `.env`만 전달한 새 clone에는 로컬 azd 환경이 없다. 참가자는 README 1단계의 **`bind`를 자기 폴더에서 실행**한다. 강사 PC에서 바인딩했다는 이유로 이 단계를 생략하지 않는다.
-
-<a id="rehearsal-workspace"></a>
-<a id="리허설과-참가자-실행을-분리"></a>
-
-## 모델 준비·리허설·참가자 실행을 분리
-
-**수업용 모델의 소유권은 준비 폴더에 남긴다.** 그 폴더에서 전체 실습을 리허설하면 10단계 cleanup이 참가자에게 공유할 모델까지 삭제할 수 있다.
-
-모델 준비가 끝나면 별도 리허설 clone을 만든다. 아래 폴더가 이미 있으면 다른 미사용 이름을 쓰며 기존 폴더를 지우지 않는다.
-
-```bash
-git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evaluation-rehearsal-ko &&
-cd foundry-evaluation-rehearsal-ko
-```
-
-편집기로 **완성된 `.env`만** 이 clone에 복사한다. `LAB_LANGUAGE=ko`와 실제 프로젝트·endpoint·모델 배포 이름은 유지하고, **`LAB_PREFIX`와 `LAB_AGENT_NAME`만 미사용 리허설 이름**으로 바꾼다. 이후 [README 1–10단계](../README.ko.md#start)를 따르되 이미 clone했으므로 clone 블록은 건너뛴다.
-
-참가자 이름은 또 별도로 예약한다. 참가자의 접두사로 KB·source·index·agent를 미리 만들면 새 폴더의 소유권 검사에서 덮어쓰기를 거부할 수 있다.
-
-준비된 모델을 공유하는 경우 `.env`의 `MODEL_*_DEPLOYMENT`에는 그 **실제 배포 이름**을 유지한다. 바꾸는 것은 조별 지식 객체·agent 이름이며, 모델을 임의로 교체하지 않는다.
-다른 사람의 `.azure`, `.foundry` 소유권 파일, 실행 결과나 인증 저장소를 복사해서 오류를 우회하지 않는다.
-언어별 실습도 폴더·접두사·agent 이름을 분리한다. 영어 자료는 `data/en/`과 `src/agent/prompts/en/`에 있으며, 실행기는 다른 언어의 소유권·응답·평가·회귀 데이터를 섞는 것을 거부한다.
-
-참가자의 `cleanup`은 **그 폴더에 생성 기록이 있는 대상만** 정리한다. 강사가 미리 준비한 모델·기반 서비스의 최종 비용과 정리는 강사가 따로 관리한다.
-
-**리허설 정리 후, 전달 전에:** 모델 준비 폴더와 그 CLI 프로필로 돌아와 `python scripts/workshop.py preflight`를 실행한다. 네 배포와 `missing_models: []`를 확인하며, 모델이 없으면 전달을 멈추고 준비부터 복구한다. 참가자가 사용 중인 준비 폴더의 모델은 정리하지 않는다.
-
-아래 [리허설 시간표](#rehearsal)를 사용한다. **이후 참가자가 없는 일회성 개인 실습**이라면 준비 폴더를 계속 사용해도 되며, 그 경우 소유한 모델의 정리는 의도된 동작이다.
-
 ## 사전 준비
 
 | 항목 | 준비 상태 |
@@ -171,6 +126,8 @@ Foundry 역할의 이전 이름인 Azure AI User 등이 UI에 남아 있을 수 
 
 기반 서비스가 이미 있는 경우의 준비 경로다. 새 환경 가이드를 완료했다면 그 문서의 전달 안내를 따르며 이 준비를 반복하지 않는다.
 
+**먼저 범위를 확인한다.** 이 실행기는 Foundry 계정·프로젝트, Search, 연결된 Application Insights가 **`AZURE_RESOURCE_GROUP`에 지정한 같은 그룹**에 있어야 한다. 후보·보조 모델도 해당 Foundry 계정에 있어야 한다. 다른 그룹·계정에 나뉘어 있다면 환경 소유자와 준비 범위부터 맞추며, 예시에 맞추려고 공유 자원을 옮기지 않는다.
+
 미사용 clone을 **모델 준비 폴더**로 쓴다. 필요하면 [README 1-1의 clone 블록](../README.ko.md#source-setup)만 실행하고 돌아온다. 이 폴더의 루트에서 실행하며, **마지막에 `OK`가 나온 뒤에만** 아래 Azure 준비로 넘어간다.
 
 ```bash
@@ -190,6 +147,15 @@ python -m unittest discover -s tests -v
 
 1. `.env.example`을 참고해 이 폴더의 `.env`에 **`LAB_LANGUAGE=ko`, 미사용 준비용 이름, 실제 자원·모델 배포 값**을 채운다. 기존 파일은 덮어쓰지 않는다.
 2. 테스트가 `OK`인 같은 폴더에서 [README 1-3 로그인](../README.ko.md#login)을 실행한다. 실습용 CLI 경로를 지정하고 두 CLI에 로그인한 뒤, 계정·tenant·구독·인증 상태를 대조한다. 다른 작업의 기본 CLI 구독은 바꾸지 않는다.
+
+**Preflight 전에 후보 배포 이름을 정한다.**
+
+| 후보 상태 | 해당 `MODEL_*_DEPLOYMENT`에 넣을 값 |
+|---|---|
+| 지정 모델·버전이 이미 배포됨 | **실제 배포 이름**을 복사. 새 접두사와 같을 필요는 없음 |
+| 후보가 아직 배포되지 않음 | 실제 `LAB_PREFIX` 뒤에 `-sol`, `-terra`, `-luna`, `-astra`를 붙인 미사용 이름을 예약. 아래 3번에서 없는 배포를 생성 |
+
+템플릿의 `ll-team01-sol` 같은 이름이 실제 배포의 존재를 뜻하지는 않는다. 고정 [모델 ID·버전](reference.ko.md#model-names)은 유지하며 보조 배포는 아래에서 별도로 준비한다.
 
 <a id="auxiliary-model"></a>
 
@@ -249,6 +215,34 @@ python -m unittest discover -s tests -v
 
 </details>
 
+<a id="rehearsal-workspace"></a>
+<a id="리허설과-참가자-실행을-분리"></a>
+
+## 모델 준비·리허설·참가자 실행을 분리
+
+**수업용 모델의 소유권은 준비 폴더에 남긴다.** 그 폴더에서 전체 실습을 리허설하면 10단계 cleanup이 참가자에게 공유할 모델까지 삭제할 수 있다.
+
+모델 준비가 끝나면 별도 리허설 clone을 만든다. 아래 폴더가 이미 있으면 다른 미사용 이름을 쓰며 기존 폴더를 지우지 않는다.
+
+```bash
+git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evaluation-rehearsal-ko &&
+cd foundry-evaluation-rehearsal-ko
+```
+
+편집기로 **완성된 `.env`만** 이 clone에 복사한다. `LAB_LANGUAGE=ko`와 실제 프로젝트·endpoint·모델 배포 이름은 유지하고, **`LAB_PREFIX`와 `LAB_AGENT_NAME`만 미사용 리허설 이름**으로 바꾼다. 이후 [README 1–10단계](../README.ko.md#start)를 따르되 이미 clone했으므로 clone 블록은 건너뛴다.
+
+참가자 이름은 또 별도로 예약한다. 참가자의 접두사로 KB·source·index·agent를 미리 만들면 새 폴더의 소유권 검사에서 덮어쓰기를 거부할 수 있다.
+
+준비된 모델을 공유하는 경우 `.env`의 `MODEL_*_DEPLOYMENT`에는 그 **실제 배포 이름**을 유지한다. 바꾸는 것은 조별 지식 객체·agent 이름이며, 모델을 임의로 교체하지 않는다.
+다른 사람의 `.azure`, `.foundry` 소유권 파일, 실행 결과나 인증 저장소를 복사해서 오류를 우회하지 않는다.
+언어별 실습도 폴더·접두사·agent 이름을 분리한다. 영어 자료는 `data/en/`과 `src/agent/prompts/en/`에 있으며, 실행기는 다른 언어의 소유권·응답·평가·회귀 데이터를 섞는 것을 거부한다.
+
+참가자의 `cleanup`은 **그 폴더에 생성 기록이 있는 대상만** 정리한다. 강사가 미리 준비한 모델·기반 서비스의 최종 비용과 정리는 강사가 따로 관리한다.
+
+**리허설 정리 후, 전달 전에:** 모델 준비 폴더와 그 CLI 프로필로 돌아와 `python scripts/workshop.py preflight`를 실행한다. 네 배포와 `missing_models: []`를 확인하며, 모델이 없으면 전달을 멈추고 준비부터 복구한다. 참가자가 사용 중인 준비 폴더의 모델은 정리하지 않는다.
+
+아래 [리허설 시간표](#rehearsal)를 사용한다. **이후 참가자가 없는 일회성 개인 실습**이라면 준비 폴더를 계속 사용해도 되며, 그 경우 소유한 모델의 정리는 의도된 동작이다.
+
 <a id="rehearsal"></a>
 
 ## 실습 시간 리허설
@@ -274,6 +268,23 @@ python -m unittest discover -s tests -v
 - Application Insights에 trace가 실제 조회되기까지의 지연.
 
 기준 시간표를 넘으면 **참가자 시작 전에** 모델 용량·동시성·준비 상태를 조정한다. 실습 중 지식 검색·평가·네 모델 중 일부를 빼고 완료로 처리하지 않는다.
+
+<a id="handoff"></a>
+
+## 참가자에게 전달할 것
+
+**리허설을 마친 뒤** 이 체크리스트로 전달한다. 참가자는 [README의 1–10단계](../README.ko.md#start)만 따라간다. 녹화 제작이나 Azure 인프라 생성 절차를 참가자의 선행 과제로 섞지 않는다.
+
+| 전달 항목 | 강사가 확인할 내용 |
+|---|---|
+| 실행 가능한 계정 | 참가자 계정의 조회·배포 권한. 실제 CLI 로그인은 참가자가 README 1-3에서 수행 |
+| 조별 `.env` | `.env.example`의 모든 값을 채움. 한국어는 `LAB_LANGUAGE=ko`, 영어는 `en`. 암호·API key·token은 없음 |
+| 준비된 서비스 | Foundry 프로젝트, Search, 연결된 App Insights, 네 후보와 별도 planner/judge |
+| 고유한 이름 | 참가자가 아직 사용하지 않은 `LAB_PREFIX`, `LAB_AGENT_NAME` |
+| 준비된 도구 | [기본 도구 설치·확인](#tools) 통과. GHCP 사용 시 [추가 준비](copilot.ko.md)는 별도 수행 |
+| 도움받을 담당자 | `grant-agent-access` 역할 부여·403·quota 오류를 처리할 담당자 |
+
+**중요:** `.env`만 전달한 새 clone에는 로컬 azd 환경이 없다. 참가자는 README 1단계의 **`bind`를 자기 폴더에서 실행**한다. 강사 PC에서 바인딩했다는 이유로 이 단계를 생략하지 않는다.
 
 ## 운영 확장 범위
 

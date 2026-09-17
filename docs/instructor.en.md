@@ -6,7 +6,7 @@ Participants follow [README.md](../README.md#start). Keep infrastructure creatio
 
 **Self-study:** “instructor” means the environment owner, which can be you. Complete preparation once, then use the participant path. You still need an approved subscription, model access/capacity, and the permissions below; this guide cannot grant them.
 
-**Preparation order:** [tools](#tools) → [access](#access) → choose the setup path below → [separate rehearsal](#rehearsal-workspace) → [team handoff](#handoff).
+**Preparation order:** [tools](#tools) → [access](#access) → choose the setup path below. **For a class**, continue with [separate rehearsal](#rehearsal-workspace) → [team handoff](#handoff). Self-study returns directly to the README at the setup path's specified step.
 
 | Azure foundation | Setup path |
 |---|---|
@@ -81,51 +81,6 @@ Require the command list to include `run` and `invoke`. An update notice is not 
 | Delegate execution to GHCP | [GHCP installation and startup](copilot.en.md#install); do not repeat basic-tool installation |
 | Prepare Azure yourself as the environment owner | Check [access](#access), then choose new or existing infrastructure |
 
-<a id="handoff"></a>
-
-## What to hand to each team
-
-Use this checklist **after rehearsal**, not as a replacement for provisioning.
-
-| Item | Instructor responsibility |
-|---|---|
-| Account | Confirm access to the intended subscription, tenant, project, and model deployments. Participants sign in and complete MFA in README step 1-3. |
-| Complete `.env` | Use `.env.example`, fill the actual values, and set **`LAB_LANGUAGE=en`**. Do not include passwords, API keys, or tokens. |
-| Ready services | Foundry project, Search, connected Application Insights, four fixed candidates, and the auxiliary planner/judge |
-| Unused names | A unique `LAB_PREFIX` and `LAB_AGENT_NAME` for each team |
-| Tools | Pass the [basic tool checks](#tools). Complete [additional GHCP setup](copilot.en.md) separately if using it. |
-| Access support | A person who can resolve narrowly scoped role assignment, 403, and capacity issues |
-
-A new participant clone has no local azd binding. The participant must run **`bind` in their own folder**, even if the instructor has already bound another copy.
-
-English and Korean must use **separate folders, prefixes, agent names, and knowledge objects**. Do not flip `LAB_LANGUAGE` in a workspace that already owns resources or contains experiment results. The runtime rejects mixed-language ownership, responses, evaluations, and regression lineage.
-
-<a id="rehearsal-workspace"></a>
-<a id="separate-rehearsal-from-participant-execution"></a>
-
-## Separate model preparation, rehearsal, and participant execution
-
-**For a class, keep model ownership in the preparation folder.** Do not rehearse the full exercise in that folder: its step-10 cleanup can delete the models you intend to share with participants.
-
-After model preparation completes, create a separate rehearsal clone. If the example folder already exists, use another unused name; do not delete the existing folder.
-
-```bash
-git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evaluation-rehearsal-en &&
-cd foundry-evaluation-rehearsal-en
-```
-
-Copy **only the completed `.env`** into this clone using your editor. Keep `LAB_LANGUAGE=en` and the actual project, endpoints, and model deployment names. Change **`LAB_PREFIX` and `LAB_AGENT_NAME` to unused rehearsal names**. Then follow [README steps 1–10](../README.md#start), skipping its clone block because this folder is already ready.
-
-Reserve different prefixes and agent names for participants. Do not create their KB, source, index, or agent in advance; a fresh participant folder will correctly refuse to overwrite unowned objects.
-
-If model deployments are shared within the approved workshop foundation, keep their **actual deployment names** in `MODEL_*_DEPLOYMENT`. Do not rename a deployment in `.env` to a resource that does not exist.
-
-Do not copy someone else's `.azure`, `.foundry` ownership files, authentication cache, or results to bypass a guard. A participant's cleanup deletes only objects recorded as owned by that folder. The instructor remains responsible for prepared models and foundation-service costs.
-
-**After rehearsal cleanup, before handoff:** return to the model-preparation folder and its CLI profile, run `python scripts/workshop.py preflight`, and require all four deployments plus `missing_models: []`. If a model is missing, stop handoff and restore preparation first. Do not clean up the preparation folder's models while teams still use them.
-
-Use the [rehearsal timing](#rehearsal) below. For **one-off self-study with no later participants**, staying in the preparation folder is valid; its owned-model cleanup is then intentional.
-
 <a id="access"></a>
 
 ## Access boundaries
@@ -152,6 +107,8 @@ This exercise uses synthetic documents shared by the team. It does not implement
 
 Use this path only when the foundation services already exist. If you completed the new-environment guide, use its handoff instead; do not repeat this setup.
 
+**Check the scope first:** this runner expects the Foundry account/project, Search, and connected Application Insights in the configured **`AZURE_RESOURCE_GROUP`**. Candidate and auxiliary models must belong to that Foundry account. If your services are spread across other groups/accounts, resolve the setup with the owner before proceeding; do not move shared resources to fit the example.
+
 Use an unused clone as your **model-preparation folder**. If needed, use the clone block in [README step 1-1](../README.md#source-setup), then return here. Run from that clone's root:
 
 ```bash
@@ -175,6 +132,15 @@ Installation references: [Azure CLI](https://learn.microsoft.com/cli/azure/insta
 
 1. Prepare this folder's `.env` with `LAB_LANGUAGE=en`, unused preparation names, and actual resource/deployment values.
 2. Complete [README step 1-3](../README.md#login), including both CLI sign-ins and the identity checks. Keep the configured subscription explicit.
+
+**Choose candidate deployment names before preflight:**
+
+| Candidate state | Value for its `MODEL_*_DEPLOYMENT` |
+|---|---|
+| The required model/version is already deployed | Copy its **actual deployment name**; it does not need your new prefix. |
+| The candidate is not deployed yet | Reserve an unused name formed from your actual `LAB_PREFIX` plus `-sol`, `-terra`, `-luna`, or `-astra`. Step 3 creates the missing deployments. |
+
+Template names such as `ll-team01-sol` are not proof of an existing deployment. Keep the fixed [model IDs and versions](reference.en.md#model-names); prepare the auxiliary deployment separately below.
 
 <a id="auxiliary-model"></a>
 
@@ -228,6 +194,32 @@ Keep the local server in a trusted development environment, never expose it publ
 
 </details>
 
+<a id="rehearsal-workspace"></a>
+<a id="separate-rehearsal-from-participant-execution"></a>
+
+## Separate model preparation, rehearsal, and participant execution
+
+**For a class, keep model ownership in the preparation folder.** Do not rehearse the full exercise in that folder: its step-10 cleanup can delete the models you intend to share with participants.
+
+After model preparation completes, create a separate rehearsal clone. If the example folder already exists, use another unused name; do not delete the existing folder.
+
+```bash
+git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evaluation-rehearsal-en &&
+cd foundry-evaluation-rehearsal-en
+```
+
+Copy **only the completed `.env`** into this clone using your editor. Keep `LAB_LANGUAGE=en` and the actual project, endpoints, and model deployment names. Change **`LAB_PREFIX` and `LAB_AGENT_NAME` to unused rehearsal names**. Then follow [README steps 1–10](../README.md#start), skipping its clone block because this folder is already ready.
+
+Reserve different prefixes and agent names for participants. Do not create their KB, source, index, or agent in advance; a fresh participant folder will correctly refuse to overwrite unowned objects.
+
+If model deployments are shared within the approved workshop foundation, keep their **actual deployment names** in `MODEL_*_DEPLOYMENT`. Do not rename a deployment in `.env` to a resource that does not exist.
+
+Do not copy someone else's `.azure`, `.foundry` ownership files, authentication cache, or results to bypass a guard. A participant's cleanup deletes only objects recorded as owned by that folder. The instructor remains responsible for prepared models and foundation-service costs.
+
+**After rehearsal cleanup, before handoff:** return to the model-preparation folder and its CLI profile, run `python scripts/workshop.py preflight`, and require all four deployments plus `missing_models: []`. If a model is missing, stop handoff and restore preparation first. Do not clean up the preparation folder's models while teams still use them.
+
+Use the [rehearsal timing](#rehearsal) below. For **one-off self-study with no later participants**, staying in the preparation folder is valid; its owned-model cleanup is then intentional.
+
 <a id="rehearsal"></a>
 
 ## Rehearsal timing
@@ -246,6 +238,25 @@ Keep the local server in a trusted development environment, never expose it publ
 | 115–120 min | Buffer | Evaluation and telemetry ingestion delay |
 
 The 120 minutes assume a prepared environment. Rehearse model deployment, cold starts, RBAC propagation, response generation, evaluator completion, and telemetry ingestion. Do not shorten an overrun by omitting a model, retrieval, or evaluation and calling the workshop complete.
+
+<a id="handoff"></a>
+
+## What to hand to each team
+
+Use this checklist **after rehearsal**, not as a replacement for provisioning.
+
+| Item | Instructor responsibility |
+|---|---|
+| Account | Confirm access to the intended subscription, tenant, project, and model deployments. Participants sign in and complete MFA in README step 1-3. |
+| Complete `.env` | Use `.env.example`, fill the actual values, and set **`LAB_LANGUAGE=en`**. Do not include passwords, API keys, or tokens. |
+| Ready services | Foundry project, Search, connected Application Insights, four fixed candidates, and the auxiliary planner/judge |
+| Unused names | A unique `LAB_PREFIX` and `LAB_AGENT_NAME` for each team |
+| Tools | Pass the [basic tool checks](#tools). Complete [additional GHCP setup](copilot.en.md) separately if using it. |
+| Access support | A person who can resolve narrowly scoped role assignment, 403, and capacity issues |
+
+A new participant clone has no local azd binding. The participant must run **`bind` in their own folder**, even if the instructor has already bound another copy.
+
+English and Korean must use **separate folders, prefixes, agent names, and knowledge objects**. Do not flip `LAB_LANGUAGE` in a workspace that already owns resources or contains experiment results. The runtime rejects mixed-language ownership, responses, evaluations, and regression lineage.
 
 ## Cleanup and maintenance
 

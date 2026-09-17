@@ -20,20 +20,30 @@
 ## 실패한 명령부터 이어가기
 
 **코드 블록 전체를 반복하지 않습니다.** 예를 들어 `collect`는 성공했고 `evaluate`만 멈췄다면 `collect`부터 다시 실행하면 안 됩니다.
-아래에서 멈춘 위치를 고르고, 같은 결과 폴더와 label을 유지합니다.
+아래에서 멈춘 위치를 고릅니다. 수집을 새로 해야 할 때만 새 label을 쓰며, 평가·trace 복구는 기존 label을 유지합니다.
 
 | 멈춘 위치 / 메시지 | 이어갈 곳 |
 |---|---|
+| 배포는 성공했지만 뒤의 `grant-agent-access` 또는 `smoke` 실패 | 원인을 해결하고 **실패한 명령만** 재실행. 재배포해 agent 버전을 하나 더 만들지 않음 |
 | `collect` 중 오류, `manifest.json`의 `status: failed` | [응답 수집 복구](#collection-retry). 실패한 결과는 보존하고 새 label로 전체 수집 |
 | `Evaluation is still running` | [평가 복구](#evaluation-retry). 같은 label의 `evaluate`만 다시 실행 |
 | Foundry run이 failed/canceled이거나 오류 행이 있음 | 원인을 해결한 뒤 [평가 복구](#evaluation-retry)의 `--retry-failed` 사용 |
 | `Telemetry is incomplete` | 수집 지연·권한과 [기본 2시간 조회 범위](#telemetry)를 확인한 뒤 같은 label의 `monitor`만 재실행 |
-| `Label ... already exists` | 기존 `manifest.json`을 읽기만 해서 상태 확인. `completed`면 평가 단계부터, `failed`면 수집 복구. `running`이면 기존 실행의 진행·중단 여부를 강사와 확인 |
+| `Label ... already exists` | 아래 상태 파일 확인. 수집이 `completed`면 아직 끝나지 않은 평가·trace 단계로, `failed`면 수집 복구. `running`이면 원래 프로세스가 실행 중일 때 기다리고, **종료를 확인한 뒤에만** [수집 복구](#collection-retry) |
 | `feedback`에서 이미 같은 회귀 기록이 존재 | 기존 행 ID·검토 이유·출처가 이번에 검토한 내용과 일치할 때만 다음 단계 진행. 다르면 중단하고 확인하며 파일을 지워 우회하지 않음 |
 
 **터미널을 다시 열었나요?** 새 clone이 아니라 **기존 실습 폴더**를 열고 [터미널 복원 블록](../README.ko.md#resume-shell)을 따릅니다. 빈 터미널이라는 이유로 `init`·`bind`·배포·수집을 반복하지 않습니다.
 
-**`src/agent/.foundry/results/<label>/`**의 `manifest.json`은 **수집 상태만** 나타냅니다. 평가는 `evaluation.json`, trace 수집은 `telemetry.json`을 확인합니다. 수집 완료가 평가 완료를 뜻하지는 않습니다.
+**`src/agent/.foundry/results/<label>/`**에서 아래 파일을 수정하지 말고 읽습니다.
+
+| 파일 | 완료 확인값 | 확인하는 범위 |
+|---|---|---|
+| `manifest.json` | `status: completed` | 응답 수집만 |
+| `evaluation.json` | `status: completed`, 예상 `run → result_counts → total`, 오류 행 없음 | Foundry job 상태 |
+| `evaluation-results.json` | 모든 응답에 대응하는 행과 각 행의 두 evaluator 결과 | 행별 평가. Trace 확인과는 별개 |
+| `telemetry.json` | `complete: true`, 일치하는 `expected_trace_count` / `observed_trace_count` | 해당 label의 trace |
+
+처음 미완료인 단계의 복구 안내를 따릅니다. Manifest 하나의 완료를 전체 실습 완료로 해석하지 않습니다.
 
 다른 실습이나 언어를 시작할 때만 미사용 이름을 받아 새 폴더를 사용합니다. 소유권·응답·trace를 지워 오류를 우회하지 않습니다. 응답 수집이 아니라 Azure 환경을 만들다가 중단했다면 [환경 준비 복구](#setup-resume)를 따릅니다.
 
@@ -70,15 +80,23 @@
 ## 로그인 브라우저가 열리지 않는다면
 
 [README 1-3](../README.ko.md#login)의 **CLI 경로 지정과 tenant·구독 입력 블록을 먼저 실행한 같은 터미널**에서 아래를 사용합니다.
-각 명령이 표시한 주소를 브라우저로 열고, **본인 터미널에 표시된 일회용 코드**를 입력해 `.env`의 계정으로 로그인합니다.
+**로그인에 실패한 CLI의 명령만 실행합니다.** 둘 다 필요하면 Azure CLI → azd 순서입니다.
+
+**Azure CLI:**
 
 ```bash
 az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" \
-  --use-device-code --output none &&
+  --use-device-code --output none
+```
+
+**azd:**
+
+```bash
 azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 ```
 
-두 명령이 끝나면 README 1-3의 [두 로그인 결과 확인](../README.ko.md#login-check) 블록으로 돌아갑니다. 로그인 명령을 다시 실행할 필요는 없습니다. 코드는 채팅·문서·녹화에 공유하지 않습니다.
+명령이 표시한 주소를 브라우저로 열고, **본인 터미널에 표시된 일회용 코드**를 입력해 `.env`의 계정으로 로그인합니다.
+필요한 로그인이 끝나면 README 1-3의 [두 로그인 결과 확인](../README.ko.md#login-check) 블록으로 돌아갑니다. 성공한 로그인은 반복하지 않습니다. 코드는 채팅·문서·녹화에 공유하지 않습니다.
 조직 정책이 device-code 로그인을 막으면 우회하지 말고 강사에게 승인된 로그인 환경을 요청합니다.
 공식 설명: [Azure CLI 대화형 로그인](https://learn.microsoft.com/cli/azure/authenticate-azure-cli-interactively) · [CLI 설정 경로](https://learn.microsoft.com/cli/azure/azure-cli-configuration#cli-configuration-file).
 
@@ -120,8 +138,9 @@ Agent와 run 필터는 그대로이며 trace 누락·중복·다른 trace·sampl
 
 ## 응답 수집에 실패했다면
 
-`collect`가 실패한 label의 `failure.json`, manifest, 원문 응답을 **그대로 보존**합니다.
-해당 label에 다시 쓰거나 성공한 행만 추려서 평가하지 않습니다.
+수집이 실패했거나, manifest가 `running`이지만 원래 프로세스의 **종료를 확인한 경우**에만 사용합니다. 아직 실행 중이면 기다리며 두 번째 수집기를 시작하지 않습니다.
+
+기존 label의 manifest·원문 응답과, 있다면 `failure.json`을 **그대로 보존**합니다. 프로세스가 중단되면 오류 파일을 남기지 못했을 수 있습니다. 상태를 편집하거나 해당 label에 다시 쓰거나 성공한 행만 추려서 평가하지 않습니다.
 
 **실패한 단계만 복구합니다.** 해당 단계의 모델·정책·질문·지침·agent 버전은 유지합니다. 원인을 해결한 뒤 새 label로 그 단계의 전체 질문을 다시 수집합니다.
 

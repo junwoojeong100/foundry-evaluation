@@ -84,8 +84,13 @@ cd foundry-evaluation
 <a id="workspace-settings"></a>
 
 강사가 준 `.env`를 **`README.ko.md`와 같은 위치**에 둡니다. 기존 `.env`를 덮어쓰지 않습니다.
-구독·tenant, 프로젝트·Search, 모델 배포 이름, 조별 `LAB_PREFIX`와 `LAB_AGENT_NAME`이 들어 있어야 합니다.
-**`LAB_LANGUAGE=ko`**로 설정하고, `LAB_PREFIX`와 `LAB_AGENT_NAME`은 이번 조가 아직 사용하지 않은 이름을 씁니다. 암호·API key·access token은 넣지 않습니다.
+승인된 계정·구독·tenant, 프로젝트·Search, 모델 배포 값이 들어 있어야 합니다. 암호·API key·access token은 넣지 않습니다.
+
+| 설정 | 새 실습을 시작하기 전 확인할 것 |
+|---|---|
+| `LAB_LANGUAGE` / `LAB_PROMPT_VERSION` | `ko` / `v1`. 기존 실행을 재개할 때는 초기화하지 않습니다. |
+| `LAB_PREFIX` / `LAB_AGENT_NAME` | 조별 미사용 이름. 영문 소문자로 시작하는 3–50자의 소문자·숫자·하이픈 |
+| `MODEL_*_DEPLOYMENT` / `LAB_AUX_DEPLOYMENT` | 강사가 **실제로 준비한 모델 배포 이름**. 조별 이름을 바꾸어도 이 값은 유지합니다. `.env`의 이름을 바꾼다고 모델이 생성되지는 않습니다. [이름 구분](docs/reference.ko.md#model-names) |
 
 **저장소 루트**에는 `azure.yaml`, `scripts/`, `src/`, `.env`가 있습니다. 숨김 파일 `.env`는 편집기의 **파일 열기**로 열며 `.env.txt`로 저장하지 않습니다. Python이 읽으므로 **실행하거나 `source .env`하지 않습니다.** `<subscription-id>` 같은 표시는 꺾쇠까지 실제 값으로 바꿉니다. 모르는 값은 추측하지 말고 준비부터 마칩니다.
 
@@ -307,7 +312,13 @@ python scripts/workshop.py smoke
 
 ## 5. 네 모델의 baseline 평가하기
 
-**할 일:** **dev**(비교용 질문) 6문항을 네 모델에 보내 V1 기준 결과를 `baseline`으로 저장합니다. `--label`은 결과 폴더 이름이며 이후 `improved`, `holdout`을 그대로 사용합니다.
+**할 일:** V1 응답을 `baseline`으로 수집하고 평가합니다. **`--split`은 질문 묶음, `--label`은 결과 폴더 이름**입니다. 전체 실습은 아래 세 label을 쓰며, 지금은 `baseline`만 실행합니다.
+
+| 단계 | 지침 | `--split` | `--label` | 응답 수 |
+|---|---|---|---|---|
+| 5. Baseline | V1 | `dev` | `baseline` | 6문항 × 4모델 = 24 |
+| 7. 개선 후보 | V2 | `dev` | `improved` | 같은 6문항 × 4모델 = 24 |
+| 8. Holdout | 고정 V2 | `holdout` | `holdout` | 별도 4문항 × 4모델 = 16 |
 
 **Judge**는 답변 텍스트를 채점하는 별도 보조 모델이며, 네 후보 중 하나가 아닙니다.
 
@@ -393,7 +404,7 @@ python scripts/workshop.py monitor --label baseline
 
 1. **`labels → baseline → business_failures`**에서 한 행을 고릅니다. `row_id`, `trace_id`, false인 `checks`를 읽습니다. 목록이 비었으면 [통과한 dev 한 건을 검토](docs/troubleshooting.ko.md#no-failures)하며 실패를 꾸미지 않습니다.
 2. 편집기로 `src/agent/.foundry/results/baseline/responses.jsonl`을 열고 **줄 번호가 아닌 같은 `row_id`**를 찾습니다(`Ctrl+F`, macOS는 `⌘F`). 이 행의 **`case_id`와 `model_key`**도 적어 둡니다. V2에서 같은 질문·모델을 찾는 기준입니다.
-3. `data/dev.jsonl`에서 **같은 `case_id`**의 고정 기준을 찾습니다. 응답의 `answer`·`decision`·`citations`를 기준의 `ground_truth`·`expected_decision`·`required_numbers`·`allowed_citations`와 대조합니다. 인용 ID가 그 응답의 `source_ids`에도 있는지 봅니다. 화면 자동 줄바꿈만 켜고 파일은 수정하지 않습니다.
+3. `data/dev.jsonl`에서 **같은 `case_id`**의 고정 기준을 찾습니다. 응답의 `answer`·`decision`·`citations`를 기준의 `ground_truth`·`expected_decision`·`required_numbers`·`allowed_citations`와 대조합니다. **`source_ids`는 이번 요청에서 검색된 문서, `citations`는 답변이 인용한 ID**입니다. 각 인용 ID가 `source_ids`에도 있어야 합니다. 화면 자동 줄바꿈만 켜고 파일은 수정하지 않습니다.
 4. 포털 **내 agent → Traces**에서 같은 `trace_id`로 검색합니다. 기간을 맞추고 Graph view의 검색·모델 span을 확인합니다.
 5. 이 행의 **응답 → 고정 기준 → 검색·모델 기록**을 근거로 원인과 바꿀 점을 설명합니다.
 
@@ -504,6 +515,8 @@ python scripts/workshop.py compare --labels baseline improved
 | 업무 통과 | `business_passed` / `total` | 다섯 업무 검사를 모두 통과한 응답 수 / 전체 |
 | 필수 인용 | `required_citation_passed` / `required_citation_total` | 필수 인용이 유효한 응답 수 / 인용 필수 응답 수 |
 | Foundry 점수 | `foundry_evaluators → groundedness 또는 relevance` | `native_mean_score`(평균)와 `native_passed` / `total`(통과/전체)을 읽음. **각 행이 5점 만점에 4점 이상**이어야 통과하며, 평균 4점이 전부 통과를 뜻하지는 않음 |
+
+같은 파일의 **`comparison_notes`**도 읽습니다. 검색 근거가 달랐다면 검색과 답변을 합친 end-to-end 결과이며, 순수한 모델 순위로 해석하지 않습니다.
 
 **판단:** 좋아지지 않았거나 악화됐다면 그대로 기록합니다. V2를 자동 채택하거나 평가 기준을 낮추지 않습니다. 8단계는 이 후보를 평가하는 것이지 **운영 도입을 결정하는 단계가 아닙니다.**
 

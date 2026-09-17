@@ -20,6 +20,8 @@
 | dev | 실패를 보고 개선하는 데 쓰는 질문 6개 |
 | holdout | 후보를 고정한 뒤 확인하는 질문 4개 |
 | Judge / calibration | 답변 텍스트에 점수를 매기는 별도 모델 / 근거 있는 답과 없는 답을 구분하는지 예제 2개로 점검 |
+| Native 평가 / 업무 검사 | Foundry의 답변 텍스트 채점 / Python의 고정 판단·금액·인용 계약 검사. 한쪽 결과가 다른 쪽을 대신하지 않음 |
+| Rubric / 품질 gate | Rubric은 응답의 채점 기준. Gate는 모델별 집계 결과가 실습 기준을 넘었는지 판단하며, 운영 승인과는 다름 |
 | trace | 한 요청의 검색·모델 호출·응답을 연결한 실행 기록 |
 | regression / 회귀 데이터 | 검토한 사례와 정답·원래 trace를 남겨 다음 버전에서 다시 확인하는 자료 |
 | lineage | 모델·지침·데이터·버전·실행 결과가 어디에서 왔는지 연결한 이력 |
@@ -53,7 +55,19 @@ flowchart LR
 
 이 과정은 **지침과 검증 체계의 개선**입니다. 로그를 켠다고 모델 가중치가 학습되지 않으며 fine-tuning/RL·자동 재학습·자동 운영 배포를 수행하지 않습니다.
 
+<a id="model-names"></a>
+
 ## 고정한 모델과 보조 모델
+
+**입력하는 위치에 맞는 이름을 사용합니다.**
+
+| 이름 | 예시 또는 확인할 곳 | 사용하는 위치 |
+|---|---|---|
+| 모델 키 | `sol` | Agent 요청의 `model_key`, 결과 집계 |
+| 모델 ID와 버전 | `gpt-5.6-sol` / `2026-07-09` | `preflight`가 대조하는 고정 모델 |
+| Azure 배포 이름 | 강사가 전달했거나 Foundry **Build → Models**에서 확인한 실제 배포 이름 | `.env`의 `MODEL_SOL_DEPLOYMENT`. 모델 키·ID와 같을 필요 없음 |
+
+Terra·Luna·Astra와 보조 배포도 같은 방식으로 구분합니다. 새 조의 `LAB_PREFIX`를 바꾸어도 공유 모델의 배포 이름은 바뀌지 않습니다.
 
 | 키 | 실제 모델 ID | 버전 |
 |---|---|---|
@@ -152,7 +166,7 @@ Monitor의 Tools 목록이 비어도 코드 내부의 IQ 호출은 trace에 남�
 
 120분은 환경 준비가 끝난 참가자의 설명·실행·검토·정리 시간입니다.
 영상에서는 대기와 화면 탐색을 줄였으므로 영상 길이를 실제 Azure 소요 시간으로 해석하지 않습니다.
-조가 10분 이상 환경 문제로 지연되면 단계를 생략하거나 모델을 대체하지 말고 강사의 준비된 환경으로 복구합니다.
+조가 10분 이상 환경 문제로 지연되면 강사와 해당 폴더의 설정·권한을 복구합니다. 다른 환경이 필요하면 새 폴더·이름으로 별도 실행하며, 이전 응답·소유권을 옮겨 이어 붙이지 않습니다.
 
 [참가자 가이드](../README.ko.md) · [강사 준비·시간표](instructor.ko.md) · [문제 해결](troubleshooting.ko.md) · [평가 방법·개선 결과](validation.ko.md)
 
@@ -191,7 +205,7 @@ Monitor의 Tools 목록이 비어도 코드 내부의 IQ 호출은 trace에 남�
 
 | 문서 | 실습에서 사용하는 내용 |
 |---|---|
-| [Foundry 모델 카탈로그](https://ai.azure.com/explore/models) · [Azure 판매 모델](https://learn.microsoft.com/azure/ai-foundry/foundry-models/concepts/models-sold-directly-by-azure) | 모델 ID·지역·배포 유형. 실제 접근·할당량은 지정 구독의 `preflight`로 확인 |
+| [Foundry 모델 카탈로그](https://ai.azure.com/explore/models) · [Azure 판매 모델](https://learn.microsoft.com/azure/ai-foundry/foundry-models/concepts/models-sold-directly-by-azure) · [Endpoint와 배포 이름](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/endpoints) | 모델 ID·지역·배포 유형·추론에 쓰는 이름. 실제 접근·할당량은 지정 구독의 `preflight`로 확인 |
 | [Agent Framework Foundry hosting](https://learn.microsoft.com/agent-framework/hosting/foundry-hosted-agent?pivots=programming-language-python) | Python Hosted Agent와 Invocations hosting |
 | [OpenAI adapter](https://learn.microsoft.com/agent-framework/integrations/by-component/model-providers/openai) · [AIProjectClient](https://learn.microsoft.com/python/api/azure-ai-projects/azure.ai.projects.aiprojectclient) | 같은 Foundry 계정의 Chat Completions client와 인증된 endpoint override |
 | [Agent Server Core](https://learn.microsoft.com/python/api/overview/azure/ai-agentserver-core-readme?view=azure-python) · [Invocations](https://learn.microsoft.com/python/api/overview/azure/ai-agentserver-invocations-readme?view=azure-python) | readiness, request context, OpenTelemetry, 명시적 JSON 입출력 |

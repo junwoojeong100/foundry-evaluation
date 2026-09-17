@@ -80,7 +80,13 @@ cd foundry-evaluation-en
 
 <a id="workspace-settings"></a>
 
-Place the instructor's complete `.env` **next to this README**, without overwriting another file. Check the account, subscription/tenant, project, Search, deployments, and unused team names. Set **`LAB_LANGUAGE=en`**. Never include passwords, API keys, or tokens.
+Place the instructor's complete `.env` **next to this README**, without overwriting another file. It must contain your approved account, subscription/tenant, project, Search, and model deployment values. Never include passwords, API keys, or tokens.
+
+| Setting | Check before starting a new run |
+|---|---|
+| `LAB_LANGUAGE` / `LAB_PROMPT_VERSION` | `en` / `v1`. Do not reset these when resuming an existing run. |
+| `LAB_PREFIX` / `LAB_AGENT_NAME` | Unused team names: 3–50 lowercase letters, digits, or hyphens, starting with a letter |
+| `MODEL_*_DEPLOYMENT` / `LAB_AUX_DEPLOYMENT` | The instructor's **actual prepared deployment names**. Keep these when changing team names; changing a name in `.env` does not create a model. [Name distinctions](docs/reference.en.md#model-names) |
 
 The **repository root** contains `azure.yaml`, `scripts/`, `src/`, and `.env`. Use your editor's **Open File** for the hidden `.env`, not `.env.txt`. Python loads it; **never execute or `source .env`**. Replace placeholders such as `<subscription-id>`, including brackets, with real values. If a value is unknown, complete preparation rather than guess.
 
@@ -282,7 +288,13 @@ If role assignment fails, ask the instructor to grant the required access to **t
 
 ## 5. Evaluate the four-model baseline
 
-**Action:** ask four models the six **dev** (comparison) questions. Save V1 as `baseline`; keep `improved` and `holdout` for later. `--label` names the result folder.
+**Action:** collect and evaluate V1 as `baseline`. **`--split` selects the question set; `--label` names its result folder.** The full experiment uses these three labels; execute only `baseline` in this step.
+
+| Stage | Instructions | `--split` | `--label` | Responses |
+|---|---|---|---|---|
+| 5. Baseline | V1 | `dev` | `baseline` | 6 questions × 4 models = 24 |
+| 7. Candidate | V2 | `dev` | `improved` | The same 6 questions × 4 models = 24 |
+| 8. Holdout | Frozen V2 | `holdout` | `holdout` | 4 separate questions × 4 models = 16 |
 
 The **judge** scores answer text; it is a separate auxiliary model, not one of the four candidates.
 
@@ -365,7 +377,7 @@ python scripts/workshop.py monitor --label baseline
 
 1. In **`labels → baseline → business_failures`**, choose a real `row_id`. Read its `trace_id` and false `checks`. If the list is empty, [review one passing dev case](docs/troubleshooting.en.md#no-failures); do not invent a failure.
 2. Open `src/agent/.foundry/results/baseline/responses.jsonl` and find **the same `row_id`, not a line number**. Also note its **`case_id` and `model_key`**: these identify the same question/model in V2.
-3. Find **that `case_id`** in `data/en/dev.jsonl`. Compare the response's `answer`, `decision`, and `citations` with the fixed `ground_truth`, `expected_decision`, `required_numbers`, and `allowed_citations`. Check that its citation IDs also appear in that response's `source_ids`. Use editor word wrap; do not edit either file.
+3. Find **that `case_id`** in `data/en/dev.jsonl`. Compare the response's `answer`, `decision`, and `citations` with the fixed `ground_truth`, `expected_decision`, `required_numbers`, and `allowed_citations`. **`source_ids` are the documents retrieved for this request; `citations` are the IDs the answer chose to cite.** Each citation must also be in `source_ids`. Use editor word wrap; do not edit either file.
 4. In **your agent → Traces**, search for the same `trace_id`. Adjust the time range and inspect its retrieval and model spans.
 5. Explain the cause and proposed change using **the response → fixed reference → retrieval/model trace**, not another request's evidence.
 
@@ -460,6 +472,8 @@ python scripts/workshop.py compare --labels baseline improved
 | Business passes | `business_passed` / `total` | Responses passing all five business checks |
 | Required citations | `required_citation_passed` / `required_citation_total` | Citation-required responses with valid citations |
 | Foundry scores | `foundry_evaluators → groundedness or relevance` | Read `native_mean_score` and `native_passed` / `total`. Each row needs **at least 4 out of 5**; an average of 4 does not mean all rows passed. |
+
+Also read **`comparison_notes`** in the same file. Different retrieved contexts mean this is an end-to-end comparison of retrieval plus answering, not an isolated model ranking.
 
 If the result is unchanged or worse, report that result. Do not lower the criteria, substitute another model, or automatically adopt V2. Step 8 evaluates this candidate; it is **not a decision to release it**.
 

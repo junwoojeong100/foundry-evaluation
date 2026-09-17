@@ -4,9 +4,9 @@
 
 **Outcome:** an English-only workshop group in **Sweden Central**, with Foundry, Search, telemetry, four candidate models, and a fixed auxiliary planner/judge.
 
-Participants with a prepared `.env` should skip this document and start at [README step 1](../README.md#start). Use Git, Python 3.13, Azure CLI, azd with the Foundry extension, and Bash/WSL.
+Participants with a prepared `.env` should skip this document and start at [README step 1](../README.md#start).
 
-For self-study, you are the environment owner. Complete the [tool and access prerequisites](instructor.en.md#tools) first. Keep this Bash terminal open throughout setup so its paths and login profile remain available.
+For self-study, you are the environment owner. Complete the [basic tool checks](instructor.en.md#tools) and [access prerequisites](instructor.en.md#access) first. Run one block at a time in the same Bash/WSL terminal; keep it open so its paths and login profile remain available.
 
 **To delegate environment creation to GHCP:** start with the [separate installation and startup guide](copilot.en.md). Do not jump to execution prompts before installation and sign-in. Review the account, subscription, and billable scope; installing tools does not grant Azure permissions.
 
@@ -63,7 +63,10 @@ Save the printed absolute `RUN_DIR` path. **Do not run this block again to resum
 | Folder | Purpose | When used |
 |---|---|---|
 | `REPO_ROOT` | Original clone with the guide and preparation tools | Initial setup, then provisioning in steps 2–5 |
+| `RUN_DIR` | This setup's `config.json`, source manifest, and infrastructure records | Provisioning scripts read it through `--run-dir`; it is **not** the runnable source root |
 | `RUN_DIR/workshop` | Isolated runnable source, generated `.env`, Python environment, and CLI profile | Sign-in, step 6, and the participant exercise |
+
+**The runnable configuration is now `RUN_DIR/workshop/.env`.** Editing the original clone's `.env` does not update this generated copy. Keep the saved configuration and ownership records intact when resuming.
 
 Install and test the isolated source:
 
