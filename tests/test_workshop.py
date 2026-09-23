@@ -439,5 +439,239 @@ class SummaryTableTests(unittest.TestCase):
         self.assertIn("improved Foundry-score failures: improved-sol-D04 (relevance 3)", lines)
 
 
+class Level2Tests(unittest.TestCase):
+    def foundry_grade(self):
+        from foundry_eval import BUSINESS_CONTRACT_CODE
+        namespace = {}
+        exec(BUSINESS_CONTRACT_CODE, namespace)
+        return namespace["grade"]
+
+    def test_foundry_business_contract_matches_local_grading(self):
+        from foundry_eval import BUSINESS_CONTRACT_CODE
+        self.assertNotIn("from grading", BUSINESS_CONTRACT_CODE)
+        foundry_grade = self.foundry_grade()
+        case = {"expected_decision": "allowed", "required_numbers": ["180000"], "allowed_citations": ["TRAVEL-2026"],
+                "citation_required": True}
+        variants = [
+            {"decision": "allowed", "answer": "Allowed; the limit is KRW 180,000.", "citations": ["TRAVEL-2026"], "source_ids": ["TRAVEL-2026"]},
+            {"decision": "allowed", "answer": "Allowed; the limit is KRW 180,000.", "citations": ["Current policy"], "source_ids": ["TRAVEL-2026"]},
+            {"decision": "not_allowed", "answer": "허용 한도는 18만 원입니다.", "citations": ["TRAVEL-2026"], "source_ids": ["TRAVEL-2026"]},
+            {"decision": "allowed", "answer": "Allowed.", "citations": [], "source_ids": ["TRAVEL-2026"]},
+        ]
+        for row in variants:
+            local = grade(row, case)
+            item = {
+                "decision": row["decision"], "expected_decision": case["expected_decision"], "response": row["answer"],
+                "required_numbers": json.dumps(case["required_numbers"]), "citations": json.dumps(row["citations"]),
+                "source_ids": json.dumps(row["source_ids"]), "allowed_citations": json.dumps(case["allowed_citations"]),
+                "citation_required": "true",
+            }
+            score = foundry_grade({}, item)
+            self.assertEqual(score == 1.0, local["passed"], row)
+            self.assertAlmostEqual(score, sum(local["checks"].values()) / 5, msg=str(row))
+
+    def test_evaluators_are_prefixed_and_typed(self):
+        from foundry_eval import evaluator_specs
+        specs = evaluator_specs("ll-test")
+        self.assertEqual([body["name"] for _, _, body in specs], ["ll-test-business-contract", "ll-test-policy-rubric"])
+        self.assertEqual([body["definition"]["type"] for _, _, body in specs], ["code", "rubric"])
+        self.assertEqual(specs[1][2]["definition"]["pass_threshold"], 0.7)
+
+    def test_suite_table_and_tally(self):
+        from foundry_eval import format_suite_table, tally
+        items = [
+            {"results": [{"name": "business_contract", "passed": False}, {"name": "groundedness", "passed": True}]},
+            {"results": [{"name": "business_contract", "passed": True}, {"name": "groundedness", "passed": True}]},
+        ]
+        counts, errored = tally(items)
+        self.assertEqual((counts["business_contract"], errored), ({"passed": 1, "total": 2}, 0))
+        suite = {"kinds": {"business_contract": "code", "groundedness": "RAG"},
+                 "runs": {"baseline": {"counts": {"business_contract": {"passed": 0, "total": 2}, "groundedness": {"passed": 2, "total": 2}}},
+                          "improved": {"counts": counts}}}
+        lines = format_suite_table(suite, ["baseline", "improved"]).splitlines()
+        self.assertRegex(lines[1], r"^business_contract\s+code\s+0/2\s+1/2$")
+        rate_limited = [{"results": [{"name": "relevance", "passed": None, "status": "completed"},
+                                     {"name": "relevance", "passed": None, "status": "error"}]}]
+        self.assertEqual(tally(rate_limited), ({}, 1))
+
+    def test_insight_summary_lists_effects_and_clusters(self):
+        from foundry_eval import insight_summary
+        comparison = {"comparisons": [{
+            "testingCriteria": "business_contract",
+            "baselineRunSummary": {"average": 0.6},
+            "compareItems": [{"treatmentRunSummary": {"average": 0.99}, "deltaEstimate": 0.39, "pValue": 0.0, "treatmentEffect": "Changed"}],
+        }]}
+        clusters = {"clusterInsight": {"clusters": [{"label": "inadequate_final_answer", "suggestionTitle": "Provide Concrete Limit",
+                                                    "subClusters": [{"label": "incomplete_policy_answer", "samples": [{"evaluationResult": {"name": "relevance"}}], "suggestionTitle": "Require Direct Answers"}]}]}}
+        text = insight_summary(comparison, clusters)
+        self.assertRegex(text, r"business_contract\s+0\.60\s+0\.99\s+\+0\.39\s+0\.000\s+Changed")
+        self.assertIn("- inadequate_final_answer [relevance x1]: Provide Concrete Limit", text)
+        self.assertIn("  - incomplete_policy_answer [relevance x1]: Require Direct Answers", text)
+        self.assertIn("Failure clusters in the candidate run: none", insight_summary(comparison, None))
+
+    def test_suite_retry_replaces_a_failed_run(self):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from foundry_eval import digest as suite_digest, evaluate_suite
+        items = [{"row_id": "r1"}]
+        criteria = [{"name": "business_contract"}]
+        output = [SimpleNamespace(model_dump=lambda **_: {"results": [{"name": "business_contract", "passed": True}]})]
+        created = []
+        runs = SimpleNamespace(
+            create=lambda **kwargs: created.append(kwargs) or SimpleNamespace(id="run-new", status="completed"),
+            output_items=SimpleNamespace(list=lambda **_: output),
+        )
+        client = SimpleNamespace(evals=SimpleNamespace(runs=runs))
+        project = SimpleNamespace(get_openai_client=lambda: nullcontext(client))
+        with tempfile.TemporaryDirectory() as directory:
+            suite_dir = Path(directory)
+            failed = {"run_id": "run-old", "input_hash": suite_digest(items), "status": "failed"}
+            (suite_dir / "suite.json").write_text(json.dumps({
+                "eval_id": "eval-1", "criteria_hash": suite_digest(criteria), "kinds": {"business_contract": "code"},
+                "runs": {"baseline": failed},
+            }), encoding="utf-8")
+            with patch("foundry_eval.SUITE_DIR", suite_dir), \
+                    patch("foundry_eval.RuntimeConfig.from_env", return_value=SimpleNamespace(prefix="ll-test")), \
+                    patch("foundry_eval.load_state", return_value={}), patch("foundry_eval.required", return_value="judge"), \
+                    patch("foundry_eval.suite_items", return_value=({"run_id": "baseline-run"}, items)), \
+                    patch("foundry_eval.suite_criteria", return_value=(criteria, {"business_contract": "code"})), \
+                    patch("foundry_eval.project_client", return_value=nullcontext(project)), patch("builtins.print"):
+                with self.assertRaisesRegex(ValueError, "ended as failed. Re-run with --retry-failed"):
+                    evaluate_suite(["baseline"])
+                self.assertEqual(created, [])
+                suite = evaluate_suite(["baseline"], retry_failed=True)
+        self.assertEqual(len(created), 1)
+        self.assertEqual(suite["attempts"]["baseline"], [failed])
+        self.assertEqual(suite["runs"]["baseline"]["run_id"], "run-new")
+        self.assertEqual(suite["runs"]["baseline"]["counts"], {"business_contract": {"passed": 1, "total": 1}})
+
+    def test_suite_item_error_is_recorded_and_retried(self):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from foundry_eval import digest as suite_digest, evaluate_suite
+        items = [{"row_id": "r1"}]
+        criteria = [{"name": "business_contract"}]
+        outputs = {"run-1": [{"id": "o1", "status": "error", "results": []}],
+                   "run-2": [{"id": "o2", "status": "completed", "results": [{"name": "business_contract", "passed": True}]}]}
+        ids = iter(["run-1", "run-2"])
+        runs = SimpleNamespace(
+            create=lambda **_: SimpleNamespace(id=next(ids), status="completed"),
+            output_items=SimpleNamespace(list=lambda run_id, **_: [SimpleNamespace(model_dump=lambda item=item, **__: item) for item in outputs[run_id]]),
+        )
+        project = SimpleNamespace(get_openai_client=lambda: nullcontext(SimpleNamespace(evals=SimpleNamespace(runs=runs))))
+        with tempfile.TemporaryDirectory() as directory:
+            suite_dir = Path(directory)
+            (suite_dir / "suite.json").write_text(json.dumps({
+                "eval_id": "eval-1", "criteria_hash": suite_digest(criteria), "kinds": {"business_contract": "code"}, "runs": {},
+            }), encoding="utf-8")
+            with patch("foundry_eval.SUITE_DIR", suite_dir), \
+                    patch("foundry_eval.RuntimeConfig.from_env", return_value=SimpleNamespace(prefix="ll-test")), \
+                    patch("foundry_eval.load_state", return_value={}), patch("foundry_eval.required", return_value="judge"), \
+                    patch("foundry_eval.suite_items", return_value=({"run_id": "baseline-run"}, items)), \
+                    patch("foundry_eval.suite_criteria", return_value=(criteria, {"business_contract": "code"})), \
+                    patch("foundry_eval.project_client", return_value=nullcontext(project)), patch("builtins.print"):
+                with self.assertRaisesRegex(ValueError, "1 evaluator results failed.*--retry-failed"):
+                    evaluate_suite(["baseline"])
+                self.assertEqual(json.loads((suite_dir / "suite.json").read_text(encoding="utf-8"))["runs"]["baseline"]["errored_results"], 1)
+                suite = evaluate_suite(["baseline"], retry_failed=True)
+        self.assertEqual(suite["attempts"]["baseline"][0]["run_id"], "run-1")
+        self.assertEqual((suite["runs"]["baseline"]["run_id"], suite["runs"]["baseline"]["counts"]),
+                         ("run-2", {"business_contract": {"passed": 1, "total": 1}}))
+
+    def test_failed_cluster_insight_is_reported_and_regenerated(self):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from foundry_eval import insights
+        ids = iter(["comparison-1", "cluster-1", "cluster-2"])
+        generated = []
+        answers = {
+            "comparison-1": {"state": "Succeeded", "result": {"comparisons": []}},
+            "cluster-1": {"state": "Failed", "error": {"message": "Too Many Requests"}},
+            "cluster-2": {"state": "Succeeded", "result": {"clusterInsight": {"clusters": [
+                {"label": "missing_limit", "suggestionTitle": "State the limit", "samples": [{"evaluationResult": {"name": "relevance"}}]}]}}},
+        }
+        project = SimpleNamespace(beta=SimpleNamespace(insights=SimpleNamespace(
+            generate=lambda insight: generated.append(insight.display_name) or SimpleNamespace(insight_id=next(ids)),
+            get=lambda insight_id: SimpleNamespace(state=answers[insight_id]["state"], as_dict=lambda: answers[insight_id]),
+        )))
+        with tempfile.TemporaryDirectory() as directory:
+            suite_dir = Path(directory)
+            (suite_dir / "suite.json").write_text(json.dumps({"eval_id": "eval-1", "runs": {
+                "baseline": {"run_id": "run-b", "counts": {}}, "improved": {"run_id": "run-i", "counts": {}}}}), encoding="utf-8")
+            with patch("foundry_eval.SUITE_DIR", suite_dir), \
+                    patch("foundry_eval.RuntimeConfig.from_env", return_value=SimpleNamespace(prefix="ll-test")), \
+                    patch("foundry_eval.required", return_value="judge"), \
+                    patch("foundry_eval.project_client", side_effect=lambda _: nullcontext(project)), \
+                    patch("builtins.print") as printed:
+                with self.assertRaisesRegex(ValueError, "Cluster insight failed: Too Many Requests.*re-run insights"):
+                    insights("baseline", "improved")
+                saved = json.loads((suite_dir / "insights.json").read_text(encoding="utf-8"))["baseline->improved"]
+                self.assertNotIn("cluster_id", saved)
+                self.assertEqual(saved["failed_attempts"][0]["id"], "cluster-1")
+                insights("baseline", "improved")
+        self.assertEqual(generated, ["ll-test improved vs baseline", "ll-test improved failure clusters", "ll-test improved failure clusters"])
+        self.assertIn("- missing_limit [relevance x1]: State the limit", printed.call_args.args[0])
+
+    def test_level3_resume_rejects_a_changed_label_or_count(self):
+        from types import SimpleNamespace
+        from foundry_eval import generate_rubric, stress_test
+        with tempfile.TemporaryDirectory() as directory:
+            level3 = Path(directory)
+            (level3 / "rubric-compare.json").write_text(json.dumps({"label": "improved", "run_id": "run-1"}), encoding="utf-8")
+            (level3 / "stress-sol.json").write_text(json.dumps({"count": 15, "run_id": "run-2"}), encoding="utf-8")
+            with patch("foundry_eval.LEVEL3_DIR", level3), \
+                    patch("foundry_eval.RuntimeConfig.from_env", return_value=SimpleNamespace(prefix="ll-test")), \
+                    patch("foundry_eval.load_state", return_value={}), patch("foundry_eval.required", return_value="judge"), \
+                    patch("foundry_eval.owned_evaluator", return_value={"name": "ll-test-policy-rubric", "version": "1"}), \
+                    patch("foundry_eval.project_client", side_effect=AssertionError("no cloud call expected")):
+                with self.assertRaisesRegex(ValueError, "already compares the rubrics on improved. Re-run with --label improved"):
+                    generate_rubric("baseline")
+                with self.assertRaisesRegex(ValueError, "already holds a 15-question run. Re-run with --count 15"):
+                    stress_test("sol", 20)
+
+    def test_gate_exit_codes(self):
+        from foundry_eval import gate
+        gates = {key: {"dev": True, "holdout": True} for key in MODEL_SPECS}
+        with tempfile.TemporaryDirectory() as directory:
+            results = Path(directory)
+            evidence = results / "verified-evidence.json"
+            evidence.write_text(json.dumps({"component_execution_verified": True, "candidate_quality_gates": gates}), encoding="utf-8")
+            with patch("foundry_eval.RESULTS_DIR", results), patch("builtins.print"):
+                self.assertEqual(gate(), 0)
+                gates["sol"]["dev"] = False
+                evidence.write_text(json.dumps({"component_execution_verified": True, "candidate_quality_gates": gates}), encoding="utf-8")
+                self.assertEqual(gate(), 1)
+
+    def test_cleanup_plan_includes_owned_evaluators(self):
+        state = {"owned_models": [], "owned_search_paths": [], "owned_roles": [],
+                 "owned_evaluators": [{"key": "business_contract", "name": "ll-test-business-contract", "version": "1", "kind": "code"},
+                                      {"key": "generated_rubric", "name": "ll-test-generated-rubric", "version": "1",
+                                       "artifact_dataset": "sys-evalartifacts-ll-test-generated-rubric"}],
+                 "owned_datasets": [{"name": "dgj_abc123", "version": "1.0"}]}
+        plan = cleanup_plan(state)
+        state["owned_evaluators"].clear()
+        state["owned_datasets"].clear()
+        self.assertEqual(plan["custom_evaluators"][0], {"name": "ll-test-business-contract", "version": "1"})
+        self.assertEqual(plan["generated_datasets"], [{"name": "dgj_abc123", "version": "1.0"},
+                                                      {"name": "sys-evalartifacts-ll-test-generated-rubric", "version": "*"}])
+        self.assertEqual(cleanup_plan({"owned_models": [], "owned_search_paths": [], "owned_roles": []})["custom_evaluators"], [])
+
+    def test_stress_test_owns_generated_dataset_once(self):
+        from types import SimpleNamespace
+        from foundry_eval import own_generated_dataset
+        dataset_id = "azureai://accounts/a/projects/p/data/dgj_abc123/versions/1.0"
+        run = SimpleNamespace(model_dump=lambda **_: {"data_source": {"item_generation_params": {"output_dataset_id": dataset_id}}})
+        client = SimpleNamespace(evals=SimpleNamespace(runs=SimpleNamespace(retrieve=lambda *_, **__: run)))
+        state = {"owned_datasets": []}
+        with tempfile.TemporaryDirectory() as directory, patch("foundry_eval.save_state") as save:
+            path = Path(directory) / "stress-sol.json"
+            record = {"run_id": "run-1", "eval_id": "eval-1", "status": "failed"}
+            own_generated_dataset(client, record, state, path)
+            own_generated_dataset(client, record, state, path)
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8"))["generated_datasets"], [{"name": "dgj_abc123", "version": "1.0"}])
+        self.assertEqual(state["owned_datasets"], [{"name": "dgj_abc123", "version": "1.0"}])
+        self.assertEqual(save.call_count, 2)
+
+
 if __name__ == "__main__":
     unittest.main()

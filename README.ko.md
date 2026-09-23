@@ -16,7 +16,7 @@
 - **로컬 도구:** Git, Python 3.13, Bash, curl, 편집기, 브라우저. Windows는 WSL을 씁니다.
 - **Azure 도구:** Azure CLI와 azd(`microsoft.foundry` 확장). [도구 설치·확인](docs/instructor.ko.md#tools)
 
-**시작:** 강사에게 완성된 `.env`를 받았다면 [1. 시작 준비](#start)로 갑니다. 그렇지 않다면 [다른 상황](#other-starts)을 봅니다.
+**시작:** 강사에게 완성된 `.env`를 받았다면 [1. 시작 준비](#start)로 갑니다. 그렇지 않다면 [다른 상황](#other-starts)을 봅니다. 시간이 더 있으면 [레벨 2·3](#levels)을 더합니다.
 
 <a id="실습-개요"></a>
 
@@ -47,6 +47,16 @@ V1: 18응답 → trace 하나 검토 → V2: 18응답 → 후보 고정 → hold
 | [10. 정리](#cleanup) | 내 소유 객체만 삭제 |
 
 **시간:** 1–2단계 약 25분, 3–4단계 15분, 5–6단계 30분, 7–8단계 30분, 9–10단계 15분에 여유 5분이며, 끝나면 [세 가지를 보고](#finish)합니다.
+
+<a id="levels"></a>
+
+**레벨 선택:** 레벨마다 같은 폴더에서 9단계와 10단계 사이에 모듈을 더합니다.
+
+| 레벨 | 더하는 내용 | 추가 시간 | 경로 |
+|---|---|---|---|
+| 1. 입문 | 1–10단계의 평가 루프 | — | 1–10단계 |
+| 2. 심화 | Foundry가 custom 코드·rubric 평가기로 업무 계약을 채점하고 기본 제공 평가기 6개와 비교. run 비교와 실패 클러스터 | 약 40분 | 1–9단계 → [레벨 2](docs/level-2.ko.md) → 10단계 |
+| 3. 운영 | Foundry가 생성한 rubric, 합성 질문 스트레스 테스트, red team, CI 릴리스 gate | 약 40분 추가 | 1–9단계 → 레벨 2 → [레벨 3](docs/level-3.ko.md) → 10단계 |
 
 **진행 방법**
 
@@ -826,7 +836,7 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 
 </details>
 
-**다음:** [10. 내 실습 자원만 정리하기](#cleanup)
+**다음:** [10. 내 실습 자원만 정리하기](#cleanup). 레벨 2·3이라면 먼저 [레벨 2](docs/level-2.ko.md)를, 레벨 3이라면 이어서 [레벨 3](docs/level-3.ko.md)을 마칩니다.
 
 <a id="cleanup"></a>
 <a id="12-마무리와-비용-정리"></a>
@@ -849,7 +859,7 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 python scripts/workshop.py cleanup --dry-run
 ```
 
-**완료 확인:** 계획에 내 agent(`LAB_AGENT_NAME`), 내 `LAB_PREFIX` 지식 객체, 내 역할만 있고, 강사가 준비한 모델 배포는 없습니다.
+**완료 확인:** 계획에 내 agent(`LAB_AGENT_NAME`), 내 `LAB_PREFIX` 지식 객체, 내 역할만 있고, 강사가 준비한 모델 배포는 없습니다. 레벨 2·3을 했다면 `<LAB_PREFIX>-...` 이름의 `custom_evaluators`와, `generated_datasets`의 `sys-evalartifacts-<LAB_PREFIX>-generated-rubric`, `stress-test`가 만든 `dgj_...` 질문 세트도 있습니다.
 **다르면:** 멈추고 강사에게 알립니다. 아무것도 삭제하지 않습니다.
 
 ### 10-2. 검토한 계획만 실행
@@ -930,6 +940,7 @@ python scripts/workshop.py check-cleanup
 
 - **결과와 한계:** [평가 방법과 개선 결과](docs/validation.ko.md)
 - **설계와 용어:** [설계·모델·공식 출처](docs/reference.ko.md)
+- **레벨 2·3:** [Foundry custom 평가기와 인사이트](docs/level-2.ko.md) · [생성 rubric·스트레스 테스트·red team·릴리스 gate](docs/level-3.ko.md)
 - **오류:** [문제 해결](docs/troubleshooting.ko.md)
 - **강사:** [강사 준비](docs/instructor.ko.md) · [새 Azure 환경 생성](docs/environment.ko.md)
 - **선택:** [GHCP로 진행](docs/copilot.ko.md)

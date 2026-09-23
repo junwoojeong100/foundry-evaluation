@@ -256,6 +256,22 @@ Use the [rehearsal timing](#rehearsal) below. For **one-off self-study with no l
 
 The 120 minutes assume a prepared environment. Rehearse model deployment, cold starts, RBAC propagation, response generation, evaluator completion, and telemetry ingestion. Do not shorten an overrun by omitting a model, retrieval, or evaluation and calling the workshop complete.
 
+<a id="levels"></a>
+
+## Prepare Levels 2 and 3
+
+Teams choose a level in the [README](../README.md#levels). [Level 2](level-2.en.md) and [Level 3](level-3.en.md) each add about 40 minutes between steps 9 and 10 in the team's own folder. Rehearse the levels you will teach in the rehearsal folder, after its step 9 and before its cleanup.
+
+| Check | Why |
+|---|---|
+| Judge capacity | Level 2 scores 36 saved responses with seven LLM-judged criteria; Level 3 also uses the judge to generate a rubric and synthetic questions. Several teams at once can exceed the judge's rate limit (429). Stagger teams by a few minutes, or raise the judge deployment's capacity within approved quota. |
+| Sol deployment | `stress-test` and `red-team` call the shared Sol candidate directly. Confirm its capacity for the number of teams. |
+| Preview APIs | Custom and generated evaluators, insights, synthetic data generation, and red teaming use preview Foundry APIs. Rehearse them in the target project close to the class date. |
+| Red teaming | The scan sends harmful prompts on purpose (violence, hate and unfairness). Confirm that your organization permits it; otherwise teams skip Level 3 section 3. |
+| Ownership | Step 10 cleanup deletes each team's custom evaluators, the generated rubric's artifact dataset, and synthetic question datasets. Eval groups, insights, and red-team scans remain as evidence. |
+
+**Not automated here:** the Level 3 page lists [features beyond this workshop](level-3.en.md#beyond). To demonstrate trace or continuous evaluation, grant the project's managed identity read access to the connected Application Insights and record message content in traces; this agent records traces without message content.
+
 <a id="handoff"></a>
 
 ## What to hand to each team
@@ -270,6 +286,7 @@ Use this checklist **after rehearsal**, not as a replacement for provisioning.
 | Unused names | A unique `LAB_PREFIX` and `LAB_AGENT_NAME` for each team |
 | Tools | Pass the [basic tool checks](#tools). Complete [additional GHCP setup](copilot.en.md) separately if using it. |
 | Access support | A person who can resolve narrowly scoped role assignment, 403, and capacity issues |
+| Levels 2–3 | If teaching them, the judge and Sol capacity for all teams ([Prepare Levels 2 and 3](#levels)) |
 
 A new participant clone has no local azd binding. The participant must run **`bind` in their own folder**, even if the instructor has already bound another copy.
 

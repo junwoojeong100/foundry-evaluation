@@ -30,6 +30,7 @@ If `collect` finished but `evaluate` stopped, do not paste the block again from 
 | `Label ... already exists` | Read the status files below. If collection is `completed`, find the next unfinished evaluation/trace step. If `failed`, recover collection. If `running`, check the original process: wait while active; [recover collection](#collection-retry) only after confirming it stopped. |
 | Reviewed regression already exists | Verify its row, reason, language, and source trace. Continue only if they match the intended review; do not overwrite it. |
 | Cleanup or its verification stopped | Use [cleanup recovery](#cleanup-recovery); do not repeat successful deletion to fix a failed check. |
+| A Level 2 or 3 command stopped | Use [Level 2–3 recovery](#levels); your step 5–9 results stay unchanged |
 
 **Reopened a terminal?** Open your **existing workshop folder**, not a new clone, and follow [the terminal restore block](../README.md#resume-shell). Do not repeat `init`, `bind`, deployment, or collection just because the terminal is empty.
 
@@ -244,6 +245,29 @@ Project-wide **Evaluations** and an agent's **Evaluation** tab are different lis
 Version comparison is under the **Version dropdown → Compare versions**, not the agent's **More** menu. Select two different versions. One **Send** submits to both panes; sending again creates additional calls.
 
 Search an older trace by its real ID after expanding the time range. Do not substitute another agent's trace, a Korean run, or a screenshot for English execution evidence. Treat separate subscription alert/policy errors separately and never change shared settings merely to match a screenshot.
+
+<a id="levels"></a>
+
+## If a Level 2 or 3 command stopped
+
+Each Level 2–3 command saves its progress under **`src/agent/.foundry/results/suite/`** or **`src/agent/.foundry/results/level3/`** and resumes from it when you run the command again. It only reads your step 5–9 results.
+
+| Message or situation | Next action |
+|---|---|
+| `... still running`, `... still generating`, or `... still in progress`, or the terminal closed during a run | Repeat the same command. It resumes the saved run instead of creating another. |
+| `... evaluator results failed, for example because the judge hit its rate limit` | Wait a minute, then run the command the message prints; it includes `--retry-failed`. Only runs that failed are replaced; each replaced run is kept under `attempts` in `suite.json`. |
+| `Suite run for ... ended as failed` | Resolve the cause, then repeat the command with `--retry-failed`. |
+| `Run register-evaluators before evaluate-suite.` or `Run evaluate-suite --labels ... first.` | Run the command the message names, then repeat. |
+| `Evaluator ... already exists and is not owned by this folder` | Another folder with the same `LAB_PREFIX` created it. Do not delete it; ask the instructor for an unused prefix and use a new folder. |
+| `... was registered with a different definition` or `The suite's evaluators changed ...` | Evaluator code in this folder changed after registration. Restore the repository files; do not edit a registered evaluator. |
+| `Saved ... responses changed after their suite run was created` | A step 5–9 result file changed. Restore it; do not collect responses again. |
+| `... rubric results failed` or `... stress-test results failed` | Delete only the file the message names, wait a minute, and repeat the command. Your ownership record keeps the evaluator or dataset already created, so cleanup still deletes it. |
+| `Comparison insight failed` or `Cluster insight failed` | Wait a minute, then repeat the same command. Only the failed insight is generated again; the failed one stays under `failed_attempts` in `insights.json`. |
+| `Rubric generation ended as ...`, `The run ended as ...`, or `The red-team scan ended as ...` | Keep the named file and show it to the instructor. After the cause is resolved, delete that file and repeat the command. |
+| `... already compares the rubrics on ...` or `... already holds a ...-question run` | That file holds an earlier run with another value. Repeat with the value the message names; to start over with a new value, delete that file first. |
+| An HTTP `429` (Too Many Requests) error | The shared judge or Sol deployment is busy. Wait a few minutes, then repeat the same command; do not raise `--count`. |
+
+Level 2–3 results do not change the step 9 evidence. Finish with [step 10 cleanup](../README.md#cleanup), which also deletes your custom evaluators and generated datasets.
 
 <a id="cleanup-recovery"></a>
 

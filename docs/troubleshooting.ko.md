@@ -32,6 +32,7 @@
 | `Label ... already exists` | 아래 상태 파일 확인. 수집이 `completed`면 아직 끝나지 않은 평가·trace 단계로, `failed`면 수집 복구. `running`이면 원래 프로세스가 실행 중일 때 기다리고, **종료를 확인한 뒤에만** [수집 복구](#collection-retry) |
 | `feedback`에서 이미 같은 회귀 기록이 존재 | 기존 행 ID·검토 이유·출처가 이번에 검토한 내용과 일치할 때만 다음 단계 진행. 다르면 중단하고 확인하며 파일을 지워 우회하지 않음 |
 | 정리 또는 정리 확인 중단 | [정리 복구](#cleanup-recovery). 확인 실패를 해결하려고 성공한 삭제를 반복하지 않음 |
+| 레벨 2·3 명령 중단 | [레벨 2·3 복구](#levels). 5–9단계 결과는 바뀌지 않음 |
 
 **터미널을 다시 열었나요?** 새 clone이 아니라 **기존 실습 폴더**를 열고 [터미널 복원 블록](../README.ko.md#resume-shell)을 따릅니다. 빈 터미널이라는 이유로 `init`·`bind`·배포·수집을 반복하지 않습니다.
 
@@ -250,6 +251,29 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 - 구독 경보·정책의 ARM 오류는 모델 평가와 구분해 강사에게 확인합니다. 공유 구독 설정을 바꿔서 영상과 화면을 맞추지 않습니다.
 
 원인별 설계 배경은 [참고 설명](reference.ko.md), 권한·모델 준비는 [강사 가이드](instructor.ko.md)를 확인합니다.
+
+<a id="levels"></a>
+
+## 레벨 2·3 명령이 중단됐다면
+
+레벨 2·3 명령은 진행 상태를 **`src/agent/.foundry/results/suite/`** 또는 **`src/agent/.foundry/results/level3/`**에 저장하고, 같은 명령을 다시 실행하면 거기서 이어갑니다. 5–9단계 결과는 읽기만 합니다.
+
+| 메시지 또는 상황 | 다음 행동 |
+|---|---|
+| `... still running`, `... still generating`, `... still in progress`, 또는 실행 중 터미널이 닫힘 | 같은 명령을 다시 실행합니다. 새 run을 만들지 않고 저장된 run을 이어갑니다. |
+| `... evaluator results failed, for example because the judge hit its rate limit` | 1분 기다린 뒤 메시지에 나온 명령을 실행합니다. `--retry-failed`가 포함되어 있습니다. 실패한 run만 교체되고, 교체된 run은 `suite.json`의 `attempts`에 남습니다. |
+| `Suite run for ... ended as failed` | 원인을 해결한 뒤 같은 명령을 `--retry-failed`와 함께 실행합니다. |
+| `Run register-evaluators before evaluate-suite.` 또는 `Run evaluate-suite --labels ... first.` | 메시지가 가리키는 명령을 먼저 실행한 뒤 다시 실행합니다. |
+| `Evaluator ... already exists and is not owned by this folder` | 같은 `LAB_PREFIX`를 쓰는 다른 폴더가 만든 평가기입니다. 삭제하지 말고, 강사에게 사용하지 않은 prefix를 받아 새 폴더에서 진행합니다. |
+| `... was registered with a different definition` 또는 `The suite's evaluators changed ...` | 등록 후 이 폴더의 평가기 코드가 바뀌었습니다. 저장소 파일을 원래대로 되돌리고, 등록된 평가기를 수정하지 않습니다. |
+| `Saved ... responses changed after their suite run was created` | 5–9단계 결과 파일이 바뀌었습니다. 원래 파일로 되돌리고, 응답을 다시 수집하지 않습니다. |
+| `... rubric results failed` 또는 `... stress-test results failed` | 메시지에 나온 파일만 삭제하고 1분 기다린 뒤 같은 명령을 실행합니다. 이미 만든 평가기나 데이터셋은 소유 기록에 남아 있어 정리 단계에서 함께 삭제됩니다. |
+| `Comparison insight failed` 또는 `Cluster insight failed` | 1분 기다린 뒤 같은 명령을 실행합니다. 실패한 인사이트만 다시 만들고, 실패한 인사이트는 `insights.json`의 `failed_attempts`에 남습니다. |
+| `Rubric generation ended as ...`, `The run ended as ...`, `The red-team scan ended as ...` | 메시지에 나온 파일을 보존하고 강사에게 보여 줍니다. 원인을 해결한 뒤 그 파일을 삭제하고 같은 명령을 실행합니다. |
+| `... already compares the rubrics on ...` 또는 `... already holds a ...-question run` | 그 파일에 다른 값으로 실행한 이전 run이 있습니다. 메시지에 나온 값으로 다시 실행하고, 새 값으로 처음부터 하려면 먼저 그 파일을 삭제합니다. |
+| HTTP `429`(Too Many Requests) 오류 | 공유 judge나 Sol 배포가 바쁩니다. 몇 분 기다린 뒤 같은 명령을 실행하고, `--count`를 늘리지 않습니다. |
+
+레벨 2·3 결과는 9단계 증거를 바꾸지 않습니다. 마지막에는 [10단계 정리](../README.ko.md#cleanup)를 실행하며, 내 custom 평가기와 생성된 데이터셋도 함께 삭제됩니다.
 
 <a id="cleanup-recovery"></a>
 

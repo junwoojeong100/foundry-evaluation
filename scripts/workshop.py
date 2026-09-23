@@ -14,6 +14,7 @@ from cloud_setup import (
 from common import RESULTS_DIR, utc_stamp, write_json
 from contracts import MODEL_SPECS
 from experiments import calibrate, collect, compare, evaluate, feedback, smoke, summary_table, verify_evidence
+from foundry_eval import evaluate_suite, gate, generate_rubric, insights, red_team, register_evaluators, stress_test
 from knowledge import retrieve
 from observability import monitor
 from settings import RuntimeConfig, credential, load_settings_env
@@ -49,6 +50,21 @@ def main() -> None:
     evaluation.add_argument("--retry-failed", action="store_true")
     sub.add_parser("compare").add_argument("--labels", nargs="+", required=True)
     sub.add_parser("summary").add_argument("--labels", nargs="+", required=True)
+    sub.add_parser("register-evaluators")
+    suite = sub.add_parser("evaluate-suite")
+    suite.add_argument("--labels", nargs="+", required=True)
+    suite.add_argument("--timeout", type=int, default=1800)
+    suite.add_argument("--retry-failed", action="store_true")
+    insight = sub.add_parser("insights")
+    insight.add_argument("--baseline", required=True)
+    insight.add_argument("--candidate", required=True)
+    rubric = sub.add_parser("generate-rubric")
+    rubric.add_argument("--label", default="improved")
+    stress = sub.add_parser("stress-test")
+    stress.add_argument("--model", choices=list(MODEL_SPECS), default="sol")
+    stress.add_argument("--count", type=int, default=15)
+    sub.add_parser("red-team").add_argument("--model", choices=list(MODEL_SPECS), default="sol")
+    sub.add_parser("gate")
     review = sub.add_parser("feedback")
     review.add_argument("--label", required=True)
     review.add_argument("--row-id", required=True)
@@ -103,6 +119,20 @@ def main() -> None:
         compare(args.labels)
     elif args.command == "summary":
         summary_table(args.labels)
+    elif args.command == "register-evaluators":
+        register_evaluators()
+    elif args.command == "evaluate-suite":
+        evaluate_suite(args.labels, args.timeout, args.retry_failed)
+    elif args.command == "insights":
+        insights(args.baseline, args.candidate)
+    elif args.command == "generate-rubric":
+        generate_rubric(args.label)
+    elif args.command == "stress-test":
+        stress_test(args.model, args.count)
+    elif args.command == "red-team":
+        red_team(args.model)
+    elif args.command == "gate":
+        sys.exit(gate())
     elif args.command == "feedback":
         feedback(args.label, args.row_id, args.reason, args.reviewer)
     elif args.command == "monitor":

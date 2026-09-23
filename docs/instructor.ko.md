@@ -286,6 +286,22 @@ cd foundry-evaluation-rehearsal-ko
 
 기준 시간표를 넘으면 **참가자 시작 전에** 모델 용량·동시성·준비 상태를 조정한다. 실습 중 지식 검색·평가·세 모델 중 일부를 빼고 완료로 처리하지 않는다.
 
+<a id="levels"></a>
+
+## 레벨 2·3 준비
+
+참가자는 [README](../README.ko.md#levels)에서 레벨을 고른다. [레벨 2](level-2.ko.md)와 [레벨 3](level-3.ko.md)은 각각 약 40분이며, 조의 폴더에서 9단계와 10단계 사이에 진행한다. 가르칠 레벨은 리허설 폴더에서 9단계 후, 정리 전에 리허설한다.
+
+| 확인 | 이유 |
+|---|---|
+| judge 용량 | 레벨 2는 저장된 36응답을 LLM이 판정하는 기준 7개로 채점하고, 레벨 3은 rubric과 합성 질문 생성에도 judge를 쓴다. 여러 조가 동시에 실행하면 judge의 속도 제한(429)을 넘을 수 있다. 조마다 몇 분씩 시작을 나누거나 승인된 quota 안에서 judge 배포 용량을 늘린다. |
+| Sol 배포 | `stress-test`와 `red-team`은 공유 Sol 후보 배포를 직접 호출한다. 조 수에 맞는 용량을 확인한다. |
+| preview API | custom·생성 평가기, 인사이트, 합성 데이터 생성, red team은 Foundry preview API를 쓴다. 수업 날짜에 가깝게 대상 프로젝트에서 리허설한다. |
+| red team | 스캔은 의도적으로 유해한 프롬프트(폭력, 혐오·불공정)를 보낸다. 조직에서 허용하는지 확인하고, 허용되지 않으면 레벨 3의 3절은 건너뛴다. |
+| 소유권 | 10단계 정리가 조별 custom 평가기, 생성 rubric의 산출물 데이터셋, 합성 질문 데이터셋을 삭제한다. eval group, 인사이트, red team 스캔은 증거로 남는다. |
+
+**이 저장소가 자동화하지 않는 것:** 레벨 3 문서의 [실습 범위 밖의 운영 기능](level-3.ko.md#beyond)을 본다. trace 평가나 연속 평가를 시연하려면 프로젝트 managed identity에 연결된 Application Insights 읽기 권한을 주고 trace에 메시지 내용을 기록해야 한다. 이 에이전트는 메시지 내용 없이 trace를 기록한다.
+
 <a id="handoff"></a>
 
 ## 참가자에게 전달할 것
@@ -300,12 +316,13 @@ cd foundry-evaluation-rehearsal-ko
 | 고유한 이름 | 참가자가 아직 사용하지 않은 `LAB_PREFIX`, `LAB_AGENT_NAME` |
 | 준비된 도구 | [기본 도구 설치·확인](#tools) 통과. GHCP 사용 시 [추가 준비](copilot.ko.md)는 별도 수행 |
 | 도움받을 담당자 | `grant-agent-access` 역할 부여·403·quota 오류를 처리할 담당자 |
+| 레벨 2·3 | 가르친다면 모든 조를 감당할 judge·Sol 용량([레벨 2·3 준비](#levels)) |
 
 **중요:** `.env`만 전달한 새 clone에는 로컬 azd 환경이 없다. 참가자는 README 1단계의 **`bind`를 자기 폴더에서 실행**한다. 강사 PC에서 바인딩했다는 이유로 이 단계를 생략하지 않는다.
 
 ## 운영 확장 범위
 
-2시간 뒤에 확장할 수 있는 주제는 continuous evaluation, 알림, CI/CD quality gate, prompt optimizer, fine-tuning/RL, 여러 공급자의 모델, 사용자별 문서 권한이다. 이번 실습의 “사람이 검토한 회귀 데이터 → 개선 후보 → holdout” 통제 구조를 유지하면서 추가한다.
+[레벨 2·3](#levels)이 custom 평가기, 인사이트, 생성 rubric, 스트레스 테스트, red team, CI 릴리스 gate를 다룬다. 그 밖에 확장할 수 있는 주제는 continuous evaluation, 알림, prompt optimizer, fine-tuning/RL, 여러 공급자의 모델, 사용자별 문서 권한이다. 이번 실습의 “사람이 검토한 회귀 데이터 → 개선 후보 → holdout” 통제 구조를 유지하면서 추가한다.
 
 ## 정리 원칙
 

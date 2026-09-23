@@ -438,8 +438,42 @@ def cleanup_plan(state: dict[str, Any]) -> dict[str, Any]:
         "models": [dict(model) for model in state["owned_models"]],
         "search_objects": list(reversed(state["owned_search_paths"])),
         "role_assignments": list(state["owned_roles"]),
+        "custom_evaluators": [{"name": item["name"], "version": item["version"]} for item in state.get("owned_evaluators", [])],
+        "generated_datasets": [dict(item) for item in state.get("owned_datasets", [])]
+        + [{"name": item["artifact_dataset"], "version": "*"} for item in state.get("owned_evaluators", []) if item.get("artifact_dataset")],
         "preserved": ["existing Foundry project", "existing Search service", "existing App Insights", "evaluation evidence"],
     }
+
+
+def delete_owned_evaluators(config: RuntimeConfig, state: dict[str, Any]) -> None:
+    owned = state.get("owned_evaluators", [])
+    datasets = state.get("owned_datasets", [])
+    if not owned and not datasets:
+        return
+    with AIProjectClient(endpoint=config.project_endpoint, credential=credential(), allow_preview=True) as project:
+        for item in list(owned):
+            if not item["name"].startswith(config.prefix + "-"):
+                raise ValueError("Unexpected custom evaluator cleanup name.")
+            try:
+                project.beta.evaluators.delete_version(name=item["name"], version=item["version"])
+            except ResourceNotFoundError:
+                pass
+            if item.get("artifact_dataset"):
+                try:
+                    versions = list(project.datasets.list_versions(item["artifact_dataset"]))
+                except ResourceNotFoundError:
+                    versions = []
+                for version in versions:
+                    project.datasets.delete(name=version.name, version=version.version)
+            owned.remove(item)
+            save_state(state)
+        for item in list(datasets):
+            try:
+                project.datasets.delete(name=item["name"], version=item["version"])
+            except ResourceNotFoundError:
+                pass
+            datasets.remove(item)
+            save_state(state)
 
 
 def cleanup(confirm: bool) -> None:
@@ -481,6 +515,7 @@ def cleanup(confirm: bool) -> None:
         az("role", "assignment", "delete", "--ids", assignment)
         state["owned_roles"].remove(assignment)
         save_state(state)
+    delete_owned_evaluators(config, state)
     state["cleanup_complete"] = True
     save_state(state)
     write_json(RESULTS_DIR / "cleanup.json", {"plan": plan, "completed": True})
@@ -514,8 +549,21 @@ def check_cleanup() -> dict[str, Any]:
         roles = az("role", "assignment", "list", "--scope", assignment_scope, "--include-inherited")
         if any(role["id"].casefold() == assignment.casefold() for role in roles):
             raise ValueError("A temporary role assignment still exists.")
-    with AIProjectClient(endpoint=config.project_endpoint, credential=credential()) as project:
+    with AIProjectClient(endpoint=config.project_endpoint, credential=credential(), allow_preview=True) as project:
         connections = [item for item in project.connections.list() if "insight" in str(item.type).lower()]
+        for evaluator in plan.get("custom_evaluators", []):
+            try:
+                project.beta.evaluators.get_version(evaluator["name"], evaluator["version"])
+            except ResourceNotFoundError:
+                continue
+            raise ValueError(f"A temporary custom evaluator still exists: {evaluator['name']}")
+        for dataset in plan.get("generated_datasets", []):
+            try:
+                versions = [item.version for item in project.datasets.list_versions(dataset["name"])]
+            except ResourceNotFoundError:
+                versions = []
+            if dataset["version"] == "*" and versions or dataset["version"] in versions:
+                raise ValueError(f"A temporary generated dataset still exists: {dataset['name']}")
     if len(connections) != 1 or connections[0].metadata.get("ResourceId", "").casefold() != found["app_insights"]["id"].casefold():
         raise ValueError("The non-destructive App Insights metadata correction was not retained.")
     result = {
@@ -523,6 +571,8 @@ def check_cleanup() -> dict[str, Any]:
         "temporary_model_deployments_absent": len(plan["models"]),
         "temporary_search_objects_absent": len(plan["search_objects"]),
         "temporary_role_assignments_absent": len(plan["role_assignments"]),
+        "temporary_custom_evaluators_absent": len(plan.get("custom_evaluators", [])),
+        "temporary_generated_datasets_absent": len(plan.get("generated_datasets", [])),
         "existing_foundry_project_preserved": True,
         "existing_search_service_preserved": True,
         "existing_application_insights_preserved": True,

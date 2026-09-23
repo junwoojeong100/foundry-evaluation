@@ -16,7 +16,7 @@ You compare **48 real responses** without writing application code, then report 
 - **Local tools:** Git, Python 3.13, Bash, curl, an editor, and a browser; on Windows, use WSL.
 - **Azure tools:** Azure CLI and azd with the `microsoft.foundry` extension. [Install and check the tools](docs/instructor.en.md#tools)
 
-**Start:** if your instructor gave you a complete `.env`, go to [1. Prepare your workspace](#start). Otherwise, see [other situations](#other-starts).
+**Start:** if your instructor gave you a complete `.env`, go to [1. Prepare your workspace](#start). Otherwise, see [other situations](#other-starts). With more time, add [Level 2 or 3](#levels).
 
 <a id="workshop-overview"></a>
 
@@ -47,6 +47,16 @@ V1: 18 responses → review one trace → V2: 18 responses → freeze → holdou
 | [10. Clean up](#cleanup) | Only your owned objects are removed |
 
 **Time:** about 25 minutes for steps 1–2, 15 for 3–4, 30 for 5–6, 30 for 7–8, and 15 for 9–10, plus a 5-minute buffer; then [report three points](#finish).
+
+<a id="levels"></a>
+
+**Choose a level:** each level adds modules between steps 9 and 10, in the same folder.
+
+| Level | Adds | Extra time | Path |
+|---|---|---|---|
+| 1. Basic | The evaluation loop in steps 1–10 | — | Steps 1–10 |
+| 2. Advanced | Foundry scores your business contract with custom code and rubric evaluators, next to six built-in evaluators; run comparison and failure clusters | About 40 minutes | Steps 1–9 → [Level 2](docs/level-2.en.md) → step 10 |
+| 3. Operations | A rubric Foundry generates, a synthetic stress test, red teaming, and a CI release gate | About 40 more minutes | Steps 1–9 → Level 2 → [Level 3](docs/level-3.en.md) → step 10 |
 
 **How to follow the steps**
 
@@ -789,7 +799,7 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 
 </details>
 
-**Next:** [10. Clean up only your owned workshop objects](#cleanup)
+**Next:** [10. Clean up only your owned workshop objects](#cleanup). On Level 2 or 3, first complete [Level 2](docs/level-2.en.md) and, for Level 3, [Level 3](docs/level-3.en.md).
 
 <a id="cleanup"></a>
 
@@ -811,7 +821,7 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 python scripts/workshop.py cleanup --dry-run
 ```
 
-**Checkpoint:** the plan lists only your agent (`LAB_AGENT_NAME`), your `LAB_PREFIX` knowledge objects, and your role assignments; no instructor-prepared model deployment appears.
+**Checkpoint:** the plan lists only your agent (`LAB_AGENT_NAME`), your `LAB_PREFIX` knowledge objects, and your role assignments; no instructor-prepared model deployment appears. After Levels 2–3 it also lists `custom_evaluators` named `<LAB_PREFIX>-...`, and `generated_datasets`: `sys-evalartifacts-<LAB_PREFIX>-generated-rubric` and the `dgj_...` question sets that `stress-test` created.
 **If not:** stop and tell the instructor; delete nothing.
 
 ### 10-2. Delete only the reviewed plan
@@ -892,6 +902,7 @@ Use this table only if you did not start from a complete `.env`, or after finish
 
 - **Results and limits:** [evaluation method and English results](docs/validation.en.md)
 - **Design and terms:** [architecture, models, and official sources](docs/reference.en.md)
+- **Levels 2–3:** [Foundry custom evaluators and insights](docs/level-2.en.md) · [generated rubric, stress test, red teaming, and release gate](docs/level-3.en.md)
 - **Errors:** [troubleshooting](docs/troubleshooting.en.md)
 - **Instructors:** [instructor preparation](docs/instructor.en.md) · [create a new English Azure environment](docs/environment.en.md)
 - **Optional:** [delegate to GHCP](docs/copilot.en.md)
