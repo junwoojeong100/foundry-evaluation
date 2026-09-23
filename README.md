@@ -712,23 +712,22 @@ These files are inputs to later workshop commands, not disposable success screen
 ## English summary video — optional
 
 <details>
-<summary>Watch the 11m39s English walkthrough recorded with the previous four candidates</summary>
+<summary>Watch the 7m05s English workshop summary</summary>
 
-[Play the previous-configuration English summary video — 11m39s](https://github.com/user-attachments/assets/97562443-49da-45d0-9554-3ce740e26e7c)
+[English workshop summary (MP4, 7.3 MiB)](videos/foundry-evaluation-gpt6-en-20260923b.mp4)
 
-This video was recorded on September 16, 2026 with **the previous four candidate models and 64 responses**. The commands and procedure are the same, but model names, response counts, and scores differ from this guide. Follow the current text and screenshots, which use **three candidates (`gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`) and 48 responses**.
-
-**11m39s of actual English CLI, Azure Portal, and Foundry Portal footage**, edited into guide order. **Silent, with English on-screen explanations.** Long waits are shortened and actual result frames are held for reading; authentication and MFA are not recorded. The recording checks calibration during environment preparation; the current text also makes that check explicit before baseline evaluation. Follow the text's checkpoints when the older recording groups commands differently.
-
-Instructor setup starts at **00:13**. If your environment is already prepared, move the player's time slider to **03:07**.
+Built from the verified English rerun on September 23, 2026 (`en-20260923b`) with three candidates (`gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`) and 48 responses. **Foundry portal segments are Playwright headless recordings. CLI segments show that run's saved actual output rendered as terminal frames; they are not live screen capture.**
+Silent, with English on-screen explanations. Waits are trimmed, sign-in and MFA were not recorded, and account and subscription identifiers are redacted.
 
 | Step | Video position | Step | Video position |
 |---|---|---|---|
-| 1. Prepare | 03:07 | 2. Knowledge | 03:26 |
-| 3. Local agent | 04:20 | 4. Hosted agent | 04:54 |
-| 5. Baseline | 05:37 | 6. Trace and review | 06:18 |
-| 7. V2 comparison | 07:17 | 8. Holdout | 08:54 |
-| 9. Observe | 09:45 | 10. Cleanup | 10:46 |
+| 1. Prepare | 00:07 | 2. Knowledge | 00:28 |
+| 3. Local agent | 01:07 | 4. Hosted agent | 01:29 |
+| 5. Baseline | 01:48 | 6. Trace and review | 02:28 |
+| 7. V2 comparison | 03:34 | 8. Holdout | 04:57 |
+| 9. Observe | 05:36 | 10. Cleanup | 06:33 |
+
+If the video groups commands differently from the text, follow the text's checkpoints. The [Korean guide](README.ko.md#summary-video) has a 13m27s recording of the Korean run with live CLI footage.
 
 </details>
 
