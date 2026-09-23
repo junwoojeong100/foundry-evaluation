@@ -261,9 +261,9 @@ Each Level 2–3 command saves its progress under **`src/agent/.foundry/results/
 | `Evaluator ... already exists and is not owned by this folder` | Another folder with the same `LAB_PREFIX` created it. Do not delete it; ask the instructor for an unused prefix and use a new folder. |
 | `... was registered with a different definition` or `The suite's evaluators changed ...` | Evaluator code in this folder changed after registration. Restore the repository files; do not edit a registered evaluator. |
 | `Saved ... responses changed after their suite run was created` | A step 5–9 result file changed. Restore it; do not collect responses again. |
-| `... rubric results failed` or `... stress-test results failed` | Delete only the file the message names, wait a minute, and repeat the command. Your ownership record keeps the evaluator or dataset already created, so cleanup still deletes it. |
+| `... rubric results failed`, `... stress-test results failed`, or `... red-team results failed` | Delete only the file the message names, wait a minute, and repeat the command. For the rubric and the stress test, your ownership record keeps the evaluator or dataset already created, so cleanup still deletes it. |
 | `Comparison insight failed` or `Cluster insight failed` | Wait a minute, then repeat the same command. Only the failed insight is generated again; the failed one stays under `failed_attempts` in `insights.json`. |
-| `Rubric generation ended as ...`, `The run ended as ...`, or `The red-team scan ended as ...` | Keep the named file and show it to the instructor. After the cause is resolved, delete that file and repeat the command. |
+| `Rubric generation ended as ...` or `The run ended as ...` | Keep the named file and show it to the instructor. After the cause is resolved, delete that file and repeat the command. |
 | `... already compares the rubrics on ...` or `... already holds a ...-question run` | That file holds an earlier run with another value. Repeat with the value the message names; to start over with a new value, delete that file first. |
 | An HTTP `429` (Too Many Requests) error | The shared judge or Sol deployment is busy. Wait a few minutes, then repeat the same command; do not raise `--count`. |
 | `This folder has no deployed hosted agent` | `evaluate-agent` and `continuous-eval` need the agent that step 10 deletes. If you already cleaned up, skip those sections; do not redeploy for them. |
@@ -273,7 +273,7 @@ Each Level 2–3 command saves its progress under **`src/agent/.foundry/results/
 | `... traces were not found` | Recent traces may still be ingesting. Wait a few minutes, delete the file the message names, and repeat. |
 | `Schedule ... already exists and is not owned by this folder` | Another folder with the same `LAB_PREFIX` created it. Do not delete it; ask the instructor for an unused prefix. |
 | `No scheduled run yet` | The first continuous-evaluation run starts at the printed time. Run `continuous-eval` again after it. |
-| The `red-team` link opens the Foundry home page | The report opens in the classic view: turn off **New Foundry** in the header, open the link again, and turn **New Foundry** back on afterwards. |
+| The `red-team` scan is hard to find in the portal | In New Foundry, open **Evaluations → Red team** and select `<LAB_PREFIX>-red-team-sol`. Read the rates under **Overall metric results**; the list's **Issues in last run** column is not the number of successful attacks. |
 
 Level 2–3 results do not change the step 9 evidence. Finish with [step 10 cleanup](../README.md#cleanup), which also deletes your continuous-evaluation schedule, custom evaluators, and generated datasets.
 

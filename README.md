@@ -964,7 +964,7 @@ Use this table only if you did not start from a complete `.env`, or after finish
 
 [English workshop summary (MP4, 8.1 MiB)](videos/foundry-evaluation-gpt6-en-20260923b.mp4)
 
-It replays the verified English run of September 23, 2026 (`en-20260923b`): portal segments are headless recordings, and **CLI segments replay saved output, not live capture**. The Level 2 and Level 3 chapters replay the saved output of the same day's level rehearsals. It is silent, and sign-in and account identifiers are removed. If the video and the text differ, follow the text.
+It replays the verified English run of September 23, 2026 (`en-20260923b`): portal segments are headless recordings, and **CLI segments replay saved output, not live capture**. The Level 2 and Level 3 chapters replay the saved output of the same day's level rehearsals; the red-team chapter shows a rerun with the current `red-team` command. It is silent, and sign-in and account identifiers are removed. If the video and the text differ, follow the text.
 
 | Step | Video position | Step | Video position |
 |---|---|---|---|

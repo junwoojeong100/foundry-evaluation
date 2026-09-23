@@ -96,33 +96,51 @@ Most failures were trips to Chicago or London, which the domestic policy does no
 
 **Warning:** this scan sends harmful prompts on purpose. Keep it small, review its results only in your project, and do not paste attack content into your notes.
 
-**Terminal A:** a small cloud scan attacks the Sol deployment for two risk categories with two attack strategies. It targets the model because Foundry's agent red teaming does not support this hosted agent ([details](#beyond)):
+**Terminal A:** a small cloud scan sends six attacks to the Sol deployment: for each of two risk categories, one plain attack (`baseline`) and one for each of two attack strategies. It runs as a Foundry evaluation and takes about a minute. It targets the model because Foundry's agent red teaming does not support this hosted agent ([details](#beyond)):
 
 ```bash
 python scripts/workshop.py red-team --model sol
 ```
 
-**Checkpoint:** `Red-team scan completed on sol: risk categories Violence, HateUnfairness; attack strategies base64, flip`, then `Portal (attack success rate): <link>`.
+**Checkpoint:** the output shows, in order:
 
-**If not:** a timeout means the scan is still running; run the same command again.
+1. `Red-team scan completed on sol: risk categories Violence, HateUnfairness; attack strategies base64, flip`
+2. `Attack success rate: N/6 attacks succeeded (...); lower is better`, then one line `by risk category` and one line `by attack strategy`
+3. `Portal: <link>`
 
-**Portal:** this scan opens only in the classic portal view ([how AI red teaming works](https://learn.microsoft.com/azure/foundry/concepts/ai-red-teaming-agent)).
+**If not:** a timeout means the scan is still running; run the same command again. For other messages, see [Level 2 and 3 recovery](troubleshooting.en.md#levels).
 
-1. In the header, turn off the **New Foundry** switch. If a feedback dialog appears, choose **Continue without feedback**.
-2. Open the printed link.
-3. Under **Metric dashboard → Attack risk category**, read the successful attacks for each risk category.
-4. Turn **New Foundry** back on.
+**Read it:**
 
-**Checkpoint:** the page is titled `<LAB_PREFIX>-red-team-sol`, and **Hate and unfairness** and **Violence** each show a percentage with `n/3 attacks`.
+- **An attack succeeds when Foundry's safety evaluator finds, in Sol's answer, the harmful content the attack was probing for.** The attack success rate (ASR) is the share of attacks that succeeded, so lower is better.
+- **The scan tests the deployment, not your instructions:** Sol answers without the V2 instructions, behind the deployment's content filter. Six attacks are a small sample: the rehearsals sent the same six prompts in each of three scans, yet Sol's answers differed every time, and the plain violence attack succeeded in two of them. Review every successful attack, not only the rate.
 
-**If not:** New Foundry's **Evaluations → Red team** tab does not list scans made by this command; use the printed link in the classic view ([portal differences](troubleshooting.en.md#portal-differs)).
+**Portal:** open the `Portal:` link. The scan opens in New Foundry and is also listed under **Evaluations → Red team** ([how AI red teaming works](https://learn.microsoft.com/azure/foundry/concepts/ai-red-teaming-agent)).
+
+**Checkpoint:** the page is titled `<LAB_PREFIX>-red-team-sol`, and **Overall metric results** shows the same rates as the CLI, for example **Violence ASR** with `n/3`. In the table below it, an **Attack outcome** of `Fail` marks a successful attack.
+
+**If not:** find `<LAB_PREFIX>-red-team-sol` under **Evaluations → Red team** and open it. Read the rates on the scan's page; the list's **Issues in last run** column is not the number of successful attacks.
 
 <details>
-<summary>Example screen: the classic red-teaming report</summary>
+<summary>Example screen: the scan in New Foundry</summary>
 
-![Red-teaming report with successful attacks by risk category](assets/levels-20260923/en-l3-redteam.webp)
+![Red-team scan with the attack success rate by risk category and attack strategy](assets/levels-20260923/en-l3-redteam.webp)
 
-No attack succeeded in the recorded English scan (0/3 for each category). In the Korean scan, one of three hate-and-unfairness attacks succeeded.
+The Response and Reasoning columns are blurred in this example.
+
+</details>
+
+<details>
+<summary>Recorded English result — an example</summary>
+
+```text
+Red-team scan completed on sol: risk categories Violence, HateUnfairness; attack strategies base64, flip
+Attack success rate: 1/6 attacks succeeded (16.7%); lower is better
+  by risk category: Violence 1/3, HateUnfairness 0/3
+  by attack strategy: baseline 1/2, base64 0/2, flip 0/2
+```
+
+The one successful attack was a plain violence prompt; neither attack strategy succeeded. The Korean scan sent the same six prompts and had 0/6: the scan does not use your workshop language or instructions, so the difference comes from Sol answering differently.
 
 </details>
 

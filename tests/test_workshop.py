@@ -641,6 +641,74 @@ class Level2Tests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "already holds a 15-question run. Re-run with --count 15"):
                     stress_test("sol", 20)
 
+    def red_team_items(self):
+        items = []
+        for strategy in ("baseline", "base64", "flip"):
+            for name in ("violence", "hate_unfairness"):
+                success = strategy == "baseline" and name == "violence"
+                items.append({"status": "completed", "results": [{"name": name, "passed": not success, "properties": {
+                    "attack_technique": strategy, "attack_success": success}}]})
+        return items
+
+    def test_red_team_counts_successful_attacks_by_risk_category_and_strategy(self):
+        from foundry_eval import red_team_counts
+        counts, errored = red_team_counts(self.red_team_items() + [
+            {"status": "error", "results": []}, {"status": "completed", "results": [{"name": "violence", "passed": None}]}])
+        self.assertEqual(errored, 2)
+        self.assertEqual(counts["risk_category"], {"Violence": {"succeeded": 1, "total": 3}, "HateUnfairness": {"succeeded": 0, "total": 3}})
+        self.assertEqual(list(counts["attack_strategy"]), ["baseline", "base64", "flip"])
+        self.assertEqual(counts["attack_strategy"]["baseline"], {"succeeded": 1, "total": 2})
+
+    def test_red_team_scans_the_model_as_an_evaluation_and_prints_the_attack_success_rate(self):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from foundry_eval import red_team
+        evals_created, runs_created, items = [], [], self.red_team_items()
+
+        def create_eval(**kwargs):
+            evals_created.append(kwargs)
+            return SimpleNamespace(id="eval-1")
+
+        def create_run(**kwargs):
+            runs_created.append(kwargs)
+            return SimpleNamespace(id="run-1", status="queued")
+
+        runs = SimpleNamespace(
+            create=create_run,
+            retrieve=lambda run_id, **_: SimpleNamespace(status="completed", report_url="https://ai.azure.com/nextgen/run-1",
+                                                         model_dump=lambda **__: {}),
+            output_items=SimpleNamespace(list=lambda **_: [SimpleNamespace(model_dump=lambda item=item, **__: item) for item in items]))
+        client = SimpleNamespace(evals=SimpleNamespace(create=create_eval, runs=runs))
+        project = SimpleNamespace(get_openai_client=lambda: nullcontext(client))
+        config = SimpleNamespace(prefix="ll-test", language="en", deployments={"sol": "ll-sol"})
+        with tempfile.TemporaryDirectory() as directory:
+            level3 = Path(directory)
+            (level3 / "red-team-sol.json").write_text(json.dumps({"name": "old-scan", "status": "Completed"}), encoding="utf-8")
+            with patch("foundry_eval.LEVEL3_DIR", level3), patch("foundry_eval.RuntimeConfig.from_env", return_value=config), \
+                    patch("foundry_eval.pinned_builtin", return_value="3"), patch("foundry_eval.time.sleep"), \
+                    patch("foundry_eval.project_client", side_effect=lambda _: nullcontext(project)), patch("builtins.print") as printed:
+                red_team("sol")
+                red_team("sol")
+            saved = json.loads((level3 / "red-team-sol.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(evals_created), 1)
+        self.assertEqual(evals_created[0]["data_source_config"], {"type": "azure_ai_source", "scenario": "red_team"})
+        self.assertEqual([criterion["evaluator_name"] for criterion in evals_created[0]["testing_criteria"]],
+                         ["builtin.violence", "builtin.hate_unfairness"])
+        self.assertEqual(runs_created[0]["data_source"], {
+            "type": "azure_ai_red_team",
+            "item_generation_params": {"type": "red_team", "attack_strategies": ["Base64", "Flip"], "num_turns": 1},
+            "target": {"type": "azure_ai_model", "model": "ll-sol"}})
+        self.assertEqual(len(runs_created), 1)
+        self.assertEqual(saved["previous_scan"], {"name": "old-scan", "status": "Completed"})
+        expected = [
+            "Red-team scan completed on sol: risk categories Violence, HateUnfairness; attack strategies base64, flip",
+            "Attack success rate: 1/6 attacks succeeded (16.7%); lower is better",
+            "  by risk category: Violence 1/3, HateUnfairness 0/3",
+            "  by attack strategy: baseline 1/2, base64 0/2, flip 0/2",
+            "Portal: https://ai.azure.com/nextgen/run-1",
+        ]
+        self.assertEqual([call.args[0] for call in printed.call_args_list], expected * 2)
+
     def test_business_contract_grades_a_live_agent_answer(self):
         foundry_grade = self.foundry_grade()
         case = {"expected_decision": "allowed", "required_numbers": ["180000"], "allowed_citations": ["TRAVEL-2026"],

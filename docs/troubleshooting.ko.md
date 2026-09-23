@@ -267,9 +267,9 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 | `Evaluator ... already exists and is not owned by this folder` | 같은 `LAB_PREFIX`를 쓰는 다른 폴더가 만든 평가기입니다. 삭제하지 말고, 강사에게 사용하지 않은 prefix를 받아 새 폴더에서 진행합니다. |
 | `... was registered with a different definition` 또는 `The suite's evaluators changed ...` | 등록 후 이 폴더의 평가기 코드가 바뀌었습니다. 저장소 파일을 원래대로 되돌리고, 등록된 평가기를 수정하지 않습니다. |
 | `Saved ... responses changed after their suite run was created` | 5–9단계 결과 파일이 바뀌었습니다. 원래 파일로 되돌리고, 응답을 다시 수집하지 않습니다. |
-| `... rubric results failed` 또는 `... stress-test results failed` | 메시지에 나온 파일만 삭제하고 1분 기다린 뒤 같은 명령을 실행합니다. 이미 만든 평가기나 데이터셋은 소유 기록에 남아 있어 정리 단계에서 함께 삭제됩니다. |
+| `... rubric results failed`, `... stress-test results failed`, `... red-team results failed` | 메시지에 나온 파일만 삭제하고 1분 기다린 뒤 같은 명령을 실행합니다. rubric과 스트레스 테스트에서 이미 만든 평가기나 데이터셋은 소유 기록에 남아 있어 정리 단계에서 함께 삭제됩니다. |
 | `Comparison insight failed` 또는 `Cluster insight failed` | 1분 기다린 뒤 같은 명령을 실행합니다. 실패한 인사이트만 다시 만들고, 실패한 인사이트는 `insights.json`의 `failed_attempts`에 남습니다. |
-| `Rubric generation ended as ...`, `The run ended as ...`, `The red-team scan ended as ...` | 메시지에 나온 파일을 보존하고 강사에게 보여 줍니다. 원인을 해결한 뒤 그 파일을 삭제하고 같은 명령을 실행합니다. |
+| `Rubric generation ended as ...`, `The run ended as ...` | 메시지에 나온 파일을 보존하고 강사에게 보여 줍니다. 원인을 해결한 뒤 그 파일을 삭제하고 같은 명령을 실행합니다. |
 | `... already compares the rubrics on ...` 또는 `... already holds a ...-question run` | 그 파일에 다른 값으로 실행한 이전 run이 있습니다. 메시지에 나온 값으로 다시 실행하고, 새 값으로 처음부터 하려면 먼저 그 파일을 삭제합니다. |
 | HTTP `429`(Too Many Requests) 오류 | 공유 judge나 Sol 배포가 바쁩니다. 몇 분 기다린 뒤 같은 명령을 실행하고, `--count`를 늘리지 않습니다. |
 | `This folder has no deployed hosted agent` | `evaluate-agent`와 `continuous-eval`에는 10단계가 삭제하는 에이전트가 필요합니다. 이미 정리했다면 그 절은 건너뛰며, 그 절을 위해 다시 배포하지 않습니다. |
@@ -279,7 +279,7 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 | `... traces were not found` | 최근 trace가 아직 수집 중일 수 있습니다. 몇 분 기다린 뒤 메시지에 나온 파일을 삭제하고 다시 실행합니다. |
 | `Schedule ... already exists and is not owned by this folder` | 같은 `LAB_PREFIX`를 쓰는 다른 폴더가 만든 일정입니다. 삭제하지 말고 강사에게 사용하지 않은 prefix를 받습니다. |
 | `No scheduled run yet` | 연속 평가의 첫 실행은 출력된 시각에 시작합니다. 그 뒤에 `continuous-eval`을 다시 실행합니다. |
-| `red-team` 링크가 Foundry 홈으로 열림 | 보고서는 이전(classic) 화면에서 열립니다. 상단의 **New Foundry**를 끄고 링크를 다시 연 뒤, 확인이 끝나면 다시 켭니다. |
+| 포털에서 `red-team` 스캔을 찾기 어려움 | New Foundry에서 **Evaluations → Red team** 탭을 열고 `<LAB_PREFIX>-red-team-sol`을 고릅니다. 비율은 **Overall metric results**에서 읽습니다. 목록의 **Issues in last run** 열은 성공한 공격 수가 아닙니다. |
 
 레벨 2·3 결과는 9단계 증거를 바꾸지 않습니다. 마지막에는 [10단계 정리](../README.ko.md#cleanup)를 실행하며, 내 연속 평가 일정, custom 평가기, 생성된 데이터셋도 함께 삭제됩니다.
 
