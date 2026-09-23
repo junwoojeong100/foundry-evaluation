@@ -28,6 +28,8 @@
 - **보조 모델:** `gpt-5.4-mini`는 검색 계획과 채점만 맡으며 후보가 아닙니다.
 - **V1/V2**는 모델이 아니라 지침 버전입니다.
 
+**질문은 두 묶음입니다:** `dev`는 V1·V2를 비교하는 6문항, `holdout`은 V2를 고정한 뒤 마지막에 확인하는 별도 4문항입니다.
+
 ```text
 질문 → Python agent → Foundry IQ로 정책 검색 → 선택한 모델 → 답변
 V1: 18응답 → trace 하나 검토 → V2: 18응답 → 후보 고정 → holdout: 12응답
@@ -48,20 +50,10 @@ V1: 18응답 → trace 하나 검토 → V2: 18응답 → 후보 고정 → hold
 
 **시간:** 1–2단계 25분, 3–4단계 15분, 5–6단계 30분, 7–8단계 30분, 9–10단계 15분, 여유 5분입니다. 끝나면 [세 가지를 보고](#finish)합니다.
 
-<a id="levels"></a>
-
-**레벨 선택:** 처음이면 레벨 1만 하고, 9단계 뒤 바로 10단계로 갑니다. 시간이 더 있으면 같은 폴더에서 9단계와 10단계 사이에 레벨 2, 또는 레벨 2·3을 더합니다.
-
-| 레벨 | 더하는 내용 | 추가 시간 | 경로 |
-|---|---|---|---|
-| 1. 입문 | 1–10단계의 평가 루프 | — | 1–10단계 |
-| 2. 심화 | 업무 검사를 Foundry 평가기로 옮겨 기본 제공 평가기와 비교. run 비교와 실패 클러스터 | 약 40분 | 1–9단계 → [레벨 2](docs/level-2.ko.md) → 10단계 |
-| 3. 운영 | 생성 rubric, 합성 질문 스트레스 테스트, red team, Foundry의 에이전트 직접 호출, trace·연속 평가, 릴리스 gate | 레벨 2 뒤 약 70분 | 1–9단계 → [레벨 2](docs/level-2.ko.md) → [레벨 3](docs/level-3.ko.md) → 10단계 |
-
 **진행 방법**
 
 - 굵은 라벨이 가리키는 곳에서 작업합니다: **터미널 A**, **터미널 B**(3단계만), **편집기**, **포털**.
-- 명령은 `$` 없이 **한 블록씩**, 저장소 루트에서 실행합니다.
+- 명령은 `$` 없이 **한 블록씩**, 저장소 루트에서 실행합니다. 입력 프롬프트가 돌아올 때까지 기다립니다(3단계의 로컬 서버만 예외).
 - 블록마다 **완료 확인**을 봅니다. 다르면 출력을 보존하고 **다르면**을 따라 [그 명령만 복구](docs/troubleshooting.ko.md#resume)합니다. 점수를 높이려고 끝난 단계를 다시 실행하지 않습니다.
 - **`data/holdout.jsonl`은 8단계 전까지 열지 않습니다.** 포털 확인은 **New Foundry·영어 메뉴** 기준이며 “내 agent”는 `LAB_AGENT_NAME`입니다.
 
@@ -525,34 +517,35 @@ python scripts/workshop.py evaluate --label baseline
 
 ```bash
 python scripts/workshop.py compare --labels baseline &&
-python scripts/workshop.py monitor --label baseline
+python scripts/workshop.py monitor --label baseline &&
+python scripts/workshop.py summary --labels baseline
 ```
 
-**완료 확인:** `complete: true`, `expected_trace_count: 18`, `observed_trace_count: 18`.
+**완료 확인:** `complete: true`, `expected_trace_count: 18`, `observed_trace_count: 18` 뒤에 모델별 요약 표와 `baseline business-check failures:`가 나옵니다. 요약은 저장된 결과를 읽을 뿐, 다시 평가하지 않습니다.
 
-**다르면:** 검토를 기록하기 전에 [모니터링 복구](docs/troubleshooting.ko.md#telemetry)를 마칩니다.
+**다르면:** trace가 부족하면 [모니터링 복구](docs/troubleshooting.ko.md#telemetry)를 마칩니다. 요약만 실패했다면 오류에 나온 파일·label을 확인하고 `summary`만 다시 실행합니다.
 
 <a id="review-case"></a>
 
 ### 6-2. 한 사례를 골라 원인 설명
 
-**편집기, 그다음 포털:** 실패한 응답 하나를 아래 네 곳에서 줄 번호가 아닌 ID로 따라갑니다. 마지막 열의 값을 적고 파일은 수정하지 않습니다. 결과 파일은 `src/agent/.foundry/results/` 아래에 있습니다.
+**터미널 요약 → 편집기 → 포털:** 방금 요약에서 응답 하나를 고른 뒤 **파일 두 개와 trace**만 확인합니다. 아래 파일 경로는 모두 저장소 루트 기준입니다. 파일은 수정하지 않습니다.
 
-1. **고르기:** `business_failures`에서 한 행을 고릅니다(표의 #1). 비어 있다면 대신 [통과한 dev 한 건을 검토](docs/troubleshooting.ko.md#no-failures)하며, 실패를 꾸며내지 않습니다.
+1. **고르기:** `baseline business-check failures:`에서 `row_id` 하나와 괄호 안의 실패 검사를 적습니다(표의 #1). `none`이면 [통과한 dev 한 건을 검토](docs/troubleshooting.ko.md#no-failures)하며, 실패를 꾸며내지 않습니다.
 2. **찾기:** 그 행의 `row_id`로 #2를, 이어서 `case_id`로 #3을 찾습니다.
 3. **확인:** 포털에서 전체 `trace_id`로 확인합니다(#4).
 4. **적기:** 6-3에서 저장할 한 줄 검토를 적습니다: `관찰: ...; 근거: ...; 바꿀 점: ...`
 
 | # | 열 곳 | 찾는 기준 | 적을 값 |
 |---|---|---|---|
-| 1 | `comparison.json` → `labels → baseline → business_failures` | 한 행 선택 | `row_id`, `trace_id`, `false`인 검사 |
-| 2 | `baseline/responses.jsonl` | `row_id` | `case_id`, `model_key`, `answer`, `decision`, `citations`, `source_ids` |
+| 1 | 6-1의 터미널 요약 → `baseline business-check failures:` | 한 행 선택 | `row_id`, 실패 검사 |
+| 2 | `src/agent/.foundry/results/baseline/responses.jsonl` | `row_id` | `case_id`, `model_key`, `trace_id`, `answer`, `decision`, `citations`, `source_ids` |
 | 3 | `data/dev.jsonl` | `case_id` | `ground_truth`, `expected_decision`, `required_numbers`, `allowed_citations` |
 | 4 | 포털 **내 agent → Traces → Graph view**(필요하면 기간 확장) | `trace_id` | `foundry_iq.retrieve`와 `chat` span |
 
 **완료 확인:** #1–#3의 **적을 값**을 메모했고, Graph view(#4)에 두 span이 있으며, 한 줄 검토를 적었습니다. `case_id`와 `model_key`는 7단계에서 씁니다.
 
-**다르면:** trace가 보이지 않으면 기간을 넓히고 전체 `trace_id`로 검색합니다([포털 화면 차이](docs/troubleshooting.ko.md#portal-differs)).
+**다르면:** 파일·행이 없으면 다른 label을 연 것은 아닌지 확인합니다. trace가 보이지 않으면 기간을 넓히고 전체 `trace_id`로 검색합니다([포털 화면 차이](docs/troubleshooting.ko.md#portal-differs)).
 
 <details>
 <summary>표에 나오는 용어</summary>
@@ -704,7 +697,7 @@ python scripts/workshop.py summary --labels baseline improved
 2. `sol`·`luna`·`astra` 표: 각 값은 V1 `->` V2([열의 뜻](#metric-fields))
 3. `improved business-check failures:`와 `improved Foundry-score failures:`: row ID 또는 `none`
 
-**다르면:** 7-3의 완료 확인을 다시 본 뒤 `python scripts/workshop.py compare --labels baseline improved`만 다시 실행하고, 이 `summary` 명령을 다시 실행합니다.
+**다르면:** 비교 파일·label이 없다는 오류이면 7-3의 평가 완료를 확인한 뒤 `compare`와 `summary`만 다시 실행합니다. `Reviewed case`가 없거나 `source trace carried: no`이면 검토 연결이 확인되지 않은 것이므로 멈추고 강사와 6-3의 기록을 확인합니다. 수집·검토를 새로 만들어 덮지 않습니다.
 
 **주의:** 좋아지지 않았거나 나빠졌어도 그대로 보고합니다. 기준을 낮추거나 모델을 바꾸거나 V2를 자동 채택하지 않습니다.
 
@@ -842,7 +835,11 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 **터미널 A:** `verify` 출력의 끝부분에서 값을 메모합니다(`src/agent/.foundry/results/verified-evidence.json`에도 저장).
 
 - **메모할 값:** `candidate_quality_gates`의 6개(`sol`·`luna`·`astra` × `dev`·`holdout`). 예: `sol dev=true, sol holdout=true, luna dev=...`
-- **뜻:** `true` = dev 업무 통과 **5/6** 이상, holdout **4/4**, 필수 인용 전부 유효
+
+| gate | `true`의 뜻(모델별) |
+|---|---|
+| `dev` | 6응답 중 **5응답 이상이 모든 업무 검사 통과** + 필수 인용 전부 유효 |
+| `holdout` | 4응답 **모두 업무 검사 통과** + 필수 인용 전부 유효 |
 
 보고는 다음과 같습니다.
 
@@ -878,7 +875,22 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 
 </details>
 
-**다음:** [10. 내 실습 자원만 정리하기](#cleanup). 레벨 2·3을 골랐다면 먼저 [레벨 2](docs/level-2.ko.md)(이어서 [레벨 3](docs/level-3.ko.md))를 마칩니다.
+**다음:** 처음 실습이면 [10. 내 실습 자원만 정리하기](#cleanup)로 갑니다.
+
+<a id="levels"></a>
+
+<details>
+<summary>선택: 시간이 더 있으면 정리 전에 레벨 2·3 추가</summary>
+
+같은 폴더에서 진행합니다. **10단계 뒤에는 에이전트가 삭제되므로 추가 실습을 시작하지 않습니다.** 모델·judge 호출 비용이 추가됩니다.
+
+| 선택 | 더하는 내용 | 추가 시간 | 경로 |
+|---|---|---|---|
+| 레벨 1만 | 여기까지의 평가 루프 | 없음 | [10단계 정리](#cleanup) |
+| 레벨 2 | 업무 규칙을 Foundry 평가기로 채점하고 run·실패 원인 비교 | 약 40분 | [레벨 2](docs/level-2.ko.md) → 10단계 |
+| 레벨 2·3 | 생성 평가 기준, 모델·agent·trace 평가, 연속 평가, 릴리스 gate | 약 110분 | [레벨 2](docs/level-2.ko.md) → [레벨 3](docs/level-3.ko.md) → 10단계 |
+
+</details>
 
 <a id="cleanup"></a>
 <a id="12-마무리와-비용-정리"></a>
@@ -945,11 +957,15 @@ python scripts/workshop.py check-cleanup
 
 ## 마무리: 세 가지 보고
 
-촬영 점수가 아닌 내 저장 결과로 설명합니다.
+**내 메모:** 아래 세 줄을 복사해 `...`를 내 결과로 채웁니다. 명령이 아니며, 촬영 점수를 옮겨 적지 않습니다.
 
-- **검토:** `row_id`·원래 trace·관찰한 문제와 근거.
-- **변화:** 세 모델 각각의 업무 통과·필수 인용·Foundry 점수·토큰·처리 시간의 전후 차이.
-- **판단:** Holdout 결과·품질 gate·남은 한계. 운영 승인이나 모델의 통계적 우월성으로 확대 해석하지 않습니다.
+```text
+검토: row_id=...; trace_id=...; 관찰·근거·바꿀 점=...
+변화: ... (7-4 summary의 세 모델 표와 미통과 행을 붙여넣기)
+판단: ... (9-2의 dev·holdout gate 6개); 남은 한계=...; production_release_approved=false
+```
+
+`summary` 표에는 업무 통과·필수 인용·Foundry 점수·토큰·처리 시간이 있습니다. 값이 나빠져도 그대로 쓰며, 운영 승인이나 모델의 통계적 우월성으로 확대 해석하지 않습니다.
 
 **완료 확인:** 세 항목 모두 내 파일의 값을 쓰고, 판단은 `production_release_approved: false`를 유지합니다.
 

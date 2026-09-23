@@ -9,7 +9,7 @@
 | [1. rubric 생성](#generate-rubric) | 저장된 V2 답변 | Foundry가 V2 지침으로 만든 rubric |
 | [2. 스트레스 테스트](#stress-test) | V2 지침을 넣은 Sol | Foundry가 만든 질문 15개 |
 | [3. red team](#red-team) | Sol 배포 | Foundry가 만든 공격 프롬프트 |
-| [4. 에이전트 직접 호출](#evaluate-agent) | 배포된 에이전트 | Foundry가 실시간으로 보내는 dev 질문 18개 |
+| [4. 에이전트 직접 호출](#evaluate-agent) | 배포된 에이전트 | 같은 dev 6문항 × 3모델 = 새 응답 18개 |
 | [5. trace 평가](#evaluate-traces) | 7단계 실행 | Application Insights의 trace 18개 |
 | [6. 연속 평가](#continuous-eval) | 에이전트의 최근 트래픽 | 매시간 최근 trace 최대 20개 |
 | [7. 릴리스 gate](#release-gate) | 업무 gate 6개(Sol·Luna·Astra × dev·holdout) | 9단계의 `verified-evidence.json` |
@@ -18,6 +18,12 @@
 
 - 4·6절은 배포된 에이전트를 씁니다. 10단계가 이 에이전트를 삭제합니다.
 - 강사가 수업 전에 공유 모델 용량(2–4절)과 trace 접근 권한(5·6절)을 준비합니다([강사 가이드](instructor.ko.md#levels)).
+
+**진행:** 기존 **터미널 A·저장소 루트**에서 1–7절을 순서대로 합니다. 새 터미널이면 [환경만 복원](../README.ko.md#resume-shell)하고 이름·V2 지침·배포 버전을 유지합니다. 복구 label을 썼다면 아래 `--label improved`를 실제 후보 label로 바꿉니다.
+
+**비용·증거:** 1–6절의 모델·judge 호출은 추가 과금되며, 6절은 최대 8시간 일정도 만듭니다. 추가 응답을 기본 실습의 48응답에 합치지 않습니다. 7절은 **9단계의 저장된 업무 gate만** 읽고 1–6절의 새 결과를 자동 반영하지 않습니다.
+
+**대기:** 명령이 아직 실행 중이면 기다립니다. `... still running`·`... still in progress`로 **종료된 경우에만** 같은 명령으로 재개합니다. 네트워크 timeout을 원격 실행 중이라는 증거로 해석하지 않습니다. 그 밖의 오류는 [메시지별 복구](troubleshooting.ko.md#levels)를 따릅니다.
 
 <a id="generate-rubric"></a>
 
@@ -31,7 +37,7 @@ python scripts/workshop.py generate-rubric --label improved
 
 **완료 확인:** `Generated rubric: <LAB_PREFIX>-generated-rubric version 1, pass threshold ...`, 가중치가 붙은 차원 목록, 그리고 `policy_rubric: .../18 passed on improved`와 `generated_rubric: .../18 passed on improved`가 실패 행 또는 `none`과 함께 나옵니다.
 
-**다르면:** 시간 초과는 생성이나 채점이 아직 진행 중이라는 뜻이므로 같은 명령을 다시 실행합니다. 그 밖의 오류는 [레벨 2·3 복구](troubleshooting.ko.md#levels)를 봅니다.
+**다르면:** `Rubric generation is still running` 또는 `The run is still in progress`로 종료됐다면 같은 명령으로 재개합니다. 그 밖의 오류는 [레벨 2·3 복구](troubleshooting.ko.md#levels)를 봅니다.
 
 **읽는 법:**
 
@@ -59,6 +65,8 @@ generated_rubric: 18/18 passed on improved; failed rows: none
 
 </details>
 
+**다음:** [2. 합성 질문 스트레스 테스트](#stress-test)
+
 <a id="stress-test"></a>
 
 ## 2. 합성 질문으로 V2 스트레스 테스트
@@ -69,14 +77,14 @@ generated_rubric: 18/18 passed on improved; failed rows: none
 python scripts/workshop.py stress-test --model sol --count 15
 ```
 
-**완료 확인:** `Stress test completed on sol: N of 15 synthetic questions failed an evaluator`, `intent_resolution`·`relevance`·`indirect_attack`의 결과 한 줄씩, 그리고 실패한 질문이 나옵니다.
+**완료 확인:** `Stress test completed on sol: N of 15 synthetic questions failed an evaluator`와 `intent_resolution`·`relevance`·`indirect_attack`의 결과가 한 줄씩 나옵니다. 실패가 있으면 질문도 나옵니다. `N=0`도 정상 결과입니다.
 
-**다르면:** 시간 초과는 아직 실행 중이라는 뜻이므로 같은 명령을 다시 실행합니다. Foundry는 질문을 최소 15개 요구합니다.
+**다르면:** `The run is still in progress`로 종료됐다면 같은 명령으로 재개합니다. 그 밖의 오류는 [레벨 2·3 복구](troubleshooting.ko.md#levels)를 봅니다. 질문 수는 15개로 유지합니다.
 
 **읽는 법:**
 
 - **모델 단위 테스트입니다.** Foundry가 정책 7개를 Sol에 직접 넣으며, 에이전트와 그 검색은 쓰지 않습니다. 그래서 5–8단계의 수치와 비교하지 않습니다.
-- **실행마다 수치가 달라집니다.** Foundry가 매번 새 질문을 만들기 때문입니다. 개수가 아니라 실패 유형을 비교합니다.
+- **별도의 새 실험끼리는 질문과 수치가 달라질 수 있습니다.** 이 폴더에서 같은 명령을 재개하면 저장된 질문·run을 재사용합니다. 결과 파일을 지워 더 좋은 점수를 뽑지 않습니다.
 - **실패한 질문을 분류합니다.** 실제 공백(예: 규정이 다루지 않는 해외 출장), 올바른 보류를 감점한 judge, 안전 경고 중 무엇인지 봅니다. 좋은 질문은 고정 정답을 직접 작성한 뒤에만 새 dev 사례로 추가하고, holdout으로 튜닝하지 않습니다.
 
 <details>
@@ -92,6 +100,8 @@ Stress test completed on sol: 3 of 15 synthetic questions failed an evaluator
 실패한 질문은 모두 일본 출장처럼 국내 규정이 다루지 않는 해외 출장이었습니다. 그중 해외 로밍비·라운지 비용을 회의비로 처리해 달라는 요청에 대한 답변 하나는 `indirect_attack`으로 표시되었습니다.
 
 </details>
+
+**다음:** [3. 후보 모델 red team](#red-team)
 
 <a id="red-team"></a>
 
@@ -111,7 +121,7 @@ python scripts/workshop.py red-team --model sol
 2. `Attack success rate: N/6 attacks succeeded (...); lower is better`, 이어서 `by risk category` 한 줄과 `by attack strategy` 한 줄
 3. `Portal: <링크>`
 
-**다르면:** 시간 초과는 스캔이 아직 진행 중이라는 뜻이므로 같은 명령을 다시 실행합니다. 그 밖의 메시지는 [레벨 2·3 복구](troubleshooting.ko.md#levels)를 봅니다.
+**다르면:** `The run is still in progress`로 종료됐다면 같은 명령으로 재개합니다. 그 밖의 메시지는 [레벨 2·3 복구](troubleshooting.ko.md#levels)를 봅니다. 공격 성공은 낮은 품질 결과이지 재시도할 실행 오류가 아닙니다.
 
 **읽는 법:**
 
@@ -147,23 +157,25 @@ Attack success rate: 0/6 attacks succeeded (0.0%); lower is better
 
 </details>
 
+**다음:** [4. 배포된 에이전트 직접 평가](#evaluate-agent)
+
 <a id="evaluate-agent"></a>
 
 ## 4. Foundry가 에이전트를 직접 호출하게 하기
 
-**터미널 A:** Foundry가 7단계의 dev 질문 18개(질문 6개 × 모델 3개)를 배포된 V2 에이전트에 모델마다 run 하나씩 보내고, 실시간 답변을 채점합니다. 약 15분 걸립니다.
+**터미널 A:** Foundry가 같은 dev 6문항을 세 모델에 각각 질문해 **새 응답 18개**를 채점합니다. 배포된 V2 에이전트를 호출하며 모델마다 run 하나씩, 약 15분 걸립니다.
 
 ```bash
-python scripts/workshop.py evaluate-agent
+python scripts/workshop.py evaluate-agent --split dev
 ```
 
 **완료 확인:** 출력에 다음이 차례로 나옵니다.
 
 1. `Foundry called <LAB_AGENT_NAME> version N for 18 dev rows in 3 runs, one per model (prompt v2).`
 2. `business_contract`·`task_adherence`·`intent_resolution`·`relevance`의 결과 한 줄씩, 이어서 `business_contract by model: ...`
-3. `Your saved improved responses: .../18 business passes.`, `Traces recorded: 18`, `Portal:` 링크
+3. `Traces recorded: 18`과 `Portal:` 링크. 기본 label이면 `Your saved improved responses: .../18 business passes.`도 나옵니다. 복구 label이면 이 줄이 없을 수 있으므로 7-4의 내 요약과 직접 대조합니다.
 
-**다르면:** 시간 초과는 아직 실행 중이라는 뜻이므로 같은 명령을 다시 실행합니다. 그 밖의 메시지는 [레벨 2·3 복구](troubleshooting.ko.md#levels)를 봅니다.
+**다르면:** `The agent evaluation is still running`으로 종료됐다면 같은 명령으로 재개합니다. 그 밖의 메시지는 [레벨 2·3 복구](troubleshooting.ko.md#levels)를 봅니다. 실패 복구에도 `--split dev`를 유지합니다.
 
 **읽는 법:**
 
@@ -198,6 +210,8 @@ Traces recorded: 18
 
 </details>
 
+**다음:** [5. 저장된 trace 평가](#evaluate-traces)
+
 <a id="evaluate-traces"></a>
 
 ## 5. 7단계의 trace 평가
@@ -210,7 +224,7 @@ python scripts/workshop.py evaluate-traces --label improved
 
 **완료 확인:** `Trace evaluation completed: 18 traces from improved, read from Application Insights.`에 이어, `relevance`·`intent_resolution`·`task_adherence`·`indirect_attack`에 대해 `traces`와 `saved responses (Level 2)` 열이 있는 표가 나옵니다.
 
-**다르면:** 접근 오류이면 강사에게 trace 접근 준비를 요청하고, `... traces were not found`이면 수집이 끝나도록 몇 분 기다립니다. 두 메시지 모두 `... <파일> and re-run evaluate-traces --label improved.`로 끝나므로, 그 파일을 삭제한 뒤 같은 명령을 다시 실행합니다([레벨 2·3 복구](troubleshooting.ko.md#levels)).
+**다르면:** 접근 오류는 강사와 권한을 확인하고, 누락 trace는 반영을 기다립니다. **오류가 파일 삭제를 명시한 경우에만** [상태 파일 복구](troubleshooting.ko.md#level-state-recovery)대로 백업 후 지정 파일 하나를 처리합니다. 단순 대기 시간 초과에는 삭제하지 않습니다. 비교 열이 `n/a`이면 레벨 2를 같은 label로 마쳤는지 확인합니다.
 
 **읽는 법:**
 
@@ -234,19 +248,21 @@ trace는 8시간 전 것이었습니다. 명령이 수집 시각을 보고 조�
 
 </details>
 
+**다음:** [6. 연속 평가 일정과 첫 결과 확인](#continuous-eval)
+
 <a id="continuous-eval"></a>
 
 ## 6. 연속 평가 켜기
 
-**터미널 A — 일정 만들기:** 에이전트 최신 버전의 최근 trace를 최대 20개씩 매시간 평가하는 일정을 만듭니다. 첫 실행은 2분 뒤에 시작하고, 일정은 8시간 뒤 스스로 멈추며, 10단계가 삭제합니다.
+**터미널 A — 일정 만들기:** 생성 시점의 에이전트 버전에 고정해 최근 trace를 최대 20개씩 매시간 평가합니다. 첫 실행은 2분 뒤에 시작하고, 일정은 8시간 뒤 스스로 멈추며, 10단계가 삭제합니다. 같은 명령을 다시 실행하면 기존 일정의 상태를 조회합니다.
 
 ```bash
 python scripts/workshop.py continuous-eval
 ```
 
-**완료 확인:** `Continuous evaluation <LAB_PREFIX>-continuous: every hour on <LAB_AGENT_NAME> version N, up to 20 recent traces, from HH:MM UTC until HH:MM UTC.`와 `No scheduled run yet. Run this command again after HH:MM UTC.`가 나옵니다. 시각은 UTC이며, 한국 시간은 9시간을 더합니다(예: `11:35 UTC`는 20:35).
+**일정 생성 확인:** `Continuous evaluation <LAB_PREFIX>-continuous: every hour on <LAB_AGENT_NAME> version N, up to 20 recent traces, from HH:MM UTC until HH:MM UTC.`가 나옵니다. `No scheduled run yet`이면 아래 시각까지 기다립니다. 이미 실행 결과가 있으면 바로 아래 완료 기준과 대조합니다. 시각은 UTC이며 한국 시간은 9시간을 더합니다(예: `11:35 UTC`는 20:35).
 
-**다르면:** `This folder has no deployed hosted agent`는 이 폴더의 에이전트가 배포되어 있지 않다는 뜻입니다(예: 10단계를 이미 실행함). 이 절은 건너뛰고, 이 절을 위해 다시 배포하지 않습니다. `Schedule ... already exists and is not owned by this folder`는 다른 조가 같은 `LAB_PREFIX`를 쓴다는 뜻이므로 강사에게 다른 이름을 받습니다.
+**다르면:** agent가 없거나 일정 소유권이 충돌하면 멈추고 [오류별 복구](troubleshooting.ko.md#levels)를 따릅니다. 이름 변경·재배포로 우회하지 않습니다. 이미 10단계를 마쳤다면 이 절은 **미실행**으로 기록하며 완료로 표시하지 않습니다.
 
 **터미널 A — 첫 실행 확인:** 출력된 `HH:MM UTC` 이후에 같은 명령을 다시 실행합니다.
 
@@ -254,13 +270,19 @@ python scripts/workshop.py continuous-eval
 python scripts/workshop.py continuous-eval
 ```
 
-**완료 확인:** `HH:MM UTC  completed  N traces: relevance .../N, task_adherence .../N, indirect_attack .../N` 같은 줄이 나옵니다.
+**완료 확인:** `HH:MM UTC  completed  N traces: relevance .../N, task_adherence .../N, indirect_attack .../N`이 나오고 **N이 1 이상**입니다. 일정 생성만으로는 완료가 아닙니다. 시각·trace 수·세 평가 결과를 메모합니다.
 
-**다르면:** `in_progress`나 `queued`는 첫 실행이 아직 진행 중이라는 뜻이므로 1분 뒤 같은 명령을 다시 실행합니다.
+**다르면:** `in_progress`·`queued`이면 1분 뒤 같은 명령으로 조회합니다. `failed`·오류·0 traces이면 미완료로 기록하고 강사와 트래픽·권한을 확인합니다. 일정을 지우고 새로 만들지 않습니다.
+
+**포털 — 행별 결과 확인:** 출력의 `Portal:` 링크를 열고 위에서 메모한 **같은 UTC 시각의 run**을 선택합니다.
+
+**완료 확인:** N개 행에 세 평가기의 유효한 결과가 있고 오류·누락이 없습니다. `completed`만으로 오류가 없다고 판단하지 않습니다. `passed: false`는 유효한 미통과 결과이므로 그대로 보고합니다.
+
+**다르면:** 빈 결과·평가 오류는 미완료로 기록하고 강사와 확인합니다. 새 일정을 만들어 오류 이력을 지우지 않습니다.
 
 **읽는 법:**
 
-- **첫 실행은 4절의 트래픽을 평가합니다.** 운영에서는 매시간 실행이 실제 트래픽의 품질 신호를 유지하고, 점수가 떨어지면 5–9단계의 루프로 돌아갑니다.
+- **최근 트래픽에서 trace를 고릅니다.** 4절의 호출과 다른 최근 호출이 포함될 수 있습니다. 운영에서는 이 품질 신호가 떨어지면 5–9단계의 루프로 돌아갑니다.
 - **hosted agent는 일정에 따라 trace로 평가하고,** prompt agent는 응답마다 평가할 수도 있습니다([연속 평가](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard#set-up-continuous-evaluation)).
 
 <details>
@@ -275,11 +297,13 @@ Continuous evaluation ll-ko-lv3a-continuous: every hour on frontier-loop-ko-lv3a
 
 </details>
 
+**다음:** [7. 저장된 업무 gate로 릴리스 중단 여부 확인](#release-gate)
+
 <a id="release-gate"></a>
 
 ## 7. 업무 gate를 릴리스 gate로 만들기
 
-**터미널 A:** 9-2의 gate 6개를 확인한 뒤 명령의 종료 코드를 출력합니다.
+**터미널 A:** 9단계의 실행 검증과 gate 6개를 확인한 뒤 명령의 종료 코드를 출력합니다. **이 레벨의 red team·연속 평가 결과는 이 gate에 포함되지 않습니다.**
 
 ```bash
 python scripts/workshop.py gate
@@ -291,7 +315,7 @@ echo "exit code: $?"
 - `Quality gate passed: all six business gates are true. production_release_approved remains false.`에 이어 `exit code: 0`
 - 9-2의 gate 중 하나라도 `false`일 때 `Quality gate FAILED: ...`에 이어 `exit code: 1`
 
-**다르면:** 이 명령은 `src/agent/.foundry/results/verified-evidence.json`을 읽습니다. 파일이 없으면 [9단계의 9-1](../README.ko.md#lab-g)로 돌아갑니다.
+**다르면:** 파일 없음·traceback은 품질 미통과와 다른 실행 오류입니다. `src/agent/.foundry/results/verified-evidence.json`과 [9-1의 완료 기준](../README.ko.md#lab-g)을 확인합니다. 출력 없이 종료 코드 `1`만 보고 업무 gate 실패로 기록하지 않습니다.
 
 **읽는 법:** 파이프라인은 새 후보마다 5–9단계와 같은 루프를 실행한 뒤 이 명령을 실행하며, 0이 아닌 종료 코드가 릴리스를 멈춥니다. 예를 들어 GitHub Actions 단계는 다음과 같습니다(읽기만 합니다. 이 저장소에는 이런 워크플로가 없습니다).
 
@@ -302,19 +326,25 @@ echo "exit code: $?"
 
 gate를 통과해도 운영 승인이 아니며, 사람의 검토와 8단계의 holdout 규칙은 그대로 적용됩니다. [GitHub Actions에서 평가 실행](https://learn.microsoft.com/azure/foundry/how-to/evaluation-github-action)
 
+<a id="finish-level-3"></a>
+
 ## 레벨 3 마무리
 
-[보고](../README.ko.md#finish)에 다음을 더합니다.
+[보고](../README.ko.md#finish)에 아래 표를 복사하고 내 값과 해석을 채웁니다. 공격 프롬프트·유해 응답 원문은 복사하지 않습니다.
 
-- 생성된 rubric이 더하거나 놓친 것
-- 실제 공백을 드러낸 합성 질문
-- red team의 공격 성공률
-- Foundry의 실시간 실행이 저장된 결과와 일치했는지, trace가 보여 준 것
-- 내 릴리스 gate가 막을 대상
+| 절 | 메모할 결과 |
+|---|---|
+| 1. 생성 rubric | 두 rubric의 통과 수와 계약 검사 대비 놓친 점 |
+| 2. 합성 질문 | 실패 수 `/15`, 실제 공백·judge 판단·안전 경고 중 확인한 유형(없으면 없음) |
+| 3. Red team | 공격 성공 수 `/6`와 ASR. 낮을수록 좋음 |
+| 4. Agent 직접 호출 | 모델별 업무 통과 수 `/6`와 7-4 저장 결과와의 차이 |
+| 5. Trace 평가 | 18 trace의 평가 결과와 레벨 2 대비 차이 |
+| 6. 연속 평가 | 첫 `completed` 시각·trace 수·세 평가 결과·포털의 오류/누락 없음 확인 |
+| 7. 릴리스 gate | 출력 문구·종료 코드·막은 업무 gate 또는 통과. 안전성·운영 승인과 구분 |
 
-**완료 확인:** 보고에 위 항목이 한 줄씩 있습니다.
+**완료 확인:** 1–7절의 완료 기준을 충족하고 표를 채웠습니다. 생략·오류·0 trace는 **미완료**로 기록합니다. 낮은 유효 점수나 `Quality gate FAILED`는 완료된 실습의 결과입니다.
 
-**다음:** [10단계 정리](../README.ko.md#cleanup)로 돌아갑니다. 정리하면 연속 평가 일정, 생성된 rubric과 그 산출물, 합성 질문 데이터셋이 삭제되고, eval group과 red team 결과는 증거로 남습니다.
+**다음:** [10단계 정리](../README.ko.md#cleanup)로 돌아갑니다. 미완료로 중단하더라도 만든 유료 자원·일정의 정리는 필요합니다. 이미 정리를 마쳤다면 반복하지 않습니다. 정리하면 연속 평가 일정, 생성된 rubric과 그 산출물, 합성 질문 데이터셋이 삭제되고, eval group과 red team 결과는 증거로 남습니다.
 
 <a id="beyond"></a>
 

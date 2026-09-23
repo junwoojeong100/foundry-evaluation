@@ -28,6 +28,8 @@ The agent answers travel-policy questions with an **answer, a decision, and sour
 - **Helper model:** `gpt-5.4-mini` plans retrieval and judges answers; it is not a candidate.
 - **V1 and V2** are instruction versions, not models.
 
+**There are two question sets:** `dev` has six questions for comparing V1 and V2; `holdout` has four separate questions for the final check after V2 is frozen.
+
 ```text
 Question → Python agent → Foundry IQ policy retrieval → selected model → answer
 V1: 18 responses → review one trace → V2: 18 responses → freeze → holdout: 12 responses
@@ -48,20 +50,10 @@ V1: 18 responses → review one trace → V2: 18 responses → freeze → holdou
 
 **Time:** about 25 minutes for steps 1–2, 15 for 3–4, 30 for 5–6, 30 for 7–8, and 15 for 9–10, plus a 5-minute buffer; then [report three points](#finish).
 
-<a id="levels"></a>
-
-**Choose a level:** on a first run, do Level 1 only and go from step 9 straight to step 10. With more time, add Level 2, or Levels 2 and 3, between steps 9 and 10 in the same folder.
-
-| Level | Adds | Extra time | Path |
-|---|---|---|---|
-| 1. Basic | The evaluation loop in steps 1–10 | — | Steps 1–10 |
-| 2. Advanced | Your business checks as Foundry evaluators, beside built-in ones; run comparison and failure clusters | About 40 minutes | Steps 1–9 → [Level 2](docs/level-2.en.md) → step 10 |
-| 3. Operations | A generated rubric, a synthetic stress test, red teaming, Foundry calling your agent, trace and continuous evaluation, and a release gate | About 70 minutes after Level 2 | Steps 1–9 → [Level 2](docs/level-2.en.md) → [Level 3](docs/level-3.en.md) → step 10 |
-
 **How to follow the steps**
 
 - Act where the bold label says: **Terminal A**, **Terminal B** (step 3 only), **Editor**, or **Portal**.
-- Run **one command block at a time** from the repository root, without a leading `$`.
+- Run **one command block at a time** from the repository root, without a leading `$`. Wait for the prompt to return (except for step 3's local server).
 - After each block, check its **Checkpoint**. If it fails, keep the output, follow **If not**, and [resume only that command](docs/troubleshooting.en.md#resume); never rerun a finished step for a better score.
 - **Do not open `data/en/holdout.jsonl` before step 8.** Portal checks use **New Foundry with English menus**; "your agent" means `LAB_AGENT_NAME`.
 
@@ -506,34 +498,35 @@ python scripts/workshop.py evaluate --label baseline
 
 ```bash
 python scripts/workshop.py compare --labels baseline &&
-python scripts/workshop.py monitor --label baseline
+python scripts/workshop.py monitor --label baseline &&
+python scripts/workshop.py summary --labels baseline
 ```
 
-**Checkpoint:** `complete: true`, `expected_trace_count: 18`, and `observed_trace_count: 18`.
+**Checkpoint:** `complete: true`, `expected_trace_count: 18`, and `observed_trace_count: 18`, followed by a model summary table and `baseline business-check failures:`. The summary reads saved results; it does not evaluate again.
 
-**If not:** [recover monitoring](docs/troubleshooting.en.md#telemetry) before recording a review.
+**If not:** for missing traces, [recover monitoring](docs/troubleshooting.en.md#telemetry). If only the summary failed, check the file or label named in the error and repeat only `summary`.
 
 <a id="review-case"></a>
 
 ### 6-2. Choose and explain one case
 
-**Editor, then Portal:** follow one failed response through the four places below, by ID rather than line number. Record the last column and edit nothing. Result files are under `src/agent/.foundry/results/`.
+**Terminal summary → Editor → Portal:** choose a response from the summary, then check just **two files and its trace**. All file paths below are relative to the repository root. Edit nothing.
 
-1. **Choose** one row in `business_failures` (#1 in the table). If the list is empty, [review one passing dev case](docs/troubleshooting.en.md#no-failures) instead; never invent a failure.
+1. **Choose** one `row_id` from `baseline business-check failures:` and note the failed checks in parentheses (#1 in the table). If it says `none`, [review one passing dev case](docs/troubleshooting.en.md#no-failures) instead; never invent a failure.
 2. **Look up** its `row_id` in #2, then its `case_id` in #3.
 3. **Confirm** its full `trace_id` in the portal (#4).
 4. **Write** your review as one line, which 6-3 saves: `Observation: ...; Evidence: ...; Change: ...`.
 
 | # | Open | Search by | Record |
 |---|---|---|---|
-| 1 | `comparison.json` → `labels → baseline → business_failures` | Pick one row | `row_id`, `trace_id`, and the `false` checks |
-| 2 | `baseline/responses.jsonl` | `row_id` | `case_id`, `model_key`, `answer`, `decision`, `citations`, `source_ids` |
+| 1 | Terminal summary from 6-1 → `baseline business-check failures:` | Pick one row | `row_id` and failed checks |
+| 2 | `src/agent/.foundry/results/baseline/responses.jsonl` | `row_id` | `case_id`, `model_key`, `trace_id`, `answer`, `decision`, `citations`, `source_ids` |
 | 3 | `data/en/dev.jsonl` | `case_id` | `ground_truth`, `expected_decision`, `required_numbers`, `allowed_citations` |
 | 4 | Portal: **your agent → Traces → Graph view** (widen the time range if needed) | `trace_id` | The `foundry_iq.retrieve` and `chat` spans |
 
 **Checkpoint:** the **Record** fields for #1–#3 are in your notes, the Graph view (#4) shows both spans, and your one-line review is written. Keep `case_id` and `model_key` for step 7.
 
-**If not:** if the trace does not appear, widen the time range and search by the full `trace_id` ([portal differences](docs/troubleshooting.en.md#portal-differs)).
+**If not:** for a missing file or row, check that you opened the right label. For a missing trace, widen the time range and search by the full `trace_id` ([portal differences](docs/troubleshooting.en.md#portal-differs)).
 
 <details>
 <summary>Terms in this table</summary>
@@ -673,7 +666,7 @@ python scripts/workshop.py summary --labels baseline improved
 2. a `sol` / `luna` / `astra` table of V1 `->` V2 values ([columns](#metric-fields));
 3. `improved business-check failures:` and `improved Foundry-score failures:`, each with row IDs or `none`.
 
-**If not:** confirm 7-3's checkpoints, rerun only `python scripts/workshop.py compare --labels baseline improved`, then rerun this `summary` command.
+**If not:** for a missing comparison file or label, confirm 7-3's evaluation completed, then rerun only `compare` and `summary`. If `Reviewed case` is absent or says `source trace carried: no`, stop and check the 6-3 review record with the instructor. Do not recollect or replace the review to hide the missing link.
 
 **Warning:** report results as they are, even if unchanged or worse. Never lower the criteria, swap models, or adopt V2 automatically.
 
@@ -807,7 +800,12 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 
 **Terminal A:** from the end of the `verify` output, copy the six `candidate_quality_gates` values: `dev` and `holdout` for `sol`, `luna`, and `astra`. They are also saved in `src/agent/.foundry/results/verified-evidence.json`. Note them as `sol dev=true, sol holdout=true, luna dev=...`.
 
-`true` means at least **5/6** dev and **4/4** holdout business passes, with every required citation valid. Report:
+| Gate | What `true` means, per model |
+|---|---|
+| `dev` | At least **5 of 6 responses** pass all business checks, and every required citation is valid |
+| `holdout` | **All 4 responses** pass all business checks, and every required citation is valid |
+
+Report:
 
 - **Any `false`:** the failed gate, unchanged; the run is still complete.
 - **All `true`:** the pass, plus any Foundry-score failures and limitations.
@@ -839,7 +837,22 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 
 </details>
 
-**Next:** [10. Clean up only your owned workshop objects](#cleanup). If you chose Level 2 or 3, do [Level 2](docs/level-2.en.md) (and then [Level 3](docs/level-3.en.md)) first.
+**Next:** on a first run, go to [10. Clean up only your owned workshop objects](#cleanup).
+
+<a id="levels"></a>
+
+<details>
+<summary>Optional: with more time, add Levels 2–3 before cleanup</summary>
+
+Stay in this folder. **Do not start these extras after step 10; it deletes the agent.** Additional model and judge calls cost money.
+
+| Choice | Adds | Extra time | Path |
+|---|---|---|---|
+| Level 1 only | The evaluation loop you just completed | None | [Step 10 cleanup](#cleanup) |
+| Level 2 | Foundry evaluates your business rules; compare runs and failure causes | About 40 minutes | [Level 2](docs/level-2.en.md) → step 10 |
+| Levels 2 and 3 | Generated criteria, model/agent/trace evaluation, continuous evaluation, and a release gate | About 110 minutes | [Level 2](docs/level-2.en.md) → [Level 3](docs/level-3.en.md) → step 10 |
+
+</details>
 
 <a id="cleanup"></a>
 
@@ -905,11 +918,15 @@ python scripts/workshop.py check-cleanup
 
 ## Finish: report three points
 
-Use your saved results, not the recording:
+**Your notes:** copy these three lines and replace `...` with your own results. This is not a command; do not copy the recording's scores.
 
-- **Review:** the `row_id`, original trace, observed problem, and supporting evidence.
-- **Change:** each model's before-and-after business passes, required citations, Foundry scores, tokens, and processing time.
-- **Decision:** holdout results, quality gates, and remaining limitations. This is not production approval.
+```text
+Review: row_id=...; trace_id=...; observation, evidence, proposed change=...
+Change: ... (paste step 7-4's summary table for all three models and its failed rows)
+Decision: ... (the six dev/holdout gates from 9-2); limitations=...; production_release_approved=false
+```
+
+The summary table includes business passes, required citations, Foundry scores, tokens, and processing time. Preserve regressions too; do not claim production approval or statistical model superiority.
 
 **Checkpoint:** each point uses values from your own files, and the decision keeps `production_release_approved: false`.
 

@@ -250,32 +250,50 @@ Search an older trace by its real ID after expanding the time range. Do not subs
 
 ## If a Level 2 or 3 command stopped
 
-Each Level 2–3 command saves its progress under **`src/agent/.foundry/results/suite/`** or **`src/agent/.foundry/results/level3/`** and resumes from it when you run the command again. It never changes your step 5–9 results.
+Commands that create evaluation runs save their state under **`src/agent/.foundry/results/suite/`** or **`src/agent/.foundry/results/level3/`**. Distinguish resuming a saved run from replacing a failed one below. **First confirm that the original command exited**; wait while it is still running.
+
+Recovery does not change the step 5–9 responses or criteria. Low valid scores, successful attacks, and `Quality gate FAILED` are not reasons to retry. If the same error recurs, stop repeating the command and tell the instructor.
 
 | Message or situation | Next action |
 |---|---|
-| `... still running`, `... still generating`, or `... still in progress`, or the terminal closed during a run | Repeat the same command. It resumes the saved run instead of creating another. |
-| `... evaluator results failed, for example because the judge hit its rate limit` | Wait a minute, then run the command the message prints; it includes `--retry-failed`. Only runs that failed are replaced; each replaced run is kept under `attempts` in `suite.json`. |
+| Command exited with `... still running`, `... still generating`, or `... still in progress` | Repeat with the same arguments and labels to resume the saved run. No `--retry-failed` or file deletion is needed. |
+| Terminal closed or network timeout | Confirm the original process stopped and check for a saved run. If recorded, repeat the same command to inspect/resume it. Without a record, check for duplicate creation with the instructor; do not assume success. |
+| `... evaluator results failed, for example because the judge hit its rate limit` | Inspect the actual error in `suite/<label>-output.json`. Rate limiting is only one possible cause. Resolve it, then use the printed `--retry-failed` command. Failed runs remain under `attempts` in `suite.json`. |
 | `Suite run for ... ended as failed` | Resolve the cause, then repeat the command with `--retry-failed`. |
 | `Run register-evaluators before evaluate-suite.` or `Run evaluate-suite --labels ... first.` | Run the command the message names, then repeat. |
-| `Evaluator ... already exists and is not owned by this folder` | Another folder with the same `LAB_PREFIX` created it. Do not delete it; ask the instructor for an unused prefix and use a new folder. |
-| `... was registered with a different definition` or `The suite's evaluators changed ...` | Evaluator code in this folder changed after registration. Restore the repository files; do not edit a registered evaluator. |
-| `Saved ... responses changed after their suite run was created` | A step 5–9 result file changed. Restore it; do not collect responses again. |
-| `... rubric results failed`, `... stress-test results failed`, or `... red-team results failed` | Delete only the file the message names, wait a minute, and repeat the command. For the rubric and the stress test, your ownership record keeps the evaluator or dataset already created, so cleanup still deletes it. |
+| `Evaluator ... already exists and is not owned by this folder` | The evaluator is not recorded as yours. Check the conflict with the instructor; do not change this folder's `LAB_PREFIX` or delete another evaluator to bypass it. |
+| `... was registered with a different definition` or `The suite's evaluators changed ...` | Compare the registered definition and current code with the instructor. Restore only from a verified original; do not edit a registered evaluator to make it match. |
+| `Saved ... responses changed after their suite run was created` | Compare the changed file with a verified original. Without an original, stop; do not recollect or edit hashes to force a match. |
+| `... rubric results failed`, `... stress-test results failed`, or `... red-team results failed` | Resolve the cause, then follow [state-file recovery](#level-state-recovery). Distinguish execution errors from low scores. |
 | `Comparison insight failed` or `Cluster insight failed` | Wait a minute, then repeat the same command. Only the failed insight is generated again; the failed one stays under `failed_attempts` in `insights.json`. |
-| `Rubric generation ended as ...` or `The run ended as ...` | Keep the named file and show it to the instructor. After the cause is resolved, delete that file and repeat the command. |
-| `... already compares the rubrics on ...` or `... already holds a ...-question run` | That file holds an earlier run with another value. Repeat with the value the message names; to start over with a new value, delete that file first. |
-| An HTTP `429` (Too Many Requests) error | The shared judge or Sol deployment is busy. Wait a few minutes, then repeat the same command; do not raise `--count`. |
-| `This folder has no deployed hosted agent` | `evaluate-agent` and `continuous-eval` need the agent that step 10 deletes. If you already cleaned up, skip those sections; do not redeploy for them. |
-| `... agent calls or evaluator results failed` | Wait a minute, then run `evaluate-agent --retry-failed` with the same `--split`. Only the failed model's run is replaced; the old run is kept under `attempts`. |
+| `Rubric generation ended as ...` or `The run ended as ...` | Review the failed status and error with the instructor. Use [state-file recovery](#level-state-recovery) only after resolving the cause and only if the message explicitly calls for deletion. |
+| `... already compares the rubrics on ...` or `... already holds a ...-question run` | Arguments differ from the saved run. Resume with the recorded values. Plan a separate experiment for new conditions; do not erase the existing record. |
+| An HTTP `429` (Too Many Requests) error | Wait for `Retry-After`, or one minute if absent. Choose resume or failed-run retry based on the saved status. Do not increase `--count`. |
+| `This folder has no deployed hosted agent` | Check the cause with the instructor. If already cleaned up, record sections 4 and 6 as **not run** and do not redeploy. Do not claim Level 3 completion for unrun sections. |
+| `... agent calls or evaluator results failed` | Resolve the recorded error, then run `evaluate-agent --split dev --retry-failed`. Only the failed model's run is replaced; the old run remains under `attempts`. |
 | `The <model> run ended as failed: ... Error code: 500` | An internal service error. Wait a minute, then run `evaluate-agent --retry-failed`. If the same model fails again, tell the instructor. |
-| `evaluate-traces` ends with an access error, such as `ApplicationInsightsAccessDenied` | The project's managed identity cannot read the traces yet. The instructor runs [trace access preparation](instructor.en.md#levels); then delete the file the message names and repeat. |
-| `... traces were not found` | Recent traces may still be ingesting. Wait a few minutes, delete the file the message names, and repeat. |
-| `Schedule ... already exists and is not owned by this folder` | Another folder with the same `LAB_PREFIX` created it. Do not delete it; ask the instructor for an unused prefix. |
+| `evaluate-traces` ends with an access error, such as `ApplicationInsightsAccessDenied` | The instructor completes [trace access preparation](instructor.en.md#levels); then follow [state-file recovery](#level-state-recovery). |
+| `... traces were not found ... evaluator results failed` | For missing traces above zero, check ingestion and access. With zero missing traces but evaluator errors, inspect the judge error instead. Resolve the cause, then follow [state-file recovery](#level-state-recovery). |
+| `Schedule ... already exists and is not owned by this folder` | The schedule is not recorded as yours. Check the conflict with the instructor; do not change `LAB_PREFIX` or delete the schedule. |
 | `No scheduled run yet` | The first continuous-evaluation run starts at the printed time. Run `continuous-eval` again after it. |
+| Continuous evaluation is `queued`/`in_progress`, or `failed`/zero traces | For waiting states, check again in one minute with the same command. For failure or zero traces, record incomplete execution and check traffic/access with the instructor. Creating a schedule is not completion. |
+| Continuous evaluation is `completed` but has evaluator errors or empty results | The [row-level checkpoint](level-3.en.md#continuous-eval) has not passed. Record incomplete execution and inspect the cause; distinguish this from valid `passed: false` results. |
 | The `red-team` scan is hard to find in the portal | In New Foundry, open **Evaluations → Red team** and select `<LAB_PREFIX>-red-team-sol`. Read the rates under **Overall metric results**; the list's **Issues in last run** column is not the number of successful attacks. |
 
-Level 2–3 results do not change the step 9 evidence. Finish with [step 10 cleanup](../README.md#cleanup), which also deletes your continuous-evaluation schedule, custom evaluators, and generated datasets.
+A separate experiment with new names needs a new folder. Keep the names and ownership records of this existing run.
+
+<a id="level-state-recovery"></a>
+
+### Only when an error explicitly requires deleting a state file
+
+**Not for waiting or low scores.** Some Level 3 commands require removing one state file to replace a failed run. Follow this order:
+
+1. Confirm the original command exited and resolve the error's cause. Check that the named path is **one file inside this workshop's `src/agent/.foundry/results/level3/`**. Ask the instructor if the path is unclear.
+2. **Back up before deleting:** use your editor to copy the file and that run's raw output (`*-output.json`, if present) into a private workshop backup folder. Confirm the run/eval/job IDs and error records are preserved. Do not upload them to a public repository.
+3. Delete **only the named state file**. Never remove the whole `suite/` or `level3/` folder, ownership files, or step 5–9 responses, evaluations, or traces.
+4. Retry the failed stage with the same command and arguments; new calls may cost money. If the error repeats, stop and share the original records with the instructor.
+
+Ownership records for existing custom evaluators and generated datasets remain available for cleanup. Finish with [step 10 cleanup](../README.md#cleanup); do not repeat cleanup that already succeeded.
 
 <a id="cleanup-recovery"></a>
 

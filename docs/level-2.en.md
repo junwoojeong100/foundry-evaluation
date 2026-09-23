@@ -4,14 +4,16 @@
 
 **In about 40 minutes you will:**
 
-1. [Register](#register-evaluators) the five business checks as a **Foundry custom code evaluator** and the policy criteria as a **rubric evaluator**.
-2. [Evaluate](#evaluate-suite) your saved V1 and V2 responses with **nine evaluators in one eval group**.
+1. [Register](#register-evaluators) the five decision, amount, and citation checks as a **code evaluator**, and a scoring guide as a **rubric evaluator**.
+2. [Evaluate](#evaluate-suite) your saved V1 and V2 responses with **nine evaluators in one comparison group (eval group)**.
 3. [Read](#insights) Foundry's **run comparison** (statistical test) and **failure clusters**.
 
 **You need:** steps 1–9 of the [main guide](../README.md) finished in this folder, and **step 10 not yet run**.
 
-- No new agent responses are collected; only the judge model is called.
+- No new agent responses are collected; only the judge model is called (**additional cost**).
 - Afterwards, go on to [Level 3](level-3.en.md) or return to [step 10](../README.md#cleanup), which also deletes the evaluators you create here.
+
+**Where to run:** your existing **Terminal A, at the repository root**. In a new terminal, [restore the environment only](../README.md#resume-shell). Keep names and instructions unchanged. If you used recovery labels, replace `baseline` and `improved` below with those labels.
 
 **Why this level exists:** in the recorded step 7, local business checks went from 0/18 to 17/18 while Foundry's groundedness stayed at 18/18. Here Foundry measures your contract itself, next to other evaluator types.
 
@@ -27,7 +29,7 @@ python scripts/workshop.py register-evaluators
 
 **Checkpoint:** two lines, `Registered <LAB_PREFIX>-business-contract version 1 (code)` and `Registered <LAB_PREFIX>-policy-rubric version 1 (rubric)`. Running the command again prints `Reusing ...` and creates nothing.
 
-**If not:** `already exists and is not owned by this folder` means another team uses your `LAB_PREFIX`; ask the instructor for an unused one. For other errors, see [Level 2 and 3 recovery](troubleshooting.en.md#levels).
+**If not:** for `already exists and is not owned by this folder`, stop and check the ownership conflict with the instructor. Do not change `LAB_PREFIX` in this folder's `.env` or delete another team's evaluator. See [Level 2 and 3 recovery](troubleshooting.en.md#levels).
 
 **Read it:** your project now has two reusable evaluators: a code evaluator that runs the five business checks exactly, and a rubric evaluator whose LLM judge scores policy quality.
 
@@ -43,6 +45,8 @@ Both are objects in your project's evaluator catalog, prefixed with your `LAB_PR
 
 </details>
 
+**Next:** [2. Evaluate the saved V1 and V2 responses](#evaluate-suite)
+
 <a id="evaluate-suite"></a>
 
 ## 2. Evaluate V1 and V2 with nine evaluators
@@ -55,19 +59,26 @@ python scripts/workshop.py evaluate-suite --labels baseline improved
 
 **Checkpoint:** `Suite evaluation completed: ... (baseline, improved)`, a table with nine rows and a `Portal:` link. The `business_contract` row matches the business passes from your 7-4 summary.
 
-**If not:** `evaluator results failed, for example because the judge hit its rate limit` means the shared judge was busy; wait a minute, then rerun only the failed runs:
+**If not:** if the command exited with `The suite is still running`, repeat the same command to resume its saved run. If it is still running in your terminal, wait. For other errors, see [Level 2 and 3 recovery](troubleshooting.en.md#levels).
+
+<details>
+<summary>Retry a failed run — only when a failed run or errored results are confirmed</summary>
+
+In `evaluator results failed, for example because the judge hit its rate limit`, rate limiting is **one possible cause**. Inspect the saved error and resolve its cause. For 429, wait as directed by `Retry-After`, then run this. Do not use it for low valid scores.
 
 ```bash
 python scripts/workshop.py evaluate-suite --labels baseline improved --retry-failed
 ```
 
-A timeout message means the runs are still going; run the original command again to resume.
+Only failed runs are replaced; earlier attempts remain recorded. If the same error recurs, stop retrying and tell the instructor.
+
+</details>
 
 **Read it:** the table has three parts.
 
 - **Your contract (`business_contract`)** reproduces the local business checks inside Foundry.
 - **The same rubric with and without evidence** gives different results: `policy_rubric` receives the question plus the retrieved policy text, while `policy_rubric_no_evidence` receives only the question. A judge sees only what you map to it.
-- **Generic evaluators** (`groundedness`, `relevance`, `response_completeness`, `task_adherence`, `intent_resolution`, and the safety evaluator `indirect_attack`) move little, because they do not know your contract.
+- **Generic and safety evaluators** measure their own criteria, such as groundedness, relevance, and safety. They do not check every decision, amount, and citation rule, so they cannot replace your contract check. Read the actual changes from your table.
 
 <details>
 <summary>Recorded English result (September 23, 2026 responses) — an example, not your target</summary>
@@ -110,6 +121,8 @@ Details: [built-in evaluators](https://learn.microsoft.com/azure/foundry/concept
 
 </details>
 
+**Next:** [3. Compare runs and cluster failures](#insights)
+
 <a id="insights"></a>
 
 ## 3. Compare the runs and cluster the failures
@@ -125,12 +138,13 @@ python scripts/workshop.py insights --baseline baseline --candidate improved
 1. a `Comparison (candidate vs baseline):` table with `delta`, `p`, and `effect` for all nine criteria;
 2. `Failure clusters in the candidate run [evaluator that failed each sample]:` with a list, or `none`.
 
-**If not:** `Run evaluate-suite ... first` means section 2 has not completed. A timeout means the insights are still generating, and `... insight failed` means one could not be generated; in both cases, run the same command again.
+**If not:** for `Run evaluate-suite ... first`, return to section 2's checkpoint. If the command exited with `Insights are still generating`, repeat it to resume. For `... insight failed`, follow [error-specific recovery](troubleshooting.en.md#levels).
 
 **Read it:**
 
-- **`effect`** is Foundry's statistical test on the two runs: `Changed` means a significant difference (p at most 0.05), and `Inconclusive` means too few rows or no significant difference ([legend](https://learn.microsoft.com/azure/foundry/how-to/evaluate-results#see-your-evaluation-results)). With 18 rows per run, only large changes become significant.
-- **Each cluster lists the evaluators whose failures it contains.** If most samples come from `policy_rubric_no_evidence`, the cluster describes a judge that lacked evidence, not a real agent problem. Before acting on a cluster, check which evaluator produced its failures: a `policy_rubric_no_evidence` cluster usually means the judge lacked evidence, while a `business_contract` cluster points to a real contract failure.
+- **Section 2 shows pass counts; this table shows mean scores.** `baseline` and `candidate` are each evaluator's averages; `delta` is candidate minus baseline. A contract score of `0.60` means some individual checks passed, not that 60% of responses passed.
+- **An `effect` of `Changed` means a difference, not necessarily an improvement.** Read `delta` and the evaluator's desired direction together. `Inconclusive` does not prove equivalence. Note the small sample of 18 rows ([statistical comparison legend](https://learn.microsoft.com/azure/foundry/how-to/evaluate-results#compare-the-evaluation-results)).
+- **Read the source evaluator before the cluster's name.** Many `policy_rubric_no_evidence` failures suggest missing judge evidence, but inspect the same response and fixed reference before deciding whether the agent is wrong. For `business_contract` failures, identify the particular failed check.
 
 <details>
 <summary>Recorded English insights — an example</summary>
@@ -147,6 +161,8 @@ relevance                  4.06      4.33       +0.28  0.151  Inconclusive
 Ten of the twelve clustered V2 samples came from `policy_rubric_no_evidence`, for example the cluster `effective_policy_misapplied`: the judge could not see which policy was in force.
 
 </details>
+
+**Next:** [Finish Level 2](#finish-level-2). The portal comparison below is optional.
 
 ## Optional: compare the runs in the portal
 
@@ -173,8 +189,14 @@ This example is a second run on the same saved responses, so a few LLM-judged co
 
 ## Finish Level 2
 
-Add one sentence to your [report](../README.md#finish): **which evaluator answers which question.** For example: the contract check decides pass or fail; the rubric with evidence explains quality; generic evaluators and the safety evaluator watch for regressions they are designed for.
+Add the following to your [report](../README.md#finish), using **your results as evidence**. This is a note, not a command.
 
-**Checkpoint:** your report names what the contract check, the rubric with evidence, and the generic and safety evaluators each tell you.
+```text
+Business contract: .../18 -> .../18; rubric with evidence: .../18 -> .../18
+What the generic and safety evaluators told me: ...
+Comparison/cluster: evaluator=...; delta/effect=...; verified failure cause, or no failures=...
+```
+
+**Checkpoint:** sections 1–3 finished, and your notes distinguish pass counts from mean scores when interpreting your results. Low valid scores are not incomplete execution; missing results due to errors are.
 
 **Next:** [Level 3](level-3.en.md), or return to [step 10 cleanup](../README.md#cleanup). Cleanup also deletes the custom evaluators from this level; the eval groups and results stay as evidence.

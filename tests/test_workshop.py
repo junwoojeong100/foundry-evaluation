@@ -21,6 +21,7 @@ from main import invocation_payload, telemetry_connection
 from prompting import load_prompt
 from observability import telemetry_boolean
 from settings import RuntimeConfig, azure_url, credential, safe_name
+from workshop import main as workshop_main
 
 
 class FakeResponse:
@@ -383,6 +384,53 @@ class EvaluationTests(unittest.TestCase):
 
 
 class SummaryTableTests(unittest.TestCase):
+    def test_single_label_summary_command_dispatches_to_saved_results(self):
+        for label in ("baseline", "baseline-retry"):
+            with self.subTest(label=label), patch("workshop.load_settings_env"), \
+                    patch("workshop.summary_table") as render, \
+                    patch.object(sys, "argv", ["workshop.py", "summary", "--labels", label]):
+                workshop_main()
+                render.assert_called_once_with([label])
+
+    def test_single_label_summary_supports_case_selection_before_review(self):
+        model = {
+            "total": 6, "business_passed": 6, "required_citation_passed": 5,
+            "required_citation_total": 5, "input_tokens": 100, "output_tokens": 20,
+            "latency_p50_seconds": 1.5, "latency_p95_seconds": 2.25,
+        }
+        for label in ("baseline", "baseline-retry"):
+            for has_failure in (True, False):
+                with self.subTest(label=label, has_failure=has_failure):
+                    row_id = f"{label}-sol-D01"
+                    failures = [{
+                        "row_id": row_id, "trace_id": "source-trace",
+                        "checks": {"decision": True, "citations_retrieved": False},
+                    }] if has_failure else []
+                    models = {key: dict(model) for key in MODEL_SPECS}
+                    if has_failure:
+                        models["sol"].update(business_passed=5, required_citation_passed=4)
+                    report = {"labels": {label: {
+                        "models": models,
+                        "business_failures": failures,
+                    }}}
+                    with tempfile.TemporaryDirectory() as directory:
+                        foundry = Path(directory)
+                        results = foundry / "results"
+                        results.mkdir()
+                        path = results / "comparison.json"
+                        path.write_text(json.dumps(report), encoding="utf-8")
+                        before = path.read_bytes()
+                        with patch("common.RESULTS_DIR", results), patch("experiments.RESULTS_DIR", results), \
+                                patch("experiments.FOUNDRY_DIR", foundry), patch("builtins.print"):
+                            text = summary_table([label])
+                        self.assertEqual(path.read_bytes(), before)
+                        self.assertEqual(list(results.iterdir()), [path])
+                    expected = f"{row_id} (citations_retrieved)" if has_failure else "none"
+                    self.assertIn(f"{label} business-check failures: {expected}", text)
+                    self.assertTrue(text.startswith("model"))
+                    self.assertNotIn("Reviewed case", text)
+                    self.assertNotIn(" -> ", text)
+
     def test_summary_reads_saved_comparison_without_changing_it(self):
         def model(passed, cited, grounded, relevant):
             return {

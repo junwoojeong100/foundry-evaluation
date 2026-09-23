@@ -58,7 +58,7 @@
 | `.env`가 없거나 필수 값 누락 | 저장소 루트에 강사가 준 파일을 둡니다. 다른 조의 이름·배포를 추측해 채우지 않습니다. |
 | 언어가 다르거나 language mismatch | 한국어는 `LAB_LANGUAGE=ko`, 영어는 `en`인 별도 작업 폴더를 사용합니다. 기존 실행의 언어·소유권·결과를 바꾸어 표시하지 않습니다. |
 | `read: -p: no coprocess` 또는 경로/activate 파일 오류 | 먼저 `bash`를 실행했는지, 터미널 A의 `pwd` 경로로 이동했는지 확인합니다. 로그인 파일이 없다고 다른 계정으로 바꾸지 않습니다. |
-| `preflight`의 `missing_models`가 비어 있지 않음 | 강사에게 네 지정 배포의 접근·할당량·준비 상태 확인을 요청합니다. 다른 모델로 대체하지 않습니다. |
+| `preflight`의 `missing_models`가 비어 있지 않음 | 강사에게 세 후보 배포의 접근·할당량·준비 상태 확인을 요청합니다. 보조 모델 오류는 바로 아래 항목을 봅니다. 다른 모델로 대체하지 않습니다. |
 | `The fixed auxiliary planner/judge deployment is missing` | 환경 소유자가 [보조 모델 준비](instructor.ko.md#auxiliary-model)와 `.env`의 실제 `LAB_AUX_DEPLOYMENT`를 확인합니다. `--allow-missing-models`나 `prepare-models`로 보조 배포를 건너뛰거나 만들 수는 없습니다. |
 | 로그인 안 됨 / tenant 오류 / 다른 계정 | [README 1-3](../README.ko.md#login)에서 두 CLI에 로그인하고 `user`·`email`·`tenant`·`subscription`을 `.env`와 대조합니다. `az account set`으로 기본 구독을 바꾸지 않습니다. |
 | 새 터미널에서만 로그인이 풀린 것처럼 보임 | 같은 실습 폴더에서 `export AZURE_CONFIG_DIR="$PWD/.azure-cli"`를 다시 지정합니다. 이전 터미널의 경로 설정은 새 터미널에 자동으로 전달되지 않습니다. |
@@ -256,32 +256,50 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 
 ## 레벨 2·3 명령이 중단됐다면
 
-레벨 2·3 명령은 진행 상태를 **`src/agent/.foundry/results/suite/`** 또는 **`src/agent/.foundry/results/level3/`**에 저장하고, 같은 명령을 다시 실행하면 거기서 이어갑니다. 5–9단계 결과는 바꾸지 않습니다.
+평가 run을 만드는 명령은 상태를 **`src/agent/.foundry/results/suite/`** 또는 **`src/agent/.foundry/results/level3/`**에 저장합니다. 저장된 run의 재개와 실패한 run의 교체를 아래처럼 구분합니다. **먼저 원래 명령이 종료됐는지 확인**하고, 실행 중이면 기다립니다.
+
+이 복구는 5–9단계의 응답·기준을 바꾸지 않습니다. 낮은 유효 점수·공격 성공·`Quality gate FAILED`는 재시도 사유가 아닙니다. 같은 오류가 재발하면 반복 실행을 멈추고 강사에게 전달합니다.
 
 | 메시지 또는 상황 | 다음 행동 |
 |---|---|
-| `... still running`, `... still generating`, `... still in progress`, 또는 실행 중 터미널이 닫힘 | 같은 명령을 다시 실행합니다. 새 run을 만들지 않고 저장된 run을 이어갑니다. |
-| `... evaluator results failed, for example because the judge hit its rate limit` | 1분 기다린 뒤 메시지에 나온 명령을 실행합니다. `--retry-failed`가 포함되어 있습니다. 실패한 run만 교체되고, 교체된 run은 `suite.json`의 `attempts`에 남습니다. |
+| `... still running`, `... still generating`, `... still in progress`로 종료됨 | 같은 인자·label로 명령을 다시 실행해 저장된 run을 이어갑니다. `--retry-failed`나 파일 삭제는 필요 없습니다. |
+| 터미널 닫힘·네트워크 timeout | 원래 프로세스의 종료와 저장된 run 유무를 확인합니다. 기록이 있으면 같은 명령으로 상태를 조회·재개합니다. 기록이 없다면 중복 생성 여부를 강사와 확인하며 성공으로 간주하지 않습니다. |
+| `... evaluator results failed, for example because the judge hit its rate limit` | `suite/<label>-output.json`의 실제 오류를 확인합니다. 속도 제한은 가능한 원인일 뿐입니다. 원인 해결 후 메시지의 `--retry-failed` 명령을 실행합니다. 실패 run은 `suite.json`의 `attempts`에 남습니다. |
 | `Suite run for ... ended as failed` | 원인을 해결한 뒤 같은 명령을 `--retry-failed`와 함께 실행합니다. |
 | `Run register-evaluators before evaluate-suite.` 또는 `Run evaluate-suite --labels ... first.` | 메시지가 가리키는 명령을 먼저 실행한 뒤 다시 실행합니다. |
-| `Evaluator ... already exists and is not owned by this folder` | 같은 `LAB_PREFIX`를 쓰는 다른 폴더가 만든 평가기입니다. 삭제하지 말고, 강사에게 사용하지 않은 prefix를 받아 새 폴더에서 진행합니다. |
-| `... was registered with a different definition` 또는 `The suite's evaluators changed ...` | 등록 후 이 폴더의 평가기 코드가 바뀌었습니다. 저장소 파일을 원래대로 되돌리고, 등록된 평가기를 수정하지 않습니다. |
-| `Saved ... responses changed after their suite run was created` | 5–9단계 결과 파일이 바뀌었습니다. 원래 파일로 되돌리고, 응답을 다시 수집하지 않습니다. |
-| `... rubric results failed`, `... stress-test results failed`, `... red-team results failed` | 메시지에 나온 파일만 삭제하고 1분 기다린 뒤 같은 명령을 실행합니다. rubric과 스트레스 테스트에서 이미 만든 평가기나 데이터셋은 소유 기록에 남아 있어 정리 단계에서 함께 삭제됩니다. |
+| `Evaluator ... already exists and is not owned by this folder` | 내 소유로 기록되지 않은 평가기입니다. 강사와 충돌을 확인하며 지금 폴더의 `LAB_PREFIX` 변경·다른 평가기 삭제로 우회하지 않습니다. |
+| `... was registered with a different definition` 또는 `The suite's evaluators changed ...` | 강사와 등록 당시 정의·현재 코드를 비교합니다. 확인된 원본에서만 복구하고, 등록된 평가기를 고쳐 맞추지 않습니다. |
+| `Saved ... responses changed after their suite run was created` | 변경 파일과 검증된 원본을 강사와 대조합니다. 원본이 없으면 중단하며, 재수집·hash 편집으로 맞추지 않습니다. |
+| `... rubric results failed`, `... stress-test results failed`, `... red-team results failed` | 원인을 해결한 뒤 [상태 파일 복구](#level-state-recovery)를 따릅니다. 낮은 점수와 실행 오류를 구분합니다. |
 | `Comparison insight failed` 또는 `Cluster insight failed` | 1분 기다린 뒤 같은 명령을 실행합니다. 실패한 인사이트만 다시 만들고, 실패한 인사이트는 `insights.json`의 `failed_attempts`에 남습니다. |
-| `Rubric generation ended as ...`, `The run ended as ...` | 메시지에 나온 파일을 보존하고 강사에게 보여 줍니다. 원인을 해결한 뒤 그 파일을 삭제하고 같은 명령을 실행합니다. |
-| `... already compares the rubrics on ...` 또는 `... already holds a ...-question run` | 그 파일에 다른 값으로 실행한 이전 run이 있습니다. 메시지에 나온 값으로 다시 실행하고, 새 값으로 처음부터 하려면 먼저 그 파일을 삭제합니다. |
-| HTTP `429`(Too Many Requests) 오류 | 공유 judge나 Sol 배포가 바쁩니다. 몇 분 기다린 뒤 같은 명령을 실행하고, `--count`를 늘리지 않습니다. |
-| `This folder has no deployed hosted agent` | `evaluate-agent`와 `continuous-eval`에는 10단계가 삭제하는 에이전트가 필요합니다. 이미 정리했다면 그 절은 건너뛰며, 그 절을 위해 다시 배포하지 않습니다. |
-| `... agent calls or evaluator results failed` | 1분 기다린 뒤 같은 `--split`으로 `evaluate-agent --retry-failed`를 실행합니다. 실패한 모델의 run만 교체되고, 이전 run은 `attempts`에 남습니다. |
+| `Rubric generation ended as ...`, `The run ended as ...` | 실패 상태·오류를 강사와 확인합니다. 원인이 해결되고 메시지가 파일 삭제를 명시한 경우에만 [상태 파일 복구](#level-state-recovery)를 따릅니다. |
+| `... already compares the rubrics on ...` 또는 `... already holds a ...-question run` | 저장된 run과 인자가 다릅니다. 메시지에 나온 기존 값으로 재개합니다. 다른 조건의 새 실험은 별도로 계획하며 기존 기록을 지우지 않습니다. |
+| HTTP `429`(Too Many Requests) 오류 | `Retry-After`가 있으면 그만큼, 없으면 1분 기다립니다. 저장된 run 상태에 맞게 재개/실패 재시도를 고릅니다. `--count`는 늘리지 않습니다. |
+| `This folder has no deployed hosted agent` | 강사와 원인을 확인합니다. 이미 정리했다면 4·6절은 **미실행**으로 기록하고 재배포하지 않습니다. 실행하지 않은 절을 레벨 3 완료로 표시하지 않습니다. |
+| `... agent calls or evaluator results failed` | 저장된 실제 오류를 해결한 뒤 `evaluate-agent --split dev --retry-failed`를 실행합니다. 실패한 모델 run만 교체되고, 이전 run은 `attempts`에 남습니다. |
 | `The <model> run ended as failed: ... Error code: 500` | 서비스 내부 오류입니다. 1분 기다린 뒤 `evaluate-agent --retry-failed`를 실행합니다. 같은 모델이 다시 실패하면 강사에게 알립니다. |
-| `evaluate-traces`가 `ApplicationInsightsAccessDenied` 같은 접근 오류로 끝남 | 프로젝트 managed identity가 아직 trace를 읽지 못합니다. 강사가 [trace 접근 준비](instructor.ko.md#levels)를 실행한 뒤, 메시지에 나온 파일을 삭제하고 다시 실행합니다. |
-| `... traces were not found` | 최근 trace가 아직 수집 중일 수 있습니다. 몇 분 기다린 뒤 메시지에 나온 파일을 삭제하고 다시 실행합니다. |
-| `Schedule ... already exists and is not owned by this folder` | 같은 `LAB_PREFIX`를 쓰는 다른 폴더가 만든 일정입니다. 삭제하지 말고 강사에게 사용하지 않은 prefix를 받습니다. |
+| `evaluate-traces`가 `ApplicationInsightsAccessDenied` 같은 접근 오류로 끝남 | 강사가 [trace 접근 준비](instructor.ko.md#levels)를 마친 뒤 [상태 파일 복구](#level-state-recovery)를 따릅니다. |
+| `... traces were not found ... evaluator results failed` | 누락 trace 수가 0보다 크면 반영·권한을 확인합니다. 누락 0건인데 평가 오류가 있으면 judge 오류를 확인합니다. 원인 해결 뒤 [상태 파일 복구](#level-state-recovery)를 따릅니다. |
+| `Schedule ... already exists and is not owned by this folder` | 내 소유로 기록되지 않은 일정입니다. 강사와 충돌을 확인하며 지금 `LAB_PREFIX`를 바꾸거나 그 일정을 삭제하지 않습니다. |
 | `No scheduled run yet` | 연속 평가의 첫 실행은 출력된 시각에 시작합니다. 그 뒤에 `continuous-eval`을 다시 실행합니다. |
+| 연속 평가가 `queued`·`in_progress` / `failed`·0 traces | 대기 상태는 1분 뒤 같은 명령으로 조회합니다. 실패·0 trace는 미완료로 기록하고 트래픽·권한을 강사와 확인합니다. 일정 생성만으로 완료 처리하지 않습니다. |
+| 연속 평가가 `completed`지만 평가 오류·빈 결과가 있음 | [행별 완료 기준](level-3.ko.md#continuous-eval)을 아직 충족하지 못했습니다. 미완료로 기록하고 원인을 확인합니다. 유효한 `passed: false`와 구분합니다. |
 | 포털에서 `red-team` 스캔을 찾기 어려움 | New Foundry에서 **Evaluations → Red team** 탭을 열고 `<LAB_PREFIX>-red-team-sol`을 고릅니다. 비율은 **Overall metric results**에서 읽습니다. 목록의 **Issues in last run** 열은 성공한 공격 수가 아닙니다. |
 
-레벨 2·3 결과는 9단계 증거를 바꾸지 않습니다. 마지막에는 [10단계 정리](../README.ko.md#cleanup)를 실행하며, 내 연속 평가 일정, custom 평가기, 생성된 데이터셋도 함께 삭제됩니다.
+새 이름이 필요한 별도 실험은 새 폴더에서 시작합니다. 이미 진행한 실습의 이름·소유권 기록은 유지합니다.
+
+<a id="level-state-recovery"></a>
+
+### 오류가 상태 파일 삭제를 명시한 경우에만
+
+**대기·낮은 점수에는 사용하지 않습니다.** 일부 레벨 3 명령은 실패한 run을 교체하려면 상태 파일 하나를 제거해야 합니다. 아래 순서를 지킵니다.
+
+1. 원래 명령이 끝났는지 확인하고 오류의 원인을 해결합니다. 오류가 지정한 경로가 **이 실습의 `src/agent/.foundry/results/level3/` 안의 파일 하나**인지 확인합니다. 경로가 불명확하면 강사에게 확인합니다.
+2. **편집기에서 삭제 전에 백업:** 그 파일과 같은 실행의 원문 출력(`*-output.json`, 있다면)을 개인 실습 백업 폴더에 **복사**합니다. run/eval/job ID와 오류 기록이 보존됐는지 확인합니다. 공개 저장소에는 올리지 않습니다.
+3. 지정된 **상태 파일 하나만** 삭제합니다. `suite/`·`level3/` 폴더 전체, 소유권 파일, 5–9단계 응답·평가·trace는 지우거나 편집하지 않습니다.
+4. 같은 명령·인자로 실패한 단계를 재시도합니다. 새 호출에는 비용이 들 수 있습니다. 같은 오류가 반복되면 멈추고 원래 기록과 함께 강사에게 전달합니다.
+
+기존 custom 평가기·생성 데이터셋의 소유권 기록은 유지되므로 나중에 함께 정리됩니다. 마지막에는 [10단계 정리](../README.ko.md#cleanup)를 실행합니다. 이미 성공한 정리는 반복하지 않습니다.
 
 <a id="cleanup-recovery"></a>
 

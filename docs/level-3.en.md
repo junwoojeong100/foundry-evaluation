@@ -9,7 +9,7 @@
 | [1. Generate a rubric](#generate-rubric) | Your saved V2 answers | A rubric Foundry writes from the V2 instructions |
 | [2. Stress-test](#stress-test) | Sol with the V2 instructions | 15 questions Foundry generates |
 | [3. Red-team](#red-team) | The Sol deployment | Attack prompts Foundry generates |
-| [4. Call your agent](#evaluate-agent) | Your deployed agent | The 18 dev questions, sent live by Foundry |
+| [4. Call your agent](#evaluate-agent) | Your deployed agent | The same 6 dev questions × 3 models = 18 new responses |
 | [5. Evaluate traces](#evaluate-traces) | Your step 7 run | Its 18 traces in Application Insights |
 | [6. Continuous evaluation](#continuous-eval) | Your agent's recent traffic | Up to 20 recent traces, every hour |
 | [7. Release gate](#release-gate) | The six business gates (Sol, Luna, Astra × dev, holdout) | `verified-evidence.json` from step 9 |
@@ -18,6 +18,12 @@
 
 - Sections 4 and 6 use your deployed agent, which step 10 deletes.
 - The instructor prepares shared model capacity (sections 2–4) and trace access (sections 5–6) before class ([instructor guide](instructor.en.md#levels)).
+
+**Follow sections 1–7 in order** in your existing **Terminal A, at the repository root**. In a new terminal, [restore the environment only](../README.md#resume-shell). Keep names, V2 instructions, and the deployed version unchanged. If you used a recovery label, replace `--label improved` below with your actual candidate label.
+
+**Cost and evidence:** model and judge calls in sections 1–6 cost extra; section 6 also creates a schedule lasting up to 8 hours. Do not add the extra responses to the main workshop's 48. Section 7 reads **only step 9's saved business gates**, not the new results from sections 1–6.
+
+**Waiting:** while a command is still running, wait. Resume with the same command only **after it exits** with `... still running` or `... still in progress`. A network timeout does not establish that a remote run is active. Use [message-specific recovery](troubleshooting.en.md#levels) for other errors.
 
 <a id="generate-rubric"></a>
 
@@ -31,7 +37,7 @@ python scripts/workshop.py generate-rubric --label improved
 
 **Checkpoint:** `Generated rubric: <LAB_PREFIX>-generated-rubric version 1, pass threshold ...`, a list of dimensions with weights, then `policy_rubric: .../18 passed on improved` and `generated_rubric: .../18 passed on improved`, each with its failed rows or `none`.
 
-**If not:** a timeout means generation or scoring is still running; run the same command again. For other errors, see [Level 2 and 3 recovery](troubleshooting.en.md#levels).
+**If not:** after the command exits with `Rubric generation is still running` or `The run is still in progress`, repeat it to resume. For other errors, see [Level 2 and 3 recovery](troubleshooting.en.md#levels).
 
 **Read it:**
 
@@ -56,6 +62,8 @@ generated_rubric: 18/18 passed on improved; failed rows: none
 
 </details>
 
+**Next:** [2. Stress-test with synthetic questions](#stress-test)
+
 <a id="stress-test"></a>
 
 ## 2. Stress-test V2 on synthetic questions
@@ -66,14 +74,14 @@ generated_rubric: 18/18 passed on improved; failed rows: none
 python scripts/workshop.py stress-test --model sol --count 15
 ```
 
-**Checkpoint:** `Stress test completed on sol: N of 15 synthetic questions failed an evaluator`, one line each for `intent_resolution`, `relevance`, and `indirect_attack`, then the failed questions.
+**Checkpoint:** `Stress test completed on sol: N of 15 synthetic questions failed an evaluator`, with one line each for `intent_resolution`, `relevance`, and `indirect_attack`. Failed questions appear only if there are failures; `N=0` is valid too.
 
-**If not:** a timeout means the run is still going; run the same command again. Foundry requires at least 15 questions.
+**If not:** after the command exits with `The run is still in progress`, repeat it to resume. For other errors, see [Level 2 and 3 recovery](troubleshooting.en.md#levels). Keep the question count at 15.
 
 **Read it:**
 
 - **This is a model-level test.** Foundry gives Sol all seven policies directly; your agent and its retrieval are not used, so these numbers are not comparable with steps 5–8.
-- **Counts change between runs,** because Foundry generates new questions each time. Compare failure patterns, not counts.
+- **Separate new experiments can have different questions and counts.** Resuming the same command in this folder reuses its saved questions and run. Do not delete result files to draw a better score.
 - **Sort each failed question** into a real gap (for example, overseas trips the policy does not cover), a judge penalizing a correct deferral, or a safety flag. Good questions become new dev cases only after you write a fixed reference for them; never tune on holdout.
 
 <details>
@@ -89,6 +97,8 @@ Stress test completed on sol: 6 of 15 synthetic questions failed an evaluator
 Most failures were trips to Chicago or London, which the domestic policy does not cover, and requests for exceptions. A second run on newly generated questions had 4 of 15 failures with the same pattern: trips to Chicago and New York, and a request to ignore the policy. The Korean run flagged one `indirect_attack` answer, to a request to book overseas costs under another expense category.
 
 </details>
+
+**Next:** [3. Red-team the candidate model](#red-team)
 
 <a id="red-team"></a>
 
@@ -108,7 +118,7 @@ python scripts/workshop.py red-team --model sol
 2. `Attack success rate: N/6 attacks succeeded (...); lower is better`, then one line `by risk category` and one line `by attack strategy`
 3. `Portal: <link>`
 
-**If not:** a timeout means the scan is still running; run the same command again. For other messages, see [Level 2 and 3 recovery](troubleshooting.en.md#levels).
+**If not:** after the command exits with `The run is still in progress`, repeat it to resume. For other messages, see [Level 2 and 3 recovery](troubleshooting.en.md#levels). A successful attack is a quality finding, not an execution error to retry.
 
 **Read it:**
 
@@ -144,23 +154,25 @@ The one successful attack was a plain violence prompt; neither attack strategy s
 
 </details>
 
+**Next:** [4. Evaluate the deployed agent directly](#evaluate-agent)
+
 <a id="evaluate-agent"></a>
 
 ## 4. Let Foundry call your agent
 
-**Terminal A:** Foundry sends step 7's 18 dev questions (6 questions × 3 models) to your deployed V2 agent, one run per model, and scores each live answer. It takes about 15 minutes:
+**Terminal A:** Foundry asks the same six dev questions of each of the three models and scores **18 new responses**. It calls your deployed V2 agent in one run per model and takes about 15 minutes:
 
 ```bash
-python scripts/workshop.py evaluate-agent
+python scripts/workshop.py evaluate-agent --split dev
 ```
 
 **Checkpoint:** the output shows, in order:
 
 1. `Foundry called <LAB_AGENT_NAME> version N for 18 dev rows in 3 runs, one per model (prompt v2).`
 2. one line each for `business_contract`, `task_adherence`, `intent_resolution`, and `relevance`, then `business_contract by model: ...`
-3. `Your saved improved responses: .../18 business passes.`, `Traces recorded: 18`, and a `Portal:` link.
+3. `Traces recorded: 18` and a `Portal:` link. With the default label, you also see `Your saved improved responses: .../18 business passes.` With a recovery label, that line may be absent; compare with your own step 7-4 summary instead.
 
-**If not:** a timeout means the run is still going; run the same command again. For other messages, see [Level 2 and 3 recovery](troubleshooting.en.md#levels).
+**If not:** after the command exits with `The agent evaluation is still running`, repeat it to resume. For other messages, see [Level 2 and 3 recovery](troubleshooting.en.md#levels). Keep `--split dev` during recovery too.
 
 **Read it:**
 
@@ -193,6 +205,8 @@ This run took 12 minutes in a rehearsal folder without saved step 7 responses, s
 
 </details>
 
+**Next:** [5. Evaluate the saved traces](#evaluate-traces)
+
 <a id="evaluate-traces"></a>
 
 ## 5. Evaluate the traces from step 7
@@ -205,7 +219,7 @@ python scripts/workshop.py evaluate-traces --label improved
 
 **Checkpoint:** `Trace evaluation completed: 18 traces from improved, read from Application Insights.`, then a table with `traces` and `saved responses (Level 2)` columns for `relevance`, `intent_resolution`, `task_adherence`, and `indirect_attack`.
 
-**If not:** for an access error, ask the instructor to prepare trace access; for `... traces were not found`, wait a few minutes for ingestion. Both messages end with `... <file> and re-run evaluate-traces --label improved.`; delete that file, then run the same command again ([Level 2 and 3 recovery](troubleshooting.en.md#levels)).
+**If not:** resolve access errors with the instructor, or wait for missing traces to ingest. **Only if the error explicitly names a file to delete**, follow [state-file recovery](troubleshooting.en.md#level-state-recovery): back it up, then handle that one file. Do not delete it for a polling timeout. If the comparison column says `n/a`, check that Level 2 completed with this same label.
 
 **Read it:**
 
@@ -229,19 +243,21 @@ The traces were eight hours old; the command sets the lookback window from your 
 
 </details>
 
+**Next:** [6. Schedule continuous evaluation and check its first result](#continuous-eval)
+
 <a id="continuous-eval"></a>
 
 ## 6. Turn on continuous evaluation
 
-**Terminal A — create the schedule:** it evaluates up to 20 recent traces of your agent's latest version every hour. The first run starts two minutes later, the schedule stops by itself after 8 hours, and step 10 deletes it:
+**Terminal A — create the schedule:** it pins the agent version at creation and evaluates up to 20 of its recent traces every hour. The first run starts two minutes later, the schedule stops by itself after 8 hours, and step 10 deletes it. Repeating the command checks the existing schedule:
 
 ```bash
 python scripts/workshop.py continuous-eval
 ```
 
-**Checkpoint:** `Continuous evaluation <LAB_PREFIX>-continuous: every hour on <LAB_AGENT_NAME> version N, up to 20 recent traces, from HH:MM UTC until HH:MM UTC.` and `No scheduled run yet. Run this command again after HH:MM UTC.` Times are in UTC.
+**Schedule creation check:** `Continuous evaluation <LAB_PREFIX>-continuous: every hour on <LAB_AGENT_NAME> version N, up to 20 recent traces, from HH:MM UTC until HH:MM UTC.` For `No scheduled run yet`, wait until the printed time below. If results already appear, compare them with the completion checkpoint below. Times are in UTC.
 
-**If not:** `This folder has no deployed hosted agent` means this folder's agent is not deployed, for example because step 10 already ran; skip this section and do not redeploy for it. `Schedule ... already exists and is not owned by this folder` means another team uses your `LAB_PREFIX`; ask the instructor for an unused one.
+**If not:** for a missing agent or schedule ownership conflict, stop and follow [error-specific recovery](troubleshooting.en.md#levels). Do not bypass it by renaming or redeploying. If step 10 already ran, record this section as **not run**, not completed.
 
 **Terminal A — check the first run:** at or after the printed `HH:MM UTC`, run the same command again:
 
@@ -249,13 +265,19 @@ python scripts/workshop.py continuous-eval
 python scripts/workshop.py continuous-eval
 ```
 
-**Checkpoint:** a line such as `HH:MM UTC  completed  N traces: relevance .../N, task_adherence .../N, indirect_attack .../N`.
+**Checkpoint:** `HH:MM UTC  completed  N traces: relevance .../N, task_adherence .../N, indirect_attack .../N`, with **N at least 1**. Creating the schedule alone is not completion. Record the time, trace count, and all three evaluation results.
 
-**If not:** `in_progress` or `queued` means the first run is still going; run the command again in a minute.
+**If not:** for `in_progress` or `queued`, check again in a minute with the same command. For `failed`, an error, or zero traces, record the section as incomplete and check traffic and access with the instructor. Do not delete and recreate the schedule.
+
+**Portal — check row-level results:** open the printed `Portal:` link and select the run at the **same UTC time** you recorded above.
+
+**Checkpoint:** all N rows have valid results for all three evaluators, without errors or missing results. `completed` alone does not establish this. `passed: false` is a valid quality failure; report it unchanged.
+
+**If not:** record empty results or evaluator errors as incomplete and inspect them with the instructor. Do not create a new schedule to erase error history.
 
 **Read it:**
 
-- **The first run evaluates your section 4 traffic.** In production, the hourly runs keep a quality signal on real traffic, and a drop sends you back through the loop of steps 5–9.
+- **The schedule selects traces from recent traffic,** which can include section 4 and other recent calls. In production, a drop in this quality signal sends you back through steps 5–9.
 - **Hosted agents are evaluated from their traces on a schedule;** prompt agents can instead be evaluated on every response ([continuous evaluation](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard#set-up-continuous-evaluation)).
 
 <details>
@@ -270,11 +292,13 @@ The first run picked 20 recent traces of version 2; each run evaluates at most 2
 
 </details>
 
+**Next:** [7. Check whether the saved business gates would stop a release](#release-gate)
+
 <a id="release-gate"></a>
 
 ## 7. Turn the business gates into a release gate
 
-**Terminal A:** check the six gates from 9-2, then print the command's exit code:
+**Terminal A:** check step 9's execution verification and six gates, then print the command's exit code. **This gate does not include this level's red-team or continuous-evaluation results.**
 
 ```bash
 python scripts/workshop.py gate
@@ -286,7 +310,7 @@ echo "exit code: $?"
 - `Quality gate passed: all six business gates are true. production_release_approved remains false.`, then `exit code: 0`;
 - `Quality gate FAILED: ...`, then `exit code: 1`, when any gate from 9-2 is `false`.
 
-**If not:** the command reads `src/agent/.foundry/results/verified-evidence.json`; return to [9-1 in step 9](../README.md#lab-g) if the file is missing.
+**If not:** a missing file or traceback is an execution error, not a quality failure. Check `src/agent/.foundry/results/verified-evidence.json` and [9-1's checkpoint](../README.md#lab-g). Do not record a business-gate failure from exit code `1` alone without its output.
 
 **Read it:** a pipeline runs the same loop as steps 5–9 for a new candidate, then this command; a non-zero exit stops the release. For example, a GitHub Actions step (read only; this repository has no such workflow):
 
@@ -297,19 +321,25 @@ echo "exit code: $?"
 
 A passing gate still does not approve production; human review and the holdout rules from step 8 still apply. [Run evaluations in GitHub Actions](https://learn.microsoft.com/azure/foundry/how-to/evaluation-github-action)
 
+<a id="finish-level-3"></a>
+
 ## Finish Level 3
 
-Add to your [report](../README.md#finish):
+Copy this table into your [report](../README.md#finish) and fill in your values and interpretation. Do not copy attack prompts or harmful response text.
 
-- what the generated rubric added or missed;
-- which synthetic questions revealed a real gap;
-- the red-team attack success rate;
-- whether Foundry's live run agreed with your saved result, and what the traces showed;
-- what your release gate would block.
+| Section | Record |
+|---|---|
+| 1. Generated rubric | Both rubrics' pass counts and what they missed compared with the contract |
+| 2. Synthetic questions | Failures `/15`; confirmed policy gap, judge issue, or safety flag (or none) |
+| 3. Red team | Successful attacks `/6` and ASR; lower is better |
+| 4. Live agent | Business passes `/6` per model and the difference from your saved 7-4 result |
+| 5. Trace evaluation | Scores for the 18 traces and differences from Level 2 |
+| 6. Continuous evaluation | First `completed` time, trace count, all three results, and portal confirmation of no errors/missing results |
+| 7. Release gate | Output, exit code, and blocked business gates or pass; distinct from safety or production approval |
 
-**Checkpoint:** your report has one line for each item above.
+**Checkpoint:** sections 1–7 meet their completion checkpoints and the table is filled in. Record skipped sections, errors, or zero traces as **incomplete**. Low valid scores or `Quality gate FAILED` are results of a completed exercise.
 
-**Next:** return to [step 10 cleanup](../README.md#cleanup). Cleanup deletes the continuous-evaluation schedule, the generated rubric and its artifacts, and the synthetic question dataset. Eval groups and red-team results stay as evidence.
+**Next:** return to [step 10 cleanup](../README.md#cleanup). Even if you stop with incomplete sections, clean up the paid resources and schedule you created. Do not repeat cleanup if already finished. It deletes the continuous-evaluation schedule, generated rubric and artifacts, and synthetic question dataset. Eval groups and red-team results stay as evidence.
 
 <a id="beyond"></a>
 
