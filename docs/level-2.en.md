@@ -1,6 +1,6 @@
 # Level 2: Let Foundry evaluate your business contract
 
-[한국어](level-2.ko.md) · [Back to the main guide](../README.md#levels)
+[한국어](level-2.ko.md) · [Back to the main guide](../README.md#levels) · [Summary video from 06:33](../README.md#summary-video)
 
 **In about 40 minutes you will:**
 

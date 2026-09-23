@@ -1,6 +1,6 @@
 # 레벨 3: 릴리스 절차처럼 평가 운영하기
 
-[English](level-3.en.md) · [메인 가이드로 돌아가기](../README.ko.md#levels)
+[English](level-3.en.md) · [메인 가이드로 돌아가기](../README.ko.md#levels) · [요약 영상 12:21부터](../README.ko.md#summary-video)
 
 **약 70분 동안 하는 일:**
 

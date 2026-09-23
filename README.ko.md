@@ -947,14 +947,14 @@ python scripts/workshop.py check-cleanup
 
 <a id="summary-video"></a>
 
-## 선택: 13분 요약 영상
+## 선택: 14분 요약 영상
 
 <details>
-<summary>한국어 실습 요약 영상 — 13분 27초</summary>
+<summary>한국어 실습 요약 영상 — 14분 35초</summary>
 
-[한국어 실습 요약 영상 (MP4, 16.5 MiB)](videos/foundry-evaluation-gpt6-ko-20260923b.mp4)
+[한국어 실습 요약 영상 (MP4, 17.2 MiB)](videos/foundry-evaluation-gpt6-ko-20260923b.mp4)
 
-2026-09-23 한국어 재실행(`ko-20260923b`)의 실제 CLI와 Foundry 포털을 Playwright headless로 녹화해 본문 순서로 편집했습니다. 소리는 없고, 대기 구간은 줄였으며, 로그인·MFA와 계정·구독 식별자는 제외했습니다. 영상과 본문이 다르면 본문을 따릅니다.
+2026-09-23 한국어 재실행(`ko-20260923b`)의 실제 CLI와 Foundry 포털을 Playwright headless로 녹화해 본문 순서로 편집했습니다. 레벨 2·3 장은 같은 날 레벨 리허설에서 저장한 실제 CLI 출력을 렌더한 화면입니다. 소리는 없고, 대기 구간은 줄였으며, 로그인·MFA와 계정·구독 식별자는 제외했습니다. 영상과 본문이 다르면 본문을 따릅니다.
 
 | 단계 | 영상 위치 | 단계 | 영상 위치 |
 |---|---|---|---|
@@ -962,7 +962,8 @@ python scripts/workshop.py check-cleanup
 | 3. 로컬 실행 | 02:08 | 4. Hosted Agent 배포 | 02:49 |
 | 5. baseline 평가 | 04:18 | 6. 사례 검토 | 05:27 |
 | 7. V2 평가 | 06:49 | 8. holdout 평가 | 09:32 |
-| 9. 운영 신호·증거 | 10:35 | 10. 정리 | 11:59 |
+| 9. 운영 신호·증거 | 10:35 | 레벨 2 | 11:59 |
+| 레벨 3 | 12:21 | 10. 정리 | 13:07 |
 
 영문 실행의 요약 영상은 [영문 가이드](README.md#summary-video)에 있습니다.
 

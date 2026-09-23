@@ -1,6 +1,6 @@
 # Level 3: Operate evaluation like a release process
 
-[한국어](level-3.ko.md) · [Back to the main guide](../README.md#levels)
+[한국어](level-3.ko.md) · [Back to the main guide](../README.md#levels) · [Summary video from 06:55](../README.md#summary-video)
 
 **In about 70 minutes you will:**
 

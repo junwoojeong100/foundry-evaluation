@@ -1,6 +1,6 @@
 # 레벨 2: Foundry가 업무 계약을 평가하게 만들기
 
-[English](level-2.en.md) · [메인 가이드로 돌아가기](../README.ko.md#levels)
+[English](level-2.en.md) · [메인 가이드로 돌아가기](../README.ko.md#levels) · [요약 영상 11:59부터](../README.ko.md#summary-video)
 
 **약 40분 동안 하는 일:**
 

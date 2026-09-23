@@ -909,14 +909,14 @@ Use this table only if you did not start from a complete `.env`, or after finish
 
 <a id="summary-video"></a>
 
-## Optional: 7-minute summary video
+## Optional: 8-minute summary video
 
 <details>
-<summary>Watch the 7m05s English workshop summary</summary>
+<summary>Watch the 8m13s English workshop summary</summary>
 
-[English workshop summary (MP4, 7.3 MiB)](videos/foundry-evaluation-gpt6-en-20260923b.mp4)
+[English workshop summary (MP4, 8.1 MiB)](videos/foundry-evaluation-gpt6-en-20260923b.mp4)
 
-It replays the verified English run of September 23, 2026 (`en-20260923b`): portal segments are headless recordings, and **CLI segments replay saved output, not live capture**. It is silent, and sign-in and account identifiers are removed. If the video and the text differ, follow the text.
+It replays the verified English run of September 23, 2026 (`en-20260923b`): portal segments are headless recordings, and **CLI segments replay saved output, not live capture**. The Level 2 and Level 3 chapters replay the saved output of the same day's level rehearsals. It is silent, and sign-in and account identifiers are removed. If the video and the text differ, follow the text.
 
 | Step | Video position | Step | Video position |
 |---|---|---|---|
@@ -924,8 +924,9 @@ It replays the verified English run of September 23, 2026 (`en-20260923b`): port
 | 3. Local agent | 01:07 | 4. Hosted agent | 01:29 |
 | 5. Baseline | 01:48 | 6. Trace and review | 02:28 |
 | 7. V2 comparison | 03:34 | 8. Holdout | 04:57 |
-| 9. Observe | 05:36 | 10. Cleanup | 06:33 |
+| 9. Observe | 05:36 | Level 2 | 06:33 |
+| Level 3 | 06:55 | 10. Cleanup | 07:41 |
 
-The [Korean guide](README.ko.md#summary-video) has a 13m27s recording of the Korean run with live CLI footage.
+The [Korean guide](README.ko.md#summary-video) has a 14m35s recording of the Korean run with live CLI footage.
 
 </details>
