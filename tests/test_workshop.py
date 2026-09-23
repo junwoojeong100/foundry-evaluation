@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from common import digest, label_dir, read_jsonl
 from cloud_setup import agent_principal, cleanup_plan, pin_deployment_version
 from contracts import Invocation, MODEL_SPECS, PolicyAnswer
-from experiments import normalize_eval_items, parse_invocation_output, reviewed_cases
+from experiments import normalize_eval_items, parse_invocation_output, reviewed_cases, summary_table
 from grading import grade, numeric_values, percentile, validate_matrix
 from knowledge import RETRIEVAL_INSTRUCTIONS, canonical_context, retrieve
 from main import telemetry_connection
@@ -368,6 +368,75 @@ class EvaluationTests(unittest.TestCase):
         item["datasource_item_id"] = "100"
         with self.assertRaises(ValueError):
             normalize_eval_items([item], [{"row_id": "r1"}])
+
+
+class SummaryTableTests(unittest.TestCase):
+    def test_summary_reads_saved_comparison_without_changing_it(self):
+        def model(passed, cited, grounded, relevant):
+            return {
+                "total": 6, "business_passed": passed, "required_citation_passed": cited,
+                "required_citation_total": 5, "input_tokens": 100, "output_tokens": 20,
+                "latency_p50_seconds": 1.5, "latency_p95_seconds": 2.25,
+                "foundry_evaluators": {
+                    "groundedness": {"native_passed": grounded, "total": 6},
+                    "relevance": {"native_passed": relevant, "total": 6},
+                },
+            }
+
+        checks = {"decision": True, "required_numbers": True, "citations_retrieved": True,
+                  "citations_relevant": True, "citation_present": True}
+        report = {"labels": {
+            "baseline": {"models": {key: model(0, 0, 6, 5) for key in MODEL_SPECS}, "business_failures": []},
+            "improved": {
+                "models": {key: model(5 if key == "sol" else 6, 5, 6, 6) for key in MODEL_SPECS},
+                "business_failures": [{"row_id": "improved-sol-D02", "trace_id": "t2",
+                                       "checks": {**checks, "decision": False}}],
+            },
+        }}
+        with tempfile.TemporaryDirectory() as directory:
+            foundry = Path(directory)
+            results = foundry / "results"
+            (results / "improved").mkdir(parents=True)
+            (foundry / "datasets").mkdir()
+            (results / "comparison.json").write_text(json.dumps(report), encoding="utf-8")
+            (results / "improved" / "evaluation-results.json").write_text(json.dumps([
+                {"row_id": "improved-sol-D04", "results": [
+                    {"name": "groundedness", "passed": True, "score": 5.0},
+                    {"name": "relevance", "passed": False, "score": 3.0},
+                ]},
+            ]), encoding="utf-8")
+            (results / "improved" / "responses.jsonl").write_text(json.dumps({
+                "row_id": "improved-sol-D01", "case_id": "D01", "model_key": "sol",
+                "business_grade": {"passed": True, "checks": checks},
+                "regression_source_trace_ids": ["t1"],
+            }) + "\n", encoding="utf-8")
+            (foundry / "datasets" / "regression-baseline-sol-D01.jsonl").write_text(json.dumps({
+                "case_id": "D01",
+                "lineage": {"source_row_id": "baseline-sol-D01", "source_trace_id": "t1", "model_key": "sol"},
+            }) + "\n", encoding="utf-8")
+            before = (results / "comparison.json").read_text(encoding="utf-8")
+            with patch("common.RESULTS_DIR", results), patch("experiments.RESULTS_DIR", results), \
+                    patch("experiments.FOUNDRY_DIR", foundry), patch("builtins.print"):
+                text = summary_table(["baseline", "improved"])
+                with self.assertRaisesRegex(ValueError, "run compare"):
+                    summary_table(["baseline", "holdout"])
+            self.assertEqual(before, (results / "comparison.json").read_text(encoding="utf-8"))
+            (results / "comparison.json").unlink()
+            with patch("common.RESULTS_DIR", results), patch("experiments.RESULTS_DIR", results), \
+                    patch("experiments.FOUNDRY_DIR", foundry):
+                with self.assertRaisesRegex(ValueError, "missing; run compare"):
+                    summary_table(["baseline", "improved"])
+
+        lines = text.splitlines()
+        self.assertEqual(
+            lines[0],
+            "Reviewed case baseline-sol-D01 -> improved-sol-D01: business passed; source trace carried: yes",
+        )
+        self.assertTrue(lines[2].startswith("model  business    required citations  groundedness  relevance"))
+        self.assertRegex(lines[3], r"^sol\s+0/6 -> 5/6\s+0/5 -> 5/5\s+6/6 -> 6/6\s+5/6 -> 6/6\s+100/20 -> 100/20\s+1\.50/2\.25 -> 1\.50/2\.25$")
+        self.assertEqual([line.split()[0] for line in lines[3:6]], list(MODEL_SPECS))
+        self.assertIn("improved business-check failures: improved-sol-D02 (decision)", lines)
+        self.assertIn("improved Foundry-score failures: improved-sol-D04 (relevance 3)", lines)
 
 
 if __name__ == "__main__":

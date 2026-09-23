@@ -48,6 +48,8 @@
 
 다른 실습이나 언어를 시작할 때만 미사용 이름을 받아 새 폴더를 사용합니다. 소유권·응답·trace를 지워 오류를 우회하지 않습니다. 응답 수집이 아니라 Azure 환경을 만들다가 중단했다면 [환경 준비 복구](#setup-resume)를 따릅니다.
 
+<a id="symptoms"></a>
+
 ## 증상별 확인
 
 | 증상 | 확인 / 조치 |
@@ -233,6 +235,8 @@ python scripts/workshop.py evaluate --label baseline --retry-failed
 
 최종 `verify`는 **검토된 baseline trace가 후보 실행에서 재사용됐는지** 확인합니다.
 holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금지합니다.
+
+<a id="portal-differs"></a>
 
 ## 포털 화면이 영상과 다르면
 

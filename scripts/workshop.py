@@ -13,7 +13,7 @@ from cloud_setup import (
 )
 from common import RESULTS_DIR, utc_stamp, write_json
 from contracts import MODEL_SPECS
-from experiments import calibrate, collect, compare, evaluate, feedback, smoke, verify_evidence
+from experiments import calibrate, collect, compare, evaluate, feedback, smoke, summary_table, verify_evidence
 from knowledge import retrieve
 from observability import monitor
 from settings import RuntimeConfig, credential, load_settings_env
@@ -48,6 +48,7 @@ def main() -> None:
     evaluation.add_argument("--timeout", type=int, default=600)
     evaluation.add_argument("--retry-failed", action="store_true")
     sub.add_parser("compare").add_argument("--labels", nargs="+", required=True)
+    sub.add_parser("summary").add_argument("--labels", nargs="+", required=True)
     review = sub.add_parser("feedback")
     review.add_argument("--label", required=True)
     review.add_argument("--row-id", required=True)
@@ -100,6 +101,8 @@ def main() -> None:
         evaluate(args.label, args.timeout, args.retry_failed)
     elif args.command == "compare":
         compare(args.labels)
+    elif args.command == "summary":
+        summary_table(args.labels)
     elif args.command == "feedback":
         feedback(args.label, args.row_id, args.reason, args.reviewer)
     elif args.command == "monitor":

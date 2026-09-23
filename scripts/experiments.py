@@ -528,6 +528,82 @@ def compare(labels: list[str]) -> dict[str, Any]:
     return report
 
 
+def summary_table(labels: list[str]) -> str:
+    """Print the saved comparison as a compact table; reads local results only."""
+    comparison_path = RESULTS_DIR / "comparison.json"
+    if not comparison_path.exists():
+        raise ValueError(f"{comparison_path} is missing; run compare --labels {' '.join(labels)} first.")
+    report = read_json(comparison_path)
+    missing = [label for label in labels if label not in report.get("labels", {})]
+    if missing:
+        raise ValueError(f"comparison.json lacks {', '.join(missing)}; run compare --labels {' '.join(labels)} first.")
+    sections = [report["labels"][label] for label in labels]
+    last = labels[-1]
+    lines: list[str] = []
+
+    responses_path = label_dir(last) / "responses.jsonl"
+    if len(labels) > 1 and responses_path.exists():
+        candidates = read_jsonl(responses_path)
+        for path in sorted((FOUNDRY_DIR / "datasets").glob("regression-*.jsonl")):
+            case = read_jsonl(path)[0]
+            lineage = case["lineage"]
+            for row in candidates:
+                if row["case_id"] != case["case_id"] or row["model_key"] != lineage["model_key"]:
+                    continue
+                failed = [check for check, ok in row["business_grade"]["checks"].items() if not ok]
+                outcome = "passed" if row["business_grade"]["passed"] else f"failed ({', '.join(failed)})"
+                carried = "yes" if lineage["source_trace_id"] in row.get("regression_source_trace_ids", []) else "no"
+                lines.append(
+                    f"Reviewed case {lineage['source_row_id']} -> {row['row_id']}: business {outcome}; "
+                    f"source trace carried: {carried}"
+                )
+    if lines:
+        lines.append("")
+
+    def across(render: Any) -> str:
+        return " -> ".join(render(section) for section in sections)
+
+    def evaluator(model: dict[str, Any], name: str) -> str:
+        score = model.get("foundry_evaluators", {}).get(name)
+        return f"{score['native_passed']}/{score['total']}" if score else "n/a"
+
+    table = [["model", "business", "required citations", "groundedness", "relevance", "tokens in/out", "p50/p95 s"]]
+    for key in MODEL_SPECS:
+        table.append([
+            key,
+            across(lambda section: f"{section['models'][key]['business_passed']}/{section['models'][key]['total']}"),
+            across(lambda section: (
+                f"{section['models'][key]['required_citation_passed']}/"
+                f"{section['models'][key]['required_citation_total']}"
+            )),
+            across(lambda section: evaluator(section["models"][key], "groundedness")),
+            across(lambda section: evaluator(section["models"][key], "relevance")),
+            across(lambda section: f"{section['models'][key]['input_tokens']}/{section['models'][key]['output_tokens']}"),
+            across(lambda section: (
+                f"{section['models'][key]['latency_p50_seconds']:.2f}/"
+                f"{section['models'][key]['latency_p95_seconds']:.2f}"
+            )),
+        ])
+    widths = [max(len(row[column]) for row in table) for column in range(len(table[0]))]
+    lines.extend("  ".join(cell.ljust(width) for cell, width in zip(row, widths)).rstrip() for row in table)
+
+    business = [
+        f"{item['row_id']} ({', '.join(check for check, ok in item['checks'].items() if not ok)})"
+        for item in report["labels"][last]["business_failures"]
+    ]
+    lines.extend(["", f"{last} business-check failures: {', '.join(business) or 'none'}"])
+    eval_path = label_dir(last) / "evaluation-results.json"
+    if eval_path.exists():
+        native = [
+            f"{row['row_id']} ({result['name']} {'n/a' if result.get('score') is None else format(result['score'], 'g')})"
+            for row in read_json(eval_path) for result in row["results"] if not result["passed"]
+        ]
+        lines.append(f"{last} Foundry-score failures: {', '.join(native) or 'none'}")
+    text = "\n".join(lines)
+    print(text)
+    return text
+
+
 def feedback(label: str, row_id: str, reason: str, reviewer: str = "human") -> None:
     manifest, rows = completed_rows(label)
     if manifest["split"] != "dev":

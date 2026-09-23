@@ -46,6 +46,8 @@ Use the first incomplete stage to choose the recovery section. A completed manif
 
 For a new experiment or another language, obtain unused names and use a separate folder. Deleting previous ownership or results is not a valid recovery strategy. If you were creating the Azure environment rather than collecting responses, use [setup recovery](#setup-resume).
 
+<a id="symptoms"></a>
+
 ## Common symptoms
 
 | Symptom | What to inspect |
@@ -230,6 +232,8 @@ That is a legitimate result. Do not fabricate a failure or alter an answer/refer
 4. Return to [6-3 to save the review](../README.md#save-review). `feedback` accepts passing dev responses too. Then review V2's suitability in step 7.
 
 The final verification requires reviewed baseline provenance to be consumed by the candidate. Do not search the holdout for a failure to use during development.
+
+<a id="portal-differs"></a>
 
 ## If the portal differs from a screenshot
 

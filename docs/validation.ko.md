@@ -21,6 +21,8 @@ Groundedness 통과는 **18/18 → 18/18**, relevance 통과는 **15/18 → 16/1
 
 파일은 각각 `collect`, `evaluate`, `compare`, `verify`를 실행한 뒤 생성된다. 해당 단계를 아직 하지 않은 새 clone에 파일이 없는 것은 정상이다. **완료된 명령의 파일이 없다면 복구가 필요하며**, 촬영 예시 파일을 복사해 채우지 않는다.
 
+**한눈에 보기:** `compare` 뒤에 `python scripts/workshop.py summary --labels baseline improved`를 실행하면 아래 표의 모델별 값, 검토한 사례의 V2 결과, 미통과 행이 한 번에 출력된다. 이 명령은 위 파일을 읽기만 한다.
+
 | 알고 싶은 것 | 열 곳 | 읽을 값 |
 |---|---|---|
 | 모델별로 무엇이 바뀌었나? | `comparison.json` | `labels → baseline / improved → models → sol/luna/astra`에서 `business_passed` / `total`, `required_citation_passed` / `required_citation_total` 비교. `foundry_evaluators`에서는 평균과 통과 건수를 함께 읽음 |
