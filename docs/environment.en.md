@@ -137,10 +137,6 @@ python scripts/provision_environment.py search --run-dir "$RUN_DIR"
 
 **Checkpoint:** the new group contains the Foundry account/project, Search, Application Insights, and Log Analytics in Sweden Central. Azure Portal **Resources** and **Tags** should match this run's names and `workshop`, `cleanup-scope`, and `run` tags.
 
-![Actual English-only foundation resources in Sweden Central](assets/live-en-20260916-0240/screenshots/00-environment.webp)
-
-The example's **2 Failed** deployment-history entries are separate automatic alert/governance failures, not failed creation of these five resources. Their [actual causes are documented](validation.en.md#8-read-operational-and-setup-errors-honestly); do not change shared subscription settings just to remove the indicator.
-
 The provisioner requires both ownership tags and this run's creation record. A tag alone is not authorization to modify another resource.
 
 Search uses Basic with one replica/partition. Its `semanticSearch` and `knowledgeRetrieval` free settings do **not** make Search uptime or model calls free.

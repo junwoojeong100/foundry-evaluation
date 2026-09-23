@@ -55,7 +55,7 @@ python -m pip install -r requirements.lock.txt
 ```
 
 **실행 ID는 여기서 한 번만 정합니다.** 아래에서 만든 `RUN_DIR`를 끝까지 사용합니다.
-녹화에 나온 `20260914-2034`를 복사하거나 기존 실행 폴더를 재사용하지 않습니다.
+예시의 실행 ID를 복사하거나 기존 실행 폴더를 재사용하지 않습니다.
 
 ```bash
 REPO_ROOT="$(pwd)" &&
@@ -101,13 +101,6 @@ python -m unittest discover -s tests -v
 **지금의 `$RUN_DIR/workshop` 폴더를 유지합니다.** 다음 로그인도 이 폴더에서 실행해야 이후 로컬 실습과 같은 CLI 캐시를 사용합니다.
 이 스냅샷은 실행할 소스이며 가이드 복사본은 포함하지 않습니다. 가이드는 브라우저나 편집기에 계속 열어 둡니다.
 
-<details>
-<summary>녹화 예시 — 새 소스 폴더 확인</summary>
-
-![새 소스 스냅샷과 기존 실행 보존](assets/live-20260914-2034/screenshots/00-01-source-after.webp)
-
-</details>
-
 <a id="setup-identity"></a>
 
 ## 2. 로그인·소유권·용량 확인
@@ -130,14 +123,6 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 각 Azure CLI 요청에는 설정한 구독이 명시됩니다. 실제 구독 할당량은 6단계의 `preflight`와 모델 준비에서 다시 확인합니다.
 
 위 경로는 **`--preserve-existing`으로 기존 그룹을 모두 보존**하며 삭제하지 않습니다. 옵션 없이 실행하면 이전 후보를 발견했을 때 소유권 확인을 위해 중단할 수 있습니다. 어느 경로든 태그·이름만으로 다른 자원을 삭제하거나 오류를 무시하지 않습니다.
-
-<details>
-<summary>녹화 예시 — 계정 대조와 기존 그룹 보존</summary>
-
-![지정 계정·구독·tenant 대조](assets/live-20260914-2034/screenshots/00-10-identity-retry-after.webp)
-![이전 전용 그룹과 공유 환경 구분](assets/live-20260914-2034/screenshots/00-11-ownership-after.webp)
-
-</details>
 
 <a id="setup-foundation"></a>
 
@@ -173,14 +158,6 @@ python scripts/provision_environment.py search-status --run-dir "$RUN_DIR"
 ```
 
 같은 자원의 `provisioning_state: Succeeded`, `status: running`을 확인한 뒤 4단계로 진행합니다.
-
-</details>
-
-<details>
-<summary>녹화 예시 — 전용 태그와 다섯 구성 자원</summary>
-
-![새 그룹의 전용 소유권 태그](assets/live-20260914-2034/screenshots/00-P02-tags-after.webp)
-![새 그룹 안의 다섯 구성 자원](assets/live-20260914-2034/screenshots/00-P03-resources-after.webp)
 
 </details>
 
@@ -264,8 +241,6 @@ Calibration 예제 2개는 본평가 48응답이 아닙니다. 모델 접근·�
 </details>
 
 ## 종료와 비용 관리
-
-화면은 과거 `rg-foundry-evaluation-20260914-2034` 실행입니다. **내 run ID·이름·결과는 다릅니다.**
 
 참가자의 `cleanup`은 그 폴더에서 소유한 agent·세션·모델·KB 객체·역할만 정리합니다.
 **강사가 준비한 기반 서비스와 모델까지 모두 삭제하지 않습니다.** 남은 Search·로그 보존·보조 모델의 비용과 최종 정리는 강사가 별도로 관리합니다.

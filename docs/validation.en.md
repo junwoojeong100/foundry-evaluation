@@ -213,18 +213,9 @@ The business gate requires **at least 80% passing responses and all required cit
 
 Some retrieved contexts differed even with the same frozen corpus (V1 D01, D02, D04, D06; V2 D02, D03, D04, D06; holdout H01, H03). These are end-to-end retrieval-and-answer results, not isolated model rankings. Six dev and four translated educational holdout cases do not establish statistical superiority or production readiness. A repeated holdout is not new independent validation.
 
-## 8. Read operational and setup errors honestly
+## 8. Read the operational dashboard honestly
 
 At capture time, the actual **Monitor → Last Day** view for this English agent showed **53 agent runs** and about **125.7K tokens**. It included smoke and additional portal activity, so none of those dashboard totals replaces the verified 48-response matrix. The displayed estimated cost of `$0` is not proof of free execution.
-
-The [new-environment guide](environment.en.md) still shows the dedicated English foundation created on September 16 for the previous four-candidate run. Its Azure Portal view includes two automatic ARM deployment-history failures, inspected in Azure Portal and through the CLI:
-
-| Deployment purpose | Actual failure | Treatment |
-|---|---|---|
-| Failure-anomalies alert rule | `MissingSubscriptionRegistration`: `Microsoft.AlertsManagement` was not registered | Preserved and reported; no shared provider registration changed |
-| Governance diagnostic settings | `ResourceNotFound`: the policy targeted a missing governance Log Analytics workspace | Preserved and reported; no shared policy or governance resource changed |
-
-These alert/governance failures are not successful workshop components and were not counted as model-evaluation failures. They are unrelated to this September 23 run, which used the existing shared foundation.
 
 ## 9. Minimum reproducibility and lineage identifiers
 
@@ -245,7 +236,7 @@ Collection run IDs were `baseline-20260923T025430Z`, `improved-20260923T025941Z`
 | Effective English V2 instructions | `4f451a8514f0f0d7f84803de01d963e6bcc712fa3a6d0faec15225877b0f2eaf` |
 | Shared evaluation suite | `53acc92aece97ae4ade833f9a0614c0def53b63f4a6a53a508fcba5507d244b0` |
 
-Dataset/corpus hashes use the runner's normalized JSON representation. Prompt hashes include the shared output contract; they are not simple file-byte hashes. The data, corpus, and instruction hashes match the previous four-candidate run and that day's first English run; the candidates and the retrieval-miss guard changed. The suite hash matches the first English run and differs from the previous four-candidate run because it records the judge deployment name used in this environment.
+Dataset/corpus hashes use the runner's normalized JSON representation. Prompt hashes include the shared output contract; they are not simple file-byte hashes. The data, corpus, instruction, and suite hashes match that day's first English run; only the retrieval-miss guard changed between the two runs.
 
 ## 10. Azure scope and completed cleanup
 
@@ -257,8 +248,6 @@ The shared Foundry project, Search service, Application Insights/Logs, connectio
 
 Implementation: [collection, evaluation, feedback, and verification](../scripts/experiments.py) · [business grading](../scripts/grading.py) · [model calls and latency](../src/agent/policy_agent.py) · [language configuration](../src/agent/settings.py).
 
-## Model change record — September 23, 2026
+## Run record — September 23, 2026
 
-The candidates changed from the previous four models to `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`. The fixed model list in code, the response counts (18 + 18 + 12 = 48) and trace verification, configuration examples, guides, and screenshots were updated together. Data, reference answers, instructions, and evaluator definitions were not changed. Do not mix the previous four-candidate results with these.
-
-That day's first Korean run revealed the [D06 retrieval miss](#retrieval-miss). After adding KB retrieval instructions and one retry, both the Korean and English workshops were rerun from the start; the numbers and screenshots above come from that rerun.
+The workshop uses three fixed candidates, `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`, for 18 + 18 + 12 = 48 verified responses. That day's first Korean run revealed the [D06 retrieval miss](#retrieval-miss). After adding KB retrieval instructions and one retry, both the Korean and English workshops were rerun from the start; the numbers and screenshots above come from that rerun.
