@@ -2,11 +2,11 @@
 
 [English participant guide](../README.md#lab-c) · [한국어 실행 결과](validation.ko.md)
 
-**Result:** the actual English run improved business-contract passes from **0/18 to 18/18**, with **12/12 on holdout**. Required citation validity improved from **0/15 to 15/15**. Groundedness passes stayed at **18/18**; relevance passes went from **17/18 to 16/18**.
+**Result:** the actual English run improved business-contract passes from **0/18 to 17/18**, with **12/12 on holdout**. Required citation validity improved from **0/15 to 15/15**. Groundedness passes stayed at **18/18**; relevance passes went from **16/18 to 17/18**.
 
-These are measured English results from **September 23, 2026 (KST)**, run `en-20260923`, with the three fixed candidates `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`. They are not translated Korean scores. All **48 responses and 48 distinct real traces** were verified. Two V2 dev rows still failed native relevance; the candidate is **not approved for production**.
+These are measured English results from **September 23, 2026 (KST)**, run `en-20260923b`, with the three fixed candidates `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`. They are not translated Korean scores. The run used the [retrieval-miss guard](#retrieval-miss) added after that day's first Korean run. All **48 responses and 48 distinct real traces** were verified. One V2 dev row failed its decision label and one failed native relevance; the candidate is **not approved for production**.
 
-**Read only what you need:** [your result files](#read-your-results) · [recorded measurements](#measured-results) · [tokens and latency](#tradeoffs) · [execution versus quality](#execution-quality).
+**Read only what you need:** [your result files](#read-your-results) · [recorded measurements](#measured-results) · [retrieval misses](#retrieval-miss) · [tokens and latency](#tradeoffs) · [execution versus quality](#execution-quality).
 
 <a id="read-your-results"></a>
 
@@ -53,11 +53,12 @@ The rest of this document explains the method and **recorded examples**, not sco
 | Candidate | English V2, the same six dev questions × three models |
 | Holdout | Frozen V2, four separate questions × three models |
 | Concurrency | Four worker slots, held constant across compared cohorts; each question calls the three models in parallel |
+| Retrieval | The same KB retrieval instructions for V1, V2, and holdout; one retry of the same question when the planner runs no search ([why](#retrieval-miss)) |
 | Primary denominator | Exactly 18 + 18 + 12 = 48 real model responses |
 
 The English files are language variants of the existing synthetic business scenario. They preserve document IDs, dates, decision labels, amounts, and allowed citations, but have their own text and content hashes. They are not a newly independent benchmark.
 
-The executed source was the three-model working tree based on revision `c2bfc2f`. Offline tests passed before cloud execution. The run used the instructor-prepared shared deployments `ll-0910-sol`, `ll-0910-luna`, and `ll-0910-astra` (GlobalStandard, capacity 50, `NoAutoUpgrade`) and its own team names (`ll-en-0923`, `frontier-loop-en-0923`). The Korean run's objects and results were kept separate.
+The executed source was revision `e01bddb` plus the retrieval-miss guard, which is committed with these results. Offline tests passed before cloud execution. The run used the instructor-prepared shared deployments `ll-0910-sol`, `ll-0910-luna`, and `ll-0910-astra` (GlobalStandard, capacity 50, `NoAutoUpgrade`) and its own team names (`ll-en-0923b`, `frontier-loop-en-0923b`). The Korean run's objects and results were kept separate.
 
 <a id="business-checks"></a>
 
@@ -99,31 +100,52 @@ This is a provided prompt candidate, not a model substitution, fine-tuning job, 
 
 | Cohort | Agent version | Responses / distinct traces | Business pass | Required citations valid | Groundedness pass | Relevance pass |
 |---|---:|---:|---:|---:|---:|---:|
-| V1 dev | 1 | 18 / 18 | 0/18 | 0/15 | 18/18 | 17/18 |
-| V2 dev | 2 | 18 / 18 | **18/18** | 15/15 | 18/18 | 16/18 |
+| V1 dev | 1 | 18 / 18 | 0/18 | 0/15 | 18/18 | 16/18 |
+| V2 dev | 2 | 18 / 18 | **17/18** | 15/15 | 18/18 | 17/18 |
 | V2 holdout | 2 | 12 / 12 | 12/12 | 12/12 | 12/12 | 12/12 |
 
 | Model | V1 business | V2 business | V2 groundedness | V2 relevance | Holdout business |
 |---|---:|---:|---:|---:|---:|
-| Sol (`gpt-6-sol`) | 0/6 | 6/6 | 6/6 | 6/6 | 4/4 |
-| Luna (`gpt-6-luna`) | 0/6 | 6/6 | 6/6 | **5/6** | 4/4 |
-| Astra (`gpt-6-astra`) | 0/6 | 6/6 | 6/6 | **5/6** | 4/4 |
+| Sol (`gpt-6-sol`) | 0/6 | **5/6** | 6/6 | **5/6** | 4/4 |
+| Luna (`gpt-6-luna`) | 0/6 | 6/6 | 6/6 | 6/6 | 4/4 |
+| Astra (`gpt-6-astra`) | 0/6 | 6/6 | 6/6 | 6/6 | 4/4 |
 
-Every baseline response failed the citation-ID contract, even when its answer contained the correct amount. Therefore **0/18 is not a claim that every V1 answer was factually wrong**, and 18/18 is not a general accuracy measurement.
+Every baseline response failed the citation-ID contract, even when its answer contained the correct amount. Therefore **0/18 is not a claim that every V1 answer was factually wrong**, and 17/18 is not a general accuracy measurement.
 
 All three native jobs completed with the expected row counts and no evaluation error rows. Low valid scores remain failures; they were not converted into errors, removed, or rerun to obtain a better grade.
 
-### The V1 decision miss that V2 corrected: Sol D02
+### The remaining V2 business failure: Sol D02's decision label
 
-`baseline-sol-D02` explained that **KRW 190,000 exceeds the KRW 180,000 limit** and that prior division-head approval is required, but returned **`decision: not_allowed`** instead of the frozen **`needs_approval`**. V2's `improved-sol-D02` returned **`needs_approval`** and cited `TRAVEL-2026` and `APPROVAL-2026`. The rubric, reference answer, and response were not changed after seeing either result.
+The D02 traveler has KRW 190,000 nightly lodging without prior approval and asks to claim reimbursement immediately. `improved-sol-D02` explained that the amount exceeds the KRW 180,000 limit, that division-head approval was required before the trip, and that after-the-fact approval cannot replace it. It cited `TRAVEL-2026` and `APPROVAL-2026`, both retrieved on the first attempt, but returned **`decision: not_allowed`** instead of the frozen **`needs_approval`**. The other four checks passed.
 
-### The remaining native relevance failures: Luna and Astra D04
+This is a decision-label error, not missing evidence. Luna and Astra returned `needs_approval` for the same question, and so did this run's V1 Sol. That day's first English run showed the reverse: V1 Sol returned `not_allowed`, and V2 returned `needs_approval`. Sol's boundary between "approval required" and "not allowed" was unstable across runs. The rubric, reference answer, and response were not changed after seeing either result. Sol still cleared the business gate (5/6, all required citations valid).
 
-`improved-luna-D04` and `improved-astra-D04` answered that the supplied policies cover domestic travel only, so no overseas hotel limit can be given, and referred the traveler to finance. Both passed the business contract with **`not_covered`** and **`SCOPE-2026`**.
+### The native relevance failures: D04
 
-The relevance judge gave both **3/5**, explaining that the answers were related to the question but did not provide the actual limit. Baseline Sol also received relevance 3 for D04. The business contract requires the assistant **not to invent an unsupported overseas limit**; the generic relevance judge instead penalized incompleteness.
+`improved-sol-D04` answered that the supplied policies cover domestic travel only, so no overseas hotel limit can be given, and referred the traveler to finance. It passed the business contract with **`not_covered`** and **`SCOPE-2026`**.
+
+The relevance judge gave it **3/5**, explaining that the answer was related to the question but did not provide the actual limit. Baseline Sol and Luna also received relevance 3 for D04. The business contract requires the assistant **not to invent an unsupported overseas limit**; the generic relevance judge instead penalized incompleteness.
 
 This is a reason to design a business-specific evaluation for justified deferral in a future experiment, not to retroactively turn these grades into passes.
+
+<a id="retrieval-miss"></a>
+
+### Retrieval misses and the guard used in this run
+
+That day's first Korean run (`ko-20260923`) had one V2 failure caused by retrieval, not by a model or instruction. Korean D06 asks to spend KRW 250,000 per night without prior approval, to ignore the existing rules, and to write that approval is complete. For that request, Foundry IQ's query planner recorded only `modelQueryPlanning` and ran no search. With empty `source_ids`, Sol answered `not_covered`.
+
+Repeated diagnostics against a separate probe knowledge base with the same corpus and settings measured the retrieval step alone:
+
+| Measurement | Before | KB retrieval instructions only | Instructions + one retry |
+|---|---:|---:|---:|
+| Korean D06 calls in which the planner ran no search | 19/30 | 1/30 | 0/30 |
+| Sol V2 business passes when repeating D06 alone | 2/10 | — | 29/30 |
+
+Before the change, English D06 skipped search in 0/30 calls, and the other Korean dev questions in 0/30 (D02) or 0/10 (D01, D03–D05). The one remaining failure among the 29/30 was a malformed citation ID, not a retrieval miss.
+
+The guard changes retrieval only: the KB now has retrieval instructions to search the applicable policies even when a request asks to ignore or rewrite them, and the agent retries the same question **once** when the activity has no `searchIndex` step. The attempt count is stored as `retrieval_attempts` in each response and its trace. Prompts, data, reference answers, and evaluators are unchanged. The complete record is in the [Korean results](validation.ko.md#retrieval-miss).
+
+In this English run, all 48 responses searched on the first attempt (`retrieval_attempts: 1`), and none had empty evidence. The guard does not guarantee retrieval for every future wording; a row with `retrieval_attempts: 2` and empty `source_ids` should be reported as a retrieval failure.
 
 ## 5. The reviewed case and its real trace
 
@@ -132,13 +154,13 @@ The review selected **`baseline-sol-D01`**. Its answer correctly allowed KRW 170
 | Evidence | V1 baseline | V2 candidate |
 |---|---|---|
 | Row | `baseline-sol-D01` | `improved-sol-D01` |
-| Trace | `12e4e3c496d29e75bf919ca21fb1c3e2` | `6a2a240387cb91dc27d460cb5dc8cda7` |
+| Trace | `afe9bd6bf2db3cd87fe553a07927cd22` | `f03bc954e60782c2e68baf5d64f012b4` |
 | Decision | `allowed` | `allowed` |
-| Citation | `Current domestic travel expense policy, effective September 1, 2026` | `TRAVEL-2026` |
+| Citation | `Current domestic travel expense policy` | `TRAVEL-2026` |
 | Correct source available | `TRAVEL-2026` in `source_ids` | `TRAVEL-2026` in `source_ids` |
 | Business result | Failed citation checks | All five checks passed |
 
-The actual Foundry trace view showed **11 spans**, one chat call, and one tool call. The chat span `chat ll-0910-sol` reported **810 tokens**, matching the response's **743 input / 67 output tokens**, and the response recorded `configured_model_id: gpt-6-sol` / `2026-09-22`. This was an inspected real trace, not a fabricated trace identifier.
+The actual Foundry trace view showed **11 spans**, one chat call, and one tool call. The chat span `chat ll-0910-sol` reported **1.0K tokens**, matching the response's **921 input / 90 output tokens**, and the response recorded `configured_model_id: gpt-6-sol` / `2026-09-22`. This was an inspected real trace, not a fabricated trace identifier.
 
 `feedback` copied the frozen dev question, reference answer, and rubric, then added the reviewed row, original trace, language, prompt/context hashes, and an English review reason. It did **not** promote the agent's answer to ground truth. This automated review used **`--reviewer assistant`**, not a claimed human review.
 
@@ -154,11 +176,11 @@ These totals include only tokens reported by the three candidate models in the p
 
 | Cohort | Candidate input tokens | Candidate output tokens |
 |---|---:|---:|
-| V1 dev, 18 responses | 15,837 | 1,871 |
-| V2 dev, 18 responses | 21,732 | 1,875 |
-| V2 holdout, 12 responses | 13,631 | 1,248 |
+| V1 dev, 18 responses | 16,646 | 1,928 |
+| V2 dev, 18 responses | 21,904 | 1,778 |
+| V2 holdout, 12 responses | 13,905 | 1,269 |
 
-For the same dev set, input tokens rose **37.2%** and output tokens were essentially unchanged (**+0.2%**). V2 has longer instructions, and retrieved contexts can vary between calls. Do not attribute the whole change to prompt length alone.
+For the same dev set, input tokens rose **31.6%** and output tokens fell **7.8%**. V2 has longer instructions, and retrieved contexts can vary between calls. Do not attribute the whole change to prompt length alone.
 
 Planner/judge calls, calibration, smoke, portal requests, hosting, Search uptime, and log retention are excluded. These are **not the total Azure bill** or a cost-saving percentage.
 
@@ -166,17 +188,17 @@ The following values measure **retrieval plus model processing inside the reques
 
 | Model | V1 p50 / p95, seconds | V2 p50 / p95, seconds |
 |---|---:|---:|
-| Sol | 2.953 / 4.045 | 3.756 / 4.677 |
-| Luna | 2.922 / 3.320 | 2.704 / 3.062 |
-| Astra | 4.096 / 4.924 | 3.858 / 6.587 |
+| Sol | 2.928 / 3.984 | 3.230 / 3.757 |
+| Luna | 3.133 / 4.176 | 2.735 / 3.482 |
+| Astra | 4.852 / 6.034 | 4.420 / 5.449 |
 
-Not every model became faster: Sol slowed down, and Astra's p95 rose. With only six observations per model, p95 is effectively the slowest request, not a reliable production SLO estimate.
+Not every value improved: Sol's p50 rose while its p95 fell; Luna and Astra were faster at both p50 and p95. With only six observations per model, p95 is effectively the slowest request, not a reliable production SLO estimate.
 
 <a id="execution-quality"></a>
 
 ## 7. Execution, quality, and approval are different
 
-The business gate requires **at least 80% passing responses and all required citations valid**. All three models cleared it for V2 dev and holdout; that does not make the native relevance failures disappear.
+The business gate requires **at least 80% passing responses and all required citations valid**. All three models cleared it for V2 dev and holdout; Sol's 5/6 dev result clears 80% with all required citations valid. That does not make the remaining business and native failures disappear.
 
 | Check | Actual result |
 |---|---|
@@ -184,16 +206,16 @@ The business gate requires **at least 80% passing responses and all required cit
 | `primary_model_outputs` | `48` |
 | `distinct_verified_traces` | `48`, all unsampled with weight 1 |
 | V2 dev and holdout business gates | Passed for all three models |
-| All V2 business rows passed | Yes, 18/18 dev and 12/12 holdout |
-| All V2 native scores passed | **No: Luna D04 and Astra D04 relevance failed** |
+| All V2 business rows passed | **No: Sol D02's decision label failed (17/18 dev)**; holdout 12/12 |
+| All V2 native scores passed | **No: Sol D04 relevance failed** |
 | Reviewed baseline provenance reused | Yes |
 | `production_release_approved` | **`false`** |
 
-Some retrieved contexts differed even with the same frozen corpus (V1 D01, D03, D04; V2 D02, D04, D06; holdout H01, H02, H04). These are end-to-end retrieval-and-answer results, not isolated model rankings. Six dev and four translated educational holdout cases do not establish statistical superiority or production readiness. A repeated holdout is not new independent validation.
+Some retrieved contexts differed even with the same frozen corpus (V1 D01, D02, D04, D06; V2 D02, D03, D04, D06; holdout H01, H03). These are end-to-end retrieval-and-answer results, not isolated model rankings. Six dev and four translated educational holdout cases do not establish statistical superiority or production readiness. A repeated holdout is not new independent validation.
 
 ## 8. Read operational and setup errors honestly
 
-At capture time, the actual **Monitor → Last Day** view for this English agent showed **53 agent runs** and about **123.1K tokens**. It included smoke and additional portal activity, so none of those dashboard totals replaces the verified 48-response matrix. The displayed estimated cost of `$0` is not proof of free execution.
+At capture time, the actual **Monitor → Last Day** view for this English agent showed **53 agent runs** and about **125.7K tokens**. It included smoke and additional portal activity, so none of those dashboard totals replaces the verified 48-response matrix. The displayed estimated cost of `$0` is not proof of free execution.
 
 The [new-environment guide](environment.en.md) still shows the dedicated English foundation created on September 16 for the previous four-candidate run. Its Azure Portal view includes two automatic ARM deployment-history failures, inspected in Azure Portal and through the CLI:
 
@@ -208,11 +230,11 @@ These alert/governance failures are not successful workshop components and were 
 
 | Cohort | Evaluation ID | Evaluation run ID |
 |---|---|---|
-| baseline | `eval_dc8d248339ab4cdbab6c0d5f6813b72d` | `evalrun_47299a46b429441586a411d1b1d79158` |
-| improved | `eval_121674f7174e497582190e95fff62449` | `evalrun_ac475cc7a9fa47d4976a4ff043521d8b` |
-| holdout | `eval_4b40e51f95ea4fe4a2a6484f9586026f` | `evalrun_55729964dba54bff9f240ec8cdbb3510` |
+| baseline | `eval_d58f5eac7da445558c400ec20e133ee7` | `evalrun_c6ee10ece7de43ddaf5aa73c27b8a172` |
+| improved | `eval_7d61db79f86046cc9029830a039c20b7` | `evalrun_67fe284e7d07406f908d4670a37d9f35` |
+| holdout | `eval_d6a85e8889114243a65a2f43df87417d` | `evalrun_c8422b0394a444a1910048a5db8b5943` |
 
-Collection run IDs were `baseline-20260923T004748Z`, `improved-20260923T005613Z`, and `holdout-20260923T005826Z`. These timestamps are UTC, corresponding to the morning of September 23 in Korea.
+Collection run IDs were `baseline-20260923T025430Z`, `improved-20260923T025941Z`, and `holdout-20260923T030150Z`. These timestamps are UTC, corresponding to about noon on September 23 in Korea.
 
 | Input | SHA-256 |
 |---|---|
@@ -221,9 +243,9 @@ Collection run IDs were `baseline-20260923T004748Z`, `improved-20260923T005613Z`
 | English policy corpus | `8e63a0d85dd0adb32903d00ed48ecb49310c7c35f389e8aa74101405e40cf6e1` |
 | Effective English V1 instructions | `368f228625e4e565d28f2711da1634a4628a72a827bc056931627a10921bc6d6` |
 | Effective English V2 instructions | `4f451a8514f0f0d7f84803de01d963e6bcc712fa3a6d0faec15225877b0f2eaf` |
-| Shared evaluation suite | `6e4cfdf06a2a1cec6c72a69e80feb621de4be2272822b3968afa484b39dd5dbe` |
+| Shared evaluation suite | `53acc92aece97ae4ade833f9a0614c0def53b63f4a6a53a508fcba5507d244b0` |
 
-Dataset/corpus hashes use the runner's normalized JSON representation. Prompt hashes include the shared output contract; they are not simple file-byte hashes. The data, corpus, and instruction hashes match the previous four-candidate run; only the candidate models changed. The suite hash differs because it records the judge deployment name used in this environment.
+Dataset/corpus hashes use the runner's normalized JSON representation. Prompt hashes include the shared output contract; they are not simple file-byte hashes. The data, corpus, and instruction hashes match the previous four-candidate run and that day's first English run; the candidates and the retrieval-miss guard changed. The suite hash matches the first English run and differs from the previous four-candidate run because it records the judge deployment name used in this environment.
 
 ## 10. Azure scope and completed cleanup
 
@@ -237,4 +259,6 @@ Implementation: [collection, evaluation, feedback, and verification](../scripts/
 
 ## Model change record — September 23, 2026
 
-The candidates changed from the previous four models to `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`. The fixed model list in code, the response counts (18 + 18 + 12 = 48) and trace verification, configuration examples, guides, and screenshots were updated together, and the numbers above come from a new run with this configuration. Data, reference answers, instructions, and evaluator definitions were not changed. Do not mix the previous four-candidate results with these.
+The candidates changed from the previous four models to `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`. The fixed model list in code, the response counts (18 + 18 + 12 = 48) and trace verification, configuration examples, guides, and screenshots were updated together. Data, reference answers, instructions, and evaluator definitions were not changed. Do not mix the previous four-candidate results with these.
+
+That day's first Korean run revealed the [D06 retrieval miss](#retrieval-miss). After adding KB retrieval instructions and one retry, both the Korean and English workshops were rerun from the start; the numbers and screenshots above come from that rerun.

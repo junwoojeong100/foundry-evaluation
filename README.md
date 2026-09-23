@@ -181,7 +181,7 @@ Do not use `az account set` to change a default subscription. Do not change `LAB
 
 Find `language: en` and `missing_models: []`. The full terminal output above them lists the three fixed candidate identities.
 
-![English project and model preflight](docs/assets/live-en-20260923/screenshots/01-ready.webp)
+![English project and model preflight](docs/assets/live-en-20260923b/screenshots/01-ready.webp)
 
 </details>
 
@@ -221,8 +221,9 @@ If current and archived policies appear together, compare their effective dates.
 **Portal:** open [Microsoft Foundry](https://ai.azure.com/) and sign in separately with the configured account. Match resource `AZURE_AI_ACCOUNT_NAME` and project `AZURE_AI_PROJECT_NAME`, then open **Knowledge → Knowledge bases**.
 
 Use **New Foundry with English menus** throughout. “Your agent” is `LAB_AGENT_NAME`; KB and source names are `LAB_PREFIX` plus `-kb` and `-source`. Match your names, not the example's.
+The KB page's **Retrieval instructions** tell the planner to search the relevant policies even when a question asks to ignore them. [Why](docs/validation.en.md#retrieval-miss)
 
-![English Foundry IQ knowledge base](docs/assets/live-en-20260923/screenshots/02-knowledge.webp)
+![English Foundry IQ knowledge base and retrieval instructions](docs/assets/live-en-20260923b/screenshots/02-knowledge.webp)
 
 <a id="local"></a>
 <a id="3-run-the-agent-locally--lab-b"></a>
@@ -272,7 +273,7 @@ python scripts/workshop.py smoke --local
 <details>
 <summary>Example: a real local response</summary>
 
-![Real local English response](docs/assets/live-en-20260923/screenshots/03-local.webp)
+![Real local English response](docs/assets/live-en-20260923b/screenshots/03-local.webp)
 
 </details>
 
@@ -320,7 +321,7 @@ python scripts/workshop.py smoke
 <details>
 <summary>Example: a real hosted response</summary>
 
-![Real hosted English response](docs/assets/live-en-20260923/screenshots/04-hosted.webp)
+![Real hosted English response](docs/assets/live-en-20260923b/screenshots/04-hosted.webp)
 
 </details>
 
@@ -393,7 +394,7 @@ The JSONL includes reference answers, but these two native evaluators do not rec
 
 **Portal:** open the report URL printed by `evaluate` to reach your exact run. It is also saved at **`baseline/evaluation.json → run → report_url`** under `src/agent/.foundry/results/`. If navigating manually, use the project-wide **Evaluations** list, not the agent detail's Evaluation tab.
 
-![Actual English baseline evaluation](docs/assets/live-en-20260923/screenshots/05-baseline.webp)
+![Actual English baseline evaluation](docs/assets/live-en-20260923b/screenshots/05-baseline.webp)
 
 <a id="lab-d"></a>
 <a id="6-review-a-real-case-and-preserve-its-source--lab-d"></a>
@@ -449,7 +450,7 @@ python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
 
 **Checkpoint:** open the printed `src/agent/.foundry/datasets/regression-*.jsonl` file. **`lineage → source_row_id / source_trace_id`** must match the response and trace you just reviewed. Do not turn the model's answer into a new ground truth. Automated reviews must use `--reviewer assistant`, not `human`.
 
-![Real English trace review](docs/assets/live-en-20260923/screenshots/06-trace.webp)
+![Real English trace review](docs/assets/live-en-20260923b/screenshots/06-trace.webp)
 
 <a id="lab-e"></a>
 <a id="7-deploy-v2-and-evaluate-the-same-dev-set--lab-e"></a>
@@ -533,7 +534,7 @@ If the result is unchanged or worse, report that result. Do not lower the criter
 <details>
 <summary>Recorded English result — an example, not your target score</summary>
 
-**Actual English run (September 23, 2026; `gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`):** business passes improved from **0/18 to 18/18**, and valid required citations from **0/15 to 15/15**. V2 also corrected Sol's D02 label from `not_allowed` to the frozen `needs_approval`. Relevance passes went from **17/18 to 16/18**: Luna and Astra correctly deferred the unsupported overseas limit in D04 and received 3/5. Your own result may differ; read the [actual English evaluation and remaining failures](docs/validation.en.md).
+**Actual English run (September 23, 2026; `gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`):** business passes improved from **0/18 to 17/18**, and valid required citations from **0/15 to 15/15**. The remaining failure was Sol's D02 label: its answer correctly required prior approval and cited valid sources, but returned `not_allowed` instead of the frozen `needs_approval`. Relevance passes went from **16/18 to 17/18**: Sol correctly deferred the unsupported overseas limit in D04 and received 3/5. Your own result may differ; read the [actual English evaluation and remaining failures](docs/validation.en.md).
 
 </details>
 
@@ -557,7 +558,7 @@ Click **Send once**: the comparison view sends the question to both versions. Ch
 
 **Read the screenshot:** both answers allow the lodging, but V1 cites a title while V2 cites the original `TRAVEL-2026` ID.
 
-![Real English V1 and V2 comparison](docs/assets/live-en-20260923/screenshots/07-comparison.webp)
+![Real English V1 and V2 comparison](docs/assets/live-en-20260923b/screenshots/07-comparison.webp)
 
 </details>
 
@@ -591,7 +592,7 @@ In `comparison.json`, compare `agent_version` and `prompt_hash` under **`labels 
 
 Do not modify the prompt after seeing these results and submit the same cases as an untouched validation set. The English holdout is a language variant of the same small educational cases, not a new independent benchmark or evidence of production quality.
 
-![Actual English holdout evaluation](docs/assets/live-en-20260923/screenshots/08-holdout.webp)
+![Actual English holdout evaluation](docs/assets/live-en-20260923b/screenshots/08-holdout.webp)
 
 <a id="lab-g"></a>
 <a id="9-check-operational-signals-and-complete-evidence--lab-g"></a>
@@ -629,7 +630,7 @@ Read the gates at **`candidate_quality_gates → sol/luna/astra → dev / holdou
 <details>
 <summary>Example: complete execution evidence</summary>
 
-![English response, evaluation, and trace verification](docs/assets/live-en-20260923/screenshots/09-verification.webp)
+![English response, evaluation, and trace verification](docs/assets/live-en-20260923b/screenshots/09-verification.webp)
 
 </details>
 
@@ -637,7 +638,7 @@ Read the gates at **`candidate_quality_gates → sol/luna/astra → dev / holdou
 
 **Portal:** open **your agent → Monitor → Last Day** and inspect your execution period.
 
-![Actual English Foundry monitoring dashboard](docs/assets/live-en-20260923/screenshots/09-monitor.webp)
+![Actual English Foundry monitoring dashboard](docs/assets/live-en-20260923b/screenshots/09-monitor.webp)
 
 The dashboard also includes smoke and optional portal calls, so its totals need not equal 48. Inspect actual errors; do not claim the whole environment is error-free from the batch result. See [evaluation details, costs, and limitations](docs/validation.en.md) when interpreting these signals.
 
@@ -682,7 +683,7 @@ Search uptime, logs, retained foundation services, and the auxiliary model may s
 <details>
 <summary>Example: cleanup confirmation</summary>
 
-![Verified English workshop cleanup](docs/assets/live-en-20260923/screenshots/10-cleanup.webp)
+![Verified English workshop cleanup](docs/assets/live-en-20260923b/screenshots/10-cleanup.webp)
 
 </details>
 

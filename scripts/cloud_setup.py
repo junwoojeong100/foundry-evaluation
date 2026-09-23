@@ -14,7 +14,7 @@ from common import (
     load_state, read_json, runtime_env, save_state, write_json,
 )
 from contracts import MODEL_SPECS
-from knowledge import SEARCH_API_VERSION, SEARCH_SCOPE
+from knowledge import RETRIEVAL_INSTRUCTIONS, SEARCH_API_VERSION, SEARCH_SCOPE
 from settings import RuntimeConfig, credential, data_directory, required
 
 ROLE_SEARCH_READER = "1407120a-92aa-4202-b7e9-c0e197c71c8f"
@@ -243,6 +243,7 @@ def prepare_iq() -> None:
             "knowledgeSources": [{"name": config.source_name}],
             "outputMode": "extractiveData",
             "retrievalReasoningEffort": {"kind": "low"},
+            "retrievalInstructions": RETRIEVAL_INSTRUCTIONS,
             "models": [{
                 "kind": "azureOpenAI",
                 "azureOpenAIParameters": {

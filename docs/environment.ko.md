@@ -256,8 +256,8 @@ Calibration 예제 2개는 본평가 48응답이 아닙니다. 모델 접근·�
 <details>
 <summary>녹화 예시 — 후보 세 개와 별도 보조 배포</summary>
 
-![실제 세 모델과 시작 조건 확인](assets/live-ko-20260923/screenshots/S1-02-preflight-after.webp)
-![포털에서 확인한 네 모델 배포 — 후보 세 개와 judge](assets/live-ko-20260923/screenshots/S1-P01-models-after.webp)
+![실제 세 모델과 시작 조건 확인](assets/live-ko-20260923b/screenshots/S1-02-preflight-after.webp)
+![포털에서 확인한 네 모델 배포 — 후보 세 개와 judge](assets/live-ko-20260923b/screenshots/S1-P01-models-after.webp)
 
 위 화면은 2026-09-23 기존 공유 환경의 리허설에서 촬영했습니다. 새 전용 환경에서는 배포 이름이 `LAB_PREFIX`를 따릅니다.
 

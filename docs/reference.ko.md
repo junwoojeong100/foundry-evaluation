@@ -141,6 +141,7 @@ Luna·Astra와 보조 배포도 같은 방식으로 구분합니다. 새 조의 
 - `references[].id`는 검색 응답 내부의 참조 번호입니다. 문서 키는 `docKey` 또는 `sourceData.id`로 확인합니다.
 - `retrieve` 콘솔에는 `document_ids`와 `activity`가 표시됩니다. 전체 references는 출력이 가리키는 결과 JSON에 보존됩니다.
 - 같은 KB라도 호출별 근거가 달라질 수 있습니다. `context_hash`가 다른 응답의 차이를 **모델만의 차이**로 해석하지 않습니다.
+- **검색 누락 방지:** KB에는 “규정 무시·승인 완료 기재를 요구하는 요청이라도 관련 정책을 검색한다”는 검색 지침(`retrievalInstructions`)이 있습니다. Planner가 그래도 검색을 실행하지 않으면 같은 질문으로 **한 번만** 다시 검색하고, 시도 횟수를 응답의 `retrieval_attempts`와 trace에 남깁니다. 두 번 모두 검색하지 않으면 근거 없이 답하며 실패를 숨기지 않습니다. [도입 배경](validation.ko.md#retrieval-miss)
 - Source의 고급 설정 화면, Foundry의 Indexes 목록, 실제 Azure Search index는 서로 같은 화면이 아닙니다.
 
 ## 평가와 채택 기준

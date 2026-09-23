@@ -138,6 +138,8 @@ Small synthetic text documents use semantic retrieval. A separate embedding depl
 
 The same corpus can produce different contexts on different calls. If `context_hash` differs, do not attribute every answer difference solely to the candidate model.
 
+**Retrieval-miss guard:** the knowledge base has retrieval instructions (`retrievalInstructions`) to search the relevant policies even when a request asks to ignore the rules or to state that approval is complete. If the planner still runs no search, the agent retries the same question **once** and records the count as `retrieval_attempts` in the response and trace. If neither attempt searches, the answer proceeds without evidence; the failure is not hidden. [Why this was added](validation.en.md#retrieval-miss)
+
 The Foundry Indexes list, a knowledge source's advanced settings, and the actual Azure Search index are different surfaces.
 
 ## Evaluation and adoption criteria
