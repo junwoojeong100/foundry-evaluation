@@ -84,8 +84,8 @@ azd ai agent --help
 |---|---|
 | Azure 구독 | 실습용 구독과 tenant를 명시적으로 선택 |
 | Foundry | `Microsoft.CognitiveServices/accounts/projects` 유형의 프로젝트 |
-| 지역 | Hosted Agent와 네 모델을 실제로 사용할 수 있는 지역 |
-| 모델 | Sol/Terra/Luna/Astra의 실제 배포 + 고정된 보조 planner/judge |
+| 지역 | Hosted Agent와 세 모델을 실제로 사용할 수 있는 지역 |
+| 모델 | Sol/Luna/Astra(`gpt-6-sol`·`gpt-6-luna`·`gpt-6-astra`)의 실제 배포 + 고정된 보조 planner/judge |
 | Search | semantic/agentic retrieval 지원, system-assigned identity, Entra RBAC |
 | 관측 | 프로젝트에 연결된 Application Insights와 Logs 조회 권한 |
 | 로컬 | Python 3.13, Azure CLI, azd, `microsoft.foundry` 확장 |
@@ -106,7 +106,7 @@ azd ai agent --help
 | 준비 담당자 | 모델 배포·Search schema 생성 권한 | 실습 리소스 |
 | 문서 적재 담당자 | Search Service Contributor, Search Index Data Contributor | 실습 Search |
 | Search managed identity | Cognitive Services User | planner 모델이 있는 Foundry 계정 |
-| Agent instance identity | Search Index Data Reader, Cognitive Services OpenAI User | 실습 Search, 네 후보 모델이 있는 Foundry 계정 |
+| Agent instance identity | Search Index Data Reader, Cognitive Services OpenAI User | 실습 Search, 세 후보 모델이 있는 Foundry 계정 |
 | 관측 담당자 | Log Analytics Reader 등 필요한 Logs 권한 | App Insights/연결 workspace |
 
 Foundry 역할의 이전 이름인 Azure AI User 등이 UI에 남아 있을 수 있다. 역할의 이름만 보고 Owner를 일괄 부여하지 않는다. 기존 역할이 충분하면 추가하지 않는다.
@@ -136,7 +136,7 @@ python -m unittest discover -s tests -v
 
 ## 설정과 안전한 준비
 
-**순서:** 설정·로그인 → **보조 planner/judge** → 네 후보 모델 → calibration → 전달.
+**순서:** 설정·로그인 → **보조 planner/judge** → 세 후보 모델 → calibration → 전달.
 
 <a id="existing-settings"></a>
 <a id="1-설정과-로그인"></a>
@@ -170,7 +170,7 @@ python -m unittest discover -s tests -v
 | 후보 상태 | 해당 `MODEL_*_DEPLOYMENT`에 넣을 값 |
 |---|---|
 | 지정 모델·버전이 이미 배포됨 | **실제 배포 이름**을 복사. 새 접두사와 같을 필요는 없음 |
-| 후보가 아직 배포되지 않음 | 실제 `LAB_PREFIX` 뒤에 `-sol`, `-terra`, `-luna`, `-astra`를 붙인 미사용 이름을 예약. 아래 3번에서 없는 배포를 생성 |
+| 후보가 아직 배포되지 않음 | 실제 `LAB_PREFIX` 뒤에 `-sol`, `-luna`, `-astra`를 붙인 미사용 이름을 예약. 아래 3번에서 없는 배포를 생성 |
 
 템플릿의 `ll-team01-sol` 같은 이름이 실제 배포의 존재를 뜻하지는 않는다. 고정 [모델 ID·버전](reference.ko.md#model-names)은 유지하며 보조 배포는 아래에서 별도로 준비한다.
 
@@ -178,7 +178,7 @@ python -m unittest discover -s tests -v
 
 ### 2. 보조 planner/judge를 먼저 준비
 
-**환경 소유자가 실습 시작 전에 수행한다.** `--allow-missing-models`는 **네 후보 모델의 부재만** 허용한다. 보조 배포가 없으면 이 명령도 중단하며, `prepare-models`는 보조 모델을 만들지 않는다.
+**환경 소유자가 실습 시작 전에 수행한다.** `--allow-missing-models`는 **세 후보 모델의 부재만** 허용한다. 보조 배포가 없으면 이 명령도 중단하며, `prepare-models`는 보조 모델을 만들지 않는다.
 
 [Foundry](https://ai.azure.com/)에 `.env`의 계정으로 로그인하고 **New Foundry**에서 `AZURE_AI_ACCOUNT_NAME`과 `AZURE_AI_PROJECT_NAME`을 대조한다. **Build → Models**에서 기존 배포를 열어 아래 조건을 확인한다.
 
@@ -205,12 +205,12 @@ python -m unittest discover -s tests -v
 
 **완료 확인:** 같은 계정의 배포가 위 조건을 만족하고, `.env`의 두 값이 **각각 실제 배포 이름과 모델 ID**에 맞는다. 이 배포 하나를 IQ planner와 평가 judge가 함께 사용한다. 포털에서 새로 만든 보조 배포의 이름·Resource ID는 준비 담당자가 보관하며, 참가자 `cleanup`의 자동 삭제 대상으로 간주하지 않는다.
 
-### 3. 네 후보 모델과 judge 확인 후 전달
+### 3. 세 후보 모델과 judge 확인 후 전달
 
-1. `python scripts/workshop.py preflight --allow-missing-models`로 환경과 네 모델의 지역별 지원·할당량을 읽기 전용 확인한다. 보조 모델은 위에서 준비되어 있어야 한다.
-2. 후보 모델이 없다면 `python scripts/workshop.py prepare-models`로 **고유 접두사**를 가진 네 배포만 만든다.
+1. `python scripts/workshop.py preflight --allow-missing-models`로 환경과 세 모델의 지역별 지원·할당량을 읽기 전용 확인한다. 보조 모델은 위에서 준비되어 있어야 한다.
+2. 후보 모델이 없다면 `python scripts/workshop.py prepare-models`로 **고유 접두사**를 가진 세 배포만 만든다. 새 배포는 `GlobalStandard` 50 capacity이며, 실습 중 모델 버전이 바뀌지 않도록 자동 버전 업그레이드를 끈다(`NoAutoUpgrade`).
 3. `python scripts/workshop.py preflight`를 다시 실행해 `language: ko`, `missing_models: []`를 확인한다.
-4. `python scripts/workshop.py calibrate`의 **`Judge calibration passed`**를 확인한다. 참가자 README 5단계에서도 점검하며, 같은 입력의 완료된 calibration은 재사용한다. 예제 2건은 네 모델의 본평가 64응답에 포함하지 않는다.
+4. `python scripts/workshop.py calibrate`의 **`Judge calibration passed`**를 확인한다. 참가자 README 5단계에서도 점검하며, 같은 입력의 완료된 calibration은 재사용한다. 예제 2건은 세 모델의 본평가 48응답에 포함하지 않는다.
 5. 수업 준비라면 [별도 리허설 폴더](#rehearsal-workspace)를 거쳐 참가자에게 전달한다. 일회성 개인 실습이라면 이 폴더에서 [README 1-4](../README.ko.md#project-binding)로 이어간다. 순서는 bind → IQ 검색 → 로컬 smoke → 배포·권한 부여 → 원격 smoke다. 두 경로를 모두 실행하지 않는다.
 
 평가가 `AppInsights connection is missing ResourceId metadata`로 실패하면 강사가 연결의 소유권과 범위를 먼저 확인한다. **공유 연결은 참가자가 직접 변경하지 않는다.** 수정이 허용된 실습 전용 연결에만 `python scripts/workshop.py repair-observability --confirm`으로 실제 Application Insights ARM ID 메타데이터를 추가한다. target/credential은 변경하지 않으며 보완 기록은 cleanup 후에도 유지된다. 이후 저장된 run 상태에 따라 [calibration 복구](troubleshooting.ko.md#calibration) 또는 [평가 복구](troubleshooting.ko.md#evaluation-retry)를 선택한다. 로컬 오류만으로 `--retry-failed`를 사용하거나 낮은 점수를 통과할 때까지 반복하지 않는다.
@@ -256,7 +256,7 @@ cd foundry-evaluation-rehearsal-ko
 
 참가자의 `cleanup`은 **그 폴더에 생성 기록이 있는 대상만** 정리한다. 강사가 미리 준비한 모델·기반 서비스의 최종 비용과 정리는 강사가 따로 관리한다.
 
-**리허설 정리 후, 전달 전에:** 모델 준비 폴더와 그 CLI 프로필로 돌아와 `python scripts/workshop.py preflight`를 실행한다. 네 배포와 `missing_models: []`를 확인하며, 모델이 없으면 전달을 멈추고 준비부터 복구한다. 참가자가 사용 중인 준비 폴더의 모델은 정리하지 않는다.
+**리허설 정리 후, 전달 전에:** 모델 준비 폴더와 그 CLI 프로필로 돌아와 `python scripts/workshop.py preflight`를 실행한다. 세 배포와 `missing_models: []`를 확인하며, 모델이 없으면 전달을 멈추고 준비부터 복구한다. 참가자가 사용 중인 준비 폴더의 모델은 정리하지 않는다.
 
 아래 [리허설 시간표](#rehearsal)를 사용한다. **이후 참가자가 없는 일회성 개인 실습**이라면 준비 폴더를 계속 사용해도 되며, 그 경우 소유한 모델의 정리는 의도된 동작이다.
 
@@ -269,11 +269,11 @@ cd foundry-evaluation-rehearsal-ko
 | 00–10분 | 1. 시작 준비 | 테스트·두 CLI 로그인·계정 확인·preflight·bind |
 | 10–25분 | 2. 지식 검색 | 실제 IQ 문서 ID와 activity |
 | 25–40분 | 3–4. 로컬·배포 | 로컬과 원격의 실제 응답 |
-| 40–55분 | 5. Baseline | dev 24행과 Foundry 평가 |
+| 40–55분 | 5. Baseline | dev 18행과 Foundry 평가 |
 | 55–70분 | 6. 사례 검토 | 실제 trace와 검토된 회귀 데이터 |
-| 70–85분 | 7. V2 재평가 | 새 버전·같은 dev 6문항 × 4모델 = 24응답 |
-| 85–100분 | 8. Holdout | 고정 후보의 16행 |
-| 100–110분 | 9. 운영·검증 | 64응답·64trace·lineage |
+| 70–85분 | 7. V2 재평가 | 새 버전·같은 dev 6문항 × 3모델 = 18응답 |
+| 85–100분 | 8. Holdout | 고정 후보의 12행 |
+| 100–110분 | 9. 운영·검증 | 48응답·48trace·lineage |
 | 110–115분 | 10. 정리 | 소유 대상만 정리 |
 | 115–120분 | 버퍼 | 비동기 평가·telemetry 반영 |
 
@@ -281,10 +281,10 @@ cd foundry-evaluation-rehearsal-ko
 
 - 모델·agent 배포 및 첫 호출의 cold start.
 - Search index 반영과 RBAC 전파.
-- dev 24행 생성과 Foundry evaluator 완료.
+- dev 18행 생성과 Foundry evaluator 완료.
 - Application Insights에 trace가 실제 조회되기까지의 지연.
 
-기준 시간표를 넘으면 **참가자 시작 전에** 모델 용량·동시성·준비 상태를 조정한다. 실습 중 지식 검색·평가·네 모델 중 일부를 빼고 완료로 처리하지 않는다.
+기준 시간표를 넘으면 **참가자 시작 전에** 모델 용량·동시성·준비 상태를 조정한다. 실습 중 지식 검색·평가·세 모델 중 일부를 빼고 완료로 처리하지 않는다.
 
 <a id="handoff"></a>
 
@@ -296,7 +296,7 @@ cd foundry-evaluation-rehearsal-ko
 |---|---|
 | 실행 가능한 계정 | 참가자 계정의 조회·배포 권한. 실제 CLI 로그인은 참가자가 README 1-3에서 수행 |
 | 조별 `.env` | `.env.example`의 모든 값을 채움. 한국어는 `LAB_LANGUAGE=ko`, 영어는 `en`. 암호·API key·token은 없음 |
-| 준비된 서비스 | Foundry 프로젝트, Search, 연결된 App Insights, 네 후보와 별도 planner/judge |
+| 준비된 서비스 | Foundry 프로젝트, Search, 연결된 App Insights, 세 후보와 별도 planner/judge |
 | 고유한 이름 | 참가자가 아직 사용하지 않은 `LAB_PREFIX`, `LAB_AGENT_NAME` |
 | 준비된 도구 | [기본 도구 설치·확인](#tools) 통과. GHCP 사용 시 [추가 준비](copilot.ko.md)는 별도 수행 |
 | 도움받을 담당자 | `grant-agent-access` 역할 부여·403·quota 오류를 처리할 담당자 |

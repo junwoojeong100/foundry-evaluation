@@ -4,14 +4,16 @@
 
 **Microsoft Foundry + Agent Framework Python · English · 120 minutes with a prepared environment**
 
-**Outcome:** run the provided agent, review a real response, and compare V1/V2 using **64 actual responses**. No application coding is required. Aim for evidence-based improvement, **not perfect scores or production approval**.
+**Outcome:** run the provided agent, review a real response, and compare V1/V2 using **48 actual responses**. No application coding is required. Aim for evidence-based improvement, **not perfect scores or production approval**.
+
+**Candidate models:** three fixed candidates, `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`. A separate `gpt-5.4-mini` deployment is the retrieval planner and evaluation judge.
 
 ## Start here
 
 | Your situation | Where to start |
 |---|---|
 | You have ready Azure services, access, and a complete team `.env` | [Step 1: prepare your workspace](#start) |
-| Foundation services exist, but models or access are not ready | As the owner, [prepare the existing foundation](docs/instructor.en.md#existing-foundation): **auxiliary model first, then four candidates** |
+| Foundation services exist, but models or access are not ready | As the owner, [prepare the existing foundation](docs/instructor.en.md#existing-foundation): **auxiliary model first, then three candidates** |
 | You do not have a prepared Azure environment | [Create an environment](docs/environment.en.md), then return at the step it specifies. For self-study, you are the environment owner. |
 | You are resuming an earlier attempt | [Resume safely](docs/troubleshooting.en.md#resume) in the **same folder**; do not clone again |
 
@@ -25,11 +27,11 @@
 
 ## The 10-step path
 
-Ask, for example, whether KRW 170,000 lodging is allowed for a September 2026 trip. The agent returns an **answer, decision, and source-document IDs**. Sol, Terra, Luna, and Astra answer independently, without voting. **V1/V2 are instructions, not models.**
+Ask, for example, whether KRW 170,000 lodging is allowed for a September 2026 trip. The agent returns an **answer, decision, and source-document IDs**. Sol, Luna, and Astra (`gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`) answer independently, without voting. **V1/V2 are instructions, not models.**
 
 ```text
 Question → Python agent → Foundry IQ policy retrieval → selected model → answer
-V1 (24 responses) → review a trace → V2 (24) → freeze candidate → holdout (16)
+V1 (18 responses) → review a trace → V2 (18) → freeze candidate → holdout (12)
 ```
 
 | Step | Continue when |
@@ -38,14 +40,14 @@ V1 (24 responses) → review a trace → V2 (24) → freeze candidate → holdou
 | [2. Retrieve policies](#lab-a) | Your knowledge base returns document IDs and retrieval activity |
 | [3. Run locally](#local) | Readiness is `HTTP 200` **and** the agent returns a real V1 answer |
 | [4. Deploy](#deploy) | The hosted response has a numeric agent version and a trace |
-| [5. Evaluate V1](#lab-c) | Calibration passes; 24 responses are collected and evaluated |
+| [5. Evaluate V1](#lab-c) | Calibration passes; 18 responses are collected and evaluated |
 | [6. Review one case](#lab-d) | Your review retains the case's original trace and fixed reference |
-| [7. Evaluate V2](#lab-e) | The new version generates and evaluates 24 responses to the **same six dev questions** |
-| [8. Evaluate holdout](#lab-f) | The frozen V2 produces 16 separately evaluated responses |
-| [9. Verify evidence](#lab-g) | 64 responses, 64 traces, evaluation results, and review lineage are verified |
+| [7. Evaluate V2](#lab-e) | The new version generates and evaluates 18 responses to the **same six dev questions** |
+| [8. Evaluate holdout](#lab-f) | The frozen V2 produces 12 separately evaluated responses |
+| [9. Verify evidence](#lab-g) | 48 responses, 48 traces, evaluation results, and review lineage are verified |
 | [10. Clean up](#cleanup) | Your owned objects are removed; retained service costs are identified |
 
-> **Keep these rules throughout:** use synthetic data and the four fixed models. Do not open `data/en/holdout.jsonl` until step 8. Preserve failed attempts; missing or error rows are not success.
+> **Keep these rules throughout:** use synthetic data and the three fixed models. Do not open `data/en/holdout.jsonl` until step 8. Preserve failed attempts; missing or error rows are not success.
 
 <a id="background-learning-loops-and-frontier-ecosystems"></a>
 
@@ -153,7 +155,7 @@ Match CLI `user` and azd `email` to `AZURE_EXPECTED_USERNAME`, and `tenant` / `s
 python scripts/workshop.py preflight
 ```
 
-**Check before binding:** `language: en`, `missing_models: []`, and all four candidates' `deployed: true`. `language: ko` is the wrong workshop. Correct only an unused folder's configuration; never relabel existing results.
+**Check before binding:** `language: en`, `missing_models: []`, and all three candidates' (`gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`) `deployed: true`. `language: ko` is the wrong workshop. Correct only an unused folder's configuration; never relabel existing results.
 
 Only when those values match:
 
@@ -177,9 +179,9 @@ Do not use `az account set` to change a default subscription. Do not change `LAB
 <details>
 <summary>Example: successful preflight output</summary>
 
-Find `language: en` and `missing_models: []`. The full terminal output above them lists the four fixed candidate identities.
+Find `language: en` and `missing_models: []`. The full terminal output above them lists the three fixed candidate identities.
 
-![English project and model preflight](docs/assets/live-en-20260916-0240/screenshots/01-ready.webp)
+![English project and model preflight](docs/assets/live-en-20260923/screenshots/01-ready.webp)
 
 </details>
 
@@ -220,7 +222,7 @@ If current and archived policies appear together, compare their effective dates.
 
 Use **New Foundry with English menus** throughout. “Your agent” is `LAB_AGENT_NAME`; KB and source names are `LAB_PREFIX` plus `-kb` and `-source`. Match your names, not the example's.
 
-![English Foundry IQ knowledge base](docs/assets/live-en-20260916-0240/screenshots/02-knowledge.webp)
+![English Foundry IQ knowledge base](docs/assets/live-en-20260923/screenshots/02-knowledge.webp)
 
 <a id="local"></a>
 <a id="3-run-the-agent-locally--lab-b"></a>
@@ -270,7 +272,7 @@ python scripts/workshop.py smoke --local
 <details>
 <summary>Example: a real local response</summary>
 
-![Real local English response](docs/assets/live-en-20260916-0240/screenshots/03-local.webp)
+![Real local English response](docs/assets/live-en-20260923/screenshots/03-local.webp)
 
 </details>
 
@@ -318,24 +320,25 @@ python scripts/workshop.py smoke
 <details>
 <summary>Example: a real hosted response</summary>
 
-![Real hosted English response](docs/assets/live-en-20260916-0240/screenshots/04-hosted.webp)
+![Real hosted English response](docs/assets/live-en-20260923/screenshots/04-hosted.webp)
 
 </details>
 
 <a id="lab-c"></a>
 <a id="5-evaluate-the-four-model-baseline--lab-c"></a>
+<a id="5-evaluate-the-three-model-baseline"></a>
 
-## 5. Evaluate the four-model baseline
+## 5. Evaluate the three-model baseline
 
 **Action:** collect and evaluate V1 as `baseline`. **`--split` selects the question set; `--label` names its result folder.** The full experiment uses these three labels; execute only `baseline` in this step.
 
 | Stage | Instructions | `--split` | `--label` | Responses |
 |---|---|---|---|---|
-| 5. Baseline | V1 | `dev` | `baseline` | 6 questions × 4 models = 24 |
-| 7. Candidate | V2 | `dev` | `improved` | The same 6 questions × 4 models = 24 |
-| 8. Holdout | Frozen V2 | `holdout` | `holdout` | 4 separate questions × 4 models = 16 |
+| 5. Baseline | V1 | `dev` | `baseline` | 6 questions × 3 models = 18 |
+| 7. Candidate | V2 | `dev` | `improved` | The same 6 questions × 3 models = 18 |
+| 8. Holdout | Frozen V2 | `holdout` | `holdout` | 4 separate questions × 3 models = 12 |
 
-The **judge** scores answer text; it is a separate auxiliary model, not one of the four candidates.
+The **judge** scores answer text; it is a separate auxiliary model (`gpt-5.4-mini`), not one of the three candidates.
 
 ### 5-1. Check the judge in this workspace
 
@@ -343,15 +346,15 @@ The **judge** scores answer text; it is a separate auxiliary model, not one of t
 python scripts/workshop.py calibrate
 ```
 
-Require **`Judge calibration passed`**. The two fixed correct/incorrect examples are excluded from the 64. Matching completed calibration is reused. On failure, [resolve calibration first](docs/troubleshooting.en.md#calibration).
+Require **`Judge calibration passed`**. The two fixed correct/incorrect examples are excluded from the 48. Matching completed calibration is reused. On failure, [resolve calibration first](docs/troubleshooting.en.md#calibration).
 
-### 5-2. Collect the 24 baseline responses
+### 5-2. Collect the 18 baseline responses
 
 ```bash
 python scripts/workshop.py collect --split dev --label baseline
 ```
 
-Require collection to finish without errors at **`24/24`**. `src/agent/.foundry/results/baseline/business-summary.json` must contain four model entries with `total: 6` each.
+Require collection to finish without errors at **`18/18`**. `src/agent/.foundry/results/baseline/business-summary.json` must contain three model entries with `total: 6` each.
 
 **`business=False` means that response failed a business check, not that the command failed.** Once collection completes, continue to 5-3. Do not recollect for a better score.
 
@@ -363,9 +366,9 @@ Require collection to finish without errors at **`24/24`**. `src/agent/.foundry/
 python scripts/workshop.py evaluate --label baseline
 ```
 
-**Checkpoint:** evaluation prints **`Foundry evaluation completed: ... (24 rows)`**.
+**Checkpoint:** evaluation prints **`Foundry evaluation completed: ... (18 rows)`**.
 
-**Next:** if all 24 rows are evaluated without execution errors, check the report below and continue to step 6 **even if scores are low**. Missing, duplicate, error, or null-score rows require [evaluation recovery](docs/troubleshooting.en.md#evaluation-retry). Do not repeat a completed collection.
+**Next:** if all 18 rows are evaluated without execution errors, check the report below and continue to step 6 **even if scores are low**. Missing, duplicate, error, or null-score rows require [evaluation recovery](docs/troubleshooting.en.md#evaluation-retry). Do not repeat a completed collection.
 
 **Two different checks:** Python checks the [`decision` label](docs/reference.en.md#decision-values), amounts, and citation IDs. Foundry scores answer text for **groundedness** and **relevance** on a 1–5 scale, passing at 4 or above. Passing one layer does not mean passing the other.
 
@@ -390,7 +393,7 @@ The JSONL includes reference answers, but these two native evaluators do not rec
 
 **Portal:** open the report URL printed by `evaluate` to reach your exact run. It is also saved at **`baseline/evaluation.json → run → report_url`** under `src/agent/.foundry/results/`. If navigating manually, use the project-wide **Evaluations** list, not the agent detail's Evaluation tab.
 
-![Actual English baseline evaluation](docs/assets/live-en-20260916-0240/screenshots/05-baseline.webp)
+![Actual English baseline evaluation](docs/assets/live-en-20260923/screenshots/05-baseline.webp)
 
 <a id="lab-d"></a>
 <a id="6-review-a-real-case-and-preserve-its-source--lab-d"></a>
@@ -406,7 +409,7 @@ python scripts/workshop.py compare --labels baseline &&
 python scripts/workshop.py monitor --label baseline
 ```
 
-**Checkpoint:** `monitor` reports `complete: true`, `expected_trace_count: 24`, and `observed_trace_count: 24`. If not, [recover monitoring](docs/troubleshooting.en.md#telemetry) before recording feedback.
+**Checkpoint:** `monitor` reports `complete: true`, `expected_trace_count: 18`, and `observed_trace_count: 18`. If not, [recover monitoring](docs/troubleshooting.en.md#telemetry) before recording feedback.
 
 <a id="review-case"></a>
 
@@ -446,7 +449,7 @@ python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
 
 **Checkpoint:** open the printed `src/agent/.foundry/datasets/regression-*.jsonl` file. **`lineage → source_row_id / source_trace_id`** must match the response and trace you just reviewed. Do not turn the model's answer into a new ground truth. Automated reviews must use `--reviewer assistant`, not `human`.
 
-![Real English trace review](docs/assets/live-en-20260916-0240/screenshots/06-trace.webp)
+![Real English trace review](docs/assets/live-en-20260923/screenshots/06-trace.webp)
 
 <a id="lab-e"></a>
 <a id="7-deploy-v2-and-evaluate-the-same-dev-set--lab-e"></a>
@@ -494,14 +497,14 @@ python scripts/workshop.py collect --split dev --label improved
 
 <a id="candidate-evaluation"></a>
 
-Require **`24/24`**, then evaluate and compare:
+Require **`18/18`**, then evaluate and compare:
 
 ```bash
 python scripts/workshop.py evaluate --label improved &&
 python scripts/workshop.py compare --labels baseline improved
 ```
 
-**Checkpoint:** evaluation **`(24 rows)`** and an updated **`src/agent/.foundry/results/comparison.json`**. Keep the same concurrency before and after.
+**Checkpoint:** evaluation **`(18 rows)`** and an updated **`src/agent/.foundry/results/comparison.json`**. Keep the same concurrency before and after.
 
 <a id="compare-results"></a>
 
@@ -509,7 +512,7 @@ python scripts/workshop.py compare --labels baseline improved
 
 **First revisit your reviewed case:** use the **same `case_id` + `model_key`** noted in step 6 to find its V2 response in `src/agent/.foundry/results/improved/responses.jsonl`. V1 and V2 have **different `row_id` values** because their labels differ. Compare the answer, decision, citations, and `business_grade → checks`. Confirm that V2's `regression_source_trace_ids` includes the reviewed **V1 `trace_id`**.
 
-**Then compare all four models:** open **`labels → baseline or improved → models → sol/terra/luna/astra`** in `src/agent/.foundry/results/comparison.json`. Compare all five items per model; better quality does not automatically mean faster or cheaper responses.
+**Then compare all three models:** open **`labels → baseline or improved → models → sol/luna/astra`** in `src/agent/.foundry/results/comparison.json`. Compare all five items per model; better quality does not automatically mean faster or cheaper responses.
 
 | Compare | Fields | Meaning |
 |---|---|---|
@@ -530,7 +533,7 @@ If the result is unchanged or worse, report that result. Do not lower the criter
 <details>
 <summary>Recorded English result — an example, not your target score</summary>
 
-**Actual English recording:** business passes improved from **0/24 to 23/24**, not 24/24. Sol still returned `not_allowed` instead of the frozen `needs_approval` label for D02. Your own result may differ; read the [actual English evaluation and remaining failures](docs/validation.en.md).
+**Actual English run (September 23, 2026; `gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`):** business passes improved from **0/18 to 18/18**, and valid required citations from **0/15 to 15/15**. V2 also corrected Sol's D02 label from `not_allowed` to the frozen `needs_approval`. Relevance passes went from **17/18 to 16/18**: Luna and Astra correctly deferred the unsupported overseas limit in D04 and received 3/5. Your own result may differ; read the [actual English evaluation and remaining failures](docs/validation.en.md).
 
 </details>
 
@@ -550,11 +553,11 @@ Open **your agent → Playground → Version dropdown → Compare versions**. Se
 }
 ```
 
-Click **Send once**: the comparison view sends the question to both versions. Check each response's `language`, `prompt_version`, `citations`, and distinct `trace_id`. These are extra demo calls, not replacements for the 24 + 24 collected responses.
+Click **Send once**: the comparison view sends the question to both versions. Check each response's `language`, `prompt_version`, `citations`, and distinct `trace_id`. These are extra demo calls, not replacements for the 18 + 18 collected responses.
 
 **Read the screenshot:** both answers allow the lodging, but V1 cites a title while V2 cites the original `TRAVEL-2026` ID.
 
-![Real English V1 and V2 comparison](docs/assets/live-en-20260916-0240/screenshots/07-comparison.webp)
+![Real English V1 and V2 comparison](docs/assets/live-en-20260923/screenshots/07-comparison.webp)
 
 </details>
 
@@ -565,7 +568,7 @@ Click **Send once**: the comparison view sends the question to both versions. Ch
 
 ## 8. Freeze the candidate and evaluate holdout
 
-**Action:** stop changing V2's instructions, models, and retrieval configuration. **Holdout** is the separate set reserved until this point: evaluate its four cases with each model.
+**Action:** stop changing V2's instructions, models, and retrieval configuration. **Holdout** is the separate set reserved until this point: evaluate its four cases with each of the three models.
 
 **How to freeze:** keep the V2 deployment confirmed in 7-2 unchanged. There is no separate `freeze` command or additional deployment.
 
@@ -575,20 +578,20 @@ python scripts/workshop.py collect --split holdout --label holdout
 
 <a id="holdout-evaluation"></a>
 
-Require **`16/16`**, then evaluate:
+Require **`12/12`**, then evaluate:
 
 ```bash
 python scripts/workshop.py evaluate --label holdout &&
 python scripts/workshop.py compare --labels baseline improved holdout
 ```
 
-**Checkpoint:** collection **`16/16`**, evaluation **`(16 rows)`**, and the **same `agent_version` and V2 prompt** used in step 7.
+**Checkpoint:** collection **`12/12`**, evaluation **`(12 rows)`**, and the **same `agent_version` and V2 prompt** used in step 7.
 
 In `comparison.json`, compare `agent_version` and `prompt_hash` under **`labels → improved`** and **`labels → holdout`**. Open the holdout `evaluate` report URL, not the previous dev report.
 
 Do not modify the prompt after seeing these results and submit the same cases as an untouched validation set. The English holdout is a language variant of the same small educational cases, not a new independent benchmark or evidence of production quality.
 
-![Actual English holdout evaluation](docs/assets/live-en-20260916-0240/screenshots/08-holdout.webp)
+![Actual English holdout evaluation](docs/assets/live-en-20260923/screenshots/08-holdout.webp)
 
 <a id="lab-g"></a>
 <a id="9-check-operational-signals-and-complete-evidence--lab-g"></a>
@@ -607,7 +610,7 @@ python scripts/workshop.py monitor --label holdout &&
 python scripts/workshop.py verify --baseline baseline --candidate improved --holdout holdout
 ```
 
-**Checkpoint:** `language: en`, `component_execution_verified: true`, `primary_model_outputs: 64`, and `distinct_verified_traces: 64`. This verifies the 24 + 24 + 16 responses, evaluations, traces, and reused baseline review.
+**Checkpoint:** `language: en`, `component_execution_verified: true`, `primary_model_outputs: 48`, and `distinct_verified_traces: 48`. This verifies the 18 + 18 + 12 responses, evaluations, traces, and reused baseline review.
 
 <a id="completion-decision"></a>
 
@@ -619,14 +622,14 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 | Checkpoint matches; any `candidate_quality_gates` value is `false` | Complete execution; business gate failed | Report unchanged → portal 9-2 → cleanup 10. Do not rerun for a better score. |
 | Checkpoint matches; all `candidate_quality_gates` values are `true` | Business gates passed; **native failures may remain** | Report native failures/limitations → portal 9-2 → cleanup 10 |
 
-Read the gates at **`candidate_quality_gates → sol/terra/luna/astra → dev / holdout`**. Each model needs **at least 5/6 dev and 4/4 holdout business passes**, plus every required citation valid in each split.
+Read the gates at **`candidate_quality_gates → sol/luna/astra → dev / holdout`**. Each model needs **at least 5/6 dev and 4/4 holdout business passes**, plus every required citation valid in each split.
 
 **`production_release_approved: false` is expected:** neither completed outcome grants production approval. Do not change it.
 
 <details>
 <summary>Example: complete execution evidence</summary>
 
-![English response, evaluation, and trace verification](docs/assets/live-en-20260916-0240/screenshots/09-verification.webp)
+![English response, evaluation, and trace verification](docs/assets/live-en-20260923/screenshots/09-verification.webp)
 
 </details>
 
@@ -634,9 +637,9 @@ Read the gates at **`candidate_quality_gates → sol/terra/luna/astra → dev / 
 
 **Portal:** open **your agent → Monitor → Last Day** and inspect your execution period.
 
-![Actual English Foundry monitoring dashboard](docs/assets/live-en-20260916-0240/screenshots/09-monitor.webp)
+![Actual English Foundry monitoring dashboard](docs/assets/live-en-20260923/screenshots/09-monitor.webp)
 
-The dashboard also includes smoke and optional portal calls, so its totals need not equal 64. Inspect actual errors; do not claim the whole environment is error-free from the batch result. See [evaluation details, costs, and limitations](docs/validation.en.md) when interpreting these signals.
+The dashboard also includes smoke and optional portal calls, so its totals need not equal 48. Inspect actual errors; do not claim the whole environment is error-free from the batch result. See [evaluation details, costs, and limitations](docs/validation.en.md) when interpreting these signals.
 
 <a id="cleanup"></a>
 
@@ -679,7 +682,7 @@ Search uptime, logs, retained foundation services, and the auxiliary model may s
 <details>
 <summary>Example: cleanup confirmation</summary>
 
-![Verified English workshop cleanup](docs/assets/live-en-20260916-0240/screenshots/10-cleanup.webp)
+![Verified English workshop cleanup](docs/assets/live-en-20260923/screenshots/10-cleanup.webp)
 
 </details>
 
@@ -687,9 +690,9 @@ Search uptime, logs, retained foundation services, and the auxiliary model may s
 
 | Location | Purpose |
 |---|---|
-| `src/agent/.foundry/results/baseline/` | 24 actual English V1 responses and their evaluations |
-| `src/agent/.foundry/results/improved/` | 24 actual English V2 responses and their evaluations |
-| `src/agent/.foundry/results/holdout/` | 16 responses from the frozen candidate |
+| `src/agent/.foundry/results/baseline/` | 18 actual English V1 responses and their evaluations |
+| `src/agent/.foundry/results/improved/` | 18 actual English V2 responses and their evaluations |
+| `src/agent/.foundry/results/holdout/` | 12 responses from the frozen candidate |
 | `src/agent/.foundry/results/comparison.json` | Before/after model metrics and failing cases |
 | `src/agent/.foundry/datasets/regression-*.jsonl` | Reviewed case, fixed reference answer, and source trace |
 | `src/agent/.foundry/results/verified-evidence.json` | Complete execution and lineage checks |
@@ -708,9 +711,11 @@ These files are inputs to later workshop commands, not disposable success screen
 ## English summary video — optional
 
 <details>
-<summary>Watch the 11m39s English walkthrough and chapter list</summary>
+<summary>Watch the 11m39s English walkthrough recorded with the previous four candidates</summary>
 
-[Play the English summary video — 11m39s](https://github.com/user-attachments/assets/97562443-49da-45d0-9554-3ce740e26e7c)
+[Play the previous-configuration English summary video — 11m39s](https://github.com/user-attachments/assets/97562443-49da-45d0-9554-3ce740e26e7c)
+
+This video was recorded on September 16, 2026 with **the previous four candidate models and 64 responses**. The commands and procedure are the same, but model names, response counts, and scores differ from this guide. Follow the current text and screenshots, which use **three candidates (`gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`) and 48 responses**.
 
 **11m39s of actual English CLI, Azure Portal, and Foundry Portal footage**, edited into guide order. **Silent, with English on-screen explanations.** Long waits are shortened and actual result frames are held for reading; authentication and MFA are not recorded. The recording checks calibration during environment preparation; the current text also makes that check explicit before baseline evaluation. Follow the text's checkpoints when the older recording groups commands differently.
 

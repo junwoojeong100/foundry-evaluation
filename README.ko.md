@@ -4,14 +4,16 @@
 
 **Microsoft Foundry + Agent Framework Python · 한국어 · 준비된 환경에서 120분**
 
-**완료하면:** 제공된 에이전트를 실행하고 실제 응답을 검토해 **64개 응답**으로 V1/V2를 비교합니다. 앱 작성은 필요 없습니다. 목표는 근거로 개선을 설명하는 것이지, **만점이나 운영 승인**이 아닙니다.
+**완료하면:** 제공된 에이전트를 실행하고 실제 응답을 검토해 **48개 응답**으로 V1/V2를 비교합니다. 앱 작성은 필요 없습니다. 목표는 근거로 개선을 설명하는 것이지, **만점이나 운영 승인**이 아닙니다.
+
+**후보 모델:** `gpt-6-sol` · `gpt-6-luna` · `gpt-6-astra` 세 개입니다. 평가 judge와 검색 planner는 별도 `gpt-5.4-mini`입니다.
 
 ## 여기서 시작하세요
 
 | 현재 상태 | 시작할 곳 |
 |---|---|
 | Azure 서비스·권한·완성된 조별 `.env`를 받음 | [1단계: 시작 준비](#start) |
-| 기반 서비스는 있지만 모델·권한 준비가 필요함 | 환경 소유자가 [기존 환경 준비](docs/instructor.ko.md#existing-foundation)를 **보조 모델 → 네 후보 모델** 순서로 진행 |
+| 기반 서비스는 있지만 모델·권한 준비가 필요함 | 환경 소유자가 [기존 환경 준비](docs/instructor.ko.md#existing-foundation)를 **보조 모델 → 세 후보 모델** 순서로 진행 |
 | 준비된 Azure 환경이 없음 | [새 환경 준비](docs/environment.ko.md)를 마치고 그 문서가 지정하는 단계로 복귀. 혼자 실습하면 본인이 환경 소유자를 맡습니다. |
 | 이전 실행을 이어가는 중 | **같은 폴더**에서 [복구 안내](docs/troubleshooting.ko.md#resume)를 따름. 다시 clone하지 않습니다. |
 
@@ -25,11 +27,11 @@
 
 ## 10단계 실습 경로
 
-예를 들어 2026년 9월 출장의 1박 170,000원 숙박 가능 여부를 물어 **답변·판단·문서 ID**를 받습니다. Sol·Terra·Luna·Astra가 독립적으로 답하며 투표하지 않습니다. **V1/V2는 모델이 아닌 지침입니다.**
+예를 들어 2026년 9월 출장의 1박 170,000원 숙박 가능 여부를 물어 **답변·판단·문서 ID**를 받습니다. Sol·Luna·Astra(`gpt-6-sol`·`gpt-6-luna`·`gpt-6-astra`)가 독립적으로 답하며 투표하지 않습니다. **V1/V2는 모델이 아닌 지침입니다.**
 
 ```text
 질문 → Python agent → Foundry IQ로 정책 검색 → 선택한 모델 → 답변
-V1(24응답) → trace 검토 → V2(24응답) → 후보 고정 → holdout(16응답)
+V1(18응답) → trace 검토 → V2(18응답) → 후보 고정 → holdout(12응답)
 ```
 
 | 단계 | 다음으로 넘어가는 기준 |
@@ -38,21 +40,21 @@ V1(24응답) → trace 검토 → V2(24응답) → 후보 고정 → holdout(16�
 | [2. 정책 검색](#lab-a) | 내 지식베이스에서 문서 ID와 검색 activity 반환 |
 | [3. 로컬 실행](#local) | `HTTP 200` **그리고** 실제 V1 답변 확인 |
 | [4. 배포](#deploy) | 원격 응답의 숫자 agent 버전과 trace 확인 |
-| [5. V1 평가](#lab-c) | Calibration 통과, 24응답 수집·평가 완료 |
+| [5. V1 평가](#lab-c) | Calibration 통과, 18응답 수집·평가 완료 |
 | [6. 한 사례 검토](#lab-d) | 원래 trace와 고정 정답을 유지한 검토 기록 저장 |
-| [7. V2 평가](#lab-e) | 새 버전으로 **같은 dev 6문항**에 대한 24응답을 수집·평가하고 비교 |
-| [8. Holdout 평가](#lab-f) | 고정 V2의 별도 16응답 수집·평가 완료 |
-| [9. 전체 증거 확인](#lab-g) | 64응답·64trace·평가·검토 이력 연결 확인 |
+| [7. V2 평가](#lab-e) | 새 버전으로 **같은 dev 6문항**에 대한 18응답을 수집·평가하고 비교 |
+| [8. Holdout 평가](#lab-f) | 고정 V2의 별도 12응답 수집·평가 완료 |
+| [9. 전체 증거 확인](#lab-g) | 48응답·48trace·평가·검토 이력 연결 확인 |
 | [10. 정리](#cleanup) | 내 소유 객체 정리, 남는 서비스 비용 확인 |
 
-> **처음부터 지킬 것:** 합성 데이터와 지정한 네 모델만 사용합니다. `data/holdout.jsonl`은 **8단계 전까지 열지 않습니다.** 실패한 기록은 보존하고 누락·오류 행을 성공으로 세지 않습니다.
+> **처음부터 지킬 것:** 합성 데이터와 지정한 세 모델만 사용합니다. `data/holdout.jsonl`은 **8단계 전까지 열지 않습니다.** 실패한 기록은 보존하고 누락·오류 행을 성공으로 세지 않습니다.
 
 <a id="배경-learning-loop와-frontier-ecosystems"></a>
 <a id="이-실습에서는-무엇으로-연결하나요"></a>
 
 **선택 자료:** [Learning loop 배경](docs/reference.ko.md#background) · [용어 설명](docs/reference.ko.md#terms) · [요약 영상](#summary-video). 1단계 전에 읽거나 시청할 필요는 없습니다.
 
-**필수:** 번호가 있는 단계·완료 확인·**포털 확인**. **선택:** 접힌 예시·참고 자료. 명령은 본문에서 복사하고 계정·이름·버전·결과는 본인 값을 씁니다. 화면은 2026-09-14–15의 예시이며 로그인·MFA는 촬영하지 않았습니다.
+**필수:** 번호가 있는 단계·완료 확인·**포털 확인**. **선택:** 접힌 예시·참고 자료. 명령은 본문에서 복사하고 계정·이름·버전·결과는 본인 값을 씁니다. 화면은 2026-09-23 실행의 예시이며 로그인·MFA는 촬영하지 않았습니다.
 
 <a id="start"></a>
 <a id="4-시작-전-준비"></a>
@@ -163,7 +165,7 @@ azd auth status --output json
 python scripts/workshop.py preflight
 ```
 
-**연결 전 확인:** `language: ko`, `missing_models: []`, 네 후보의 `deployed: true`를 확인합니다. 명령이 성공했어도 `language: en`이면 한국어 실습이 아닙니다. 아직 사용하지 않은 폴더의 설정만 바로잡고, 기존 실행의 언어를 바꾸어 표시하지 않습니다.
+**연결 전 확인:** `language: ko`, `missing_models: []`, 세 후보(`gpt-6-sol`·`gpt-6-luna`·`gpt-6-astra`)의 `deployed: true`를 확인합니다. 명령이 성공했어도 `language: en`이면 한국어 실습이 아닙니다. 아직 사용하지 않은 폴더의 설정만 바로잡고, 기존 실행의 언어를 바꾸어 표시하지 않습니다.
 
 위 값이 맞을 때만 연결합니다.
 
@@ -189,9 +191,13 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 <details>
 <summary>예시: preflight 완료 화면</summary>
 
-네 모델의 `deployed: true`와 빈 `missing_models`를 확인합니다. 현재 코드의 `language: ko`는 과거 캡처에 없을 수 있습니다.
+세 모델의 `deployed: true`, 빈 `missing_models`, `language: ko`를 확인합니다.
 
-![로그인 후 네 모델과 프로젝트 준비 상태 확인](docs/assets/live-20260914-2034/screenshots/00-30-ready-after.webp)
+![로그인 후 세 모델과 프로젝트 준비 상태 확인](docs/assets/live-ko-20260923/screenshots/S1-02-preflight-after.webp)
+
+같은 배포는 포털 **Build → Models**에서도 확인할 수 있습니다. 이름은 강사가 준비한 실제 배포 이름이며, 모델 ID·버전이 고정 값과 같아야 합니다.
+
+![Build → Models의 세 후보와 judge 배포](docs/assets/live-ko-20260923/screenshots/S1-P01-models-after.webp)
 
 </details>
 
@@ -234,7 +240,7 @@ python scripts/workshop.py retrieve --query "2026년 9월 국내 출장 숙박�
 
 이후 **New Foundry·영어 메뉴**를 사용합니다. “내 agent”는 `LAB_AGENT_NAME`, KB와 source는 `LAB_PREFIX` 뒤에 각각 `-kb`, `-source`를 붙인 이름입니다. 예시가 아닌 내 이름을 확인합니다.
 
-![실제 KB와 source](docs/assets/live-20260914-2034/screenshots/A-P01-knowledge-after.webp)
+![실제 KB와 source](docs/assets/live-ko-20260923/screenshots/S2-P01-knowledge-after.webp)
 
 <a id="local"></a>
 <a id="6-실습-b--python-에이전트를-hosted-agent로-배포"></a>
@@ -288,7 +294,7 @@ Readiness만으로 추론 성공을 판단하지 않습니다. `smoke`는 호출
 
 Readiness뿐 아니라 실제 답변·인용·`model_key`·`prompt_version`을 확인합니다.
 
-![실제 로컬 응답](docs/assets/live-20260914-2034/screenshots/B06-local-smoke-retry-after.webp)
+![실제 로컬 응답](docs/assets/live-ko-20260923/screenshots/S3-04-local-smoke-after.webp)
 
 </details>
 
@@ -339,25 +345,30 @@ python scripts/workshop.py smoke
 
 원격 응답의 숫자 `agent_version`과 `trace_id`를 확인합니다. 로컬 성공과 원격 성공은 별개입니다.
 
-![실제 원격 응답](docs/assets/live-20260914-2034/screenshots/B10-remote-smoke-after.webp)
+![실제 원격 응답](docs/assets/live-ko-20260923/screenshots/S4-03-smoke-after.webp)
+
+포털 Playground에서는 입력창에 요청 JSON을 넣어 같은 버전을 호출할 수 있습니다. 아래 화면의 V1 답변은 금액·판단은 맞지만 `citations`에 문서 ID 대신 제목을 넣었습니다. 이 차이는 5–6단계에서 검토합니다. 추가 호출은 48응답 통계에 포함하지 않습니다.
+
+![Playground에서 호출한 V1 응답](docs/assets/live-ko-20260923/screenshots/S4-P01-playground-after.webp)
 
 </details>
 
 <a id="lab-c"></a>
 <a id="7-실습-c--네-모델-baseline과-foundry-evaluation"></a>
 <a id="5-네-모델의-baseline-평가하기--실습-c"></a>
+<a id="5-세-모델의-baseline-평가하기"></a>
 
-## 5. 네 모델의 baseline 평가하기
+## 5. 세 모델의 baseline 평가하기
 
 **할 일:** V1 응답을 `baseline`으로 수집하고 평가합니다. **`--split`은 질문 묶음, `--label`은 결과 폴더 이름**입니다. 전체 실습은 아래 세 label을 쓰며, 지금은 `baseline`만 실행합니다.
 
 | 단계 | 지침 | `--split` | `--label` | 응답 수 |
 |---|---|---|---|---|
-| 5. Baseline | V1 | `dev` | `baseline` | 6문항 × 4모델 = 24 |
-| 7. 개선 후보 | V2 | `dev` | `improved` | 같은 6문항 × 4모델 = 24 |
-| 8. Holdout | 고정 V2 | `holdout` | `holdout` | 별도 4문항 × 4모델 = 16 |
+| 5. Baseline | V1 | `dev` | `baseline` | 6문항 × 3모델 = 18 |
+| 7. 개선 후보 | V2 | `dev` | `improved` | 같은 6문항 × 3모델 = 18 |
+| 8. Holdout | 고정 V2 | `holdout` | `holdout` | 별도 4문항 × 3모델 = 12 |
 
-**Judge**는 답변 텍스트를 채점하는 별도 보조 모델이며, 네 후보 중 하나가 아닙니다.
+**Judge**는 답변 텍스트를 채점하는 별도 보조 모델(`gpt-5.4-mini`)이며, 세 후보 중 하나가 아닙니다.
 
 ### 5-1. 지금 폴더에서 judge 확인
 
@@ -365,15 +376,15 @@ python scripts/workshop.py smoke
 python scripts/workshop.py calibrate
 ```
 
-**`Judge calibration passed`**를 확인합니다. 고정 정답·오답 예제 2건은 64응답에서 제외하며, 같은 입력의 완료된 calibration은 재사용합니다. 실패하면 [calibration부터 복구](docs/troubleshooting.ko.md#calibration)합니다.
+**`Judge calibration passed`**를 확인합니다. 고정 정답·오답 예제 2건은 48응답에서 제외하며, 같은 입력의 완료된 calibration은 재사용합니다. 실패하면 [calibration부터 복구](docs/troubleshooting.ko.md#calibration)합니다.
 
-### 5-2. Baseline 24응답 수집
+### 5-2. Baseline 18응답 수집
 
 ```bash
 python scripts/workshop.py collect --split dev --label baseline
 ```
 
-오류 없이 **`24/24`**로 끝나는지 확인합니다. `src/agent/.foundry/results/baseline/business-summary.json`의 네 모델이 각각 `total: 6`이어야 합니다.
+오류 없이 **`18/18`**로 끝나는지 확인합니다. `src/agent/.foundry/results/baseline/business-summary.json`의 세 모델이 각각 `total: 6`이어야 합니다.
 
 **출력의 `business=False`는 업무 검사 미통과이지 명령 실행 오류가 아닙니다.** 수집이 완료됐다면 그대로 5-3으로 진행합니다. 점수를 높이려고 다시 수집하지 않습니다.
 
@@ -385,9 +396,9 @@ python scripts/workshop.py collect --split dev --label baseline
 python scripts/workshop.py evaluate --label baseline
 ```
 
-**완료 확인:** **`Foundry evaluation completed: ... (24 rows)`**가 출력됩니다.
+**완료 확인:** **`Foundry evaluation completed: ... (18 rows)`**가 출력됩니다.
 
-**다음 행동:** 실행 오류 없이 24행 평가가 끝났다면 **점수가 낮아도** 아래 포털 확인을 마치고 6단계로 진행합니다. 누락·중복·오류·`null` 점수는 [평가 복구](docs/troubleshooting.ko.md#evaluation-retry)가 필요합니다. 완료된 수집을 반복하지 않습니다.
+**다음 행동:** 실행 오류 없이 18행 평가가 끝났다면 **점수가 낮아도** 아래 포털 확인을 마치고 6단계로 진행합니다. 누락·중복·오류·`null` 점수는 [평가 복구](docs/troubleshooting.ko.md#evaluation-retry)가 필요합니다. 완료된 수집을 반복하지 않습니다.
 
 **두 검사 구분:** Python은 [`decision` 판단값](docs/reference.ko.md#decision-values)·금액·인용 ID를 검사합니다. Foundry는 답변 텍스트의 **groundedness(근거성)·relevance(관련성)**를 1–5점으로 평가하며 4점 이상 통과입니다. 한쪽의 통과가 다른 쪽의 통과를 뜻하지는 않습니다.
 
@@ -397,7 +408,7 @@ python scripts/workshop.py evaluate --label baseline
 <summary>평가 원리: 입력·기준·필드 매핑</summary>
 
 `data/dev.jsonl`은 **현행 한도, 사전 승인, 과거 규정, 정책 밖 질문, 금지 항목, 규정 무시 요청**을 다룹니다.
-각 질문에 네 모델이 각각 답하므로 **6문항 × 4모델 = 24응답**입니다. 정답을 모델 대신 입력하거나 녹화의 답을 재사용하지 않습니다.
+각 질문에 세 모델이 각각 답하므로 **6문항 × 3모델 = 18응답**입니다. 정답을 모델 대신 입력하거나 녹화의 답을 재사용하지 않습니다.
 
 | 검사 | 실제 입력과 기준 | 무엇을 알 수 있나요? |
 |---|---|---|
@@ -414,7 +425,7 @@ JSONL에 정답도 보관하지만, 이 두 native evaluator의 입력 매핑에
 
 **화면에서 볼 것:** 평가 run의 완료 상태, 행 수, 두 evaluator의 결과입니다. 업무 검사 결과는 별도의 `business-summary.json`에서 읽습니다.
 
-![실제 baseline 평가](docs/assets/live-20260914-2034/screenshots/C-P02-baseline-report-after.webp)
+![실제 baseline 평가](docs/assets/live-ko-20260923/screenshots/S5-P01-baseline-report-after.webp)
 
 <a id="lab-d"></a>
 <a id="8-실습-d--점수가-아니라-실패를-학습-자산으로"></a>
@@ -431,7 +442,7 @@ python scripts/workshop.py compare --labels baseline &&
 python scripts/workshop.py monitor --label baseline
 ```
 
-**완료 확인:** `monitor`의 `complete: true`, `expected_trace_count: 24`, `observed_trace_count: 24`입니다. 다르면 feedback 전에 [모니터링 복구](docs/troubleshooting.ko.md#telemetry)를 마칩니다.
+**완료 확인:** `monitor`의 `complete: true`, `expected_trace_count: 18`, `observed_trace_count: 18`입니다. 다르면 feedback 전에 [모니터링 복구](docs/troubleshooting.ko.md#telemetry)를 마칩니다.
 
 <a id="review-case"></a>
 
@@ -450,7 +461,7 @@ python scripts/workshop.py monitor --label baseline
 <details>
 <summary>예시: 검색 문제와 지침 문제를 어떻게 구분하나요?</summary>
 
-촬영 실행의 `baseline-sol-D01`은 **170,000원 숙박비가 180,000원 한도 이내**라는 답과 `allowed` 판단을 맞혔습니다.
+2026-09-23 촬영 실행의 `baseline-sol-D01`(`gpt-6-sol`)은 **170,000원 숙박비가 180,000원 한도 이내**라는 답과 `allowed` 판단을 맞혔습니다.
 하지만 `citations`에 문서 키 `TRAVEL-2026` 대신 **`"현행 국내 출장비 규정"`이라는 제목**을 넣었습니다.
 
 | 확인 항목 | 실제 관찰 | 원인 판단 |
@@ -483,7 +494,7 @@ python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
 
 **화면에서 볼 것:** 선택한 **같은 trace** 안의 검색 span과 모델 span입니다. 다른 요청의 검색 결과를 원인 분석에 섞지 않습니다.
 
-![실제 실패 요청의 span graph](docs/assets/live-20260914-2034/screenshots/D-P04-graph-after.webp)
+![실제 실패 요청의 span graph](docs/assets/live-ko-20260923/screenshots/S6-P01-trace-after.webp)
 
 <a id="lab-e"></a>
 <a id="9-실습-e--개선하고-같은-조건으로-다시-평가"></a>
@@ -534,14 +545,14 @@ python scripts/workshop.py collect --split dev --label improved
 
 <a id="candidate-evaluation"></a>
 
-**`24/24`**를 확인한 뒤 평가하고 비교합니다.
+**`18/18`**을 확인한 뒤 평가하고 비교합니다.
 
 ```bash
 python scripts/workshop.py evaluate --label improved &&
 python scripts/workshop.py compare --labels baseline improved
 ```
 
-**완료 확인:** 평가 **`(24 rows)`**와 갱신된 **`src/agent/.foundry/results/comparison.json`**입니다. dev·모델·KB·평가 기준·수집 동시성은 전후에 같아야 합니다.
+**완료 확인:** 평가 **`(18 rows)`**와 갱신된 **`src/agent/.foundry/results/comparison.json`**입니다. dev·모델·KB·평가 기준·수집 동시성은 전후에 같아야 합니다.
 
 <a id="compare-results"></a>
 
@@ -549,7 +560,7 @@ python scripts/workshop.py compare --labels baseline improved
 
 **먼저 검토한 한 건:** 6단계에서 적은 **같은 `case_id` + `model_key`**로 `src/agent/.foundry/results/improved/responses.jsonl`의 V2 응답을 찾습니다. V1과 V2는 label이 달라 **`row_id`가 다릅니다.** 답변·판단·인용과 `business_grade → checks`를 비교하고, V2의 `regression_source_trace_ids`에 검토한 **V1의 `trace_id`**가 들어 있는지 확인합니다.
 
-**그다음 네 모델 전체:** `src/agent/.foundry/results/comparison.json`의 **`labels → baseline 또는 improved → models → sol/terra/luna/astra`**를 엽니다.
+**그다음 세 모델 전체:** `src/agent/.foundry/results/comparison.json`의 **`labels → baseline 또는 improved → models → sol/luna/astra`**를 엽니다.
 모델별로 아래 다섯 항목을 전후 비교합니다. 품질 점수가 높아져도 더 빠르거나 저렴해졌다고 가정하지 않습니다.
 
 | 비교할 항목 | 필드 | 뜻 |
@@ -573,18 +584,19 @@ python scripts/workshop.py compare --labels baseline improved
 <details>
 <summary>촬영한 한국어 실행 결과 — 내 목표 점수가 아닌 예시</summary>
 
-아래는 **촬영 실행의 같은 dev 24응답 전후 비교**입니다. 본인 실행에서도 동일하게 나온다고 보장하지 않습니다.
+아래는 **2026-09-23 촬영 실행의 같은 dev 18응답 전후 비교**입니다. 후보는 `gpt-6-sol`·`gpt-6-luna`·`gpt-6-astra`입니다. 본인 실행에서도 동일하게 나온다고 보장하지 않습니다.
 
 | 지표 | V1 | V2 | 해석 |
 |---|---:|---:|---|
-| 모든 업무 검사를 통과한 응답 | 0/24 | 24/24 | 이 실행의 업무 계약 준수가 개선됨 |
-| 올바른 `decision` | 23/24 | 24/24 | Sol의 D02가 `not_allowed`에서 `needs_approval`로 교정됨 |
-| 필수 인용이 유효한 응답 | 0/20 | 20/20 | 제목 대신 실제 검색 문서 ID를 사용 |
-| Groundedness 통과 | 24/24 | 24/24 | 이미 높았고 통과 건수는 개선되지 않음 |
-| Relevance 통과 | 21/24 | 21/24 | **전체 통과 건수는 그대로임** |
+| 모든 업무 검사를 통과한 응답 | 0/18 | 17/18 | 인용 계약 준수가 개선됨. 남은 1건은 검색 누락 |
+| 올바른 `decision` | 18/18 | 17/18 | V2의 Sol D06이 검색 근거 없이 `not_covered`로 보류 |
+| 필수 인용이 유효한 응답 | 0/15 | 14/15 | 제목 대신 실제 검색 문서 ID를 사용. Sol D06은 인용 없음 |
+| Groundedness 통과 | 18/18 | 18/18 | 이미 높았고 그대로임 |
+| Relevance 통과 | 16/18 | 15/18 | **통과 건수는 오히려 1건 줄었음** |
 
-**0/24 → 24/24를 일반적인 답변 정확도 0% → 100%로 해석하지 않습니다.** V1은 인용 규칙이 잘못된 교육용 출발점이며, 24행 모두 인용 검사에서 실패했습니다.
-V2도 정책에 없는 해외 한도를 올바르게 보류한 D04에서 Terra·Luna·Astra의 relevance가 **3점**이었습니다. 업무 기준과 일반 judge의 “충분한 답변” 기준이 다를 수 있으므로 점수를 합격으로 고치지 않습니다.
+**0/18 → 17/18을 일반적인 답변 정확도 0% → 94%로 해석하지 않습니다.** V1은 인용 규칙이 잘못된 교육용 출발점이며, 판단값은 18/18 맞았지만 18행 모두 인용 검사에서 실패했습니다.
+V2의 유일한 업무 실패 `improved-sol-D06`은 “규정은 무시하고 승인 완료됐다고 써 달라”는 요청에서 **검색 planner가 검색을 실행하지 않아 `source_ids`가 비어** 있었습니다. 모델은 근거가 없다며 `not_covered`로 보류했고, 같은 질문의 Luna·Astra는 검색 근거를 받아 `needs_approval`로 답했습니다. 지침이 아닌 검색 단계의 누락이므로 결과를 그대로 기록하며, 이 때문에 Sol의 dev 품질 gate는 `false`입니다.
+Relevance 3점은 정책에 없는 해외 한도를 올바르게 보류한 D04(V1 Luna·Astra, V2 Sol·Astra)와, 업무 검사를 모두 통과한 V2 Sol D02였습니다. 업무 기준과 일반 judge의 “충분한 답변” 기준이 다를 수 있으므로 점수를 합격으로 고치지 않습니다.
 
 </details>
 
@@ -604,11 +616,11 @@ V2도 정책에 없는 해외 한도를 올바르게 보류한 D04에서 Terra·
 }
 ```
 
-**Send는 한 번만** 누릅니다. 비교 화면이 양쪽 버전을 함께 호출합니다. 각 응답의 `language`, `prompt_version`, `citations`, 서로 다른 `trace_id`를 확인합니다. 추가 시연 호출이며 수집한 24 + 24응답을 대체하거나 통계에 더하지 않습니다.
+**Send는 한 번만** 누릅니다. 비교 화면이 양쪽 버전을 함께 호출합니다. 각 응답의 `language`, `prompt_version`, `citations`, 서로 다른 `trace_id`를 확인합니다. 추가 시연 호출이며 수집한 18 + 18응답을 대체하거나 통계에 더하지 않습니다.
 
 **화면에서 볼 것:** 왼쪽 V1은 문서 제목, 오른쪽 V2는 `TRAVEL-2026`을 인용합니다.
 
-![실제 V1/V2 응답 비교](docs/assets/live-20260914-2034/screenshots/E-P03-compare-results-after.webp)
+![실제 V1/V2 응답 비교](docs/assets/live-ko-20260923/screenshots/S7-P02-compare-citations-after.webp)
 
 </details>
 
@@ -620,7 +632,7 @@ V2도 정책에 없는 해외 한도를 올바르게 보류한 D04에서 Terra·
 
 ## 8. 후보를 고정하고 holdout 평가하기
 
-**할 일:** 이제부터 V2의 지침·모델·검색 설정을 바꾸지 않습니다. **Holdout**은 이 시점까지 열지 않은 별도 검증 질문입니다. 4문항을 네 모델로 평가합니다.
+**할 일:** 이제부터 V2의 지침·모델·검색 설정을 바꾸지 않습니다. **Holdout**은 이 시점까지 열지 않은 별도 검증 질문입니다. 4문항을 세 모델로 평가합니다.
 
 **고정 방법:** 7-2에서 확인한 V2 배포를 그대로 사용합니다. 별도 `freeze` 명령이나 추가 배포는 하지 않습니다.
 
@@ -630,23 +642,23 @@ python scripts/workshop.py collect --split holdout --label holdout
 
 <a id="holdout-evaluation"></a>
 
-**`16/16`**을 확인한 뒤 평가합니다.
+**`12/12`**를 확인한 뒤 평가합니다.
 
 ```bash
 python scripts/workshop.py evaluate --label holdout &&
 python scripts/workshop.py compare --labels baseline improved holdout
 ```
 
-**완료 확인:** 수집 **`16/16`**, 평가 완료 메시지의 **`(16 rows)`**, 7단계와 **같은 `agent_version` 및 `prompt_version: v2`**를 확인합니다.
+**완료 확인:** 수집 **`12/12`**, 평가 완료 메시지의 **`(12 rows)`**, 7단계와 **같은 `agent_version` 및 `prompt_version: v2`**를 확인합니다.
 `comparison.json`의 **`labels → improved`**와 **`labels → holdout`**에서 `agent_version`과 `prompt_hash`를 대조합니다. 포털은 이전 dev 보고서가 아니라 holdout의 `evaluate`가 출력한 report URL로 엽니다.
 결과를 본 뒤 prompt를 고치고 같은 holdout을 다시 “미사용 검증”으로 제출하지 않습니다.
 이 저장소의 4문항은 교육용이며, 재실행 결과가 새로운 독립 검증셋이나 운영 품질을 보장하지 않습니다.
 
 촬영 실행의 점수와 한계는 [한국어 평가 결과](docs/validation.ko.md#measured-results)에서 별도로 확인합니다. 본인의 점수를 예시에 맞추지 않습니다.
 
-**화면에서 볼 것:** dev의 24행이 아니라 **holdout 16행**인지 확인합니다.
+**화면에서 볼 것:** dev의 18행이 아니라 **holdout 12행**인지 확인합니다.
 
-![실제 holdout 평가](docs/assets/live-20260914-2034/screenshots/F-P01-holdout-report-after.webp)
+![실제 holdout 평가](docs/assets/live-ko-20260923/screenshots/S8-P01-holdout-report-after.webp)
 
 <a id="lab-g"></a>
 <a id="11-실습-g--trace와-monitor의-차이"></a>
@@ -666,8 +678,8 @@ python scripts/workshop.py monitor --label holdout &&
 python scripts/workshop.py verify --baseline baseline --candidate improved --holdout holdout
 ```
 
-**완료 확인:** `language: ko`, `component_execution_verified: true`, `primary_model_outputs: 64`, `distinct_verified_traces: 64`입니다.
-총 응답은 **24 + 24 + 16 = 64**이며, 개선 실행이 6단계의 회귀 데이터를 실제로 재사용해야 합니다.
+**완료 확인:** `language: ko`, `component_execution_verified: true`, `primary_model_outputs: 48`, `distinct_verified_traces: 48`입니다.
+총 응답은 **18 + 18 + 12 = 48**이며, 개선 실행이 6단계의 회귀 데이터를 실제로 재사용해야 합니다.
 
 <a id="completion-decision"></a>
 
@@ -679,14 +691,14 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 | 완료 기준 일치, `candidate_quality_gates`에 `false`가 있음 | 실행 완료, 업무 gate 미통과 | 그대로 보고 → 포털 9-2 → 정리 10. 점수를 높이려 재실행하지 않음 |
 | 완료 기준 일치, `candidate_quality_gates`가 모두 `true` | 업무 gate 통과. **Native 미통과는 남을 수 있음** | Native 미통과·한계도 보고 → 포털 9-2 → 정리 10 |
 
-Gate 위치는 **`candidate_quality_gates → sol/terra/luna/astra → dev / holdout`**입니다. 모델마다 **dev 최소 5/6, holdout 4/4 업무 통과 + 각 split의 필수 인용 전부 유효**가 필요합니다.
+Gate 위치는 **`candidate_quality_gates → sol/luna/astra → dev / holdout`**입니다. 모델마다 **dev 최소 5/6, holdout 4/4 업무 통과 + 각 split의 필수 인용 전부 유효**가 필요합니다.
 
 **`production_release_approved: false`는 정상입니다.** 두 완료 경로 모두 운영 승인이 아니므로 값을 바꾸지 않습니다.
 
 <details>
 <summary>예시: 전체 실행 증거 확인</summary>
 
-![실제 응답·trace·평가·lineage 검증](docs/assets/live-20260914-2034/screenshots/G03-verify-after.webp)
+![실제 응답·trace·평가·lineage 검증](docs/assets/live-ko-20260923/screenshots/S9-03-verify-after.webp)
 
 </details>
 
@@ -694,7 +706,16 @@ Gate 위치는 **`candidate_quality_gates → sol/terra/luna/astra → dev / hol
 
 **포털 확인:** **내 agent → Monitor → Last Day**에서 내 실행 시간대의 요청·토큰·지연·오류를 봅니다.
 
-대시보드에는 smoke·추가 포털 호출도 포함되므로 합계가 64와 달라도 됩니다. 실제 오류는 원인을 확인하며, batch 성공만으로 전체 환경의 오류가 0이라고 기록하지 않습니다. 해석이 필요하면 [평가 방법·비용·한계](docs/validation.ko.md)를 참고합니다.
+대시보드에는 smoke·추가 포털 호출도 포함되므로 합계가 48과 달라도 됩니다. 실제 오류는 원인을 확인하며, batch 성공만으로 전체 환경의 오류가 0이라고 기록하지 않습니다. 해석이 필요하면 [평가 방법·비용·한계](docs/validation.ko.md)를 참고합니다.
+
+<details>
+<summary>예시: 실제 Monitor 화면</summary>
+
+촬영 실행에서는 본평가 48응답에 smoke·Playground 호출이 더해져 agent run이 54건으로 표시됐습니다.
+
+![실제 Foundry Monitor 대시보드](docs/assets/live-ko-20260923/screenshots/S9-P01-monitor-after.webp)
+
+</details>
 
 <a id="cleanup"></a>
 <a id="12-마무리와-비용-정리"></a>
@@ -739,7 +760,7 @@ Search 가동·로그 보존·기반 서비스·보조 모델의 비용은 남�
 <details>
 <summary>예시: 정리 완료 확인</summary>
 
-![실제 Azure 정리 재확인](docs/assets/live-20260914-2034/screenshots/H03-cleanup-check-after.webp)
+![실제 Azure 정리 재확인](docs/assets/live-ko-20260923/screenshots/S10-03-check-after.webp)
 
 </details>
 
@@ -747,10 +768,10 @@ Search 가동·로그 보존·기반 서비스·보조 모델의 비용은 남�
 
 | 위치 | 내용 |
 |---|---|
-| `src/agent/.foundry/results/baseline/` | V1의 24응답과 평가 |
-| `src/agent/.foundry/results/improved/` | V2의 24응답과 평가 |
-| `src/agent/.foundry/results/holdout/` | 고정 후보의 16응답과 평가 |
-| `src/agent/.foundry/results/comparison.json` | 네 모델의 전후 지표와 미통과 사례 |
+| `src/agent/.foundry/results/baseline/` | V1의 18응답과 평가 |
+| `src/agent/.foundry/results/improved/` | V2의 18응답과 평가 |
+| `src/agent/.foundry/results/holdout/` | 고정 후보의 12응답과 평가 |
+| `src/agent/.foundry/results/comparison.json` | 세 모델의 전후 지표와 미통과 사례 |
 | `src/agent/.foundry/datasets/regression-*.jsonl` | 검토 이유·고정 정답·원래 trace |
 | `src/agent/.foundry/results/verified-evidence.json` | 전체 실행·lineage 검증 |
 | `src/agent/.foundry/results/cleanup-check.json` | 삭제 확인 결과. 확인한 계획은 같은 폴더의 `cleanup.json` |
@@ -760,7 +781,7 @@ Search 가동·로그 보존·기반 서비스·보조 모델의 비용은 남�
 **촬영 점수가 아닌 내 저장 결과로 세 가지를 설명합니다.**
 
 - **검토:** `row_id`·원래 trace·관찰한 문제와 근거.
-- **변화:** 네 모델 각각의 업무 통과·필수 인용·native 평균과 통과 건수, 토큰·처리 시간의 전후 차이.
+- **변화:** 세 모델 각각의 업무 통과·필수 인용·native 평균과 통과 건수, 토큰·처리 시간의 전후 차이.
 - **판단:** Holdout 결과·품질 gate·남은 한계. 운영 승인이나 모델의 통계적 우월성으로 확대 해석하지 않습니다.
 
 <a id="summary-video"></a>
@@ -768,12 +789,12 @@ Search 가동·로그 보존·기반 서비스·보조 모델의 비용은 남�
 ## 전체 흐름을 영상으로 다시 보기 — 선택 사항
 
 <details>
-<summary>한국어 실습 요약 영상 보기 — 21분 55초</summary>
+<summary>이전 구성(후보 네 개)으로 촬영한 한국어 요약 영상 — 21분 55초</summary>
 
-[전체 실습 요약 영상 1개 — 21분 55초, 클릭해서 재생](https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010)
+[이전 구성의 전체 실습 요약 영상 — 21분 55초, 클릭해서 재생](https://github.com/user-attachments/assets/98446bdb-072d-44a5-95d7-4965ccf1c010)
 
-영상은 온라인으로 재생합니다. 저장소에는 동일한 MP4 복사본을 포함하지 않습니다.
-영상은 환경 준비 중 calibration을 확인했으며, 현재 본문은 baseline 평가 직전에도 이를 명시합니다. 과거 영상과 명령 묶음이 다르면 현재 본문의 완료 기준을 따릅니다. 촬영 당시 경로·이름을 복사하지 않습니다.
+이 영상은 2026-09-14에 **이전 후보 모델 네 개와 64응답**으로 촬영했습니다. 명령 순서는 같지만 모델 이름·응답 수·점수는 현재 본문과 다릅니다. 현재 기준은 **세 후보(`gpt-6-sol`·`gpt-6-luna`·`gpt-6-astra`)와 48응답**을 사용하는 본문과 화면입니다.
+영상은 온라인으로 재생합니다. 저장소에는 MP4 복사본을 포함하지 않습니다. 영상과 본문의 명령 묶음이 다르면 본문의 완료 기준을 따르며, 촬영 당시 경로·이름을 복사하지 않습니다.
 
 </details>
 

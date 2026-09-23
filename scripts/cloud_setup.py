@@ -60,6 +60,28 @@ def verify_deployment(item: dict[str, Any], key: str) -> None:
         raise ValueError(f"Deployment {item['name']} is not ready.")
 
 
+def pin_deployment_version(item: dict[str, Any]) -> dict[str, Any]:
+    properties = item["properties"]
+    if properties.get("versionUpgradeOption") == "NoAutoUpgrade":
+        return item
+    body = {
+        "sku": {"name": item["sku"]["name"], "capacity": item["sku"]["capacity"]},
+        "properties": {
+            "model": {field: properties["model"][field] for field in ("format", "name", "version")},
+            **({"raiPolicyName": properties["raiPolicyName"]} if properties.get("raiPolicyName") else {}),
+            "versionUpgradeOption": "NoAutoUpgrade",
+        },
+    }
+    updated = az(
+        "rest", "--method", "put", "--uri",
+        f"https://management.azure.com{item['id']}?api-version=2025-06-01",
+        "--body", json.dumps(body),
+    )
+    if updated["properties"].get("versionUpgradeOption") != "NoAutoUpgrade":
+        raise ValueError(f"Deployment {item['name']} did not keep its fixed model version.")
+    return updated
+
+
 def preflight(allow_missing: bool = False) -> dict[str, Any]:
     config = RuntimeConfig.from_env()
     load_state()
@@ -147,6 +169,7 @@ def prepare_models() -> None:
         )
         state["owned_models"].append({"name": model["deployment"], "id": item["id"], "model": model["model"], "version": model["version"]})
         save_state(state)
+        item = pin_deployment_version(item)
         verify_deployment(item, model["key"])
     preflight()
 
@@ -345,7 +368,7 @@ def bind() -> None:
         service["name"] = config.agent_name
         service.setdefault("env", {})["LAB_LANGUAGE"] = config.language
         if config.language == "en":
-            service["description"] = "Synthetic English travel policy assistant with Foundry IQ, four fixed models and evaluation lineage."
+            service["description"] = "Synthetic English travel policy assistant with Foundry IQ, three fixed models and evaluation lineage."
         services[config.agent_name] = service
         manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
         if not (REPO_ROOT / ".azure" / "config.json").exists():

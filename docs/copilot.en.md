@@ -156,7 +156,7 @@ Execute the English workshop within the scope we just reviewed.
 - At each required portal check, show its location and expected values, then wait
   for my confirmation. Do not continue to the next step or cleanup before that.
   Do not make recordings/videos or work in other repositories.
-- Verify 64 responses, 64 traces, evaluations, and reviewed baseline provenance.
+- Verify 48 responses, 48 traces, evaluations, and reviewed baseline provenance.
   Report quality separately. production_release_approved remains false.
   Clean up only after reviewing the dry-run plan and obtaining approval.
 ```

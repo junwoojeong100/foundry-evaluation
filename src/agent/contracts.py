@@ -2,15 +2,14 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-ModelKey = Literal["sol", "terra", "luna", "astra"]
+ModelKey = Literal["sol", "luna", "astra"]
 Decision = Literal[
     "allowed", "needs_approval", "needs_info", "not_covered", "not_allowed"
 ]
 
 MODEL_SPECS: dict[str, tuple[str, str]] = {
-    "sol": ("gpt-5.6-sol", "2026-07-09"),
-    "terra": ("gpt-5.6-terra", "2026-07-09"),
-    "luna": ("gpt-5.6-luna", "2026-07-09"),
+    "sol": ("gpt-6-sol", "2026-09-22"),
+    "luna": ("gpt-6-luna", "2026-09-22"),
     "astra": ("gpt-6-astra", "2026-09-03"),
 }
 

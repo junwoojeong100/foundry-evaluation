@@ -126,7 +126,7 @@ python scripts/provision_environment.py ownership --run-dir "$RUN_DIR" --preserv
 python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 ```
 
-**완료 확인:** 세 `matches` 값이 `true`, 구독은 `Enabled`이며 지정한 네 모델과 보조 모델의 용량 레코드가 있습니다.
+**완료 확인:** 세 `matches` 값이 `true`, 구독은 `Enabled`이며 지정한 세 모델(`gpt-6-sol`·`gpt-6-luna`·`gpt-6-astra`)과 보조 모델의 용량 레코드가 있습니다.
 각 Azure CLI 요청에는 설정한 구독이 명시됩니다. 실제 구독 할당량은 6단계의 `preflight`와 모델 준비에서 다시 확인합니다.
 
 위 경로는 **`--preserve-existing`으로 기존 그룹을 모두 보존**하며 삭제하지 않습니다. 옵션 없이 실행하면 이전 후보를 발견했을 때 소유권 확인을 위해 중단할 수 있습니다. 어느 경로든 태그·이름만으로 다른 자원을 삭제하거나 오류를 무시하지 않습니다.
@@ -219,11 +219,13 @@ python scripts/provision_environment.py ready --run-dir "$RUN_DIR"
 ```
 
 **완료 확인:** 새 그룹·프로젝트·Search와 두 endpoint를 확인합니다. Project endpoint와 Azure OpenAI endpoint는 용도가 다릅니다.
-보조 모델은 `gpt-5.4-mini` / `2026-03-17`이며 네 후보 모델 중 하나를 대신하지 않습니다.
+보조 모델은 `gpt-5.4-mini` / `2026-03-17`이며 세 후보 모델 중 하나를 대신하지 않습니다.
 
 <a id="setup-candidates"></a>
 
-## 6. 네 후보 준비 후 참가자에게 전달
+<a id="6-네-후보-준비-후-참가자에게-전달"></a>
+
+## 6. 세 후보 준비 후 참가자에게 전달
 
 **할 일:** 새 소스 폴더로 이동해 모델을 준비하고 judge를 점검합니다.
 
@@ -236,8 +238,8 @@ python scripts/workshop.py preflight &&
 python scripts/workshop.py calibrate
 ```
 
-**완료 확인:** `language: ko`, Sol/Terra/Luna/Astra의 고정 모델 ID·버전, `deployed: true`, `missing_models: []`, **`Judge calibration passed`**를 확인합니다.
-Calibration 예제 2개는 본평가 64응답이 아닙니다. 모델 접근·할당량이 부족하면 다른 모델로 대체하지 않고 준비를 중단합니다.
+**완료 확인:** `language: ko`, Sol/Luna/Astra의 고정 모델 ID·버전(`gpt-6-sol` / `2026-09-22`, `gpt-6-luna` / `2026-09-22`, `gpt-6-astra` / `2026-09-03`), `deployed: true`, `missing_models: []`, **`Judge calibration passed`**를 확인합니다.
+Calibration 예제 2개는 본평가 48응답이 아닙니다. 모델 접근·할당량이 부족하면 다른 모델로 대체하지 않고 준비를 중단합니다.
 
 <a id="handoff"></a>
 
@@ -252,10 +254,12 @@ Calibration 예제 2개는 본평가 64응답이 아닙니다. 모델 접근·�
 `.azure`·`.foundry` 소유권 파일·인증 캐시·결과는 전달하지 않습니다. 언어를 바꾸어 기존 지식 객체를 덮어쓰지 않습니다. 자세한 전달 항목은 [강사 체크리스트](instructor.ko.md#handoff)를 따릅니다.
 
 <details>
-<summary>녹화 예시 — 후보 네 개와 별도 보조 배포</summary>
+<summary>녹화 예시 — 후보 세 개와 별도 보조 배포</summary>
 
-![실제 네 모델과 시작 조건 확인](assets/live-20260914-2034/screenshots/00-30-ready-after.webp)
-![포털에서 확인한 다섯 모델 배포](assets/live-20260914-2034/screenshots/00-P07-models-after.webp)
+![실제 세 모델과 시작 조건 확인](assets/live-ko-20260923/screenshots/S1-02-preflight-after.webp)
+![포털에서 확인한 네 모델 배포 — 후보 세 개와 judge](assets/live-ko-20260923/screenshots/S1-P01-models-after.webp)
+
+위 화면은 2026-09-23 기존 공유 환경의 리허설에서 촬영했습니다. 새 전용 환경에서는 배포 이름이 `LAB_PREFIX`를 따릅니다.
 
 </details>
 

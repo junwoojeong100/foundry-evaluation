@@ -11,7 +11,7 @@
 | 용어 | 이 실습에서의 뜻 |
 |---|---|
 | Copilot CLI / 실습 agent | Copilot CLI는 명령 실행을 돕는 개발 도구. 실습 agent는 Azure에 배포해 출장 규정에 답하게 하는 Python 앱 |
-| Agent / 모델 | Python agent 하나가 요청마다 Sol·Terra·Luna·Astra 중 하나를 호출하며, 모델끼리 투표하지 않음 |
+| Agent / 모델 | Python agent 하나가 요청마다 Sol·Luna·Astra(`gpt-6-sol`·`gpt-6-luna`·`gpt-6-astra`) 중 하나를 호출하며, 모델끼리 투표하지 않음 |
 | Foundry / Agent Framework | Foundry는 Azure 서비스와 포털, Agent Framework는 Python agent가 사용하는 라이브러리 |
 | KB / knowledge base | 회사 문서를 검색하는 지식 계층 |
 | Hosted Agent | Python 코드를 Azure의 관리형 환경에서 실행하는 에이전트 |
@@ -57,7 +57,7 @@ flowchart LR
     Q["합성 질문"] --> A["Python Hosted Agent"]
     A --> K["Foundry IQ\n정책 원문 검색"]
     K --> A
-    A --> M["고정한 네 모델 중 하나"]
+    A --> M["고정한 세 모델 중 하나"]
     M --> R["답변 · 문서 ID · trace"]
     R --> E["Foundry 평가\n+ 업무 검사"]
     R --> T["Trace / Monitor"]
@@ -80,30 +80,29 @@ flowchart LR
 | 이름 | 예시 또는 확인할 곳 | 사용하는 위치 |
 |---|---|---|
 | 모델 키 | `sol` | Agent 요청의 `model_key`, 결과 집계 |
-| 모델 ID와 버전 | `gpt-5.6-sol` / `2026-07-09` | `preflight`가 대조하는 고정 모델 |
+| 모델 ID와 버전 | `gpt-6-sol` / `2026-09-22` | `preflight`가 대조하는 고정 모델 |
 | Azure 배포 이름 | 강사가 전달했거나 Foundry **Build → Models**에서 확인한 실제 배포 이름 | `.env`의 `MODEL_SOL_DEPLOYMENT`. 모델 키·ID와 같을 필요 없음 |
 
-Terra·Luna·Astra와 보조 배포도 같은 방식으로 구분합니다. 새 조의 `LAB_PREFIX`를 바꾸어도 공유 모델의 배포 이름은 바뀌지 않습니다.
+Luna·Astra와 보조 배포도 같은 방식으로 구분합니다. 새 조의 `LAB_PREFIX`를 바꾸어도 공유 모델의 배포 이름은 바뀌지 않습니다.
 
 | 키 | 실제 모델 ID | 버전 |
 |---|---|---|
-| `sol` | `gpt-5.6-sol` | `2026-07-09` |
-| `terra` | `gpt-5.6-terra` | `2026-07-09` |
-| `luna` | `gpt-5.6-luna` | `2026-07-09` |
+| `sol` | `gpt-6-sol` | `2026-09-22` |
+| `luna` | `gpt-6-luna` | `2026-09-22` |
 | `astra` | `gpt-6-astra` | `2026-09-03` |
 
 `preflight`가 각 실제 배포의 모델·버전과 지역별 지원·할당량을 확인합니다. 다른 구독에서도 접근·배포가 보장되는 목록은 아닙니다. 하나가 없으면 중단하며 다른 모델로 대체하지 않습니다.
 
-네 모델은 **같은 dev/holdout, KB, 지침, 평가 기준**으로 각각 답합니다. 동시 합의형 multi-agent council이 아닙니다.
+세 모델은 **같은 dev/holdout, KB, 지침, 평가 기준**으로 각각 답합니다. 동시 합의형 multi-agent council이 아닙니다.
 검색 planner와 공통 LLM judge에는 별도 고정 배포를 사용합니다. 예시의 `gpt-5.4-mini`는 보조 모델이며 후보 모델의 대체물이 아닙니다.
-네 후보가 모두 OpenAI 모델이므로 여러 공급자 간 이식성을 검증했다고 주장하지 않습니다.
+세 후보가 모두 OpenAI 모델이므로 여러 공급자 간 이식성을 검증했다고 주장하지 않습니다.
 
 ## 실행 경로를 이렇게 고른 이유
 
 - **Direct code deployment:** `azure.yaml`의 Python 3.13 소스 ZIP을 배포합니다. 로컬 Docker는 필요 없습니다.
 - **Invocations protocol:** `model_key`, `case_id`, `run_id`를 명시해 기계적으로 비교합니다. 모델 선택은 허용 목록으로 제한합니다.
 - **요청 간 대화 분리:** session은 컴퓨트 재사용에 쓰지만, 각 요청은 새 Agent로 실행해 모델·사례 간 대화 이력을 공유하지 않습니다.
-- **엄격한 출력 계약:** 네 모델 모두 같은 JSON 텍스트 지침을 쓰고 Pydantic으로 검증합니다. 잘못된 JSON을 고쳐 성공으로 처리하지 않습니다. 서비스가 보장하는 Structured Outputs와는 다릅니다.
+- **엄격한 출력 계약:** 세 모델 모두 같은 JSON 텍스트 지침을 쓰고 Pydantic으로 검증합니다. 잘못된 JSON을 고쳐 성공으로 처리하지 않습니다. 서비스가 보장하는 Structured Outputs와는 다릅니다.
 
 검증 환경의 Astra는 프로젝트 Responses API의 `json_schema`를 거부했고 최소 일반 요청도 실패했습니다.
 프로젝트 Chat Completions는 사용자와 hosted identity의 권한 동작이 달랐습니다.
@@ -175,7 +174,7 @@ Terra·Luna·Astra와 보조 배포도 같은 방식으로 구분합니다. 새 
 기본 단위와 custom span을 섞어 토큰·지연을 이중 집계하지 않습니다.
 실습 agent만 `microsoft.fixed_percentage` / `1.0`으로 100% trace를 수집하며, 공유 App Insights 설정은 바꾸지 않습니다.
 
-포털의 운영 집계에는 smoke·추가 포털 호출 등이 섞일 수 있어 64개 본평가와 분모가 다릅니다.
+포털의 운영 집계에는 smoke·추가 포털 호출 등이 섞일 수 있어 48개 본평가와 분모가 다릅니다.
 표시된 추정 비용 `$0`은 실제 전체 청구액이 아닙니다.
 Monitor의 Tools 목록이 비어도 코드 내부의 IQ 호출은 trace에 남을 수 있습니다.
 운영의 샘플링·개인정보·비용·알림 정책은 별도 설계가 필요합니다.
@@ -211,11 +210,11 @@ Monitor의 Tools 목록이 비어도 코드 내부의 IQ 호출은 trace에 남�
 |---|---|---|
 | 조직의 기억을 활용 | 합성 출장 규정을 Foundry IQ로 검색 | 정책 원문·문서 ID·적용 기준 |
 | 업무 성과로 평가하는 learning loop | 실제 응답 → 업무 검사·Foundry 평가 → trace 검토 → V2 지침 → 같은 조건의 재평가 | 고정 정답·평가 기준·검토한 사례·개선 이유 |
-| 모델과 조직의 학습 자산을 분리 | 같은 지식·질문·평가 체계에서 Sol/Terra/Luna/Astra를 비교 | 특정 모델과 분리해 관리하는 데이터·지침·trace 연결 관계 |
+| 모델과 조직의 학습 자산을 분리 | 같은 지식·질문·평가 체계에서 Sol/Luna/Astra를 비교 | 특정 모델과 분리해 관리하는 데이터·지침·trace 연결 관계 |
 
 **실습의 범위:** 원문이 제시하는 비전 전체를 구현하는 것은 아닙니다.
 이 실습은 고정 모델을 사용한 **프롬프트·평가 체계의 개선**이며, fine-tuning/RL이나 자동 재학습·운영 배포를 수행하지 않습니다.
-네 후보는 모두 OpenAI 모델이므로 여러 공급자 사이의 상호운용성까지 검증했다고 주장하지 않습니다.
+세 후보는 모두 OpenAI 모델이므로 여러 공급자 사이의 상호운용성까지 검증했다고 주장하지 않습니다.
 
 [참가자 1단계로 이동](../README.ko.md#start).
 

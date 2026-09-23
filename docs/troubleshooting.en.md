@@ -53,7 +53,7 @@ For a new experiment or another language, obtain unused names and use a separate
 | Missing `.env` or required setting | Put the instructor's complete file in the repository root; do not guess another team's deployment names |
 | `read: -p: no coprocess` or activation path missing | Start Bash and use Terminal A's absolute `pwd` path |
 | Language mismatch | Use the original language/workspace. `LAB_LANGUAGE=en` selects English; a missing setting preserves legacy Korean behavior. Never mix the two sets of results. |
-| Nonempty `missing_models` | Ask the instructor to confirm all four exact deployments, versions, access, and quota; no substitutes |
+| Nonempty `missing_models` | Ask the instructor to confirm all three exact deployments, versions, access, and quota; no substitutes |
 | `The fixed auxiliary planner/judge deployment is missing` | The owner completes [auxiliary model preparation](instructor.en.md#auxiliary-model) and checks the actual `LAB_AUX_DEPLOYMENT` in `.env`. Neither `--allow-missing-models` nor `prepare-models` skips or creates that deployment. |
 | Wrong account or tenant | Repeat [the two sign-ins and checks](../README.md#login); do not change a global default subscription |
 | Login appears missing only in a new terminal | Restore `export AZURE_CONFIG_DIR="$PWD/.azure-cli"` in the correct folder |
@@ -129,7 +129,7 @@ Use the following only when the saved `status` is **`failed` / `canceled` / `can
 python scripts/workshop.py calibrate --retry-failed
 ```
 
-Malformed/missing results without a recorded failed/errored run require owner review of this calibration folder's saved status and raw output, not a forced retry. If the judge completed but did **not** distinguish the supplied amounts, review its configuration with the owner. Do not edit the examples/threshold or rerun a valid low score. Calibration is separate from the 64 agent responses.
+Malformed/missing results without a recorded failed/errored run require owner review of this calibration folder's saved status and raw output, not a forced retry. If the judge completed but did **not** distinguish the supplied amounts, review its configuration with the owner. Do not edit the examples/threshold or rerun a valid low score. Calibration is separate from the 48 agent responses.
 
 <a id="telemetry"></a>
 
@@ -187,7 +187,7 @@ python scripts/workshop.py collect --split dev --label improved-retry --concurre
 python scripts/workshop.py collect --split holdout --label holdout-retry --concurrency 4
 ```
 
-After a V2 dev retry reaches **24/24**, return directly to [step 7's evaluation and comparison](../README.md#candidate-evaluation), replacing `improved` with `improved-retry`. After a holdout retry reaches **16/16**, return directly to [step 8's evaluation](../README.md#holdout-evaluation), replacing `holdout` with `holdout-retry`. Do not repeat deployment or collection at the top of those steps.
+After a V2 dev retry reaches **18/18**, return directly to [step 7's evaluation and comparison](../README.md#candidate-evaluation), replacing `improved` with `improved-retry`. After a holdout retry reaches **12/12**, return directly to [step 8's evaluation](../README.md#holdout-evaluation), replacing `holdout` with `holdout-retry`. Do not repeat deployment or collection at the top of those steps.
 
 Do not redeploy, change the prompt after seeing holdout, or recreate the completed baseline and its review. A holdout execution retry is **not a new untouched validation set**. If you must change concurrency after baseline completed, start a separately controlled experiment; do not erase the original evidence.
 

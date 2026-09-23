@@ -16,7 +16,6 @@ services:
       LAB_PREFIX: ${LAB_PREFIX}
       LAB_AGENT_NAME: ${LAB_AGENT_NAME}
       MODEL_SOL_DEPLOYMENT: ${MODEL_SOL_DEPLOYMENT}
-      MODEL_TERRA_DEPLOYMENT: ${MODEL_TERRA_DEPLOYMENT}
       MODEL_LUNA_DEPLOYMENT: ${MODEL_LUNA_DEPLOYMENT}
       MODEL_ASTRA_DEPLOYMENT: ${MODEL_ASTRA_DEPLOYMENT}
       LAB_PROMPT_VERSION: ${LAB_PROMPT_VERSION}
@@ -34,7 +33,7 @@ services:
         memory: 2Gi
     kind: hosted
     name: frontier-loop-0910
-    description: Synthetic Korean travel policy assistant with Foundry IQ, four swappable
+    description: Synthetic Korean travel policy assistant with Foundry IQ, three swappable
       models and evaluation lineage.
     startupCommand: python main.py
     protocols:

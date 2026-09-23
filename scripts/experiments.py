@@ -579,11 +579,17 @@ def verify_evidence(baseline: str, candidate: str, holdout: str) -> dict[str, An
         raise ValueError("The improvement must be a new hosted agent version.")
     if candidate_manifest["agent"]["version"] != holdout_manifest["agent"]["version"]:
         raise ValueError("Holdout must use the frozen candidate agent version.")
-    if [len(base_rows), len(candidate_rows), len(holdout_rows)] != [24, 24, 16]:
-        raise ValueError("The final comparison must contain exactly 24 + 24 + 16 model outputs.")
+    expected_rows = [
+        len(dataset(split)) * len(MODEL_SPECS) for split in ("dev", "dev", "holdout")
+    ]
+    if [len(base_rows), len(candidate_rows), len(holdout_rows)] != expected_rows:
+        raise ValueError(
+            "The final comparison must contain exactly "
+            + " + ".join(str(count) for count in expected_rows) + " model outputs."
+        )
     all_traces = {row["trace_id"] for _, rows in loaded.values() for row in rows}
-    if len(all_traces) != 64:
-        raise ValueError("Expected 64 distinct trace IDs.")
+    if len(all_traces) != sum(expected_rows):
+        raise ValueError(f"Expected {sum(expected_rows)} distinct trace IDs.")
     expected_old_traces = {row["trace_id"] for row in base_rows}
     reused_traces = {
         trace_id for row in candidate_rows
@@ -638,8 +644,8 @@ def verify_evidence(baseline: str, candidate: str, holdout: str) -> dict[str, An
     comparison = compare(labels)
     evidence = {
         "language": workshop_language(),
-        "component_execution_verified": True, "primary_model_outputs": 64,
-        "distinct_verified_traces": 64, "models": MODEL_SPECS, "runs": runs,
+        "component_execution_verified": True, "primary_model_outputs": sum(expected_rows),
+        "distinct_verified_traces": len(all_traces), "models": MODEL_SPECS, "runs": runs,
         "reused_baseline_trace_ids": sorted(reused_traces),
         "candidate_quality_gates": {
             key: {

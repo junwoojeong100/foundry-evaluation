@@ -72,7 +72,7 @@ class EnvironmentPreparationTests(unittest.TestCase):
         (self.root / ".env").write_text(
             "AZURE_SUBSCRIPTION_ID=test-subscription\nAZURE_TENANT_ID=test-tenant\n"
             "AZURE_EXPECTED_USERNAME=person@example.com\nAZURE_RESOURCE_GROUP=\n"
-            "LAB_AUX_MODEL=gpt-5.4-mini\n",
+            "LAB_AUX_MODEL=gpt-5.4-mini\nMODEL_TERRA_DEPLOYMENT=retired-terra\n",
         )
         root_patch = patch.object(prepare_environment, "ROOT", self.root)
         root_patch.start()
@@ -113,6 +113,10 @@ class EnvironmentPreparationTests(unittest.TestCase):
         self.assertEqual(manifest["files"]["data/policies.json"], expected)
         values = prepare_environment.dotenv_values(workspace / ".env")
         self.assertEqual(values["MODEL_SOL_DEPLOYMENT"], "ll-test-run-sol")
+        self.assertEqual(
+            sorted(key for key in values if key.startswith("MODEL_")),
+            ["MODEL_ASTRA_DEPLOYMENT", "MODEL_LUNA_DEPLOYMENT", "MODEL_SOL_DEPLOYMENT"],
+        )
         self.assertEqual(values["AZURE_SUBSCRIPTION_ID"], "test-subscription")
         self.assertEqual((workspace / ".env").stat().st_mode & 0o777, 0o600)
 

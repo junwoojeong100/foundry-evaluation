@@ -121,7 +121,7 @@ Hosting reference: [Hosted Agent quickstart](https://learn.microsoft.com/azure/f
 
 ## Safe preparation with an existing foundation
 
-**Order:** configuration/sign-in → **auxiliary planner/judge** → four candidates → calibration → handoff.
+**Order:** configuration/sign-in → **auxiliary planner/judge** → three candidates → calibration → handoff.
 
 <a id="existing-settings"></a>
 <a id="1-configure-and-sign-in"></a>
@@ -155,7 +155,7 @@ After the local tests pass, complete [README step 1-3](../README.md#login), incl
 | Candidate state | Value for its `MODEL_*_DEPLOYMENT` |
 |---|---|
 | The required model/version is already deployed | Copy its **actual deployment name**; it does not need your new prefix. |
-| The candidate is not deployed yet | Reserve an unused name formed from your actual `LAB_PREFIX` plus `-sol`, `-terra`, `-luna`, or `-astra`. Step 3 creates the missing deployments. |
+| The candidate is not deployed yet | Reserve an unused name formed from your actual `LAB_PREFIX` plus `-sol`, `-luna`, or `-astra`. Step 3 creates the missing deployments. |
 
 Template names such as `ll-team01-sol` are not proof of an existing deployment. Keep the fixed [model IDs and versions](reference.en.md#model-names); prepare the auxiliary deployment separately below.
 
@@ -163,7 +163,7 @@ Template names such as `ll-team01-sol` are not proof of an existing deployment. 
 
 ### 2. Prepare the auxiliary planner/judge first
 
-**The environment owner completes this before the exercise.** `--allow-missing-models` allows **only the four candidates** to be missing. It still stops if the auxiliary deployment is absent, and `prepare-models` does not create that deployment.
+**The environment owner completes this before the exercise.** `--allow-missing-models` allows **only the three candidates** to be missing. It still stops if the auxiliary deployment is absent, and `prepare-models` does not create that deployment.
 
 Sign in to [Foundry](https://ai.azure.com/) with the configured account. In **New Foundry**, match `AZURE_AI_ACCOUNT_NAME` and `AZURE_AI_PROJECT_NAME`. Open **Build → Models** and inspect an existing deployment against these requirements:
 
@@ -193,9 +193,9 @@ Stop if the exact model, version, deployment type, or quota is unavailable. Do n
 ### 3. Check the candidates and judge, then hand off
 
 1. Run `python scripts/workshop.py preflight --allow-missing-models`. The auxiliary deployment must already be ready.
-2. If the four candidates are missing, use `python scripts/workshop.py prepare-models` to create only the owned, prefixed deployments.
+2. If the three candidates are missing, use `python scripts/workshop.py prepare-models` to create only the owned, prefixed deployments. New deployments use `GlobalStandard` capacity 50, and automatic version upgrades are disabled (`NoAutoUpgrade`) so the fixed model versions do not change during the exercise.
 3. Run `python scripts/workshop.py preflight` again and require `language: en` and `missing_models: []`.
-4. Run `python scripts/workshop.py calibrate` and require **`Judge calibration passed`**. README step 5 repeats this check in each participant workspace; matching completed calibration is reused. The two fixed examples are not part of the 64 candidate responses.
+4. Run `python scripts/workshop.py calibrate` and require **`Judge calibration passed`**. README step 5 repeats this check in each participant workspace; matching completed calibration is reused. The two fixed examples are not part of the 48 candidate responses.
 5. For a class, use the [separate rehearsal folder](#rehearsal-workspace), then hand off to participants. For one-off self-study, stay here and continue at [README step 1-4](../README.md#project-binding): bind → IQ retrieval → local smoke → deployment/access → hosted smoke. Do not run both paths.
 
 If evaluation reports missing App Insights `ResourceId` metadata, inspect connection ownership first. Only an authorized instructor may use `repair-observability --confirm` on a dedicated workshop connection. Do not modify a shared connection to make an example work.
@@ -233,7 +233,7 @@ If model deployments are shared within the approved workshop foundation, keep th
 
 Do not copy someone else's `.azure`, `.foundry` ownership files, authentication cache, or results to bypass a guard. A participant's cleanup deletes only objects recorded as owned by that folder. The instructor remains responsible for prepared models and foundation-service costs.
 
-**After rehearsal cleanup, before handoff:** return to the model-preparation folder and its CLI profile, run `python scripts/workshop.py preflight`, and require all four deployments plus `missing_models: []`. If a model is missing, stop handoff and restore preparation first. Do not clean up the preparation folder's models while teams still use them.
+**After rehearsal cleanup, before handoff:** return to the model-preparation folder and its CLI profile, run `python scripts/workshop.py preflight`, and require all three deployments plus `missing_models: []`. If a model is missing, stop handoff and restore preparation first. Do not clean up the preparation folder's models while teams still use them.
 
 Use the [rehearsal timing](#rehearsal) below. For **one-off self-study with no later participants**, staying in the preparation folder is valid; its owned-model cleanup is then intentional.
 
@@ -246,11 +246,11 @@ Use the [rehearsal timing](#rehearsal) below. For **one-off self-study with no l
 | 00–10 min | 1. Prepare | Offline tests, two sign-ins, identity check, preflight, and binding |
 | 10–25 min | 2. Knowledge | Actual English document IDs and IQ activity |
 | 25–40 min | 3–4. Local and hosted | Real answers in both environments |
-| 40–55 min | 5. Baseline | 24 actual English responses and completed native evaluation |
+| 40–55 min | 5. Baseline | 18 actual English responses and completed native evaluation |
 | 55–70 min | 6. Review | A real trace and reviewed regression case |
-| 70–85 min | 7. V2 | New version, same 6 dev questions × 4 models = 24 responses |
-| 85–100 min | 8. Holdout | Frozen candidate and 16 responses |
-| 100–110 min | 9. Observe | 64 responses, 64 traces, and complete lineage |
+| 70–85 min | 7. V2 | New version, same 6 dev questions × 3 models = 18 responses |
+| 85–100 min | 8. Holdout | Frozen candidate and 12 responses |
+| 100–110 min | 9. Observe | 48 responses, 48 traces, and complete lineage |
 | 110–115 min | 10. Cleanup | Only the folder's owned objects removed |
 | 115–120 min | Buffer | Evaluation and telemetry ingestion delay |
 
@@ -266,7 +266,7 @@ Use this checklist **after rehearsal**, not as a replacement for provisioning.
 |---|---|
 | Account | Confirm access to the intended subscription, tenant, project, and model deployments. Participants sign in and complete MFA in README step 1-3. |
 | Complete `.env` | Use `.env.example`, fill the actual values, and set **`LAB_LANGUAGE=en`**. Do not include passwords, API keys, or tokens. |
-| Ready services | Foundry project, Search, connected Application Insights, four fixed candidates, and the auxiliary planner/judge |
+| Ready services | Foundry project, Search, connected Application Insights, three fixed candidates, and the auxiliary planner/judge |
 | Unused names | A unique `LAB_PREFIX` and `LAB_AGENT_NAME` for each team |
 | Tools | Pass the [basic tool checks](#tools). Complete [additional GHCP setup](copilot.en.md) separately if using it. |
 | Access support | A person who can resolve narrowly scoped role assignment, 403, and capacity issues |

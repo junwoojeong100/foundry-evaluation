@@ -2,7 +2,7 @@
 
 [English workshop](../README.md) · [한국어](environment.ko.md)
 
-**Outcome:** an English-only workshop group in **Sweden Central**, with Foundry, Search, telemetry, four candidate models, and a fixed auxiliary planner/judge.
+**Outcome:** an English-only workshop group in **Sweden Central**, with Foundry, Search, telemetry, three candidate models (`gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`), and a fixed auxiliary planner/judge.
 
 Participants with a prepared `.env` should skip this document and start at [README step 1](../README.md#start).
 
@@ -186,7 +186,7 @@ python scripts/provision_environment.py ready --run-dir "$RUN_DIR"
 
 **Checkpoint:** the actual returned project and model endpoints match the new environment. They are different endpoints with different purposes.
 
-The auxiliary deployment is `gpt-5.4-mini` / `2026-03-17`. It is the planner/judge, not a replacement for one of the four candidates.
+The auxiliary deployment is `gpt-5.4-mini` / `2026-03-17`. It is the planner/judge, not a replacement for one of the three candidates.
 
 <a id="setup-candidates"></a>
 
@@ -201,7 +201,7 @@ python scripts/workshop.py preflight &&
 python scripts/workshop.py calibrate
 ```
 
-**Checkpoint:** `language: en`, the four exact candidate identities/versions, `deployed: true`, `missing_models: []`, and a successful judge calibration. The two calibration examples are not part of the 64 candidate outputs.
+**Checkpoint:** `language: en`, the three exact candidate identities/versions (`gpt-6-sol` / `2026-09-22`, `gpt-6-luna` / `2026-09-22`, `gpt-6-astra` / `2026-09-03`), `deployed: true`, `missing_models: []`, and a successful judge calibration. The two calibration examples are not part of the 48 candidate outputs.
 
 <a id="handoff"></a>
 

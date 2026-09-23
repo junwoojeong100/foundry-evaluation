@@ -89,7 +89,9 @@ def prepare(directory: Path):
         "LAB_PROMPT_VERSION": "v1", "LAB_AUTH_MODE": "cli",
         "LAB_LANGUAGE": language,
     })
-    for key in ("SOL", "TERRA", "LUNA", "ASTRA"):
+    for key in [name for name in list(values) if name.startswith("MODEL_") and name.endswith("_DEPLOYMENT")]:
+        values.pop(key)
+    for key in ("SOL", "LUNA", "ASTRA"):
         values[f"MODEL_{key}_DEPLOYMENT"] = config["prefix"] + "-" + key.lower()
     (workspace / ".env").write_text("".join(f"{key}={value}\n" for key, value in values.items() if value is not None))
     os.chmod(workspace / ".env", 0o600)

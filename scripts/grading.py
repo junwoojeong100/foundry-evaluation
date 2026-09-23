@@ -34,7 +34,7 @@ def validate_matrix(rows: list[dict[str, Any]], cases: list[dict[str, Any]]) -> 
     expected = {(key, case_id) for key in MODEL_SPECS for case_id in ids}
     actual = [(row["model_key"], row["case_id"]) for row in rows]
     if len(actual) != len(set(actual)) or set(actual) != expected:
-        raise ValueError("Incomplete/duplicate four-model matrix; errors cannot be omitted.")
+        raise ValueError("Incomplete/duplicate model matrix; errors cannot be omitted.")
     if any(row.get("error") for row in rows):
         raise ValueError("An invocation failed; do not evaluate a success-only subset.")
     for row in rows:

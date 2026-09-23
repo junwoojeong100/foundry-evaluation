@@ -11,7 +11,7 @@ Follow [the English README](../README.md) for the execution path. This document 
 | Term | Meaning here |
 |---|---|
 | Copilot CLI / workshop agent | Copilot CLI is the development tool that helps run commands; the workshop agent is the Python application deployed to Azure to answer policy questions |
-| Agent / model | One Python agent calls one of Sol, Terra, Luna, or Astra for each request; the models do not vote |
+| Agent / model | One Python agent calls one of Sol, Luna, or Astra (`gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`) for each request; the models do not vote |
 | Foundry / Agent Framework | Foundry provides Azure services and the portal; Agent Framework is the library used by the Python agent |
 | Knowledge base / KB | Searchable organizational policy evidence |
 | Hosted Agent | Python code executed in a managed Azure environment |
@@ -57,7 +57,7 @@ flowchart LR
     Q["Synthetic question"] --> A["Python Hosted Agent"]
     A --> K["Foundry IQ policy retrieval"]
     K --> A
-    A --> M["One of four fixed models"]
+    A --> M["One of three fixed models"]
     M --> R["Answer, citations, trace"]
     R --> E["Foundry evaluation + business checks"]
     R --> T["Trace / Monitor"]
@@ -78,23 +78,22 @@ The loop improves instructions and the validation system. Recording a trace does
 | Name | Example or source | Where used |
 |---|---|---|
 | Model key | `sol` | Agent request `model_key` and result grouping |
-| Model ID and version | `gpt-5.6-sol` / `2026-07-09` | The fixed model identity checked by `preflight` |
+| Model ID and version | `gpt-6-sol` / `2026-09-22` | The fixed model identity checked by `preflight` |
 | Azure deployment name | The actual prepared name from the instructor or Foundry **Build → Models** | `.env`'s `MODEL_SOL_DEPLOYMENT`; it need not equal the model key or ID |
 
-Apply the same distinction to Terra, Luna, Astra, and the auxiliary deployment. Changing `LAB_PREFIX` for a new team does not rename shared model deployments.
+Apply the same distinction to Luna, Astra, and the auxiliary deployment. Changing `LAB_PREFIX` for a new team does not rename shared model deployments.
 
 | Key | Model ID | Version |
 |---|---|---|
-| `sol` | `gpt-5.6-sol` | `2026-07-09` |
-| `terra` | `gpt-5.6-terra` | `2026-07-09` |
-| `luna` | `gpt-5.6-luna` | `2026-07-09` |
+| `sol` | `gpt-6-sol` | `2026-09-22` |
+| `luna` | `gpt-6-luna` | `2026-09-22` |
 | `astra` | `gpt-6-astra` | `2026-09-03` |
 
 `preflight` checks the actual deployment, model/version, regional catalog, and quota. A catalog entry does not guarantee availability in another subscription. If a required model is unavailable, stop rather than substitute another one.
 
-The four candidates answer independently. They are not a multi-agent voting council. A separate fixed `gpt-5.4-mini` deployment serves retrieval planning and evaluation judging.
+The three candidates answer independently. They are not a multi-agent voting council. A separate fixed `gpt-5.4-mini` deployment serves retrieval planning and evaluation judging.
 
-All four candidates are OpenAI models. This is not a cross-provider interoperability benchmark.
+All three candidates are OpenAI models. This is not a cross-provider interoperability benchmark.
 
 ## Why this execution path
 
@@ -154,7 +153,7 @@ The native path is a **JSONL dataset evaluation of actual captured agent answers
 
 During an experiment:
 
-- Require the complete four-model response matrix with no execution errors or duplicate/missing rows.
+- Require the complete three-model response matrix with no execution errors or duplicate/missing rows.
 - Keep the dev data, corpus, concurrency, judge, and evaluator definitions fixed.
 - Require a model's business pass rate to be at least 80%, with all required citations valid.
 - Keep the native 1–5 scale and pass threshold of 4. Do not replace nulls/errors with grades.
@@ -171,7 +170,7 @@ The full English method, actual measurements, and interpretation belong in [the 
 
 The workshop agent uses `microsoft.fixed_percentage` with `1.0` for complete trace coverage. It does not change a shared Application Insights sampling policy.
 
-Portal dashboards may include smoke or additional UI invocations beyond the 64 primary responses. A displayed estimated cost of `$0` is not a complete Azure bill. An empty Tools chart does not prove that code-level IQ spans were absent.
+Portal dashboards may include smoke or additional UI invocations beyond the 48 primary responses. A displayed estimated cost of `$0` is not a complete Azure bill. An empty Tools chart does not prove that code-level IQ spans were absent.
 
 Production requires separately designed sampling, privacy, retention, alerting, cost, and authorization policies.
 
@@ -194,9 +193,9 @@ This workshop is a small educational interpretation of that perspective:
 |---|---|---|
 | Institutional memory | Retrieve synthetic travel policies with Foundry IQ | Policy documents, IDs, and applicability rules |
 | Business-specific learning loop | Generate real answers, evaluate them, review a trace, and compare V1/V2 | Reference answers, evaluation criteria, reviewed cases, and improvement reasons |
-| Separate models from organizational assets | Compare four fixed models with the same policy corpus and questions | Data, instructions, and trace lineage managed independently of a model choice |
+| Separate models from organizational assets | Compare three fixed models with the same policy corpus and questions | Data, instructions, and trace lineage managed independently of a model choice |
 
-This is **prompt and evaluation-system improvement**, not fine-tuning, reinforcement learning, or automatic production deployment. All four candidates are OpenAI models; the workshop does not claim to validate interoperability across model providers.
+This is **prompt and evaluation-system improvement**, not fine-tuning, reinforcement learning, or automatic production deployment. All three candidates are OpenAI models; the workshop does not claim to validate interoperability across model providers.
 
 [Continue with workshop step 1](../README.md#start).
 

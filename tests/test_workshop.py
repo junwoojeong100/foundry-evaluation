@@ -12,7 +12,7 @@ sys.path[:0] = [str(ROOT / "src" / "agent"), str(ROOT / "scripts")]
 from pydantic import ValidationError
 
 from common import digest, label_dir, read_jsonl
-from cloud_setup import agent_principal, cleanup_plan
+from cloud_setup import agent_principal, cleanup_plan, pin_deployment_version
 from contracts import Invocation, MODEL_SPECS, PolicyAnswer
 from experiments import normalize_eval_items, parse_invocation_output, reviewed_cases
 from grading import grade, numeric_values, percentile, validate_matrix
@@ -39,15 +39,47 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(plan["role_assignments"], ["role-id"])
         self.assertEqual(plan["search_objects"], ["indexes/test-policies"])
 
-    def test_four_exact_model_ids(self):
+    def test_three_exact_model_ids_and_versions(self):
         self.assertEqual(
-            {name for name, _ in MODEL_SPECS.values()},
-            {"gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-6-astra"},
+            MODEL_SPECS,
+            {
+                "sol": ("gpt-6-sol", "2026-09-22"),
+                "luna": ("gpt-6-luna", "2026-09-22"),
+                "astra": ("gpt-6-astra", "2026-09-03"),
+            },
         )
+
+    def test_new_candidate_deployment_keeps_its_fixed_version(self):
+        item = {
+            "id": "/subscriptions/s/resourceGroups/g/providers/Microsoft.CognitiveServices/accounts/a/deployments/team-sol",
+            "name": "team-sol", "sku": {"name": "GlobalStandard", "capacity": 50},
+            "properties": {
+                "model": {"format": "OpenAI", "name": "gpt-6-sol", "version": "2026-09-22", "source": None},
+                "raiPolicyName": "Microsoft.DefaultV2", "provisioningState": "Succeeded",
+                "versionUpgradeOption": "OnceNewDefaultVersionAvailable",
+            },
+        }
+        pinned = {**item, "properties": {**item["properties"], "versionUpgradeOption": "NoAutoUpgrade"}}
+        with patch("cloud_setup.az", return_value=pinned) as call:
+            self.assertEqual(pin_deployment_version(item), pinned)
+            self.assertEqual(pin_deployment_version(pinned), pinned)
+        call.assert_called_once()
+        args = call.call_args.args
+        self.assertEqual(args[:4], ("rest", "--method", "put", "--uri"))
+        self.assertTrue(args[4].endswith("/deployments/team-sol?api-version=2025-06-01"))
+        body = json.loads(args[args.index("--body") + 1])
+        self.assertEqual(body["properties"]["versionUpgradeOption"], "NoAutoUpgrade")
+        self.assertEqual(body["properties"]["model"], {"format": "OpenAI", "name": "gpt-6-sol", "version": "2026-09-22"})
+        self.assertEqual(body["sku"], {"name": "GlobalStandard", "capacity": 50})
+        with patch("cloud_setup.az", return_value=item):
+            with self.assertRaises(ValueError):
+                pin_deployment_version(item)
 
     def test_model_alias_and_extra_prompt_are_rejected(self):
         with self.assertRaises(ValidationError):
             Invocation(query="test", model_key="other", case_id="D01", run_id="test")
+        with self.assertRaises(ValidationError):
+            Invocation(query="test", model_key="terra", case_id="D01", run_id="test")
         with self.assertRaises(ValidationError):
             Invocation(query="test", model_key="sol", case_id="D01", run_id="test", prompt_version="v2")
 

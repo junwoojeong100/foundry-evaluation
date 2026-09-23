@@ -130,7 +130,7 @@ python scripts/workshop.py calibrate
 python scripts/workshop.py calibrate --retry-failed
 ```
 
-실패·오류 run이 기록되지 않은 결과 형식 오류·누락은 이 calibration 폴더의 상태·원문 결과를 보존하고 환경 소유자에게 확인합니다. 재시도를 강행하지 않습니다. Judge가 평가를 마쳤지만 두 금액을 **구분하지 못했다면** 설정을 검토합니다. 예제·threshold를 바꾸거나 낮은 점수를 반복 실행하지 않습니다. Calibration은 본평가 64응답과 별개입니다.
+실패·오류 run이 기록되지 않은 결과 형식 오류·누락은 이 calibration 폴더의 상태·원문 결과를 보존하고 환경 소유자에게 확인합니다. 재시도를 강행하지 않습니다. Judge가 평가를 마쳤지만 두 금액을 **구분하지 못했다면** 설정을 검토합니다. 예제·threshold를 바꾸거나 낮은 점수를 반복 실행하지 않습니다. Calibration은 본평가 48응답과 별개입니다.
 
 <a id="telemetry"></a>
 
@@ -189,7 +189,7 @@ python scripts/workshop.py collect --split dev --label improved-retry --concurre
 python scripts/workshop.py collect --split holdout --label holdout-retry --concurrency 4
 ```
 
-V2 dev가 **24/24**로 끝나면 바로 [7단계 평가·비교](../README.ko.md#candidate-evaluation)부터 `improved`를 `improved-retry`로 바꾸어 이어갑니다. Holdout이 **16/16**으로 끝나면 바로 [8단계 평가](../README.ko.md#holdout-evaluation)부터 `holdout`을 `holdout-retry`로 바꾸어 이어갑니다. 해당 단계 처음의 배포·수집은 반복하지 않습니다.
+V2 dev가 **18/18**로 끝나면 바로 [7단계 평가·비교](../README.ko.md#candidate-evaluation)부터 `improved`를 `improved-retry`로 바꾸어 이어갑니다. Holdout이 **12/12**로 끝나면 바로 [8단계 평가](../README.ko.md#holdout-evaluation)부터 `holdout`을 `holdout-retry`로 바꾸어 이어갑니다. 해당 단계 처음의 배포·수집은 반복하지 않습니다.
 
 재배포하거나, holdout을 보고 지침을 바꾸거나, 완료된 baseline과 회귀 검토를 다시 만들지 않습니다. Holdout 실행 오류를 복구한 결과는 **새 미사용 검증셋이 아닙니다.** Baseline 완료 후 동시성까지 바꿔야 한다면 별도로 통제한 새 실험을 시작하며 원래 증거는 지우지 않습니다.
 
