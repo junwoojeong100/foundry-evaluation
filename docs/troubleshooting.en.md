@@ -273,6 +273,7 @@ Each Level 2–3 command saves its progress under **`src/agent/.foundry/results/
 | `... traces were not found` | Recent traces may still be ingesting. Wait a few minutes, delete the file the message names, and repeat. |
 | `Schedule ... already exists and is not owned by this folder` | Another folder with the same `LAB_PREFIX` created it. Do not delete it; ask the instructor for an unused prefix. |
 | `No scheduled run yet` | The first continuous-evaluation run starts at the printed time. Run `continuous-eval` again after it. |
+| The `red-team` link opens the Foundry home page | The report opens in the classic view: turn off **New Foundry** in the header, open the link again, and turn **New Foundry** back on afterwards. |
 
 Level 2–3 results do not change the step 9 evidence. Finish with [step 10 cleanup](../README.md#cleanup), which also deletes your continuous-evaluation schedule, custom evaluators, and generated datasets.
 

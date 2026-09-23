@@ -4,13 +4,16 @@
 
 **In about 40 minutes you will:**
 
-1. Register the five business checks as a **Foundry custom code evaluator** and the policy criteria as a **rubric evaluator**.
-2. Evaluate your saved V1 and V2 responses with **nine evaluators in one eval group**.
-3. Read Foundry's **run comparison** (statistical test) and **failure clusters**.
+1. [Register](#register-evaluators) the five business checks as a **Foundry custom code evaluator** and the policy criteria as a **rubric evaluator**.
+2. [Evaluate](#evaluate-suite) your saved V1 and V2 responses with **nine evaluators in one eval group**.
+3. [Read](#insights) Foundry's **run comparison** (statistical test) and **failure clusters**.
 
-**You need:** steps 1–9 of the [main guide](../README.md) finished in the same folder, and **step 10 not yet run**; cleanup deletes the evaluators you create here. No new agent responses are collected; only the judge model is called.
+**You need:** steps 1–9 of the [main guide](../README.md) finished in this folder, and **step 10 not yet run**.
 
-**Why this level exists:** in step 7, the business pass count changed from 0/18 to 17/18 in the recorded run, while Foundry's groundedness stayed at 18/18. The business result came from local Python. Here you make Foundry itself measure that contract and compare it with other evaluator types.
+- No new agent responses are collected; only the judge model is called.
+- Afterwards, go on to [Level 3](level-3.en.md) or return to [step 10](../README.md#cleanup), which also deletes the evaluators you create here.
+
+**Why this level exists:** in the recorded step 7, local business checks went from 0/18 to 17/18 while Foundry's groundedness stayed at 18/18. Here Foundry measures your contract itself, next to other evaluator types.
 
 <a id="register-evaluators"></a>
 
@@ -23,7 +26,10 @@ python scripts/workshop.py register-evaluators
 ```
 
 **Checkpoint:** two lines, `Registered <LAB_PREFIX>-business-contract version 1 (code)` and `Registered <LAB_PREFIX>-policy-rubric version 1 (rubric)`. Running the command again prints `Reusing ...` and creates nothing.
+
 **If not:** `already exists and is not owned by this folder` means another team uses your `LAB_PREFIX`; ask the instructor for an unused one. For other errors, see [Level 2 and 3 recovery](troubleshooting.en.md#levels).
+
+**Read it:** your project now has two reusable evaluators: a code evaluator that runs the five business checks exactly, and a rubric evaluator whose LLM judge scores policy quality.
 
 <details>
 <summary>What the two evaluators contain</summary>
@@ -48,13 +54,20 @@ python scripts/workshop.py evaluate-suite --labels baseline improved
 ```
 
 **Checkpoint:** `Suite evaluation completed: ... (baseline, improved)`, a table with nine rows and a `Portal:` link. The `business_contract` row matches the business passes from your 7-4 summary.
-**If not:** `evaluator results failed, for example because the judge hit its rate limit` means the shared judge was busy; run the same command with `--retry-failed` added. A timeout message means the runs are still going; run the same command again to resume.
 
-**Read the table in three parts:**
+**If not:** `evaluator results failed, for example because the judge hit its rate limit` means the shared judge was busy; wait a minute, then rerun only the failed runs:
+
+```bash
+python scripts/workshop.py evaluate-suite --labels baseline improved --retry-failed
+```
+
+A timeout message means the runs are still going; run the original command again to resume.
+
+**Read it:** the table has three parts.
 
 - **Your contract (`business_contract`)** reproduces the local business checks inside Foundry.
-- **The same rubric with and without evidence** differ: `policy_rubric` receives the question plus the retrieved policy text, while `policy_rubric_no_evidence` receives only the question. A judge sees only what you map to it.
-- **Generic evaluators** (`groundedness`, `relevance`, `response_completeness`, `task_adherence`, `intent_resolution`, and the safety evaluator `indirect_attack`) barely move, because they do not know your contract.
+- **The same rubric with and without evidence** gives different results: `policy_rubric` receives the question plus the retrieved policy text, while `policy_rubric_no_evidence` receives only the question. A judge sees only what you map to it.
+- **Generic evaluators** (`groundedness`, `relevance`, `response_completeness`, `task_adherence`, `intent_resolution`, and the safety evaluator `indirect_attack`) move little, because they do not know your contract.
 
 <details>
 <summary>Recorded English result (September 23, 2026 responses) — an example, not your target</summary>
@@ -101,19 +114,23 @@ Details: [built-in evaluators](https://learn.microsoft.com/azure/foundry/concept
 
 ## 3. Compare the runs and cluster the failures
 
-**Terminal A:**
+**Terminal A:** Foundry compares section 2's `baseline` and `improved` runs and groups the `improved` run's failures into clusters:
 
 ```bash
 python scripts/workshop.py insights --baseline baseline --candidate improved
 ```
 
-**Checkpoint:** a `Comparison (candidate vs baseline):` table with `delta`, `p`, and `effect` for all nine criteria, then `Failure clusters in the candidate run [evaluator that failed each sample]:` with a list, or `none`.
+**Checkpoint:** the output shows, in order:
+
+1. a `Comparison (candidate vs baseline):` table with `delta`, `p`, and `effect` for all nine criteria;
+2. `Failure clusters in the candidate run [evaluator that failed each sample]:` with a list, or `none`.
+
 **If not:** `Run evaluate-suite ... first` means section 2 has not completed. A timeout means the insights are still generating, and `... insight failed` means one could not be generated; in both cases, run the same command again.
 
 **Read it:**
 
-- **`effect`** is Foundry's statistical test on the two runs: `Changed` means a significant difference (p at most 0.05), and `Inconclusive` means too few rows or p of 0.05 or more. With 18 rows per run, only large changes become significant.
-- **Each cluster lists the evaluators whose failures it contains.** If most samples come from `policy_rubric_no_evidence`, the cluster describes a judge that lacked evidence, not a real agent problem. Check the source before acting on a suggestion.
+- **`effect`** is Foundry's statistical test on the two runs: `Changed` means a significant difference (p at most 0.05), and `Inconclusive` means too few rows or no significant difference ([legend](https://learn.microsoft.com/azure/foundry/how-to/evaluate-results#see-your-evaluation-results)). With 18 rows per run, only large changes become significant.
+- **Each cluster lists the evaluators whose failures it contains.** If most samples come from `policy_rubric_no_evidence`, the cluster describes a judge that lacked evidence, not a real agent problem. Before acting on a cluster, check which evaluator produced its failures: a `policy_rubric_no_evidence` cluster usually means the judge lacked evidence, while a `business_contract` cluster points to a real contract failure.
 
 <details>
 <summary>Recorded English insights — an example</summary>
@@ -131,15 +148,33 @@ Ten of the twelve clustered V2 samples came from `policy_rubric_no_evidence`, fo
 
 </details>
 
-## 4. Optional: compare the runs in the portal
+## Optional: compare the runs in the portal
 
-**Portal:** open the `Portal:` link from section 2, select the `baseline-...` and `improved-...` runs, and select **Compare**. The comparison view uses the same statistical test and colors each cell by effect ([official guide](https://learn.microsoft.com/azure/foundry/how-to/evaluate-results#compare-the-evaluation-results)).
+The required path ends with section 3. Short on time? Skip to [Finish Level 2](#finish-level-2).
 
-**Checkpoint:** each evaluator appears with both runs side by side. Your custom evaluators appear under their `LAB_PREFIX` names.
-**If not:** use the CLI table from section 3; see [portal differences](troubleshooting.en.md#portal-differs).
+**Portal:** open the `Portal:` link from section 2. The eval group lists your `baseline-...` and `improved-...` runs with one column per criterion.
+
+**Checkpoint:** both runs show `Completed`, and the `business_contract` column matches the CLI table from section 2.
+
+**If not:** use the CLI table and see [portal differences](troubleshooting.en.md#portal-differs).
+
+For Foundry's statistical view, select both runs, choose **Compare runs**, and pick the `baseline-...` run as **Baseline** ([official guide](https://learn.microsoft.com/azure/foundry/how-to/evaluate-results#compare-the-evaluation-results)).
+
+<details>
+<summary>Example screen: both runs selected in the eval group</summary>
+
+![Eval group with the baseline and improved runs selected](assets/levels-20260923/en-l2-runs.webp)
+
+This example is a second run on the same saved responses, so a few LLM-judged counts differ from the recorded table in section 2.
+
+</details>
+
+<a id="finish-level-2"></a>
 
 ## Finish Level 2
 
-Add one sentence to your report: **which evaluator answers which question.** For example: the contract check decides pass or fail; the rubric with evidence explains quality; generic evaluators and the safety evaluator watch for regressions they are designed for.
+Add one sentence to your [report](../README.md#finish): **which evaluator answers which question.** For example: the contract check decides pass or fail; the rubric with evidence explains quality; generic evaluators and the safety evaluator watch for regressions they are designed for.
+
+**Checkpoint:** your report names what the contract check, the rubric with evidence, and the generic and safety evaluators each tell you.
 
 **Next:** [Level 3](level-3.en.md), or return to [step 10 cleanup](../README.md#cleanup). Cleanup also deletes the custom evaluators from this level; the eval groups and results stay as evidence.

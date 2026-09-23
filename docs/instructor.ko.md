@@ -300,7 +300,7 @@ cd foundry-evaluation-rehearsal-ko
 | trace 접근 | `evaluate-traces`와 `continuous-eval`은 프로젝트 managed identity에 연결된 Application Insights 리소스와 그 Log Analytics workspace의 **Log Analytics Reader** 역할이 필요하다. [설정 도구](environment.ko.md)로 만든 새 환경에는 이미 있다. 기존 기반 환경이라면 환경 소유자가 준비된 폴더에서 `python scripts/workshop.py prepare-trace-access`를 한 번 실행한다. 없는 역할만 부여하며 조별 정리에서 삭제되지 않는다. |
 | 연속 평가 | 조별 일정이 8시간 동안 매시간 trace를 최대 20개씩 judge로 평가한다. 10단계 정리가 일정을 삭제한다. |
 | preview API | custom·생성 평가기, 인사이트, 합성 데이터 생성, red team은 Foundry preview API를 쓴다. 수업 날짜에 가깝게 대상 프로젝트에서 리허설한다. |
-| red team | 스캔은 의도적으로 유해한 프롬프트(폭력, 혐오·불공정)를 보낸다. 조직에서 허용하는지 확인하고, 허용되지 않으면 레벨 3의 3절은 건너뛴다. |
+| red team | 스캔은 의도적으로 유해한 프롬프트(폭력, 혐오·불공정)를 보낸다. 조직에서 허용하는지 확인하고, 허용되지 않으면 레벨 3의 3절은 건너뛴다. 보고서는 이전(classic) 포털 화면에서만 열린다. New Foundry의 **Red team** 탭에는 새 평가 API로 만든 run만 나온다. |
 | 소유권 | 10단계 정리가 조별 custom 평가기, 생성 rubric의 산출물 데이터셋, 합성 질문 데이터셋을 삭제한다. eval group, 인사이트, red team 스캔은 증거로 남는다. |
 
 **trace 내용:** 에이전트의 모델 span에는 모델 입력 전체(질문과 검색된 정책)와 답변이 기록되며, trace 평가는 이 내용을 읽는다. 실습 데이터는 합성 데이터이며 실제 직원 데이터를 연결하지 않는다.

@@ -279,6 +279,7 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 | `... traces were not found` | 최근 trace가 아직 수집 중일 수 있습니다. 몇 분 기다린 뒤 메시지에 나온 파일을 삭제하고 다시 실행합니다. |
 | `Schedule ... already exists and is not owned by this folder` | 같은 `LAB_PREFIX`를 쓰는 다른 폴더가 만든 일정입니다. 삭제하지 말고 강사에게 사용하지 않은 prefix를 받습니다. |
 | `No scheduled run yet` | 연속 평가의 첫 실행은 출력된 시각에 시작합니다. 그 뒤에 `continuous-eval`을 다시 실행합니다. |
+| `red-team` 링크가 Foundry 홈으로 열림 | 보고서는 이전(classic) 화면에서 열립니다. 상단의 **New Foundry**를 끄고 링크를 다시 연 뒤, 확인이 끝나면 다시 켭니다. |
 
 레벨 2·3 결과는 9단계 증거를 바꾸지 않습니다. 마지막에는 [10단계 정리](../README.ko.md#cleanup)를 실행하며, 내 연속 평가 일정, custom 평가기, 생성된 데이터셋도 함께 삭제됩니다.
 
