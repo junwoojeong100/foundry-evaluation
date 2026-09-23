@@ -256,7 +256,7 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 
 ## 레벨 2·3 명령이 중단됐다면
 
-레벨 2·3 명령은 진행 상태를 **`src/agent/.foundry/results/suite/`** 또는 **`src/agent/.foundry/results/level3/`**에 저장하고, 같은 명령을 다시 실행하면 거기서 이어갑니다. 5–9단계 결과는 읽기만 합니다.
+레벨 2·3 명령은 진행 상태를 **`src/agent/.foundry/results/suite/`** 또는 **`src/agent/.foundry/results/level3/`**에 저장하고, 같은 명령을 다시 실행하면 거기서 이어갑니다. 5–9단계 결과는 바꾸지 않습니다.
 
 | 메시지 또는 상황 | 다음 행동 |
 |---|---|
@@ -272,8 +272,15 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 | `Rubric generation ended as ...`, `The run ended as ...`, `The red-team scan ended as ...` | 메시지에 나온 파일을 보존하고 강사에게 보여 줍니다. 원인을 해결한 뒤 그 파일을 삭제하고 같은 명령을 실행합니다. |
 | `... already compares the rubrics on ...` 또는 `... already holds a ...-question run` | 그 파일에 다른 값으로 실행한 이전 run이 있습니다. 메시지에 나온 값으로 다시 실행하고, 새 값으로 처음부터 하려면 먼저 그 파일을 삭제합니다. |
 | HTTP `429`(Too Many Requests) 오류 | 공유 judge나 Sol 배포가 바쁩니다. 몇 분 기다린 뒤 같은 명령을 실행하고, `--count`를 늘리지 않습니다. |
+| `This folder has no deployed hosted agent` | `evaluate-agent`와 `continuous-eval`에는 10단계가 삭제하는 에이전트가 필요합니다. 이미 정리했다면 그 절은 건너뛰며, 그 절을 위해 다시 배포하지 않습니다. |
+| `... agent calls or evaluator results failed` | 1분 기다린 뒤 같은 `--split`으로 `evaluate-agent --retry-failed`를 실행합니다. 실패한 모델의 run만 교체되고, 이전 run은 `attempts`에 남습니다. |
+| `The <model> run ended as failed: ... Error code: 500` | 서비스 내부 오류입니다. 1분 기다린 뒤 `evaluate-agent --retry-failed`를 실행합니다. 같은 모델이 다시 실패하면 강사에게 알립니다. |
+| `evaluate-traces`가 `ApplicationInsightsAccessDenied` 같은 접근 오류로 끝남 | 프로젝트 managed identity가 아직 trace를 읽지 못합니다. 강사가 [trace 접근 준비](instructor.ko.md#levels)를 실행한 뒤, 메시지에 나온 파일을 삭제하고 다시 실행합니다. |
+| `... traces were not found` | 최근 trace가 아직 수집 중일 수 있습니다. 몇 분 기다린 뒤 메시지에 나온 파일을 삭제하고 다시 실행합니다. |
+| `Schedule ... already exists and is not owned by this folder` | 같은 `LAB_PREFIX`를 쓰는 다른 폴더가 만든 일정입니다. 삭제하지 말고 강사에게 사용하지 않은 prefix를 받습니다. |
+| `No scheduled run yet` | 연속 평가의 첫 실행은 출력된 시각에 시작합니다. 그 뒤에 `continuous-eval`을 다시 실행합니다. |
 
-레벨 2·3 결과는 9단계 증거를 바꾸지 않습니다. 마지막에는 [10단계 정리](../README.ko.md#cleanup)를 실행하며, 내 custom 평가기와 생성된 데이터셋도 함께 삭제됩니다.
+레벨 2·3 결과는 9단계 증거를 바꾸지 않습니다. 마지막에는 [10단계 정리](../README.ko.md#cleanup)를 실행하며, 내 연속 평가 일정, custom 평가기, 생성된 데이터셋도 함께 삭제됩니다.
 
 <a id="cleanup-recovery"></a>
 

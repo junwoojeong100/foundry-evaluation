@@ -2,14 +2,17 @@
 
 [한국어](level-3.ko.md) · [Back to the main guide](../README.md#levels)
 
-**In about 40 minutes you will:**
+**In about 70 minutes you will:**
 
 1. Let Foundry **generate a rubric** from your V2 instructions and compare it with your hand-authored rubric.
 2. **Stress-test** the V2 instructions on questions Foundry generates for you.
 3. **Red-team** the candidate model with adversarial attack strategies.
-4. Turn the six business gates into a **release gate** that a CI pipeline can enforce.
+4. Let Foundry **call your deployed agent** for each dev question and grade the live answers with your business contract.
+5. **Evaluate the traces** of your step 7 run, read from Application Insights without replaying anything.
+6. Turn on **continuous evaluation** of your agent's recent traffic.
+7. Turn the six business gates into a **release gate** that a CI pipeline can enforce.
 
-**You need:** [Level 2](level-2.en.md) finished in the same folder, and **step 10 not yet run**. Sections 2 and 3 call the shared Sol deployment and the judge; the instructor confirms their capacity before class.
+**You need:** [Level 2](level-2.en.md) finished in the same folder, and **step 10 not yet run**; sections 4 and 6 use your deployed agent. Sections 2–4 call the shared model deployments and the judge, and sections 5–6 need trace access; the instructor prepares both before class ([instructor guide](instructor.en.md#levels)).
 
 <a id="generate-rubric"></a>
 
@@ -100,9 +103,121 @@ python scripts/workshop.py red-team --model sol
 
 **Warning:** red teaming generates harmful prompts on purpose. Keep the scan small, review its results only in your project, and do not paste attack content into the workshop notes.
 
+**Why the model and not your agent:** Foundry's agent red teaming (prohibited actions, sensitive data leakage) rejects hosted agents that use the invocations protocol, like this one. The recorded attempt failed with `Hosted Invocations agents require a freeform input template, which red team agent targets do not provide.` Sections 4–6 evaluate the agent itself.
+
+<a id="evaluate-agent"></a>
+
+## 4. Let Foundry call your agent
+
+**Terminal A:** Foundry sends the same 18 dev invocations as step 7 (6 questions × 3 models) to your deployed V2 agent in three parallel runs, one per model, and scores each live answer. This takes about 15 minutes:
+
+```bash
+python scripts/workshop.py evaluate-agent
+```
+
+**Checkpoint:** `Foundry called <LAB_AGENT_NAME> version N for 18 dev rows in 3 runs, one per model (prompt v2).`, one line each for `business_contract`, `task_adherence`, `intent_resolution`, and `relevance`, then `business_contract by model: ...`, `Your saved improved responses: .../18 business passes.`, `Traces recorded: 18`, and a `Portal:` link.
+**If not:** a timeout means the run is still going; run the same command again. For other messages, see [Level 2 and 3 recovery](troubleshooting.en.md#levels).
+
+**Read it:**
+
+- **This is how a pipeline evaluates an agent.** There is no collector code: Foundry calls the agent and applies the evaluators, as `azd ai agent eval run` and CI jobs do.
+- **The same code evaluator grades saved rows (Level 2) and live answers (here).** When a row has no saved decision, it reads the agent's JSON answer from the row's `sample.output_text` field, where Foundry puts the live response.
+- **Compare with your saved `improved` result model by model.** The answers are new, so a model can pass a row here that it failed in step 7, or the reverse. That is model variation, not an evaluator change.
+- **How Foundry calls an invocations agent:** it posts the rendered message content, `{"type": "input_text", "text": "..."}`, to the agent's endpoint. This agent accepts that envelope: invocation JSON in the text runs as that invocation, and plain text goes to Sol with `case_id` `external` ([evaluate a hosted agent](https://learn.microsoft.com/azure/foundry/observability/quickstarts/quickstart-evaluate-hosted-agent)).
+
+<details>
+<summary>Recorded English result — an example</summary>
+
+```text
+Foundry called frontier-loop-en-lv3a version 2 for 18 dev rows in 3 runs, one per model (prompt v2).
+  business_contract  18/18
+  task_adherence     18/18
+  intent_resolution  18/18
+  relevance          18/18
+business_contract by model: sol 6/6, luna 6/6, astra 6/6
+Traces recorded: 18
+```
+
+This run took 12 minutes in a rehearsal folder without saved step 7 responses, so the `Your saved improved responses` line did not print. The step 7 recording had 17/18, failing Sol's D02 decision label, which Sol answered correctly here: one live run is a sample, not a verdict.
+
+</details>
+
+<a id="evaluate-traces"></a>
+
+## 5. Evaluate the traces from step 7
+
+**Terminal A:** Foundry reads the 18 traces of your step 7 run from Application Insights and scores them. Nothing is replayed:
+
+```bash
+python scripts/workshop.py evaluate-traces --label improved
+```
+
+**Checkpoint:** `Trace evaluation completed: 18 traces from improved, read from Application Insights.`, then a table with `traces` and `saved responses (Level 2)` columns for `relevance`, `intent_resolution`, `task_adherence`, and `indirect_attack`.
+**If not:** an access error means the instructor has not prepared trace access yet; `... traces were not found` means ingestion is still running. See [Level 2 and 3 recovery](troubleshooting.en.md#levels).
+
+**Read it:**
+
+- **A trace records what the model actually saw:** the question *with the retrieved policies* as input, and the raw JSON answer as output. Level 2 gave the same evaluators only the question and the answer text, so the counts can differ. In the recorded runs, every criterion passed all 18 traces.
+- **Use traces when Foundry cannot call the agent,** for example streaming or long-running agents, or to evaluate real traffic after the fact ([trace evaluation](https://learn.microsoft.com/azure/foundry/observability/how-to/cloud-evaluation-deployed-interactions#evaluate-traces-preview)).
+- **Traces hold message content.** The workshop data is synthetic; for real users, decide what your traces may record before you evaluate them.
+
+<details>
+<summary>Recorded English result — an example</summary>
+
+```text
+Trace evaluation completed: 18 traces from improved, read from Application Insights.
+criterion          traces  saved responses (Level 2)
+relevance          18/18   17/18
+intent_resolution  18/18   18/18
+task_adherence     18/18   17/18
+indirect_attack    18/18   18/18
+```
+
+The traces were eight hours old; the command sets the lookback window from your collection time.
+
+</details>
+
+<a id="continuous-eval"></a>
+
+## 6. Turn on continuous evaluation
+
+**Terminal A:** create an hourly schedule that evaluates up to 20 recent traces of your agent's latest version. The first run starts two minutes later, the schedule stops by itself after 8 hours, and step 10 deletes it:
+
+```bash
+python scripts/workshop.py continuous-eval
+```
+
+**Checkpoint:** `Continuous evaluation <LAB_PREFIX>-continuous: every hour on <LAB_AGENT_NAME> version N, up to 20 recent traces, from HH:MM UTC until HH:MM UTC.` and `No scheduled run yet. Run this command again after HH:MM UTC.`
+
+**Terminal A:** after the printed time, run the same command again:
+
+```bash
+python scripts/workshop.py continuous-eval
+```
+
+**Checkpoint:** a line such as `HH:MM UTC  completed  N traces: relevance .../N, task_adherence .../N, indirect_attack .../N`.
+**If not:** `in_progress` or `queued` means the first run is still going; run the command again in a minute.
+
+**Read it:**
+
+- **The first run evaluates your section 4 traffic.** In production, the hourly runs keep a quality signal on real traffic, and a drop sends you back through the loop of steps 5–9.
+- **Hosted agents are evaluated from their traces on a schedule;** prompt agents can instead be evaluated on every response ([continuous evaluation](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard#set-up-continuous-evaluation)).
+
+<details>
+<summary>Recorded English result — an example</summary>
+
+```text
+Continuous evaluation ll-en-lv3a-continuous: every hour on frontier-loop-en-lv3a version 2, up to 20 recent traces, from 11:31 UTC until 19:29 UTC.
+  11:31 UTC  completed  20 traces: relevance 20/20, task_adherence 20/20, indirect_attack 20/20
+```
+
+The first run picked 20 recent traces of version 2; each run evaluates at most 20.
+
+</details>
+
 <a id="release-gate"></a>
 
-## 4. Turn the business gates into a release gate
+## 7. Turn the business gates into a release gate
 
 **Terminal A:**
 
@@ -124,19 +239,16 @@ This is an example step, not a workflow in this repository. A passing gate still
 
 ## Finish Level 3
 
-Add to your report: what the generated rubric added or missed, which synthetic questions revealed a real gap, the red-team ASR, and what your release gate would block.
+Add to your report: what the generated rubric added or missed, which synthetic questions revealed a real gap, the red-team ASR, whether Foundry's live run agreed with your saved result, what the traces showed, and what your release gate would block.
 
-**Next:** return to [step 10 cleanup](../README.md#cleanup). Cleanup deletes the generated rubric, its artifacts, and the synthetic question dataset. Eval groups and red-team results stay as evidence.
+**Next:** return to [step 10 cleanup](../README.md#cleanup). Cleanup deletes the continuous-evaluation schedule, the generated rubric and its artifacts, and the synthetic question dataset. Eval groups and red-team results stay as evidence.
 
 <a id="beyond"></a>
 
 ## Beyond this workshop
 
-These production features need a live agent or instructor-level preparation, so they are not part of the hands-on path:
-
-| Feature | What it needs | Official guide |
+| Feature | Status for this agent | Official guide |
 |---|---|---|
-| Foundry calls your deployed agent for each test case | A deployed agent; hosted agents that use the responses or invocations protocol are supported | [Evaluate your hosted agent](https://learn.microsoft.com/azure/foundry/observability/quickstarts/quickstart-evaluate-hosted-agent) |
-| Evaluate production traces | The project's managed identity must read the connected Application Insights, and traces must record message content. This workshop's agent records traces without message content by default. | [Trace evaluation](https://learn.microsoft.com/azure/foundry/observability/how-to/cloud-evaluation-deployed-interactions#evaluate-traces-preview) |
-| Continuous or scheduled evaluation | The same trace access, plus a recurring configuration | [Set up continuous evaluation](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard#set-up-continuous-evaluation) |
-| Agent red teaming (prohibited actions, sensitive data leakage) | An agent target | [Run AI red teaming in the cloud](https://learn.microsoft.com/azure/foundry/how-to/develop/run-ai-red-teaming-cloud) |
+| Agent red teaming (prohibited actions, sensitive data leakage) | Rejects hosted agents on the invocations protocol (verified on 2026-09-23); works for prompt agents | [Run AI red teaming in the cloud](https://learn.microsoft.com/azure/foundry/how-to/develop/run-ai-red-teaming-cloud) |
+| Evaluate every response of a prompt agent | Evaluation rules apply to prompt agents; hosted agents use the trace schedule from section 6 | [Set up continuous evaluation](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard#set-up-continuous-evaluation) |
+| Scheduled red teaming | Red teaming can also run on a schedule; this workshop runs one small scan | [Run AI red teaming in the cloud](https://learn.microsoft.com/azure/foundry/how-to/develop/run-ai-red-teaming-cloud) |

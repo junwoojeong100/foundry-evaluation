@@ -74,6 +74,8 @@ indirect_attack            safety   18/18     18/18
 
 `business_contract` matches the recorded local result (0/18 → 17/18). The remaining V2 failure is Sol's D02 decision label; `policy_rubric` passed that row, which is why a deterministic contract check and an LLM rubric complement each other.
 
+A second run on the same saved responses gave identical `business_contract` counts, while LLM-judged counts moved by one to three rows (for example, `policy_rubric` on baseline went from 7/18 to 10/18). Compare LLM-judged criteria by their direction, not by a single row.
+
 </details>
 
 <details>

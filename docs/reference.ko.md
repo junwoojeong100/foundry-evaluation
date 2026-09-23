@@ -100,7 +100,7 @@ Luna·Astra와 보조 배포도 같은 방식으로 구분합니다. 새 조의 
 ## 실행 경로를 이렇게 고른 이유
 
 - **Direct code deployment:** `azure.yaml`의 Python 3.13 소스 ZIP을 배포합니다. 로컬 Docker는 필요 없습니다.
-- **Invocations protocol:** `model_key`, `case_id`, `run_id`를 명시해 기계적으로 비교합니다. 모델 선택은 허용 목록으로 제한합니다.
+- **Invocations protocol:** `model_key`, `case_id`, `run_id`를 명시해 기계적으로 비교합니다. 모델 선택은 허용 목록으로 제한합니다. Foundry의 target 평가는 대신 `{"type": "input_text", "text": ...}`를 보냅니다. 에이전트는 그 text의 호출 JSON을 같은 엄격한 요청으로 실행하고, 일반 텍스트는 `case_id` `external`로 Sol에 보냅니다([레벨 3의 4절](level-3.ko.md#evaluate-agent)).
 - **요청 간 대화 분리:** session은 컴퓨트 재사용에 쓰지만, 각 요청은 새 Agent로 실행해 모델·사례 간 대화 이력을 공유하지 않습니다.
 - **엄격한 출력 계약:** 세 모델 모두 같은 JSON 텍스트 지침을 쓰고 Pydantic으로 검증합니다. 잘못된 JSON을 고쳐 성공으로 처리하지 않습니다. 서비스가 보장하는 Structured Outputs와는 다릅니다.
 

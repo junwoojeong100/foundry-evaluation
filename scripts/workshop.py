@@ -8,13 +8,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src" / "agent"))
 
 from cloud_setup import (
-    bind, check_cleanup, cleanup, grant_agent_access, preflight, prepare_iq, prepare_models,
+    bind, check_cleanup, cleanup, grant_agent_access, preflight, prepare_iq, prepare_models, prepare_trace_access,
     repair_observability, set_prompt,
 )
 from common import RESULTS_DIR, utc_stamp, write_json
 from contracts import MODEL_SPECS
 from experiments import calibrate, collect, compare, evaluate, feedback, smoke, summary_table, verify_evidence
-from foundry_eval import evaluate_suite, gate, generate_rubric, insights, red_team, register_evaluators, stress_test
+from foundry_eval import (
+    continuous_eval, evaluate_agent, evaluate_suite, evaluate_traces, gate, generate_rubric, insights, red_team,
+    register_evaluators, stress_test,
+)
 from knowledge import retrieve
 from observability import monitor
 from settings import RuntimeConfig, credential, load_settings_env
@@ -31,6 +34,7 @@ def main() -> None:
     calibration.add_argument("--timeout", type=int, default=600)
     calibration.add_argument("--retry-failed", action="store_true")
     sub.add_parser("repair-observability").add_argument("--confirm", action="store_true")
+    sub.add_parser("prepare-trace-access")
     sub.add_parser("bind")
     sub.add_parser("set-prompt").add_argument("version", choices=["v1", "v2"])
     sub.add_parser("grant-agent-access").add_argument("--principal-id")
@@ -64,6 +68,12 @@ def main() -> None:
     stress.add_argument("--model", choices=list(MODEL_SPECS), default="sol")
     stress.add_argument("--count", type=int, default=15)
     sub.add_parser("red-team").add_argument("--model", choices=list(MODEL_SPECS), default="sol")
+    live = sub.add_parser("evaluate-agent")
+    live.add_argument("--split", choices=["dev", "holdout"], default="dev")
+    live.add_argument("--timeout", type=int, default=2400)
+    live.add_argument("--retry-failed", action="store_true")
+    sub.add_parser("evaluate-traces").add_argument("--label", default="improved")
+    sub.add_parser("continuous-eval").add_argument("--hours", type=int, default=8)
     sub.add_parser("gate")
     review = sub.add_parser("feedback")
     review.add_argument("--label", required=True)
@@ -93,6 +103,8 @@ def main() -> None:
         calibrate(args.timeout, args.retry_failed)
     elif args.command == "repair-observability":
         repair_observability(args.confirm)
+    elif args.command == "prepare-trace-access":
+        prepare_trace_access()
     elif args.command == "bind":
         bind()
     elif args.command == "set-prompt":
@@ -131,6 +143,12 @@ def main() -> None:
         stress_test(args.model, args.count)
     elif args.command == "red-team":
         red_team(args.model)
+    elif args.command == "evaluate-agent":
+        evaluate_agent(args.split, args.timeout, args.retry_failed)
+    elif args.command == "evaluate-traces":
+        evaluate_traces(args.label)
+    elif args.command == "continuous-eval":
+        continuous_eval(args.hours)
     elif args.command == "gate":
         sys.exit(gate())
     elif args.command == "feedback":

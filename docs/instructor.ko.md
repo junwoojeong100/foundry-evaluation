@@ -290,17 +290,22 @@ cd foundry-evaluation-rehearsal-ko
 
 ## 레벨 2·3 준비
 
-참가자는 [README](../README.ko.md#levels)에서 레벨을 고른다. [레벨 2](level-2.ko.md)와 [레벨 3](level-3.ko.md)은 각각 약 40분이며, 조의 폴더에서 9단계와 10단계 사이에 진행한다. 가르칠 레벨은 리허설 폴더에서 9단계 후, 정리 전에 리허설한다.
+참가자는 [README](../README.ko.md#levels)에서 레벨을 고른다. [레벨 2](level-2.ko.md)는 약 40분, [레벨 3](level-3.ko.md)은 약 70분이 추가되며, 조의 폴더에서 9단계와 10단계 사이에 진행한다. 가르칠 레벨은 리허설 폴더에서 9단계 후, 정리 전에 리허설한다.
 
 | 확인 | 이유 |
 |---|---|
 | judge 용량 | 레벨 2는 저장된 36응답을 LLM이 판정하는 기준 7개로 채점하고, 레벨 3은 rubric과 합성 질문 생성에도 judge를 쓴다. 여러 조가 동시에 실행하면 judge의 속도 제한(429)을 넘을 수 있다. 조마다 몇 분씩 시작을 나누거나 승인된 quota 안에서 judge 배포 용량을 늘린다. |
 | Sol 배포 | `stress-test`와 `red-team`은 공유 Sol 후보 배포를 직접 호출한다. 조 수에 맞는 용량을 확인한다. |
+| 에이전트 실제 호출 | `evaluate-agent`는 Foundry가 조별 hosted agent를 세 run에서 동시에 18번 호출하게 하며, 이때 세 후보 배포도 모두 호출된다. |
+| trace 접근 | `evaluate-traces`와 `continuous-eval`은 프로젝트 managed identity에 연결된 Application Insights 리소스와 그 Log Analytics workspace의 **Log Analytics Reader** 역할이 필요하다. [설정 도구](environment.ko.md)로 만든 새 환경에는 이미 있다. 기존 기반 환경이라면 환경 소유자가 준비된 폴더에서 `python scripts/workshop.py prepare-trace-access`를 한 번 실행한다. 없는 역할만 부여하며 조별 정리에서 삭제되지 않는다. |
+| 연속 평가 | 조별 일정이 8시간 동안 매시간 trace를 최대 20개씩 judge로 평가한다. 10단계 정리가 일정을 삭제한다. |
 | preview API | custom·생성 평가기, 인사이트, 합성 데이터 생성, red team은 Foundry preview API를 쓴다. 수업 날짜에 가깝게 대상 프로젝트에서 리허설한다. |
 | red team | 스캔은 의도적으로 유해한 프롬프트(폭력, 혐오·불공정)를 보낸다. 조직에서 허용하는지 확인하고, 허용되지 않으면 레벨 3의 3절은 건너뛴다. |
 | 소유권 | 10단계 정리가 조별 custom 평가기, 생성 rubric의 산출물 데이터셋, 합성 질문 데이터셋을 삭제한다. eval group, 인사이트, red team 스캔은 증거로 남는다. |
 
-**이 저장소가 자동화하지 않는 것:** 레벨 3 문서의 [실습 범위 밖의 운영 기능](level-3.ko.md#beyond)을 본다. trace 평가나 연속 평가를 시연하려면 프로젝트 managed identity에 연결된 Application Insights 읽기 권한을 주고 trace에 메시지 내용을 기록해야 한다. 이 에이전트는 메시지 내용 없이 trace를 기록한다.
+**trace 내용:** 에이전트의 모델 span에는 모델 입력 전체(질문과 검색된 정책)와 답변이 기록되며, trace 평가는 이 내용을 읽는다. 실습 데이터는 합성 데이터이며 실제 직원 데이터를 연결하지 않는다.
+
+**지원되지 않는 것:** Foundry의 에이전트 red team은 이 에이전트처럼 invocations 프로토콜을 쓰는 hosted agent를 거부한다. 그래서 레벨 3은 모델 배포를 red team한다. [실습 범위 밖의 운영 기능](level-3.ko.md#beyond)을 본다.
 
 <a id="handoff"></a>
 

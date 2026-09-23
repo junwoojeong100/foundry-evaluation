@@ -98,7 +98,7 @@ All three candidates are OpenAI models. This is not a cross-provider interoperab
 ## Why this execution path
 
 - **Direct code deployment:** `azure.yaml` describes Python 3.13 source deployment. No local Docker/ACR build is required.
-- **Invocations protocol:** each request carries explicit `model_key`, `case_id`, and `run_id` values. Model routing is allowlisted.
+- **Invocations protocol:** each request carries explicit `model_key`, `case_id`, and `run_id` values. Model routing is allowlisted. Foundry's target evaluation posts `{"type": "input_text", "text": ...}` instead; the agent runs invocation JSON found in that text as the same strict request, and sends plain text to Sol with `case_id` `external` ([Level 3, section 4](level-3.en.md#evaluate-agent)).
 - **Independent request state:** a hosted session reuses compute, while a new Agent instance is created for each question/model request.
 - **Strict JSON contract:** the model returns JSON text, which Pydantic validates. The application does not repair invalid output and label it a success.
 

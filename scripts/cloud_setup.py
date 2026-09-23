@@ -20,6 +20,7 @@ from settings import RuntimeConfig, credential, data_directory, required
 ROLE_SEARCH_READER = "1407120a-92aa-4202-b7e9-c0e197c71c8f"
 ROLE_COGNITIVE_USER = "a97b65f3-24c7-4388-baec-2e87135dc908"
 ROLE_OPENAI_USER = "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd"
+ROLE_LOG_ANALYTICS_READER = "73c42c96-874c-492b-b04d-ab87d138a893"
 
 
 def resources() -> dict[str, Any]:
@@ -187,6 +188,25 @@ def ensure_role(principal_id: str, scope_id: str, role_id: str) -> None:
     )
     state["owned_roles"].append(created["id"])
     save_state(state)
+
+
+def prepare_trace_access() -> None:
+    found = resources()
+    principal = (found["project"].get("identity") or {}).get("principalId")
+    workspace = found["app_insights"]["properties"].get("WorkspaceResourceId")
+    if not principal or not workspace:
+        raise ValueError("The Foundry project needs a managed identity and Application Insights needs a linked Log Analytics workspace.")
+    for scope in (found["app_insights"]["id"], workspace):
+        name = scope.rsplit("/", 1)[-1]
+        roles = az("role", "assignment", "list", "--scope", scope, "--include-inherited")
+        if any(role["principalId"] == principal and role["roleDefinitionId"].endswith(ROLE_LOG_ANALYTICS_READER) for role in roles):
+            print(f"Log Analytics Reader is already assigned to the project identity on {name}.")
+            continue
+        az("role", "assignment", "create", "--name", str(uuid.uuid5(uuid.NAMESPACE_URL, f"{scope}/{principal}/{ROLE_LOG_ANALYTICS_READER}")),
+           "--assignee-object-id", principal, "--assignee-principal-type", "ServicePrincipal",
+           "--role", ROLE_LOG_ANALYTICS_READER, "--scope", scope)
+        print(f"Assigned Log Analytics Reader to the project identity on {name}.")
+    print("Trace access is ready. This shared preparation is not recorded as team-owned, so team cleanup keeps it.")
 
 
 def search_client(config: RuntimeConfig) -> httpx.Client:
@@ -438,11 +458,28 @@ def cleanup_plan(state: dict[str, Any]) -> dict[str, Any]:
         "models": [dict(model) for model in state["owned_models"]],
         "search_objects": list(reversed(state["owned_search_paths"])),
         "role_assignments": list(state["owned_roles"]),
+        "schedules": list(state.get("owned_schedules", [])),
         "custom_evaluators": [{"name": item["name"], "version": item["version"]} for item in state.get("owned_evaluators", [])],
         "generated_datasets": [dict(item) for item in state.get("owned_datasets", [])]
         + [{"name": item["artifact_dataset"], "version": "*"} for item in state.get("owned_evaluators", []) if item.get("artifact_dataset")],
         "preserved": ["existing Foundry project", "existing Search service", "existing App Insights", "evaluation evidence"],
     }
+
+
+def delete_owned_schedules(config: RuntimeConfig, state: dict[str, Any]) -> None:
+    owned = state.get("owned_schedules", [])
+    if not owned:
+        return
+    with AIProjectClient(endpoint=config.project_endpoint, credential=credential(), allow_preview=True) as project:
+        for schedule_id in list(owned):
+            if not schedule_id.startswith(config.prefix + "-"):
+                raise ValueError("Unexpected schedule cleanup name.")
+            try:
+                project.beta.schedules.delete(schedule_id)
+            except ResourceNotFoundError:
+                pass
+            owned.remove(schedule_id)
+            save_state(state)
 
 
 def delete_owned_evaluators(config: RuntimeConfig, state: dict[str, Any]) -> None:
@@ -485,6 +522,7 @@ def cleanup(confirm: bool) -> None:
     if not confirm:
         return
     write_json(RESULTS_DIR / "cleanup-plan.json", plan)
+    delete_owned_schedules(config, state)
     if state.get("agent_owned"):
         if state["agent_owned"] != config.agent_name:
             raise ValueError("Agent ownership mismatch.")
@@ -551,6 +589,12 @@ def check_cleanup() -> dict[str, Any]:
             raise ValueError("A temporary role assignment still exists.")
     with AIProjectClient(endpoint=config.project_endpoint, credential=credential(), allow_preview=True) as project:
         connections = [item for item in project.connections.list() if "insight" in str(item.type).lower()]
+        for schedule_id in plan.get("schedules", []):
+            try:
+                project.beta.schedules.get(schedule_id)
+            except ResourceNotFoundError:
+                continue
+            raise ValueError(f"A temporary evaluation schedule still exists: {schedule_id}")
         for evaluator in plan.get("custom_evaluators", []):
             try:
                 project.beta.evaluators.get_version(evaluator["name"], evaluator["version"])
@@ -571,6 +615,7 @@ def check_cleanup() -> dict[str, Any]:
         "temporary_model_deployments_absent": len(plan["models"]),
         "temporary_search_objects_absent": len(plan["search_objects"]),
         "temporary_role_assignments_absent": len(plan["role_assignments"]),
+        "temporary_schedules_absent": len(plan.get("schedules", [])),
         "temporary_custom_evaluators_absent": len(plan.get("custom_evaluators", [])),
         "temporary_generated_datasets_absent": len(plan.get("generated_datasets", [])),
         "existing_foundry_project_preserved": True,

@@ -1,6 +1,8 @@
+import json
 import logging
 import os
 from json import JSONDecodeError
+from typing import Any
 
 import httpx
 from agent_framework.observability import enable_instrumentation
@@ -19,6 +21,20 @@ from policy_agent import answer_question
 from settings import RuntimeConfig, credential
 
 logger = logging.getLogger("learning-loop")
+EXTERNAL_MODEL_KEY = "sol"
+
+
+def invocation_payload(body: Any) -> Any:
+    # Foundry target evaluation posts the rendered message content; its text holds an invocation or a plain question.
+    if not (isinstance(body, dict) and body.get("type") == "input_text" and isinstance(body.get("text"), str)):
+        return body
+    try:
+        parsed = json.loads(body["text"])
+    except JSONDecodeError:
+        parsed = None
+    if isinstance(parsed, dict):
+        return parsed
+    return {"query": body["text"], "model_key": EXTERNAL_MODEL_KEY, "case_id": "external", "run_id": "foundry-evaluation"}
 
 
 def telemetry_connection(config: RuntimeConfig, token_credential: TokenCredential) -> str | None:
@@ -58,7 +74,7 @@ def build_host() -> InvocationAgentServerHost:
     @app.invoke_handler
     async def handle(request: Request) -> JSONResponse:
         try:
-            invocation = Invocation.model_validate(await request.json())
+            invocation = Invocation.model_validate(invocation_payload(await request.json()))
         except (ValidationError, JSONDecodeError) as exc:
             logger.warning("Invalid invocation: %s", type(exc).__name__)
             return JSONResponse(

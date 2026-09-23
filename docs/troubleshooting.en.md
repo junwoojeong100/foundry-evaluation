@@ -250,7 +250,7 @@ Search an older trace by its real ID after expanding the time range. Do not subs
 
 ## If a Level 2 or 3 command stopped
 
-Each Level 2–3 command saves its progress under **`src/agent/.foundry/results/suite/`** or **`src/agent/.foundry/results/level3/`** and resumes from it when you run the command again. It only reads your step 5–9 results.
+Each Level 2–3 command saves its progress under **`src/agent/.foundry/results/suite/`** or **`src/agent/.foundry/results/level3/`** and resumes from it when you run the command again. It never changes your step 5–9 results.
 
 | Message or situation | Next action |
 |---|---|
@@ -266,8 +266,15 @@ Each Level 2–3 command saves its progress under **`src/agent/.foundry/results/
 | `Rubric generation ended as ...`, `The run ended as ...`, or `The red-team scan ended as ...` | Keep the named file and show it to the instructor. After the cause is resolved, delete that file and repeat the command. |
 | `... already compares the rubrics on ...` or `... already holds a ...-question run` | That file holds an earlier run with another value. Repeat with the value the message names; to start over with a new value, delete that file first. |
 | An HTTP `429` (Too Many Requests) error | The shared judge or Sol deployment is busy. Wait a few minutes, then repeat the same command; do not raise `--count`. |
+| `This folder has no deployed hosted agent` | `evaluate-agent` and `continuous-eval` need the agent that step 10 deletes. If you already cleaned up, skip those sections; do not redeploy for them. |
+| `... agent calls or evaluator results failed` | Wait a minute, then run `evaluate-agent --retry-failed` with the same `--split`. Only the failed model's run is replaced; the old run is kept under `attempts`. |
+| `The <model> run ended as failed: ... Error code: 500` | An internal service error. Wait a minute, then run `evaluate-agent --retry-failed`. If the same model fails again, tell the instructor. |
+| `evaluate-traces` ends with an access error, such as `ApplicationInsightsAccessDenied` | The project's managed identity cannot read the traces yet. The instructor runs [trace access preparation](instructor.en.md#levels); then delete the file the message names and repeat. |
+| `... traces were not found` | Recent traces may still be ingesting. Wait a few minutes, delete the file the message names, and repeat. |
+| `Schedule ... already exists and is not owned by this folder` | Another folder with the same `LAB_PREFIX` created it. Do not delete it; ask the instructor for an unused prefix. |
+| `No scheduled run yet` | The first continuous-evaluation run starts at the printed time. Run `continuous-eval` again after it. |
 
-Level 2–3 results do not change the step 9 evidence. Finish with [step 10 cleanup](../README.md#cleanup), which also deletes your custom evaluators and generated datasets.
+Level 2–3 results do not change the step 9 evidence. Finish with [step 10 cleanup](../README.md#cleanup), which also deletes your continuous-evaluation schedule, custom evaluators, and generated datasets.
 
 <a id="cleanup-recovery"></a>
 

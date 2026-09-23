@@ -260,17 +260,22 @@ The 120 minutes assume a prepared environment. Rehearse model deployment, cold s
 
 ## Prepare Levels 2 and 3
 
-Teams choose a level in the [README](../README.md#levels). [Level 2](level-2.en.md) and [Level 3](level-3.en.md) each add about 40 minutes between steps 9 and 10 in the team's own folder. Rehearse the levels you will teach in the rehearsal folder, after its step 9 and before its cleanup.
+Teams choose a level in the [README](../README.md#levels). [Level 2](level-2.en.md) adds about 40 minutes and [Level 3](level-3.en.md) about 70 more, between steps 9 and 10 in the team's own folder. Rehearse the levels you will teach in the rehearsal folder, after its step 9 and before its cleanup.
 
 | Check | Why |
 |---|---|
 | Judge capacity | Level 2 scores 36 saved responses with seven LLM-judged criteria; Level 3 also uses the judge to generate a rubric and synthetic questions. Several teams at once can exceed the judge's rate limit (429). Stagger teams by a few minutes, or raise the judge deployment's capacity within approved quota. |
 | Sol deployment | `stress-test` and `red-team` call the shared Sol candidate directly. Confirm its capacity for the number of teams. |
+| Live agent calls | `evaluate-agent` makes Foundry call each team's hosted agent 18 times in three parallel runs, which also calls all three candidate deployments. |
+| Trace access | `evaluate-traces` and `continuous-eval` need the project's managed identity to have **Log Analytics Reader** on the connected Application Insights resource and its Log Analytics workspace. New environments from [the setup tool](environment.en.md) get it. For an existing foundation, the environment owner runs `python scripts/workshop.py prepare-trace-access` once in a prepared folder; it assigns only what is missing, and team cleanup keeps it. |
+| Continuous evaluation | Each team's schedule evaluates up to 20 traces every hour for 8 hours, using the judge. Step 10 cleanup deletes it. |
 | Preview APIs | Custom and generated evaluators, insights, synthetic data generation, and red teaming use preview Foundry APIs. Rehearse them in the target project close to the class date. |
 | Red teaming | The scan sends harmful prompts on purpose (violence, hate and unfairness). Confirm that your organization permits it; otherwise teams skip Level 3 section 3. |
 | Ownership | Step 10 cleanup deletes each team's custom evaluators, the generated rubric's artifact dataset, and synthetic question datasets. Eval groups, insights, and red-team scans remain as evidence. |
 
-**Not automated here:** the Level 3 page lists [features beyond this workshop](level-3.en.md#beyond). To demonstrate trace or continuous evaluation, grant the project's managed identity read access to the connected Application Insights and record message content in traces; this agent records traces without message content.
+**Trace content:** the agent's model spans record the full model input (the question with the retrieved policies) and the answer. That is what trace evaluation reads. The workshop data is synthetic; do not connect real employee data.
+
+**Not supported here:** Foundry's agent red teaming rejects hosted agents that use the invocations protocol, like this one, so Level 3 red-teams the model deployment. See [beyond this workshop](level-3.en.md#beyond).
 
 <a id="handoff"></a>
 

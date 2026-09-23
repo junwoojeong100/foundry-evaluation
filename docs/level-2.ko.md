@@ -72,7 +72,7 @@ intent_resolution          agent    16/18     16/18
 indirect_attack            safety   18/18     18/18
 ```
 
-`business_contract`는 촬영 실행의 로컬 결과(0/18 → 18/18)와 같습니다. 영문 실행에서는 V2의 Sol D02 판단값 오류를 `business_contract`만 잡고 `policy_rubric`은 통과시켰습니다. 결정적인 계약 검사와 LLM rubric이 서로를 보완하는 이유입니다.
+`business_contract`는 촬영 실행의 로컬 결과(0/18 → 18/18)와 같습니다. 영문 응답을 같은 입력으로 한 번 더 평가했을 때 `business_contract`는 그대로였고, LLM이 판정하는 항목은 1–3행 달라졌습니다(예: baseline의 `policy_rubric` 7/18 → 10/18). LLM 판정 항목은 한 행이 아니라 방향으로 비교합니다. 영문 실행에서는 V2의 Sol D02 판단값 오류를 `business_contract`만 잡고 `policy_rubric`은 통과시켰습니다. 결정적인 계약 검사와 LLM rubric이 서로를 보완하는 이유입니다.
 
 </details>
 
