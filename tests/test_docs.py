@@ -235,6 +235,30 @@ class DocumentationTests(unittest.TestCase):
                 with self.subTest(document=name, command=command):
                     self.assertEqual([args for args in documented if args[0] == command], arguments)
 
+    def test_main_workshop_reads_holdout_scores_before_reporting(self):
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            text = self.documents[ROOT / name]
+            holdout = text.split('<a id="lab-f"></a>', 1)[1].split('<a id="lab-g"></a>', 1)[0]
+            report = text.split('<a id="finish"></a>', 1)[1].split('<a id="cleanup"></a>', 1)[0]
+            with self.subTest(document=name):
+                self.assertEqual(
+                    [(script, args) for _, script, args in commands(holdout)],
+                    [
+                        ("workshop", ["collect", "--split", "holdout", "--label", "holdout"]),
+                        ("workshop", ["evaluate", "--label", "holdout"]),
+                        ("workshop", ["compare", "--labels", "baseline", "improved", "holdout"]),
+                        ("workshop", ["summary", "--labels", "holdout"]),
+                    ],
+                    "Read holdout separately, not as a before/after comparison with different dev questions.",
+                )
+                self.assertIn('<a id="holdout-results"></a>', holdout)
+                for field in ("groundedness", "relevance", "holdout business-check failures:",
+                              "holdout Foundry-score failures:"):
+                    self.assertIn(field, holdout)
+                self.assertIn("](#holdout-results)", report)
+                recovery = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+                self.assertIn(f"../{name}#holdout-results", recovery)
+
     def test_start_routes_precede_the_first_command(self):
         for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
             text = self.documents[ROOT / name]

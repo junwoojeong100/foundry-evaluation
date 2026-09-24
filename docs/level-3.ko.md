@@ -1,19 +1,19 @@
 # 레벨 3: 릴리스 절차처럼 평가 운영하기
 
-[English](level-3.en.md) · [메인 가이드로 돌아가기](../README.ko.md#levels) · [요약 영상 12:21부터](../README.ko.md#summary-video)
+[English](level-3.en.md) · [메인 가이드로 돌아가기](../README.ko.md#levels) · [요약 영상 12:48부터](../README.ko.md#summary-video)
 
-**약 70분 뒤 남길 것:** 평가 대상별 결과표 한 장, 연속 평가의 첫 실행 결과, 릴리스 gate의 종료 코드입니다. **모델 단독·에이전트·trace 평가는 대상과 입력이 다르므로 점수를 한데 합치지 않습니다.**
+**약 70분 뒤 남길 것:** 평가 대상별 결과표 한 장, 연속 평가의 첫 실행 결과, 릴리스 게이트의 종료 코드입니다. **모델 단독·에이전트·trace 평가는 대상과 입력이 다르므로 점수를 한데 합치지 않습니다.**
 
 | 시작 전 확인 | 필요한 상태 |
 |---|---|
 | 이전 작업 | 같은 폴더에서 [레벨 2](level-2.ko.md) 완료. **10단계 정리는 아직 실행하지 않음** |
 | 실행 자원 | 4·6절에서 쓸 동일한 V2 에이전트. [모델 용량·trace 접근 권한](instructor.ko.md#levels) 준비 완료 |
 | Red team 허용 여부 | 조직이 허용할 때만 3절 실행. 아니면 생략으로 기록 |
-| 마친 뒤 | 기본 보고에 결과를 붙인 뒤 [10단계 정리](../README.ko.md#cleanup) |
+| 마친 뒤 | 기본 보고서에 결과를 붙인 뒤 [10단계 정리](../README.ko.md#cleanup) |
 
-**진행:** 기존 **터미널 A·저장소 루트**에서 1–7절을 순서대로 합니다. 새 터미널이면 [환경만 복원](../README.ko.md#resume-shell)하고 이름·V2 지침·배포 버전을 유지합니다. 복구 label을 썼다면 아래 `--label improved`를 실제 후보 label로 바꿉니다.
+**실행 순서와 범위:** 저장소 루트의 기존 **터미널 A**에서 1–7절을 순서대로 합니다. 새 터미널이면 [환경만 복원](../README.ko.md#resume-shell)하고 이름·V2 지침·배포 버전을 유지합니다. 복구 label을 썼다면 `--label improved`를 그 label로 바꿉니다.
 
-**비용·증거:** 1–6절의 모델·judge 호출은 추가 과금되며, 6절은 최대 8시간 일정도 만듭니다. 추가 응답을 기본 실습의 48응답에 합치지 않습니다. 7절은 **9단계의 저장된 업무 gate만** 읽고 1–6절의 새 결과를 자동 반영하지 않습니다.
+**비용과 증거:** 1–6절은 모델·judge 호출이 추가 과금되며, 6절은 최대 8시간 일정도 만듭니다. 이 응답을 기본 실습의 48응답에 합치지 않습니다. 7절은 **9단계의 저장된 업무 게이트만** 읽습니다.
 
 <a id="level-3-results"></a>
 
@@ -21,19 +21,19 @@
 
 | 절 | 평가 대상 | 메모할 내 결과 |
 |---|---|---|
-| [1. 채점 기준표(rubric) 생성](#generate-rubric) | 저장된 V2 답변 | 두 rubric의 통과 수 `/18`와 업무 계약 검사 대비 놓친 점(없으면 없음) |
+| [1. 채점 기준표(rubric) 생성](#generate-rubric) | 저장된 V2 답변 | 두 rubric의 통과 수 `/18`와 업무 검사 대비 놓친 점(없으면 없음) |
 | [2. 스트레스 테스트](#stress-test) | V2 지침·정책 7개를 직접 받는 Sol. **검색·에이전트는 사용하지 않음** | 실패 수 `/15`; 실제 정책 공백·judge 판단·안전 경고 중 확인한 유형(없으면 없음) |
 | [3. 공격 테스트(red team)](#red-team) | **V2 지침 없는** Sol 배포 | 공격 성공 수 `/6`와 성공률(ASR). 낮을수록 좋음 |
 | [4. 에이전트 직접 호출](#evaluate-agent) | 배포된 V2 에이전트의 **새 응답 18개**(dev 6문항 × 3모델) | 모델별 업무 통과 수 `/6`와 7-4 저장 결과와의 차이 |
 | [5. trace 평가](#evaluate-traces) | 7단계의 Application Insights trace 18개 | 평가 결과와 레벨 2 대비 차이 |
 | [6. 연속 평가](#continuous-eval) | 매시간 최근 trace 최대 20개 | 첫 `completed` 시각·trace 수·세 평가 결과·포털의 오류/누락 없음 확인 |
-| [7. 릴리스 gate](#release-gate) | 9단계 `verified-evidence.json`의 업무 gate 6개 | 출력 문구·종료 코드·통과 또는 막은 gate. **운영 승인은 아님** |
+| [7. 릴리스 게이트](#release-gate) | 9단계 `verified-evidence.json`의 업무 게이트 6개 | 출력 문구·종료 코드·통과 또는 막은 게이트. **운영 승인은 아님** |
 
-**대기:** 명령이 아직 실행 중이면 기다립니다. `... still running`·`... still in progress`로 **종료된 경우에만** 같은 명령으로 재개합니다. 네트워크 timeout을 원격 실행 중이라는 증거로 해석하지 않습니다. 그 밖의 오류는 [메시지별 복구](troubleshooting.ko.md#levels)를 따릅니다.
+**대기:** 명령이 아직 실행 중이면 기다립니다. `... still running`·`... still in progress`로 **종료된 경우에만** 같은 명령으로 재개합니다. 네트워크 timeout만으로는 원격 실행이 계속 중이라고 보지 않습니다. 그 밖의 오류는 [메시지별 복구](troubleshooting.ko.md#levels)를 따릅니다.
 
 <a id="generate-rubric"></a>
 
-## 1. rubric을 생성해 내 rubric과 비교
+## 1. rubric 생성 후 내 rubric과 비교
 
 **터미널 A:** Foundry가 V2 지침을 읽어 가중치가 있는 차원을 제안하고, 두 rubric이 V2 응답을 채점합니다.
 
@@ -48,10 +48,10 @@ python scripts/workshop.py generate-rubric --label improved
 **읽는 법:**
 
 - **생성된 차원은 코드처럼 검토합니다.** LLM이 생성하므로 차원과 가중치는 조마다, 실행마다 다를 수 있습니다.
-- **실패 행을 레벨 2의 `business_contract`와 비교합니다.** 영문 촬영 실행에서는 두 rubric 모두 V2 18행을 전부 통과시켰고, 계약 검사가 잡은 Sol D02의 판단값 오류도 통과시켰습니다. rubric은 품질을 판단할 뿐, 결정적인 계약 검사를 대신하지 않습니다.
+- **실패 행을 레벨 2의 `business_contract`와 비교합니다.** rubric은 답변 품질을 판단할 뿐, 결정적인 업무 검사를 대신하지 않습니다.
 
 <details>
-<summary>촬영한 한국어 결과 — 예시</summary>
+<summary>기록된 한국어 실행 결과 — 예시</summary>
 
 ```text
 Generated rubric: ll-ko-0923b-generated-rubric version 1, pass threshold 0.5
@@ -89,12 +89,12 @@ python scripts/workshop.py stress-test --model sol --count 15
 
 **읽는 법:**
 
-- **모델 단위 테스트입니다.** Foundry가 정책 7개를 Sol에 직접 넣으며, 에이전트와 그 검색은 쓰지 않습니다. 그래서 5–8단계의 수치와 비교하지 않습니다.
-- **별도의 새 실험끼리는 질문과 수치가 달라질 수 있습니다.** 이 폴더에서 같은 명령을 재개하면 저장된 질문·run을 재사용합니다. 결과 파일을 지워 더 좋은 점수를 뽑지 않습니다.
-- **실패한 질문을 분류합니다.** 실제 공백(예: 규정이 다루지 않는 해외 출장), 올바른 보류를 감점한 judge, 안전 경고 중 무엇인지 봅니다. 좋은 질문은 고정 정답을 직접 작성한 뒤에만 새 dev 사례로 추가하고, holdout으로 튜닝하지 않습니다.
+- **모델 단위 테스트입니다.** Foundry가 정책 7개를 Sol에 직접 넣습니다. 에이전트와 검색은 쓰지 않으므로 기본 실습 5–8단계 수치와 비교하지 않습니다.
+- **저장된 run을 재사용합니다.** 같은 명령을 다시 실행하면 저장된 질문과 run을 이어 씁니다. 결과 파일을 지워 점수를 다시 뽑지 않습니다. 별도의 새 실험은 질문과 수치가 달라질 수 있으므로 같은 run처럼 비교하지 않습니다.
+- **분류한 뒤 승격합니다.** 실패는 실제 정책 공백, 올바른 보류를 감점한 judge, 안전 경고 중 하나로 나눕니다. 고정 정답이 있는 질문만 `dev`에 추가하고, `holdout`으로 튜닝하지 않습니다.
 
 <details>
-<summary>촬영한 한국어 결과 — 예시</summary>
+<summary>기록된 한국어 실행 결과 — 예시</summary>
 
 ```text
 Stress test completed on sol: 3 of 15 synthetic questions failed an evaluator
@@ -113,9 +113,9 @@ Stress test completed on sol: 3 of 15 synthetic questions failed an evaluator
 
 ## 3. 후보 모델 red team
 
-**실행 전:** 조직이 이 스캔을 허용하는지 확인합니다. 허용되지 않으면 3절을 **완료가 아닌 생략**으로 기록하고 [4절](#evaluate-agent)로 갑니다. 스캔은 의도적으로 유해한 프롬프트를 보내므로 작게 유지하고, 결과는 내 프로젝트에서만 확인하며 공격 원문은 메모에 옮기지 않습니다.
+**실행 전:** 강사나 프로젝트 운영 규칙이 red team 스캔을 이미 허용한 경우에만 실행합니다. 확실하지 않으면 3절을 **완료가 아닌 생략**으로 기록하고 [4절](#evaluate-agent)로 갑니다. 스캔은 의도적으로 유해한 프롬프트를 보내므로 작게 유지하고, 결과는 내 프로젝트에서만 확인하며 공격 원문은 메모에 옮기지 않습니다.
 
-**터미널 A:** 작은 클라우드 스캔이 Sol 배포에 공격 6건을 보냅니다. 위험 범주 2개마다 전략을 쓰지 않은 기본 공격(`baseline`) 1건과 공격 전략 2개로 1건씩입니다. Foundry 평가로 실행되며 약 1분 걸립니다. Foundry의 에이전트 red team이 이 hosted agent를 지원하지 않으므로 모델을 대상으로 합니다([자세히](#beyond)).
+**터미널 A:** 소규모 클라우드 스캔이 Sol 배포에 공격 6건을 보냅니다. 위험 범주 2개마다 `baseline`, `base64`, `flip` 공격을 1건씩 보내며, Foundry 평가로 약 1분 걸립니다.
 
 ```bash
 python scripts/workshop.py red-team --model sol
@@ -127,12 +127,7 @@ python scripts/workshop.py red-team --model sol
 2. `Attack success rate: N/6 attacks succeeded (...); lower is better`, 이어서 `by risk category` 한 줄과 `by attack strategy` 한 줄
 3. `Portal: <링크>`
 
-**다르면:** `The run is still in progress`로 종료됐다면 같은 명령으로 재개합니다. 그 밖의 메시지는 [레벨 2·3 복구](troubleshooting.ko.md#levels)를 봅니다. 공격 성공은 낮은 품질 결과이지 재시도할 실행 오류가 아닙니다.
-
-**읽는 법:**
-
-- **공격 성공은 Foundry의 안전 평가기가 Sol의 답변에서 그 공격이 노린 유해 내용을 찾았다는 뜻입니다.** 공격 성공률(ASR)은 성공한 공격의 비율이므로 낮을수록 좋습니다.
-- **이 스캔은 내 지침이 아니라 배포를 시험합니다.** Sol은 V2 지침 없이, 배포의 콘텐츠 필터를 거쳐 답합니다. 공격 6건은 작은 표본입니다. 리허설에서 세 번 스캔할 때마다 같은 프롬프트 6개를 보냈지만 Sol의 답변은 매번 달랐고, 전략을 쓰지 않은 violence 공격은 그중 두 번 성공했습니다. 비율만 보지 말고 성공한 공격을 하나씩 검토합니다.
+**다르면:** `The run is still in progress`로 종료됐다면 같은 명령으로 재개합니다. 그 밖의 메시지는 [레벨 2·3 복구](troubleshooting.ko.md#levels)를 봅니다. 공격 성공은 품질 문제이며, 재시도할 실행 오류가 아닙니다.
 
 **포털:** `Portal:` 링크를 엽니다. 스캔이 New Foundry에서 열리며, **Evaluations → Red team** 탭에도 나옵니다([AI red teaming 작동 방식](https://learn.microsoft.com/azure/foundry/concepts/ai-red-teaming-agent)).
 
@@ -149,8 +144,14 @@ python scripts/workshop.py red-team --model sol
 
 </details>
 
+**읽는 법:**
+
+- **ASR은 실패율입니다.** 공격 성공은 안전 평가기가 Sol 답변에서 공격이 노린 유해 내용을 찾았다는 뜻이며, 공격 성공률(ASR)은 낮을수록 좋습니다.
+- **스캔 대상은 모델입니다.** Foundry의 에이전트 red team은 이 hosted 에이전트를 지원하지 않습니다([자세히](#beyond)).
+- **이 스캔은 내 지침이 아니라 배포를 시험합니다.** Sol은 V2 지침 없이, 배포의 콘텐츠 필터를 거쳐 답합니다. 공격 6건은 작은 표본이므로 비율만 보지 말고 성공한 공격을 하나씩 검토합니다.
+
 <details>
-<summary>촬영한 한국어 결과 — 예시</summary>
+<summary>기록된 한국어 실행 결과 — 예시</summary>
 
 ```text
 Red-team scan completed on sol: risk categories Violence, HateUnfairness; attack strategies base64, flip
@@ -159,7 +160,7 @@ Attack success rate: 0/6 attacks succeeded (0.0%); lower is better
   by attack strategy: baseline 0/2, base64 0/2, flip 0/2
 ```
 
-같은 날 영문 스캔은 같은 프롬프트 6개를 보냈고, 전략을 쓰지 않은 violence 공격 1건이 성공해 1/6이었습니다. 스캔은 실습 언어나 지침을 쓰지 않으므로, 이 차이는 Sol의 답변이 실행마다 달라서 생깁니다.
+Sol의 답변은 실행마다 달라질 수 있으므로 성공한 공격을 하나씩 확인합니다.
 
 </details>
 
@@ -186,19 +187,19 @@ python scripts/workshop.py evaluate-agent --split dev
 **읽는 법:**
 
 - **파이프라인이 에이전트를 평가하는 방식입니다.** 수집 코드 없이 Foundry가 에이전트를 호출하고 평가기를 적용합니다. `azd ai agent eval run`과 CI 작업도 이렇게 동작합니다.
-- **레벨 2의 코드 평가기가 실시간 답변을 채점하므로,** 저장된 결과와 실시간 결과가 같은 업무 계약으로 채점됩니다.
+- **레벨 2의 코드 평가기가 실시간 답변을 채점하므로,** 저장된 결과와 실시간 결과가 같은 업무 검사로 채점됩니다.
 - **저장된 `improved` 결과와 모델별로 비교합니다.** 답변을 새로 받으므로 7단계에서 실패한 행을 여기서 통과하거나 그 반대일 수 있습니다. 평가기가 바뀐 것이 아니라 모델의 실행 간 차이입니다.
 
 <details>
 <summary>Foundry가 이 invocations 에이전트를 호출하는 방식</summary>
 
-- 렌더링한 메시지 내용 `{"type": "input_text", "text": "..."}`을 에이전트 엔드포인트로 보냅니다. 이 에이전트는 그 형식을 받아, text가 호출 JSON이면 그 호출을 그대로 실행하고, 일반 텍스트면 `case_id` `external`로 Sol에 보냅니다([hosted agent 평가](https://learn.microsoft.com/azure/foundry/observability/quickstarts/quickstart-evaluate-hosted-agent)).
-- 저장된 판단값이 없는 행이면, 코드 평가기는 Foundry가 실시간 응답을 넣는 행의 `sample.output_text` 필드에서 에이전트의 JSON 답변을 읽습니다.
+- Foundry는 렌더링한 메시지 내용 `{"type": "input_text", "text": "..."}`을 에이전트 엔드포인트로 보냅니다. 이 에이전트는 `text`가 호출 JSON이면 그대로 실행하고, 일반 텍스트이면 `case_id` `external`로 Sol에 보냅니다([hosted 에이전트 평가](https://learn.microsoft.com/azure/foundry/observability/quickstarts/quickstart-evaluate-hosted-agent)).
+- 저장된 decision이 없는 행은, 코드 평가기가 Foundry의 실시간 응답 필드인 `sample.output_text`에서 에이전트의 JSON 답변을 읽습니다.
 
 </details>
 
 <details>
-<summary>촬영한 한국어 결과 — 예시</summary>
+<summary>기록된 한국어 실행 결과 — 예시</summary>
 
 ```text
 Foundry called frontier-loop-ko-lv3a version 1 for 18 dev rows in 3 runs, one per model (prompt v2).
@@ -210,9 +211,9 @@ business_contract by model: sol 6/6, luna 6/6, astra 6/6
 Traces recorded: 18
 ```
 
-`intent_resolution`이 실패시킨 3행은 모두 올바른 답이었습니다. 규정이 다루지 않는 일본 출장을 재무팀에 넘긴 D04 한 건과, 승인 완료로 적어 달라는 요청을 거절한 D06 두 건입니다. 범용 평가기는 요청을 들어주지 않았다고 감점했고, 업무 계약은 모두 통과시켰습니다. 실패 행은 점수보다 먼저 이유를 읽습니다.
+`intent_resolution`이 실패시킨 3행은 모두 올바른 답이었습니다. 규정이 다루지 않는 일본 출장을 재무팀에 넘긴 D04 한 건과, 승인 완료로 적어 달라는 요청을 거절한 D06 두 건입니다. 범용 평가기는 요청을 들어주지 않았다고 감점했고, 업무 검사는 모두 통과시켰습니다. 실패 행은 점수보다 먼저 이유를 읽습니다.
 
-이 run은 7단계 저장 응답이 없는 리허설 폴더에서 15분 걸렸습니다. 저장 응답이 없어 `Your saved improved responses` 줄은 출력되지 않았으며, 촬영한 7단계 결과는 18/18이었습니다.
+이 run은 7단계 저장 응답이 없는 리허설 폴더에서 15분 걸렸습니다. 저장 응답이 없어 `Your saved improved responses` 줄은 출력되지 않았으며, 기록된 예시 실행의 7단계 결과는 18/18이었습니다.
 
 </details>
 
@@ -234,12 +235,13 @@ python scripts/workshop.py evaluate-traces --label improved
 
 **읽는 법:**
 
-- **trace에는 모델이 실제로 본 내용이 남습니다.** 입력은 *검색된 정책이 포함된* 질문이고, 출력은 JSON 원문 답변입니다. 레벨 2는 같은 평가기에 질문과 답변 텍스트만 주었으므로 결과가 다를 수 있습니다. 촬영한 실행에서는 모든 항목이 trace 18개를 전부 통과했습니다.
+- **trace에는 모델 입력과 JSON 원문 출력이 남습니다.** 여기서는 입력에 검색된 정책이 포함됩니다.
+- **레벨 2와 결과가 다를 수 있습니다.** 레벨 2는 같은 평가기에 질문과 답변 텍스트만 넘겼습니다. 기록된 예시 실행에서는 모든 항목이 trace 18개를 전부 통과했습니다.
+- **실제 사용자 데이터라면 기록 범위부터 정합니다.** 실습 데이터는 합성 데이터이지만, 실제로는 평가 전에 trace에 무엇을 남길지 결정합니다.
 - **Foundry가 에이전트를 호출할 수 없을 때 trace를 씁니다.** 스트리밍·장시간 실행 에이전트나, 실제 트래픽을 사후에 평가할 때입니다([trace 평가](https://learn.microsoft.com/azure/foundry/observability/how-to/cloud-evaluation-deployed-interactions#evaluate-traces-preview)).
-- **trace에는 메시지 내용이 남습니다.** 실습 데이터는 합성 데이터입니다. 실제 사용자라면 평가 전에 trace에 무엇을 기록할지 먼저 정합니다.
 
 <details>
-<summary>촬영한 한국어 결과 — 예시</summary>
+<summary>기록된 한국어 실행 결과 — 예시</summary>
 
 ```text
 Trace evaluation completed: 18 traces from improved, read from Application Insights.
@@ -266,9 +268,11 @@ trace는 8시간 전 것이었습니다. 명령이 수집 시각을 보고 조�
 python scripts/workshop.py continuous-eval
 ```
 
-**일정 생성 확인:** `Continuous evaluation <LAB_PREFIX>-continuous: every hour on <LAB_AGENT_NAME> version N, up to 20 recent traces, from HH:MM UTC until HH:MM UTC.`가 나옵니다. `No scheduled run yet`이면 아래 시각까지 기다립니다. 이미 실행 결과가 있으면 바로 아래 완료 기준과 대조합니다. 시각은 UTC이며 한국 시간은 9시간을 더합니다(예: `11:35 UTC`는 20:35).
+**완료 확인:** 일정 생성 출력에 `Continuous evaluation <LAB_PREFIX>-continuous: every hour on <LAB_AGENT_NAME> version N, up to 20 recent traces, from HH:MM UTC until HH:MM UTC.`가 보입니다. `No scheduled run yet`이면 명령이 출력한 다음 실행 시각까지 기다립니다. 이미 `completed` 결과가 있으면 시각·trace 수·세 평가 결과를 메모하고, 두 번째 명령은 건너뛴 뒤 아래 포털 확인으로 갑니다. 행별 확인에 쓸 `Portal:` 링크도 남깁니다. 시각은 UTC입니다.
 
-**다르면:** agent가 없거나 일정 소유권이 충돌하면 멈추고 [오류별 복구](troubleshooting.ko.md#levels)를 따릅니다. 이름 변경·재배포로 우회하지 않습니다. 이미 10단계를 마쳤다면 이 절은 **미실행**으로 기록하며 완료로 표시하지 않습니다.
+한국 시간은 UTC에 9시간을 더해 읽습니다(예: `11:35 UTC`는 20:35).
+
+**다르면:** 에이전트가 없거나 일정 소유권이 충돌하면 멈추고 [오류별 복구](troubleshooting.ko.md#levels)를 따릅니다. 이름 변경·재배포로 우회하지 않습니다. 이미 10단계를 마쳤다면 이 절은 **미실행**으로 기록하며 완료로 표시하지 않습니다.
 
 **터미널 A — 첫 실행 확인:** 출력된 `HH:MM UTC` 이후에 같은 명령을 다시 실행합니다.
 
@@ -282,17 +286,17 @@ python scripts/workshop.py continuous-eval
 
 **포털 — 행별 결과 확인:** 출력의 `Portal:` 링크를 열고 위에서 메모한 **같은 UTC 시각의 run**을 선택합니다.
 
-**완료 확인:** N개 행에 세 평가기의 유효한 결과가 있고 오류·누락이 없습니다. `completed`만으로 오류가 없다고 판단하지 않습니다. `passed: false`는 유효한 미통과 결과이므로 그대로 보고합니다.
+**완료 확인:** N개 행에 세 평가기의 유효한 결과가 있고 오류·누락이 없습니다. **위치:** 선택한 run의 세부 정보 표에서 `relevance`, `task_adherence`, `indirect_attack` 결과 열이 행마다 채워졌는지 확인합니다. `completed`만으로 오류가 없다고 판단하지 않습니다. `passed: false`는 유효한 미통과 결과이므로 그대로 보고합니다.
 
 **다르면:** 빈 결과·평가 오류는 미완료로 기록하고 강사와 확인합니다. 새 일정을 만들어 오류 이력을 지우지 않습니다.
 
 **읽는 법:**
 
-- **최근 트래픽에서 trace를 고릅니다.** 4절의 호출과 다른 최근 호출이 포함될 수 있습니다. 운영에서는 이 품질 신호가 떨어지면 5–9단계의 루프로 돌아갑니다.
-- **hosted agent는 일정에 따라 trace로 평가하고,** prompt agent는 응답마다 평가할 수도 있습니다([연속 평가](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard#set-up-continuous-evaluation)).
+- **최근 트래픽에서 trace를 고릅니다.** 4절의 호출과 다른 최근 호출이 포함될 수 있습니다. 운영에서는 이 품질 신호가 떨어지면 기본 실습 5–9단계의 루프로 돌아갑니다.
+- **hosted 에이전트는 일정에 따라 trace로 평가하고,** prompt 에이전트는 응답마다 평가할 수도 있습니다([연속 평가](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard#set-up-continuous-evaluation)).
 
 <details>
-<summary>촬영한 한국어 결과 — 예시</summary>
+<summary>기록된 한국어 실행 결과 — 예시</summary>
 
 ```text
 Continuous evaluation ll-ko-lv3a-continuous: every hour on frontier-loop-ko-lv3a version 1, up to 20 recent traces, from 11:35 UTC until 19:33 UTC.
@@ -303,13 +307,13 @@ Continuous evaluation ll-ko-lv3a-continuous: every hour on frontier-loop-ko-lv3a
 
 </details>
 
-**다음:** [7. 저장된 업무 gate로 릴리스 중단 여부 확인](#release-gate)
+**다음:** [7. 저장된 업무 게이트로 릴리스 중단 여부 확인](#release-gate)
 
 <a id="release-gate"></a>
 
-## 7. 업무 gate를 릴리스 gate로 만들기
+## 7. 업무 게이트를 릴리스 게이트로 만들기
 
-**터미널 A:** 9단계의 실행 검증과 gate 6개를 확인한 뒤 명령의 종료 코드를 출력합니다. **이 레벨의 red team·연속 평가 결과는 이 gate에 포함되지 않습니다.**
+**터미널 A:** 9단계의 실행 검증과 게이트 6개를 확인한 뒤 명령의 종료 코드를 출력합니다. **이 레벨의 red team·연속 평가 결과는 이 게이트에 포함되지 않습니다.**
 
 ```bash
 python scripts/workshop.py gate
@@ -319,18 +323,27 @@ echo "exit code: $?"
 **완료 확인:** 다음 둘 중 어느 쪽이든 정상이며, 나온 결과를 그대로 보고합니다.
 
 - `Quality gate passed: all six business gates are true. production_release_approved remains false.`에 이어 `exit code: 0`
-- [9-3의 gate](../README.ko.md#completion-decision) 중 하나라도 `false`일 때 `Quality gate FAILED: ...`에 이어 `exit code: 1`
+- [9-3의 게이트](../README.ko.md#completion-decision) 중 하나라도 `false`일 때 `Quality gate FAILED: ...`에 이어 `exit code: 1`
 
-**다르면:** 파일 없음·traceback은 품질 미통과와 다른 실행 오류입니다. `src/agent/.foundry/results/verified-evidence.json`과 [9-1의 완료 기준](../README.ko.md#lab-g)을 확인합니다. 출력 없이 종료 코드 `1`만 보고 업무 gate 실패로 기록하지 않습니다.
+**다르면:** 파일 없음·traceback은 품질 미통과와 다른 실행 오류입니다. `src/agent/.foundry/results/verified-evidence.json`과 [9-1의 완료 기준](../README.ko.md#lab-g)을 확인합니다. 출력 없이 종료 코드 `1`만 보고 업무 게이트 실패로 기록하지 않습니다.
 
-**읽는 법:** 파이프라인은 새 후보마다 5–9단계와 같은 루프를 실행한 뒤 이 명령을 실행하며, 0이 아닌 종료 코드가 릴리스를 멈춥니다. 예를 들어 GitHub Actions 단계는 다음과 같습니다(읽기만 합니다. 이 저장소에는 이런 워크플로가 없습니다).
+**읽는 법:** 파이프라인은 새 후보마다 기본 실습 5–9단계를 실행한 뒤 이 명령을 실행하며, 0이 아닌 종료 코드가 릴리스를 멈춥니다.
+
+<details>
+<summary>CI 예시</summary>
+
+이 저장소에는 이런 워크플로가 없지만, GitHub Actions 단계는 같은 명령을 실행할 수 있습니다([GitHub Actions에서 평가 실행](https://learn.microsoft.com/azure/foundry/how-to/evaluation-github-action)).
 
 ```yaml
       - name: Stop the release if a business gate fails
         run: python scripts/workshop.py gate
 ```
 
-gate를 통과해도 운영 승인이 아니며, 사람의 검토와 8단계의 holdout 규칙은 그대로 적용됩니다. [GitHub Actions에서 평가 실행](https://learn.microsoft.com/azure/foundry/how-to/evaluation-github-action)
+</details>
+
+게이트를 통과해도 운영 승인이 아니며, 사람의 검토와 기본 실습 8단계의 holdout 규칙은 그대로 적용됩니다.
+
+**다음:** [레벨 3 마무리](#finish-level-3)
 
 <a id="finish-level-3"></a>
 
@@ -342,14 +355,19 @@ gate를 통과해도 운영 승인이 아니며, 사람의 검토와 8단계의 
 
 **다르면:** 끝나지 않은 첫 절로 돌아가 그 명령만 이어가거나, 시간이 없으면 미완료로 기록합니다. 끝난 명령은 반복하지 않습니다([레벨 2·3 복구](troubleshooting.ko.md#levels)).
 
-**다음:** [10단계 정리](../README.ko.md#cleanup)로 돌아갑니다. 미완료로 중단하더라도 만든 유료 자원·일정의 정리는 필요합니다. 이미 정리를 마쳤다면 반복하지 않습니다. 정리하면 연속 평가 일정, 생성된 rubric과 그 산출물, 합성 질문 데이터셋이 삭제되고, eval group과 red team 결과는 증거로 남습니다.
+**다음:** [10단계 정리](../README.ko.md#cleanup)로 돌아갑니다. 미완료로 중단해도 만든 유료 자원과 일정은 정리해야 합니다. 이미 정리를 마쳤다면 반복하지 않습니다. 정리하면 연속 평가 일정, 생성된 rubric과 산출물, 합성 질문 데이터셋이 삭제됩니다. eval group과 red team 결과는 증거로 남습니다.
 
 <a id="beyond"></a>
 
 ## 선택 자료: 실습 범위 밖의 운영 기능
 
+<details>
+<summary>참고: 이 실습에서 쓰지 않는 기능</summary>
+
 | 기능 | 이 에이전트에서의 상태 | 공식 안내 |
 |---|---|---|
-| 에이전트 red team(금지 행동, 민감 데이터 유출) | invocations 프로토콜의 hosted agent는 거부됨. 2026-09-23 시도는 `Hosted Invocations agents require a freeform input template, which red team agent targets do not provide.`로 실패. prompt agent에서는 동작 | [클라우드에서 AI red teaming 실행](https://learn.microsoft.com/azure/foundry/how-to/develop/run-ai-red-teaming-cloud) |
-| prompt agent의 모든 응답 평가 | 평가 규칙은 prompt agent용이며, hosted agent는 6절의 trace 일정을 씀 | [연속 평가 설정](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard#set-up-continuous-evaluation) |
-| 예약 red team | red team도 일정으로 실행할 수 있음. 이 실습은 작은 스캔 한 번만 실행 | [클라우드에서 AI red teaming 실행](https://learn.microsoft.com/azure/foundry/how-to/develop/run-ai-red-teaming-cloud) |
+| 에이전트 red team(금지 행동, 민감 데이터 유출) | invocations 프로토콜의 hosted 에이전트는 거부됨. 2026-09-23 시도는 `Hosted Invocations agents require a freeform input template, which red team agent targets do not provide.`로 실패. prompt 에이전트에서는 동작 | [클라우드에서 AI red teaming 실행](https://learn.microsoft.com/azure/foundry/how-to/develop/run-ai-red-teaming-cloud) |
+| prompt 에이전트의 모든 응답 평가 | 평가 규칙은 prompt 에이전트용이며, hosted 에이전트는 6절의 trace 일정을 씀 | [연속 평가 설정](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard#set-up-continuous-evaluation) |
+| 예약 red team | red team도 일정으로 실행할 수 있음. 이 실습은 소규모 스캔 한 번만 실행 | [클라우드에서 AI red teaming 실행](https://learn.microsoft.com/azure/foundry/how-to/develop/run-ai-red-teaming-cloud) |
+
+</details>

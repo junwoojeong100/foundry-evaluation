@@ -385,7 +385,7 @@ class EvaluationTests(unittest.TestCase):
 
 class SummaryTableTests(unittest.TestCase):
     def test_single_label_summary_command_dispatches_to_saved_results(self):
-        for label in ("baseline", "baseline-retry"):
+        for label in ("baseline", "baseline-retry", "holdout", "holdout-retry"):
             with self.subTest(label=label), patch("workshop.load_settings_env"), \
                     patch("workshop.summary_table") as render, \
                     patch.object(sys, "argv", ["workshop.py", "summary", "--labels", label]):
@@ -430,6 +430,57 @@ class SummaryTableTests(unittest.TestCase):
                     self.assertTrue(text.startswith("model"))
                     self.assertNotIn("Reviewed case", text)
                     self.assertNotIn(" -> ", text)
+
+    def test_holdout_summary_separates_business_and_foundry_results_without_new_calls(self):
+        for label in ("holdout", "holdout-retry"):
+            for native_failure in (True, False):
+                with self.subTest(label=label, native_failure=native_failure), \
+                        tempfile.TemporaryDirectory() as directory:
+                    results = Path(directory) / "results"
+                    (results / label).mkdir(parents=True)
+                    models = {
+                        key: {
+                            "total": 4, "business_passed": 4,
+                            "required_citation_passed": 4, "required_citation_total": 4,
+                            "input_tokens": 100, "output_tokens": 20,
+                            "latency_p50_seconds": 1.5, "latency_p95_seconds": 2.25,
+                            "foundry_evaluators": {
+                                "groundedness": {"native_passed": 4, "total": 4},
+                                "relevance": {
+                                    "native_passed": 3 if native_failure and key == "sol" else 4,
+                                    "total": 4,
+                                },
+                            },
+                        } for key in MODEL_SPECS
+                    }
+                    (results / "comparison.json").write_text(json.dumps({
+                        "labels": {label: {"models": models, "business_failures": []}},
+                    }), encoding="utf-8")
+                    (results / label / "evaluation-results.json").write_text(json.dumps([
+                        {"row_id": f"{label}-{key}-H{case:02}", "results": [
+                            {"name": "groundedness", "passed": True, "score": 5},
+                            {"name": "relevance",
+                             "passed": not (native_failure and key == "sol" and case == 1),
+                             "score": 3 if native_failure and key == "sol" and case == 1 else 5},
+                        ]} for key in MODEL_SPECS for case in range(1, 5)
+                    ]), encoding="utf-8")
+                    before = {path: path.read_bytes() for path in results.rglob("*.json")}
+                    with patch("common.RESULTS_DIR", results), patch("experiments.RESULTS_DIR", results), \
+                            patch("experiments.dataset", side_effect=AssertionError("Do not reopen the question set")), \
+                            patch("experiments.collect", side_effect=AssertionError("Do not collect new answers")), \
+                            patch("experiments.evaluate", side_effect=AssertionError("Do not rescore answers")), \
+                            patch("builtins.print"):
+                        text = summary_table([label])
+                    self.assertEqual(before, {path: path.read_bytes() for path in results.rglob("*.json")})
+                    lines = text.splitlines()
+                    self.assertEqual([line.split()[0] for line in lines[1:4]], list(MODEL_SPECS))
+                    relevance = "3/4" if native_failure else "4/4"
+                    self.assertRegex(lines[1], rf"^sol\s+4/4\s+4/4\s+4/4\s+{relevance}\s+")
+                    self.assertIn(f"{label} business-check failures: none", text)
+                    failure = f"{label}-sol-H01 (relevance 3)" if native_failure else "none"
+                    self.assertIn(f"{label} Foundry-score failures: {failure}", text)
+                    self.assertNotIn(" -> ", text)
+                    self.assertNotIn("Reviewed case", text)
 
     def test_summary_reads_saved_comparison_without_changing_it(self):
         def model(passed, cited, grounded, relevant):

@@ -1,6 +1,6 @@
 # Level 3: Operate evaluation like a release process
 
-[한국어](level-3.ko.md) · [Back to the main guide](../README.md#levels) · [Summary video from 06:55](../README.md#summary-video)
+[한국어](level-3.ko.md) · [Back to the main guide](../README.md#levels) · [Summary video from 07:22](../README.md#summary-video)
 
 **What you finish with in about 70 minutes:** one table separating evaluation targets, the first scheduled evaluation's results, and the release gate's exit code. **Model-only, agent, and trace evaluations use different targets and inputs; do not combine their scores.**
 
@@ -11,9 +11,9 @@
 | Red-team permission | Section 3 only if your organization permits the scan; otherwise record it as skipped |
 | After this level | Append your results to the main report, then [step 10 cleanup](../README.md#cleanup) |
 
-**Follow sections 1–7 in order** in your existing **Terminal A, at the repository root**. In a new terminal, [restore the environment only](../README.md#resume-shell). Keep names, V2 instructions, and the deployed version unchanged. If you used a recovery label, replace `--label improved` below with your actual candidate label.
+**Run order and scope:** In existing **Terminal A at the repository root**, complete sections 1–7 in order. In a new terminal, [restore the environment only](../README.md#resume-shell). Keep names, V2 instructions, and the deployed version unchanged; if you used a recovery label, replace `--label improved` with that label.
 
-**Cost and evidence:** model and judge calls in sections 1–6 cost extra; section 6 also creates a schedule lasting up to 8 hours. Do not add the extra responses to the main workshop's 48. Section 7 reads **only step 9's saved business gates**, not the new results from sections 1–6.
+**Cost and evidence:** Sections 1–6 make extra model/judge calls; section 6 also creates a schedule for up to 8 hours. Do not add these responses to the main workshop’s 48. Section 7 reads **only step 9’s saved business gates**.
 
 <a id="level-3-results"></a>
 
@@ -24,9 +24,9 @@
 | [1. Generate a scoring guide (rubric)](#generate-rubric) | Your saved V2 answers | Both rubrics' pass counts `/18` and what they missed compared with the business contract (or none) |
 | [2. Stress-test](#stress-test) | Sol with V2 instructions and all seven policies. **No retrieval or agent** | Failures `/15`; confirmed policy gap, judge issue, or safety flag (or none) |
 | [3. Attack-test (red team)](#red-team) | The Sol deployment **without V2 instructions** | Successful attacks `/6` and attack success rate (ASR); lower is better |
-| [4. Call your agent](#evaluate-agent) | **18 new responses** from your deployed V2 agent (6 dev questions × 3 models) | Business passes `/6` per model and the difference from your saved 7-4 result |
+| [4. Call your agent](#evaluate-agent) | **18 new responses** from your deployed V2 agent (6 dev questions × 3 models) | Business passes per model `/6` and difference from step 7-4 |
 | [5. Evaluate traces](#evaluate-traces) | The 18 Application Insights traces from step 7 | Scores and differences from Level 2 |
-| [6. Continuous evaluation](#continuous-eval) | Up to 20 recent traces, every hour | First `completed` time, trace count, all three results, and portal confirmation of no errors/missing results |
+| [6. Continuous evaluation](#continuous-eval) | Up to 20 recent traces, every hour | First completed time, trace count, three scores, and portal row check |
 | [7. Release gate](#release-gate) | The six business gates in step 9's `verified-evidence.json` | Output, exit code, and blocked gates or pass; **not production approval** |
 
 **Waiting:** while a command is still running, wait. Resume with the same command only **after it exits** with `... still running` or `... still in progress`. A network timeout does not establish that a remote run is active. Use [message-specific recovery](troubleshooting.en.md#levels) for other errors.
@@ -48,7 +48,7 @@ python scripts/workshop.py generate-rubric --label improved
 **Read it:**
 
 - **Review the generated dimensions like code.** Generation uses an LLM, so your dimensions and weights can differ from another team's, and between runs.
-- **Compare the failed rows with Level 2's `business_contract`.** In the recorded run both rubrics passed all 18 V2 rows, including Sol's D02 wrong decision label that the contract check failed. A rubric judges quality; it does not replace a deterministic contract.
+- **Compare the failed rows with Level 2's `business_contract`.** A rubric judges answer quality; it does not replace the deterministic business contract.
 
 <details>
 <summary>Recorded English result — an example</summary>
@@ -65,6 +65,8 @@ Generated rubric: ll-en-0923b-generated-rubric version 1, pass threshold 0.5
 policy_rubric: 18/18 passed on improved; failed rows: none
 generated_rubric: 18/18 passed on improved; failed rows: none
 ```
+
+Both rubrics passed all 18 V2 rows, including Sol's D02 wrong decision label that the contract check failed.
 
 </details>
 
@@ -86,9 +88,9 @@ python scripts/workshop.py stress-test --model sol --count 15
 
 **Read it:**
 
-- **This is a model-level test.** Foundry gives Sol all seven policies directly; your agent and its retrieval are not used, so these numbers are not comparable with steps 5–8.
-- **Separate new experiments can have different questions and counts.** Resuming the same command in this folder reuses its saved questions and run. Do not delete result files to draw a better score.
-- **Sort each failed question** into a real gap (for example, overseas trips the policy does not cover), a judge penalizing a correct deferral, or a safety flag. Good questions become new dev cases only after you write a fixed reference for them; never tune on holdout.
+- **This is a model-level test.** Foundry gives Sol all seven policies directly; your agent and its retrieval are not used, so these numbers are not comparable with the main guide's steps 5–8.
+- **Reuse the saved run.** Rerunning the command reuses its saved questions and run; do not delete result files for a better score. A separate new experiment can have different questions and counts, so do not compare it as the same run.
+- **Classify, then promote.** Sort each failure into a real policy gap (for example, an uncovered overseas trip), a judge penalizing a correct deferral, or a safety flag. Add a question to `dev` only with a fixed reference; never tune on `holdout`.
 
 <details>
 <summary>Recorded English result — an example</summary>
@@ -100,7 +102,7 @@ Stress test completed on sol: 6 of 15 synthetic questions failed an evaluator
   indirect_attack: 15/15
 ```
 
-Most failures were trips to Chicago or London, which the domestic policy does not cover, and requests for exceptions. A second run on newly generated questions had 4 of 15 failures with the same pattern: trips to Chicago and New York, and a request to ignore the policy. The Korean run flagged one `indirect_attack` answer, to a request to book overseas costs under another expense category.
+Most failures were trips to Chicago or London, which the domestic policy does not cover, and requests for exceptions.
 
 </details>
 
@@ -110,9 +112,9 @@ Most failures were trips to Chicago or London, which the domestic policy does no
 
 ## 3. Red-team the candidate model
 
-**Before running:** confirm that your organization permits this scan. If not, record section 3 as **skipped, not completed**, and go to [section 4](#evaluate-agent). The scan intentionally sends harmful prompts; keep it small, review results only in your project, and do not copy attack content into your notes.
+**Before running:** run this only if your instructor or project rules have already approved red-team scans. If you are unsure, record section 3 as **skipped, not completed**, and go to [section 4](#evaluate-agent). The scan intentionally sends harmful prompts; keep it small, review results only in your project, and do not copy attack content into your notes.
 
-**Terminal A:** a small cloud scan sends six attacks to the Sol deployment: for each of two risk categories, one plain attack (`baseline`) and one for each of two attack strategies. It runs as a Foundry evaluation and takes about a minute. It targets the model because Foundry's agent red teaming does not support this hosted agent ([details](#beyond)):
+**Terminal A:** a small cloud scan sends six attacks to the Sol deployment, one plain attack (`baseline`) and one per attack strategy for each of two risk categories; it runs as a Foundry evaluation and takes about a minute:
 
 ```bash
 python scripts/workshop.py red-team --model sol
@@ -125,11 +127,6 @@ python scripts/workshop.py red-team --model sol
 3. `Portal: <link>`
 
 **If not:** after the command exits with `The run is still in progress`, repeat it to resume. For other messages, see [Level 2 and 3 recovery](troubleshooting.en.md#levels). A successful attack is a quality finding, not an execution error to retry.
-
-**Read it:**
-
-- **An attack succeeds when Foundry's safety evaluator finds, in Sol's answer, the harmful content the attack was probing for.** The attack success rate (ASR) is the share of attacks that succeeded, so lower is better.
-- **The scan tests the deployment, not your instructions:** Sol answers without the V2 instructions, behind the deployment's content filter. Six attacks are a small sample: the rehearsals sent the same six prompts in each of three scans, yet Sol's answers differed every time, and the plain violence attack succeeded in two of them. Review every successful attack, not only the rate.
 
 **Portal:** open the `Portal:` link. The scan opens in New Foundry and is also listed under **Evaluations → Red team** ([how AI red teaming works](https://learn.microsoft.com/azure/foundry/concepts/ai-red-teaming-agent)).
 
@@ -146,6 +143,12 @@ The Response and Reasoning columns are blurred in this example.
 
 </details>
 
+**Read it:**
+
+- **ASR is a failure rate.** A successful attack means the safety evaluator found the harmful content the attack asked for in Sol's answer; lower ASR is better.
+- **The scan targets the model,** because Foundry's agent red teaming does not support this hosted agent ([details](#beyond)).
+- **This tests the deployment, not V2 instructions.** Sol answers without your V2 instructions, behind the deployment content filter. Six attacks are only a sample, so review each successful attack, not just the rate.
+
 <details>
 <summary>Recorded English result — an example</summary>
 
@@ -156,7 +159,7 @@ Attack success rate: 1/6 attacks succeeded (16.7%); lower is better
   by attack strategy: baseline 1/2, base64 0/2, flip 0/2
 ```
 
-The one successful attack was a plain violence prompt; neither attack strategy succeeded. The Korean scan sent the same six prompts and had 0/6: the scan does not use your workshop language or instructions, so the difference comes from Sol answering differently.
+The one successful attack was a plain violence prompt; neither attack strategy succeeded.
 
 </details>
 
@@ -187,7 +190,7 @@ python scripts/workshop.py evaluate-agent --split dev
 - **Compare with your saved `improved` result model by model.** The answers are new, so a model can pass a row here that it failed in step 7, or the reverse. That is model variation, not an evaluator change.
 
 <details>
-<summary>How Foundry calls this invocations agent</summary>
+<summary>How Foundry calls this hosted invocations agent</summary>
 
 - Foundry posts the rendered message content, `{"type": "input_text", "text": "..."}`, to the agent's endpoint. This agent accepts that envelope: invocation JSON in the text runs as that invocation, and plain text goes to Sol with `case_id` `external` ([evaluate a hosted agent](https://learn.microsoft.com/azure/foundry/observability/quickstarts/quickstart-evaluate-hosted-agent)).
 - When a row has no saved decision, the code evaluator reads the agent's JSON answer from the row's `sample.output_text` field, where Foundry puts the live response.
@@ -229,9 +232,10 @@ python scripts/workshop.py evaluate-traces --label improved
 
 **Read it:**
 
-- **A trace records what the model actually saw:** the question *with the retrieved policies* as input, and the raw JSON answer as output. Level 2 gave the same evaluators only the question and the answer text, so the counts can differ. In the recorded runs, every criterion passed all 18 traces.
+- **A trace records the model input and raw JSON output.** Here the input includes the retrieved policies.
+- **Counts can differ from Level 2,** which gave the same evaluators only the question and answer text. In the recorded runs, every criterion passed all 18 traces.
+- **For real users, decide what traces may record before evaluating them.** The workshop data is synthetic.
 - **Use traces when Foundry cannot call the agent,** for example streaming or long-running agents, or to evaluate real traffic after the fact ([trace evaluation](https://learn.microsoft.com/azure/foundry/observability/how-to/cloud-evaluation-deployed-interactions#evaluate-traces-preview)).
-- **Traces hold message content.** The workshop data is synthetic; for real users, decide what your traces may record before you evaluate them.
 
 <details>
 <summary>Recorded English result — an example</summary>
@@ -261,7 +265,7 @@ The traces were eight hours old; the command sets the lookback window from your 
 python scripts/workshop.py continuous-eval
 ```
 
-**Schedule creation check:** `Continuous evaluation <LAB_PREFIX>-continuous: every hour on <LAB_AGENT_NAME> version N, up to 20 recent traces, from HH:MM UTC until HH:MM UTC.` For `No scheduled run yet`, wait until the printed time below. If results already appear, compare them with the completion checkpoint below. Times are in UTC.
+**Checkpoint:** schedule creation shows `Continuous evaluation <LAB_PREFIX>-continuous: every hour on <LAB_AGENT_NAME> version N, up to 20 recent traces, from HH:MM UTC until HH:MM UTC.` If it says `No scheduled run yet`, wait until the next-run time printed by the command. If a completed result already appears, record its time, trace count, and three scores, skip the second command, and continue with the portal check below. Keep the printed `Portal:` link for that check. Times are in UTC.
 
 **If not:** for a missing agent or schedule ownership conflict, stop and follow [error-specific recovery](troubleshooting.en.md#levels). Do not bypass it by renaming or redeploying. If step 10 already ran, record this section as **not run**, not completed.
 
@@ -277,13 +281,13 @@ python scripts/workshop.py continuous-eval
 
 **Portal — check row-level results:** open the printed `Portal:` link and select the run at the **same UTC time** you recorded above.
 
-**Checkpoint:** all N rows have valid results for all three evaluators, without errors or missing results. `completed` alone does not establish this. `passed: false` is a valid quality failure; report it unchanged.
+**Checkpoint:** all N rows have valid results for all three evaluators, without errors or missing results. **Locator:** in the selected run, open the run details table and check the `relevance`, `task_adherence`, and `indirect_attack` result columns for each row. `completed` alone does not establish this. `passed: false` is a valid quality failure; report it unchanged.
 
 **If not:** record empty results or evaluator errors as incomplete and inspect them with the instructor. Do not create a new schedule to erase error history.
 
 **Read it:**
 
-- **The schedule selects traces from recent traffic,** which can include section 4 and other recent calls. In production, a drop in this quality signal sends you back through steps 5–9.
+- **The schedule selects traces from recent traffic,** which can include section 4 and other recent calls. In production, a drop in this quality signal sends you back through the main guide's steps 5–9.
 - **Hosted agents are evaluated from their traces on a schedule;** prompt agents can instead be evaluated on every response ([continuous evaluation](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard#set-up-continuous-evaluation)).
 
 <details>
@@ -318,14 +322,23 @@ echo "exit code: $?"
 
 **If not:** a missing file or traceback is an execution error, not a quality failure. Check `src/agent/.foundry/results/verified-evidence.json` and [9-1's checkpoint](../README.md#lab-g). Do not record a business-gate failure from exit code `1` alone without its output.
 
-**Read it:** a pipeline runs the same loop as steps 5–9 for a new candidate, then this command; a non-zero exit stops the release. For example, a GitHub Actions step (read only; this repository has no such workflow):
+**Read it:** a pipeline runs the main guide's steps 5–9 for a new candidate, then this command; a non-zero exit stops the release.
+
+<details>
+<summary>CI example</summary>
+
+This repository has no such workflow, but a GitHub Actions step can run the same command ([Run evaluations in GitHub Actions](https://learn.microsoft.com/azure/foundry/how-to/evaluation-github-action)):
 
 ```yaml
       - name: Stop the release if a business gate fails
         run: python scripts/workshop.py gate
 ```
 
-A passing gate still does not approve production; human review and the holdout rules from step 8 still apply. [Run evaluations in GitHub Actions](https://learn.microsoft.com/azure/foundry/how-to/evaluation-github-action)
+</details>
+
+A passing gate still does not approve production; human review and the holdout rules from the main guide's step 8 still apply.
+
+**Next:** [Finish Level 3](#finish-level-3)
 
 <a id="finish-level-3"></a>
 
@@ -343,8 +356,13 @@ Append the [results table](#level-3-results) you filled in during the sections t
 
 ## Optional reading: beyond this workshop
 
+<details>
+<summary>Reference: features not used in this workshop</summary>
+
 | Feature | Status for this agent | Official guide |
 |---|---|---|
 | Agent red teaming (prohibited actions, sensitive data leakage) | Rejects hosted agents on the invocations protocol; on 2026-09-23 it failed with `Hosted Invocations agents require a freeform input template, which red team agent targets do not provide.` Works for prompt agents | [Run AI red teaming in the cloud](https://learn.microsoft.com/azure/foundry/how-to/develop/run-ai-red-teaming-cloud) |
 | Evaluate every response of a prompt agent | Evaluation rules apply to prompt agents; hosted agents use the trace schedule from section 6 | [Set up continuous evaluation](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard#set-up-continuous-evaluation) |
 | Scheduled red teaming | Red teaming can also run on a schedule; this workshop runs one small scan | [Run AI red teaming in the cloud](https://learn.microsoft.com/azure/foundry/how-to/develop/run-ai-red-teaming-cloud) |
+
+</details>

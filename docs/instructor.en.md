@@ -2,22 +2,33 @@
 
 [English workshop](../README.md) · [한국어](instructor.ko.md)
 
-**Finish with:** ready Azure services and model deployments, a complete `.env` for each team, and a rehearsed participant path. This preparation is **outside the 120-minute workshop**.
+**Finish with:** ready Azure services and model deployments, a complete `.env` for each team, and a rehearsed participant path, all **outside the 120-minute workshop**.
 
-**For environment owners, including self-study.** Participants with a complete environment go to [README step 1](../README.md#start). For self-study, “instructor” means you; you still need an approved subscription, model access/capacity, and the permissions below.
+**Who:** environment owners, including self-study learners (then "instructor" means you). Participants with a complete environment go to [README step 1](../README.md#start).
 
-**Preparation order:** [tools](#tools) → [access](#access) → choose the setup path below. **For a class**, continue with [separate rehearsal](#rehearsal-workspace) → [team handoff](#handoff). Self-study returns directly to the README at the setup path's specified step.
+**You need:** an approved subscription, model access and capacity, the [access below](#access), and a budget; preparation and rehearsal create and call paid Azure resources (model deployments, Search, logging).
+
+**Choose one setup path** (both start with [tools](#tools) and [access](#access)):
 
 | Azure foundation | Setup path |
 |---|---|
-| Foundry, Search, or connected telemetry is not ready | [Create a dedicated environment](environment.en.md); do not run both setup paths |
-| Those services already exist; models/access still need checking | [Prepare with the existing foundation](#existing-foundation) |
+| Foundry, Search, or telemetry not ready | [Create a dedicated environment](environment.en.md), then continue with [After model preparation and calibration](#after-calibration) below; do not repeat setup here |
+| Those services already exist; models/access still need checking | [Prepare with the existing foundation](#existing-foundation): local test → settings/sign-in → auxiliary model → candidates/calibration |
+
+<a id="after-calibration"></a>
+
+**After model preparation and judge calibration (either path):**
+
+- Class: [rehearsal](#rehearsal-workspace) through README step 9 → optional [Levels 2/3](#levels) → README step 10 in the rehearsal clone → [final model check](#final-model-check) → [timing](#rehearsal) → [handoff](#handoff) → [cleanup](#cleanup-and-maintenance) after class.
+- Self-study: [README `bind`](../README.md#bind-project) in the same folder.
+
+**Start:** [install and check the local tools](#tools).
 
 <a id="tools"></a>
 
 ## Install and check the local tools
 
-**This is the basic setup, even when you run commands yourself.** Additional tools and configuration for delegating environment creation and execution to GHCP are in the [separate GHCP guide](copilot.en.md). GHCP, Node.js, and Playwright are not prerequisites for manual workshop execution.
+**This is the basic setup, even when you run commands yourself.** If you use Copilot CLI, finish these checks first and follow the [Copilot CLI guide](copilot.en.md) separately; manual runs do not need Copilot CLI, Node.js, or Playwright.
 
 | Tool | Installation reference / requirement |
 |---|---|
@@ -25,15 +36,15 @@
 | Python | [Install Python](https://www.python.org/downloads/), selecting **3.13.x**; `python3.13` must work in the workshop terminal |
 | Azure CLI | [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) |
 | azd | [Install Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) |
-| Bash | Included with macOS. On Linux/WSL, use your distribution's package manager; see the Ubuntu example below. [GNU Bash](https://www.gnu.org/software/bash/) |
-| curl | Included with macOS. If missing on Linux/WSL, use the example below or [curl packages for your platform](https://curl.se/download.html). |
+| Bash | Required shell. [GNU Bash](https://www.gnu.org/software/bash/) |
+| curl | Required transfer tool. [curl packages for your platform](https://curl.se/download.html) |
 | Editor | [Install VS Code](https://code.visualstudio.com/download) or use an existing editor that can open `.env` and JSON files |
 | Browser | [Install Edge](https://www.microsoft.com/edge/download) or [Chrome](https://www.google.com/chrome/) for sign-in and Foundry portal checks |
-| Windows terminal | [Install WSL](https://learn.microsoft.com/windows/wsl/install); install the Linux tools **inside WSL**, not only on Windows |
+| Windows terminal | [Install WSL](https://learn.microsoft.com/windows/wsl/install) |
 
-Use Bash (`bash`) on macOS/Linux, or a WSL Bash terminal on Windows. Windows editors and browsers are fine for manual file/portal checks; verify CLI tools inside the WSL environment running the workshop.
+Run workshop commands in Bash: macOS/Linux use the local terminal; Windows uses WSL with the Linux tools installed inside WSL. Windows editors and browsers are fine for manual checks.
 
-**Check all CLI tools in one block.** It stops at the first missing command; install only that tool, then repeat the check.
+**Terminal — check CLI tools:** it stops at the first missing command; install only that tool, then repeat the check.
 
 ```bash
 bash --version &&
@@ -45,42 +56,70 @@ azd version &&
 azd extension list
 ```
 
-For missing Bash/curl on Ubuntu/WSL, run `sudo apt-get update`, then execute **only the applicable row**. Handle installation approval in your own terminal; never send the password through chat.
+**Checkpoint:** every command prints a version or JSON result, and `azd extension list` finishes successfully.
 
-| Missing tool | Installation command |
-|---|---|
-| Bash | `sudo apt-get install bash` |
-| curl | `sudo apt-get install curl` |
+**If not:** install or repair only the missing tool, then rerun the same block. On Ubuntu/WSL: run `sudo apt-get update` once; for Bash run `sudo apt-get install bash`; for curl run `sudo apt-get install curl`.
 
-On macOS, check `/bin/bash`, `/usr/bin/curl`, and PATH before treating a built-in command as missing. Other Linux distributions should use their own package manager. Repeat the version check after installation.
+Approve installation in your own terminal; never send the password through chat.
 
-Once the commands work, if `microsoft.foundry` has **no installed version**, install it once:
+<details>
+<summary>Platform notes for missing tools</summary>
+
+On macOS, check `/bin/bash`, `/usr/bin/curl`, and PATH before treating a built-in command as missing. Other Linux distributions use their package manager.
+
+</details>
+
+**Terminal — any folder, only if `microsoft.foundry` has no installed version:**
 
 ```bash
-azd extension install microsoft.foundry
+azd extension install microsoft.foundry &&
+azd extension list
 ```
 
-Then confirm the agent commands are available:
+**Checkpoint:** `azd extension list` shows an installed `microsoft.foundry` version.
+
+**If not:** repair the azd installation, then rerun only this command.
+
+**Terminal — verify agent commands:**
 
 ```bash
 azd ai agent --help
 ```
 
-Require the command list to include `run` and `invoke`. An update notice is not itself a failure of the installed commands; do not run “update all” or downgrade tools mid-experiment. If the installed commands fail, resolve the compatible azd/extension versions before starting.
+**Checkpoint:** the command list includes `run` and `invoke`.
 
-**After checking the tools, choose one return path.** Install Python packages in that path's virtual-environment step, not globally here. Participants do not need to complete the remaining instructor sections.
+**If not:** repair the azd/`microsoft.foundry` extension version before starting. An update notice is not itself a failure; do not run “update all” or downgrade tools mid-experiment.
 
-| How you will proceed | Next destination |
+If you are not preparing Azure yourself, stop here and return to [README step 1](../README.md#start) or the [Copilot CLI guide](copilot.en.md); otherwise continue to [access](#access). Install Python packages in that path's virtual-environment step, not globally here.
+
+<details>
+<summary>Reference: Azure services and conditions to prepare</summary>
+
+| Item | Required state |
 |---|---|
-| Run a prepared workshop manually | [README step 1](../README.md#start) |
-| Delegate execution to GHCP | [GHCP installation and startup](copilot.en.md#install); do not repeat basic-tool installation |
-| Prepare Azure yourself as the environment owner | Check [access](#access), then choose new or existing infrastructure |
+| Azure subscription | The workshop subscription and tenant, selected explicitly |
+| Foundry | A project of type `Microsoft.CognitiveServices/accounts/projects` |
+| Region | A region where the Hosted Agent and all three models are actually available |
+| Models | Actual Sol/Luna/Astra (`gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`) deployments plus the fixed auxiliary planner/judge |
+| Search | Supports semantic/agentic retrieval, with a system-assigned identity and Entra RBAC |
+| Observability | Application Insights connected to the project, plus Logs read access |
+| Local | Python 3.13, Azure CLI, azd, and the `microsoft.foundry` extension |
+| Sign-in | Participants can sign in to both CLIs and complete MFA in README step 1-3 |
+| Data | Synthetic documents only; a different workshop prefix for each team |
+
+Agent hosting and the SDK packages can have different GA/preview status; do not treat one as the other.
+
+</details>
 
 <a id="access"></a>
 
 ## Access boundaries
 
-The environment owner needs permission to create the resource group/resources and to assign the listed roles at their target scopes. **Contributor alone does not grant role-assignment permission** (`Microsoft.Authorization/roleAssignments/write`); an authorized access administrator must provide it or perform those operations. Do not give administrator/Owner permissions to the agent as a shortcut. Participants without assignment permission need the owner for `prepare-iq` and `grant-agent-access`.
+The environment owner needs permission to create or use the workshop resources and to assign the listed roles at their target scopes. **Contributor alone does not grant role-assignment permission** (`Microsoft.Authorization/roleAssignments/write`).
+
+An authorized access administrator must provide that permission or perform the assignments. Do not give administrator/Owner permissions to the agent as a shortcut. Participants without assignment permission need the owner for `prepare-iq` and `grant-agent-access`.
+
+Check each row separately; do not swap managed identities or scopes.
 
 | Principal | Required purpose | Scope |
 |---|---|---|
@@ -91,20 +130,47 @@ The environment owner needs permission to create the resource group/resources an
 | Agent instance identity | Search Index Data Reader and Cognitive Services OpenAI User | Workshop Search and candidate-model account |
 | Monitoring operator / project identity | Read the connected telemetry | Application Insights / Logs |
 
-Users, the project identity, and the agent's **instance identity** are not interchangeable. Local inference success does not prove that the hosted agent has data access. Do not grant broad Owner access as a shortcut.
+Local success does not prove hosted access.
 
-This exercise uses synthetic documents shared by the team. It does not implement per-document authorization, tenant-isolated end-user retrieval, or on-behalf-of identity propagation for a production product.
+- The portal may still show a previous Foundry role name such as Azure AI User. Do not grant Owner because of a role name, and skip roles that are already sufficient.
+- Inference uses the account endpoint, so do not give the agent the project's `Foundry User` or Owner role; the agent identity keeps only its two data-access roles above. Remove any extra role you tried during diagnosis when you clean up the test environment.
+
+**Checkpoint:** the environment owner can create the workshop resources and can assign each listed role at its scope, or has an authorized access administrator who will.
+
+**If not:** stop preparation until an authorized access administrator grants the role or performs the assignment; do not continue with Contributor-only access.
+
+<details>
+<summary>Production boundary and supported environments</summary>
+
+This exercise uses synthetic documents shared by the team. It does not implement per-document authorization, tenant-isolated end-user retrieval, or on-behalf-of identity propagation for a production product. A Search reader role alone does not filter documents per user.
+
+Supported hosted-agent environments are listed in the [Hosted Agent quickstart](https://learn.microsoft.com/azure/foundry/agents/quickstarts/quickstart-hosted-agent).
+
+</details>
+
+**Next:** with an existing foundation, continue to [Prepare with an existing foundation](#existing-foundation); for new services, return to [Create a dedicated environment](environment.en.md).
 
 <a id="existing-foundation"></a>
 <a id="install-and-verify-locally"></a>
 
-## Install and verify locally — existing foundation
+## Prepare with an existing foundation
 
 Use this path only when the foundation services already exist. If you completed the new-environment guide, use its handoff instead; do not repeat this setup.
 
-**Check the scope first:** this runner expects the Foundry account/project, Search, and connected Application Insights in the configured **`AZURE_RESOURCE_GROUP`**. Candidate and auxiliary models must belong to that Foundry account. If your services are spread across other groups/accounts, resolve the setup with the owner before proceeding; do not move shared resources to fit the example.
+**Order for this path:** scope check → local test → settings/sign-in → auxiliary deployment for IQ planning and judging → three candidates → calibration → rehearsal or self-study handoff.
 
-Use an unused clone as your **model-preparation folder**. If needed, use the clone block in [README step 1-1](../README.md#source-setup), then return here. Run from that clone's root:
+**Check the scope first:** the Foundry account/project, Search, and connected Application Insights must be in the configured **`AZURE_RESOURCE_GROUP`**, and the candidate and auxiliary models must be deployments of that Foundry account. If they are split across groups or accounts, stop and align the setup with the owner; do not move shared resources to fit the example.
+
+Use an unused clone as your **model-preparation folder**.
+
+**Terminal — parent folder for clones:** create the model-preparation clone. If you already have an unused clone, skip this block and `cd` into its root. If the default folder exists, replace both folder-name occurrences with one unused name; do not delete the existing folder.
+
+```bash
+git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evaluation-model-prep-en &&
+cd foundry-evaluation-model-prep-en
+```
+
+**Terminal — model-preparation folder:**
 
 ```bash
 python3.13 -m venv src/agent/.venv &&
@@ -113,24 +179,25 @@ python -m pip install -r requirements.txt &&
 python -m unittest discover -s tests -v
 ```
 
-Do not continue to Azure operations until the result is **`OK`**. The tests cover both languages and ensure that English translations retain the same policy IDs, monetary rules, and frozen case contracts.
+**Checkpoint:** the test run ends with **`OK`**. The tests cover both languages and verify the fixed policy IDs, monetary rules, and frozen case contracts.
 
-Use the pinned package versions. `requirements.lock.txt` is the validated dependency snapshot; do not upgrade frameworks, extensions, or SDKs indiscriminately during a workshop.
+**If not:** fix the failing offline test before any Azure operation; keep the pinned dependencies in `requirements.lock.txt`.
 
-Hosting reference: [Hosted Agent quickstart](https://learn.microsoft.com/azure/foundry/agents/quickstarts/quickstart-hosted-agent).
+<details>
+<summary>Pinned package versions</summary>
 
-## Safe preparation with an existing foundation
+Framework and Foundry SDK version ceilings can differ, so the workshop pins Agent Framework Foundry 1.11.0, core 1.16.0, OpenAI adapter 1.14.1, Azure AI Projects 2.3.0, and Agent Server Invocations 1.1.0. Do not upgrade frameworks, extensions, or SDKs indiscriminately during a workshop. `requirements.lock.txt` is the validated full dependency snapshot; to reproduce the same Python environment, use `python -m pip install -r requirements.lock.txt`.
 
-**Order:** configuration/sign-in → **auxiliary planner/judge** → three candidates → calibration → handoff.
+</details>
+
+**Next:** [copy the actual settings, then sign in](#existing-settings).
 
 <a id="existing-settings"></a>
 <a id="1-configure-and-sign-in"></a>
 
 ### 1. Copy the actual settings, then sign in
 
-**For a new run using existing services.** If you received a complete `.env`, check it rather than replacing it. Otherwise, copy `.env.example` to **`.env` at this clone's root** in your editor and fill the fields below. For a new environment, use its [shorter initial-settings list](environment.en.md#initial-settings) instead.
-
-Sign in to [Azure Portal](https://portal.azure.com/) and [Foundry](https://ai.azure.com/) with the approved account. Copy **names or endpoint values**, not browser address-bar URLs or full Resource IDs.
+**Editor — model-preparation folder:** if you received a complete `.env`, check it rather than replacing it. Otherwise copy `.env.example` to **`.env` at this clone's root** and fill only the fields below. Copy the displayed names and endpoints, not browser URLs or full Resource IDs.
 
 | `.env` field | Where to get the value |
 |---|---|
@@ -142,20 +209,79 @@ Sign in to [Azure Portal](https://portal.azure.com/) and [Foundry](https://ai.az
 | `AZURE_OPENAI_ENDPOINT` | Azure Portal: the **same Foundry account → Keys and Endpoint**, using its Azure OpenAI base endpoint ending in `.openai.azure.com` |
 | `AZURE_SEARCH_NAME` / `AZURE_SEARCH_ENDPOINT` | Azure Portal: the intended **Search service → Overview**, copying its name and **URL** ending in `.search.windows.net` |
 | `AZURE_APPLICATION_INSIGHTS_NAME` | Name of the **Application Insights resource connected to this project**, in the same group; not the Log Analytics workspace name |
-| `MODEL_*_DEPLOYMENT` / `LAB_AUX_DEPLOYMENT` | Foundry **Build → Models**, copying actual deployment names. For missing models, follow the preparation steps below rather than inventing existing deployments. |
+| `MODEL_*_DEPLOYMENT` | Foundry **Build → Models**; copy actual candidate deployment names when they exist. Name missing candidates with the candidate table below. |
 
-Keep the other template defaults, with **`LAB_LANGUAGE=en`, `LAB_PROMPT_VERSION=v1`, and `LAB_AUTH_MODE=cli`**. Choose unused `LAB_PREFIX` / `LAB_AGENT_NAME` as described in [README 1-1](../README.md#workspace-settings). Never copy API keys, add `/openai/v1/` to the model base endpoint, or use the project endpoint as the model endpoint; the runner adds the inference route. [Endpoint distinctions](reference.en.md#endpoints)
+Keep the template defaults `LAB_LANGUAGE=en`, `LAB_PROMPT_VERSION=v1`, and `LAB_AUTH_MODE=cli`. Choose unused `LAB_PREFIX` and `LAB_AGENT_NAME` values. Record `LAB_AUX_DEPLOYMENT` later, in [step 2](#auxiliary-model). Do not copy keys, add `/openai/v1/`, or use the project endpoint as the model endpoint.
 
-**Came from the GHCP guide only to collect settings?** Return to [plan review](copilot.en.md#plan-review) now. CLI sign-in belongs to the later execution phase. For manual preparation, continue below.
+**Checkpoint:** the table's fields hold the names and endpoints shown in the portal, and `LAB_LANGUAGE=en`, `LAB_PROMPT_VERSION=v1`, and `LAB_AUTH_MODE=cli` are unchanged.
 
-After the local tests pass, complete [README step 1-3](../README.md#login), including both CLI sign-ins and identity checks, then **return here**. Do not run preflight/bind until the auxiliary model is ready.
+**If not:** fix only `.env` before signing in. Do not add API keys, `/openai/v1/`, or full Resource IDs.
 
-**Choose candidate deployment names before preflight:**
+<details>
+<summary>Copilot CLI return point</summary>
+
+If you came from the Copilot CLI guide only to collect settings, return to [plan review](copilot.en.md#plan-review) now. CLI sign-in belongs to the later execution phase.
+
+</details>
+
+After the local tests pass, sign in from the **model-preparation folder** so this folder uses its own isolated CLI profile. These are [README step 1-3](../README.md#login)'s sign-in blocks. Do **not** run README preflight or bind yet; the auxiliary model is not ready.
+
+**Terminal A — 1. enter the IDs:** this keeps the sign-in in this folder's `.azure-cli/` (never share or commit it):
+
+```bash
+export AZURE_CONFIG_DIR="$PWD/.azure-cli" &&
+read -r -p "AZURE_TENANT_ID value from .env: " LOGIN_TENANT_ID &&
+read -r -p "AZURE_SUBSCRIPTION_ID value from .env: " LOGIN_SUBSCRIPTION_ID
+```
+
+**Checkpoint:** the two prompts accepted the tenant and subscription IDs from `.env`, and the terminal stayed in the model-preparation folder.
+
+**If not:** rerun only this ID-entry block before signing in.
+
+**Terminal A — 2. sign in to Azure CLI:** choose the `.env` subscription if asked:
+
+```bash
+az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" --output none
+```
+
+**Checkpoint:** Azure CLI opens sign-in if needed and returns to the prompt without error.
+
+**If not:** retry this block with the configured tenant and subscription, then use [authentication troubleshooting](troubleshooting.en.md#login).
+
+**Terminal A — 3. sign in to azd** with the same account:
+
+```bash
+azd auth login --tenant-id "$LOGIN_TENANT_ID"
+```
+
+**Checkpoint:** azd login completes for the same account.
+
+**If not:** rerun only the azd login block with the configured tenant.
+
+<a id="login-check"></a>
+
+**Terminal A — 4. verify both sign-ins:**
+
+```bash
+az account show --subscription "$LOGIN_SUBSCRIPTION_ID" \
+  --query "{user:user.name,tenant:tenantId,subscription:id,state:state}" --output json &&
+azd auth status --output json
+```
+
+**Checkpoint:** CLI `user` and azd `email` equal `AZURE_EXPECTED_USERNAME`; `tenant` and `subscription` equal the `.env` IDs; `state` is `Enabled`; `status` is `authenticated`.
+
+**If not:** sign in again with the configured account; if no browser opens, see [authentication troubleshooting](troubleshooting.en.md#login).
+
+**Editor — choose candidate deployment names before preflight:** update the three `MODEL_*_DEPLOYMENT` values in `.env` using this table.
 
 | Candidate state | Value for its `MODEL_*_DEPLOYMENT` |
 |---|---|
 | The required model/version is already deployed | Copy its **actual deployment name**; it does not need your new prefix. |
 | The candidate is not deployed yet | Reserve an unused name formed from your actual `LAB_PREFIX` plus `-sol`, `-luna`, or `-astra`. Step 3 creates the missing deployments. |
+
+**Checkpoint:** each `MODEL_*_DEPLOYMENT` value is either an actual existing deployment name or an unused `<LAB_PREFIX>-sol` / `-luna` / `-astra` name.
+
+**If not:** fix only those three `.env` values before running preflight.
 
 Template names such as `ll-team01-sol` are not proof of an existing deployment. Keep the fixed [model IDs and versions](reference.en.md#model-names); prepare the auxiliary deployment separately below.
 
@@ -165,7 +291,11 @@ Template names such as `ll-team01-sol` are not proof of an existing deployment. 
 
 **The environment owner completes this before the exercise.** `--allow-missing-models` allows **only the three candidates** to be missing. It still stops if the auxiliary deployment is absent, and `prepare-models` does not create that deployment.
 
-Sign in to [Foundry](https://ai.azure.com/) with the configured account. In **New Foundry**, match `AZURE_AI_ACCOUNT_NAME` and `AZURE_AI_PROJECT_NAME`. Open **Build → Models** and inspect an existing deployment against these requirements:
+**Portal — inspect or create the auxiliary deployment:**
+
+1. Sign in to [Foundry](https://ai.azure.com/) with the configured account.
+2. In **New Foundry**, open the project matching `AZURE_AI_ACCOUNT_NAME` and `AZURE_AI_PROJECT_NAME`.
+3. Open **Build → Models** and check an existing deployment against these requirements:
 
 | Check | Fixed workshop requirement |
 |---|---|
@@ -175,24 +305,34 @@ Sign in to [Foundry](https://ai.azure.com/) with the configured account. In **Ne
 | Version stability | No automatic version upgrades (`NoAutoUpgrade`) |
 | Deployment status | **`Succeeded`** |
 
-**Reuse a matching deployment.** Its name need not match the example. Do not create a duplicate or modify a shared deployment.
+- Reuse an existing deployment only if every row matches.
+- If none matches, create `<LAB_PREFIX>-judge` at **Discover → Models → `gpt-5.4-mini` → Deploy → Custom settings** with **Global Standard**, version `2026-03-17`, `NoAutoUpgrade`, and approved capacity.
+- Stop if model access, version/type, or quota is unavailable; do not substitute another model or modify a shared deployment.
+- Then record the values below.
 
-**Create one only if no matching deployment exists.** After the owner checks and approves model access, available regional quota, and cost, open **Discover → Models → `gpt-5.4-mini` → Deploy → Custom settings**. Recheck the target account and select the model version/type above. Use an **unused name formed from your actual `LAB_PREFIX` plus `-judge`** and capacity within the approved available quota. Do not enable automatic version upgrades during the experiment. Select **Deploy** and wait for `Succeeded`.
-
-Stop if the exact model, version, deployment type, or quota is unavailable. Do not substitute a candidate as judge, reduce another user's allocation, or create a duplicate foundation as a workaround. See the [official model deployment guide](https://learn.microsoft.com/azure/foundry/foundry-models/how-to/deploy-foundry-models) for the portal procedure.
-
-**Finally, record these values in this folder's `.env`:**
+**Editor — record the auxiliary deployment:** record these values in this folder's `.env`, and save the deployment's Resource ID somewhere participant cleanup does not touch.
 
 | Key | Value to record |
 |---|---|
-| `LAB_AUX_DEPLOYMENT` | **Actual deployment name copied from Build → Models**. Use `gpt-5.4-mini` only if that is also its deployment name. |
-| `LAB_AUX_MODEL` | The model ID, **`gpt-5.4-mini`** |
+| `LAB_AUX_DEPLOYMENT` | **Actual deployment name copied from Build → Models** |
+| `LAB_AUX_MODEL` | `gpt-5.4-mini` |
 
-**Checkpoint:** the deployment in the same account meets the requirements above, and the two `.env` values match **the actual deployment name and model ID respectively**. IQ planning and evaluation judging share this deployment. The owner records the name and Resource ID of any auxiliary deployment created in the portal; do not assume participant `cleanup` will delete it.
+**Checkpoint:** the deployment is in the `.env` Foundry account/project, meets the requirements above, and the two `.env` values match **the actual deployment name and model ID**. IQ planning and evaluation judging share this deployment, and its Resource ID is saved outside participant cleanup.
 
 **If not:** stop before the next check. Have the owner verify the fixed requirements and actual deployment name; do not modify a shared deployment or substitute a model.
 
-### 3. Check the candidates and judge, then hand off
+If the **Build → Models** columns are hard to find, open the example below and compare only model, version, status, and deployment type.
+
+<details>
+<summary>Optional deployment-field screenshot (open only to locate Build → Models fields; labels may be Korean)</summary>
+
+Use this only for field positions, not text matching. Your portal language, deployment names, prefix, and timestamps may differ. This recorded run shows **Build → Models → Deployments** with three candidate deployments plus `gpt-5.4-mini`, all `Succeeded` and `Global Standard`.
+
+![Recorded Foundry deployments example](assets/live-ko-20260923b/screenshots/S1-P01-models-after.webp)
+
+</details>
+
+### 3. Check the candidates and calibrate the judge
 
 **Terminal — check current models:** use the same model-preparation folder. The auxiliary deployment must already be ready.
 
@@ -226,20 +366,20 @@ python scripts/workshop.py calibrate
 
 **If not:** [recover only calibration](troubleshooting.en.md#calibration), not completed model preparation.
 
-**Next:** for a class, use the [separate rehearsal folder](#rehearsal-workspace), then hand off to participants. For one-off self-study, stay in this folder and continue at [the README's binding command (`bind`)](../README.md#bind-project). Do not repeat completed cloning, installation, sign-in, or preflight. Do not run both paths.
+If evaluation reports missing Application Insights `ResourceId` metadata, open the owner-only recovery below before retrying.
 
-If evaluation reports missing App Insights `ResourceId` metadata, inspect connection ownership first. Only an authorized instructor may use `repair-observability --confirm` on a dedicated workshop connection. Do not modify a shared connection to make an example work.
+<details>
+<summary>Owner-only observability recovery</summary>
+
+Use the [observability symptom row](troubleshooting.en.md#symptoms). Only an authorized instructor may repair a dedicated workshop connection; never modify a shared connection to make an example work.
+
+Use `python scripts/workshop.py repair-observability --confirm` only after confirming the connection is dedicated to this workshop.
 
 After resolving the cause, choose [calibration recovery](troubleshooting.en.md#calibration) or [evaluation recovery](troubleshooting.en.md#evaluation-retry) based on the saved run status. A local error alone does not authorize `--retry-failed`; never retry a valid low score to force a pass.
 
-<details>
-<summary>What bind does — explanation, not another step to execute</summary>
-
-`bind` uses the provided `azure.yaml` to create or reuse this folder's azd environment and set its team-specific service/agent name. It does not reprovision the Foundry project. Do not run `azd ai agent init` again, copy another folder's state, or ignore subscription/project conflicts.
-
-Keep the local server in a trusted development environment, never expose it publicly, and stop it after the local check. Local and platform-authenticated hosted endpoints have different security boundaries.
-
 </details>
+
+**Next:** for a class, use the [separate rehearsal folder](#rehearsal-workspace). Do not repeat completed cloning, installation, sign-in, or preflight.
 
 <a id="rehearsal-workspace"></a>
 <a id="separate-rehearsal-from-participant-execution"></a>
@@ -250,32 +390,104 @@ Keep the local server in a trusted development environment, never expose it publ
 
 ```text
 Preparation folder (owns the shared models)
-  -> .env only + unused names -> rehearsal folder -> steps 1-10
-  -> .env only + unused names -> each team's folder -> steps 1-10
+  -> copy only .env, change LAB_PREFIX/LAB_AGENT_NAME -> rehearsal clone: steps 1-9 -> optional Levels 2/3 -> step 10
+  -> copy only .env, change LAB_PREFIX/LAB_AGENT_NAME -> each team's clone: same path
 ```
 
-After model preparation completes, create a separate rehearsal clone. If the example folder already exists, use another unused name; do not delete the existing folder.
+**Terminal — outside the model-preparation clone, in the parent folder for rehearsal clones:** after model preparation completes, create the default rehearsal clone. If that folder already exists, replace both folder-name occurrences with one unused name; do not delete the existing folder.
 
 ```bash
 git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evaluation-rehearsal-en &&
 cd foundry-evaluation-rehearsal-en
 ```
 
-Copy **only the completed `.env`** into this clone using your editor. Keep `LAB_LANGUAGE=en` and the actual project, endpoints, and model deployment names. Change **`LAB_PREFIX` and `LAB_AGENT_NAME` to unused rehearsal names**. Then follow [README steps 1–10](../README.md#start), skipping its clone block because this folder is already ready.
+**Editor — rehearsal clone `.env`:** copy **only the completed `.env`** from the model-preparation folder. Keep `LAB_LANGUAGE=en`, the project, endpoints, and model deployment names unchanged. Change only **`LAB_PREFIX` and `LAB_AGENT_NAME`** to unused rehearsal names.
 
-Reserve different prefixes and agent names for participants. Do not create their KB, source, index, or agent in advance; a fresh participant folder will correctly refuse to overwrite unowned objects.
+**Checkpoint:** the rehearsal clone has `.env` with `LAB_LANGUAGE=en`, the actual endpoints and deployment names, and unused `LAB_PREFIX` / `LAB_AGENT_NAME`.
 
-If model deployments are shared within the approved workshop foundation, keep their **actual deployment names** in `MODEL_*_DEPLOYMENT`. Do not rename a deployment in `.env` to a resource that does not exist.
+**If not:** fix only `.env` in the rehearsal clone. Do not copy `.azure`, `.foundry`, authentication caches, or results.
 
-Do not copy someone else's `.azure`, `.foundry` ownership files, authentication cache, or results to bypass a guard. A participant's cleanup deletes only objects recorded as owned by that folder. The instructor remains responsible for prepared models and foundation-service costs.
+**README — rehearsal clone:** in this clone, start at [README step 1-1](../README.md#source-setup) right after its clone block, using the `.env` you just copied, and complete README steps 1–9 in order.
 
-**After rehearsal cleanup, before handoff:** return to the model-preparation folder and its CLI profile, run `python scripts/workshop.py preflight`, and require all three deployments plus `missing_models: []`. If a model is missing, stop handoff and restore preparation first. Do not clean up the preparation folder's models while teams still use them.
+**Checkpoint:** in this clone, README 9-1 `verify` shows `component_execution_verified: true`, `primary_model_outputs: 48`, and `distinct_verified_traces: 48`, and the 9-2 dashboard shows data.
 
-Use the [rehearsal timing](#rehearsal) below. For **one-off self-study with no later participants**, staying in the preparation folder is valid; its owned-model cleanup is then intentional.
+**If not:** recover only in the README step that failed; do not continue to Levels or cleanup.
+
+<details>
+<summary>Bind and local-server background</summary>
+
+`bind` uses the provided `azure.yaml` to create or reuse this folder's azd environment and set its team-specific service/agent name. It does not reprovision the Foundry project. Do not run `azd ai agent init` again, copy another folder's state, or ignore subscription/project conflicts.
+
+Keep the local server in a trusted development environment, never expose it publicly, and stop it after the local check. Local and platform-authenticated hosted endpoints have different security boundaries.
+
+</details>
+
+**Next:** if you will teach Levels 2/3, continue with [Prepare Levels 2 and 3](#levels); otherwise run README step 10 in this clone, then the [final model check](#final-model-check).
+
+<a id="levels"></a>
+
+## Prepare Levels 2 and 3
+
+Rehearse only the levels you will teach ([Level 2](level-2.en.md), [Level 3](level-3.en.md)), after README step 9 in the rehearsal clone and before its step 10. Teams do them between steps 9 and 10 in their own folders.
+
+**Terminal — prepare trace access for existing foundations:** run once in the model-preparation folder for the shared foundation. Rehearsal and team folders do not need this command after it succeeds. New environments created with [the new-environment guide](environment.en.md) already have these roles.
+
+```bash
+python scripts/workshop.py prepare-trace-access
+```
+
+**Checkpoint:** the command finishes without errors and prints `Trace access is ready. This shared preparation is not recorded as team-owned, so team cleanup keeps it.` It may also print `Log Analytics Reader is already assigned...` or `Assigned Log Analytics Reader...`.
+
+**If not:** stop Level 2/3 preparation and have the environment owner resolve the reported managed-identity, workspace, or RBAC issue. Do not let teams start trace evaluation yet.
+
+Before teaching Level 3 red teaming, get organization approval for harmful-prompt testing; otherwise skip Level 3 section 3. Use only the synthetic workshop data; do not connect real employee data.
+
+<details>
+<summary>Level 2/3 rehearsal checklist</summary>
+
+If teaching Levels 2–3, rehearse capacity, trace access, red-team approval, and cleanup boundaries.
+
+| Check | Why |
+|---|---|
+| Judge capacity | Rate-limit risk → stagger teams or raise approved judge capacity. |
+| Sol deployment | Shared Sol load → confirm capacity for `stress-test` and `red-team`. |
+| Live agent calls | Hosted-agent load → rehearse 18 Foundry calls per team across three parallel runs. |
+| Trace access | Existing foundations need trace-access preparation → run the command above once. |
+| Continuous evaluation | Scheduled judge usage → confirm up to 20 traces hourly for 8 hours per team. |
+| Preview APIs | Preview API drift → rehearse custom/generated evaluators, insights, synthetic data, and red teaming close to class date. |
+| Ownership | Cleanup boundary → team cleanup deletes only team-created custom evaluators and generated datasets; eval groups, insights, and red-team scans remain. |
+
+**Trace content:** the agent's model spans record the full model input (the question with the retrieved policies) and the answer. That is what trace evaluation reads.
+
+**Not supported here:** Agent red teaming is not supported for this hosted-agent protocol, so Level 3 red-teams the model deployment instead. See [beyond this workshop](level-3.en.md#beyond).
+
+</details>
+
+**Next:** run README step 10 in the rehearsal clone, then the [final model check](#final-model-check).
+
+<a id="final-model-check"></a>
+
+## Final model check before handoff
+
+**Terminal — model-preparation folder:** restore its environment and check the models before handoff.
+
+```bash
+source src/agent/.venv/bin/activate &&
+export AZURE_CONFIG_DIR="$PWD/.azure-cli" &&
+python scripts/workshop.py preflight
+```
+
+**Checkpoint:** the command finishes without errors and shows all three candidate deployments with `missing_models: []`.
+
+**If not:** stop handoff, restore model preparation in this folder, and do not clean up models while teams still use them.
+
+**Next:** [rehearsal timing](#rehearsal).
 
 <a id="rehearsal"></a>
 
 ## Rehearsal timing
+
+The 120 minutes assume a prepared environment. Do not shorten the workshop by omitting a model, retrieval, or evaluation. If timing slips, measure these delays: model deployment, agent deployment, cold start, RBAC propagation, evaluator completion, and telemetry ingestion.
 
 | Time | Participant steps | Observable outcome |
 |---|---|---|
@@ -290,68 +502,62 @@ Use the [rehearsal timing](#rehearsal) below. For **one-off self-study with no l
 | 110–115 min | 10. Cleanup | Only the folder's owned objects removed |
 | 115–120 min | Buffer | Evaluation and telemetry ingestion delay |
 
-The 120 minutes assume a prepared environment. Rehearse model deployment, cold starts, RBAC propagation, response generation, evaluator completion, and telemetry ingestion. Do not shorten an overrun by omitting a model, retrieval, or evaluation and calling the workshop complete.
+**Checkpoint:** the rehearsal fits 120 minutes without dropping retrieval, any model, evaluation, or cleanup.
 
-<a id="levels"></a>
+**If not:** adjust capacity, concurrency, or readiness before participants start.
 
-## Prepare Levels 2 and 3
+During class, if a team is delayed more than 10 minutes by an environment problem, restore that folder's settings and access with the team. If a different environment is needed, start a separate run with a new folder and names; do not carry over earlier responses or ownership records.
 
-Teams choose a level in the [README](../README.md#levels). [Level 2](level-2.en.md) adds about 40 minutes and [Level 3](level-3.en.md) about 70 more, between steps 9 and 10 in the team's own folder. Rehearse the levels you will teach in the rehearsal folder, after its step 9 and before its cleanup.
-
-| Check | Why |
-|---|---|
-| Judge capacity | Level 2 scores 36 saved responses with seven LLM-judged criteria; Level 3 also uses the judge to generate a rubric and synthetic questions. Several teams at once can exceed the judge's rate limit (429). Stagger teams by a few minutes, or raise the judge deployment's capacity within approved quota. |
-| Sol deployment | `stress-test` and `red-team` call the shared Sol candidate directly. Confirm its capacity for the number of teams. |
-| Live agent calls | `evaluate-agent` makes Foundry call each team's hosted agent 18 times in three parallel runs, which also calls all three candidate deployments. |
-| Trace access | `evaluate-traces` and `continuous-eval` need the project's managed identity to have **Log Analytics Reader** on the connected Application Insights resource and its Log Analytics workspace. New environments from [the setup tool](environment.en.md) get it. For an existing foundation, the environment owner runs `python scripts/workshop.py prepare-trace-access` once in a prepared folder; it assigns only what is missing, and team cleanup keeps it. |
-| Continuous evaluation | Each team's schedule evaluates up to 20 traces every hour for 8 hours, using the judge. Step 10 cleanup deletes it. |
-| Preview APIs | Custom and generated evaluators, insights, synthetic data generation, and red teaming use preview Foundry APIs. Rehearse them in the target project close to the class date. |
-| Red teaming | The scan sends harmful prompts on purpose (violence, hate and unfairness). Confirm that your organization permits it; otherwise teams skip Level 3 section 3. Each team's scan runs as an evaluation named `<LAB_PREFIX>-red-team-sol`: six attacks on the Sol deployment in about a minute, listed under **Evaluations → Red team** in New Foundry. |
-| Ownership | Step 10 cleanup deletes each team's custom evaluators, the generated rubric's artifact dataset, and synthetic question datasets. Eval groups, insights, and red-team scans remain as evidence. |
-
-**Trace content:** the agent's model spans record the full model input (the question with the retrieved policies) and the answer. That is what trace evaluation reads. The workshop data is synthetic; do not connect real employee data.
-
-**Not supported here:** Foundry's agent red teaming rejects hosted agents that use the invocations protocol, like this one, so Level 3 red-teams the model deployment. See [beyond this workshop](level-3.en.md#beyond).
+**Next:** [team handoff](#handoff).
 
 <a id="handoff"></a>
 
 ## What to hand to each team
 
-Use this checklist **after rehearsal**, not as a replacement for provisioning.
+Use this checklist **after rehearsal**, not as a replacement for provisioning. Participants follow README steps 1–10; classes teaching Levels 2–3 move to the level documents after step 9, before cleanup.
+
+**Editor:** prepare one team packet with a complete `.env`, the README step-1 link, and the support contact.
 
 | Item | Instructor responsibility |
 |---|---|
 | Account | Confirm access to the intended subscription, tenant, project, and model deployments. Participants sign in and complete MFA in README step 1-3. |
-| Complete `.env` | Use `.env.example`, fill the actual values, and set **`LAB_LANGUAGE=en`**. Do not include passwords, API keys, or tokens. |
-| Ready services | Foundry project, Search, connected Application Insights, three fixed candidates, and the auxiliary planner/judge |
-| Unused names | A unique `LAB_PREFIX` and `LAB_AGENT_NAME` for each team |
-| Tools | Pass the [basic tool checks](#tools). Complete [additional GHCP setup](copilot.en.md) separately if using it. |
+| Complete `.env` | Use `.env.example`, fill the actual values, and set **`LAB_LANGUAGE=en`**. Do not include passwords, API keys, or tokens. Each participant runs `bind` in their own folder; an instructor-bound copy does not count. |
+| Ready services | Foundry project, Search, connected Application Insights, three fixed candidates, and the auxiliary planner/judge. Keep shared deployment names unchanged in `MODEL_*_DEPLOYMENT`; the instructor owns model and foundation costs. |
+| Unused names | A unique `LAB_PREFIX` and `LAB_AGENT_NAME` for each team, with English and Korean runs in separate folders. Reserve names only; do not pre-create participant-owned KB, source, index, or agent resources. |
+| Tools | Pass the [basic tool checks](#tools). Complete [additional Copilot CLI setup](copilot.en.md) separately if using it. |
 | Access support | A person who can resolve narrowly scoped role assignment, 403, and capacity issues |
 | Levels 2–3 | If teaching them, the judge and Sol capacity for all teams ([Prepare Levels 2 and 3](#levels)) |
 
-A new participant clone has no local azd binding. The participant must run **`bind` in their own folder**, even if the instructor has already bound another copy.
+**Checkpoint:** every row in the handoff table is complete for each team; then send them to [README step 1](../README.md#start).
 
-English and Korean must use **separate folders, prefixes, agent names, and knowledge objects**. Do not flip `LAB_LANGUAGE` in a workspace that already owns resources or contains experiment results. The runtime rejects mixed-language ownership, responses, evaluations, and regression lineage.
+**If not:** withhold the team packet and fix the missing account, setting, service, name, tool, or support owner before participants start.
 
 ## Cleanup and maintenance
 
-Review `cleanup --dry-run` before confirming. Never delete an entire shared resource group or run `azd down` against shared resources. Retained Search and logging resources may continue to cost money.
+In each owned workshop folder, use the [README step-10 dry run](../README.md#cleanup) before confirming cleanup. Continue only when the listed names match that folder's owned objects. Never delete an entire shared resource group or run `azd down` against shared resources.
 
-For **one-off self-study in an exclusively owned group created by this repository's setup tools**, you may separately choose [final foundation cleanup](environment.en.md#final-cleanup) after README step 10. Do not use that path for an existing/shared environment or a group needed for a later class.
+Retained Search, model deployments, and logging resources may continue to cost money. For an exclusively owned self-study group, use [final foundation cleanup](environment.en.md#final-cleanup) after README step 10.
 
-Before changing Foundry agent code or instructions, read the `microsoft-foundry` skill guidance. Keep synthetic-data-only boundaries, the configured subscription, model identities, prompt/data versions, and trace lineage. Run the offline tests before cloud operations.
+**Checkpoint:** each folder's README step-10 dry run lists only objects owned by that folder.
 
-Actual English cloud results belong in [the English evaluation explanation](validation.en.md), separately from the [Korean experiment](validation.ko.md). A translated question is not a newly independent holdout case.
+**If not:** stop cleanup and resolve the ownership or environment mismatch before confirming deletion.
+
+**Next:** preparation and cleanup are complete. Use the maintainer checks below only when editing these guides.
 
 <a id="documentation-checks"></a>
 
+<details>
+<summary>Maintainer checks when editing these guides</summary>
+
 ## When updating the guides
+
+Before changing Foundry agent code or instructions, read the `microsoft-foundry` skill guidance. Use synthetic data only, do not change shared Azure resources or the default CLI subscription, and name the configured subscription in Azure commands. Keep the links between models, instructions, datasets, and traces; do not substitute models or count missing or failed rows as successes. Keep documented commands matched to the code, and pass the offline tests before any Azure run.
 
 Keep English and Korean execution paths aligned. Lead with the outcome and starting conditions, distinguishing **a new workshop from an existing run** first. Collapse alternative paths such as environment preparation or tool delegation, along with background explanations.
 
 Each execution step must name **where to act, the command, its completion evidence, and the recovery path**. Give collection, evaluation, aggregation, trace lookup, verification, **candidate preparation, and calibration one command and one checkpoint each**. Recovery pages should fix the failed task, then link to **the main guide's next unexecuted command**, not duplicate a bundle of later steps. Do not repeat checks that a command already performs internally.
 
-Place each collapsed example screen right after the checkpoint it illustrates. A setup guide's return link must target the next unexecuted command. Put the final report after evidence and portal checks; distinguish **provenance links, execution completion, and quality passes**. Recorded answers and scores are examples, not the reader's target results.
+Place each collapsed example screen right after the checkpoint it illustrates. A setup guide's return link must target the next unexecuted command. Put the final report after evidence and portal checks; distinguish **provenance links, execution completion, and quality passes**. Recorded answers and scores are examples, not the reader's target results. Keep actual cloud results in the separate [English](validation.en.md) and [Korean](validation.ko.md) result pages; a translated question is not a newly independent holdout case.
 
 From the **original clone**, with its virtual environment active, run:
 
@@ -362,3 +568,5 @@ python -m unittest discover -s tests -p 'test_docs.py' -v
 This checks local links/anchors/assets, code-block structure, Bash/JSON syntax, Python CLI arguments against the actual parsers, and matching English/Korean command sequences. It also checks separate checkpoints in the main, candidate-preparation, and collection-recovery paths; **If not** guidance in participant and environment-preparation guides; recovery links to the next command; and the **dashboard → report → cleanup** order. It does **not** execute the example commands, contact Azure, or revalidate recorded cloud scores. Runnable source snapshots omit the guides and skip these documentation checks.
 
 Also follow [the starting instructions](../README.md#start-here) as a participant, an environment owner, and a returning user. Check that **the next action, completion signal, and next destination** require no guesswork. Automated checks cannot establish that a first-time reader understands the instructions.
+
+</details>

@@ -1,6 +1,6 @@
 # Level 2: Evaluate your business rules in Foundry
 
-[한국어](level-2.ko.md) · [Back to the main guide](../README.md#levels) · [Summary video from 06:33](../README.md#summary-video)
+[한국어](level-2.ko.md) · [Back to the main guide](../README.md#levels) · [Summary video from 07:00](../README.md#summary-video)
 
 **What you finish with in about 40 minutes:** a comparison of the same 36 saved V1 and V2 responses, with an explanation that **distinguishes business checks from LLM scores**.
 
@@ -13,7 +13,7 @@
 | Cost | Additional judge calls; **no new agent responses** |
 | After this level | [Level 3](level-3.en.md) or [step 10 cleanup](../README.md#cleanup), which also removes these custom evaluators |
 
-**Where to run:** your existing **Terminal A, at the repository root**. In a new terminal, [restore the environment only](../README.md#resume-shell). Keep names and instructions unchanged. If you used recovery labels, replace `baseline` and `improved` below with those labels.
+**Where to run:** your existing **Terminal A, at the repository root**. In a new terminal, [restore the environment only](../README.md#resume-shell). Do not change `.env` names or the V2 instructions. If you used recovery labels, replace `baseline` and `improved` below with those labels.
 
 **Read pass counts in section 2; read mean scores and failure causes in section 3.** Add both to your report. Example scores and the optional portal view are not required steps.
 
@@ -48,10 +48,13 @@ Both are objects in your project's evaluator catalog, prefixed with your `LAB_PR
 **Next:** [2. Evaluate the saved V1 and V2 responses](#evaluate-suite)
 
 <a id="evaluate-suite"></a>
+<a id="2-evaluate-v1-and-v2-with-nine-evaluators"></a>
 
-## 2. Evaluate V1 and V2 with nine evaluators
+## 2. Score V1 and V2 on nine criteria
 
-**Terminal A:** this reads the saved `baseline` and `improved` responses and runs them one after the other in one eval group; it takes several minutes:
+**You already registered everything needed.** This suite scores **nine criteria**: the two custom evaluators, six built-ins, and `policy_rubric_no_evidence`, the same rubric run without retrieved evidence.
+
+**Terminal A:** run the saved `baseline` and `improved` responses in one eval group; this takes several minutes:
 
 ```bash
 python scripts/workshop.py evaluate-suite --labels baseline improved
@@ -64,13 +67,13 @@ python scripts/workshop.py evaluate-suite --labels baseline improved
 <details>
 <summary>Retry a failed run — only when a failed run or errored results are confirmed</summary>
 
-In `evaluator results failed, for example because the judge hit its rate limit`, rate limiting is **one possible cause**. Inspect the saved error and resolve its cause. For 429, wait as directed by `Retry-After`, then run this. Do not use it for low valid scores.
+If results failed, inspect the saved error first. Rate limiting is only one possible cause. For a 429, wait for `Retry-After`, then run:
 
 ```bash
 python scripts/workshop.py evaluate-suite --labels baseline improved --retry-failed
 ```
 
-Only failed runs are replaced; earlier attempts remain recorded. If the same error recurs, stop retrying and tell the instructor.
+This replaces only failed runs. Do not use it for low valid scores. If the same error repeats, stop and tell the instructor.
 
 </details>
 
@@ -78,7 +81,7 @@ Only failed runs are replaced; earlier attempts remain recorded. If the same err
 
 1. **Start with `business_contract`.** Record V1 → V2 pass counts and check that they match your local business checks from 7-4.
 2. **Compare `policy_rubric` with `policy_rubric_no_evidence`.** The former receives the question plus retrieved policy text; the latter receives only the question. Note whether the same rubric's pass counts changed when the judge had evidence.
-3. **Record one change in the remaining generic and safety evaluators** (or none). They measure their own criteria, such as groundedness, relevance, and safety, rather than replacing `business_contract` checks for your decisions, amounts, and citations.
+3. **Record one change in the built-in quality, agent, RAG, or safety rows** (or `none`). These scores do not replace the business checks for decisions, amounts, and citations.
 
 <details>
 <summary>Recorded English result (September 23, 2026 responses) — an example, not your target</summary>
@@ -96,14 +99,12 @@ intent_resolution          agent    17/18     18/18
 indirect_attack            safety   18/18     18/18
 ```
 
-`business_contract` matches the recorded local result (0/18 → 17/18). The remaining V2 failure is Sol's D02 decision label; `policy_rubric` passed that row, which is why a deterministic contract check and an LLM rubric complement each other.
-
-A second run on the same saved responses gave identical `business_contract` counts, while LLM-judged counts moved by one to three rows (for example, `policy_rubric` on baseline went from 7/18 to 10/18). Inspect the failed rows; one small run does not establish a reliable improvement.
+`business_contract` matches the recorded local result (0/18 → 17/18). The remaining V2 failure is Sol's D02 decision label; `policy_rubric` passed it, so a deterministic check and an LLM rubric complement each other. On a second run of the same saved responses, `business_contract` stayed identical while LLM-judged counts moved by one to three rows (for example, baseline `policy_rubric` went from 7/18 to 10/18). Inspect failed rows; one small run does not prove an improvement.
 
 </details>
 
 <details>
-<summary>The nine evaluators and what each receives</summary>
+<summary>The nine scoring criteria and what each receives</summary>
 
 | Criterion | Kind | Receives | Default pass rule |
 |---|---|---|---|
@@ -142,9 +143,9 @@ python scripts/workshop.py insights --baseline baseline --candidate improved
 
 **Read it:**
 
-- **Section 2 shows pass counts; this table shows mean scores.** `baseline` and `candidate` are each evaluator's averages; `delta` is candidate minus baseline. A contract score of `0.60` means some individual checks passed, not that 60% of responses passed.
-- **An `effect` of `Changed` means a difference, not necessarily an improvement.** Read `delta` and the evaluator's desired direction together. `Inconclusive` does not prove equivalence. Note the small sample of 18 rows ([statistical comparison legend](https://learn.microsoft.com/azure/foundry/how-to/evaluate-results#compare-the-evaluation-results)).
-- **Read the source evaluator before the cluster's name.** Many `policy_rubric_no_evidence` failures suggest missing judge evidence, but inspect the same response and fixed reference before deciding whether the agent is wrong. For `business_contract` failures, identify the particular failed check.
+- **Section 2 is pass counts; section 3 is mean scores.** `delta` is candidate minus baseline. A `business_contract` mean of `0.60` means some checks passed, not that 60% of responses passed.
+- **`Changed` means different, not automatically better.** Use `delta`, the evaluator's desired direction, and the small 18-row sample size ([statistical comparison legend](https://learn.microsoft.com/azure/foundry/how-to/evaluate-results#compare-the-evaluation-results)).
+- **For clusters, read the failing evaluator first.** `policy_rubric_no_evidence` often means the judge lacked evidence; `business_contract` means a specific contract check failed.
 
 <details>
 <summary>Recorded English insights — an example</summary>
@@ -162,37 +163,13 @@ Ten of the twelve clustered V2 samples came from `policy_rubric_no_evidence`, fo
 
 </details>
 
-**Next:** [Finish Level 2](#finish-level-2). The portal comparison below is optional.
-
-<a id="optional-compare-the-runs-in-the-portal"></a>
-
-<details>
-<summary>Optional: compare runs in the portal — only for an additional check</summary>
-
-**Portal:** open the `Portal:` link from section 2. The eval group lists your `baseline-...` and `improved-...` runs with one column per criterion.
-
-**Checkpoint:** both runs show `Completed`, and the `business_contract` column matches the CLI table from section 2.
-
-**If not:** use the CLI table and see [portal differences](troubleshooting.en.md#portal-differs).
-
-For Foundry's statistical view, select both runs, choose **Compare runs**, and pick the `baseline-...` run as **Baseline** ([official guide](https://learn.microsoft.com/azure/foundry/how-to/evaluate-results#compare-the-evaluation-results)).
-
-<details>
-<summary>Example screen: both runs selected in the eval group</summary>
-
-![Eval group with the baseline and improved runs selected](assets/levels-20260923/en-l2-runs.webp)
-
-This example is a second run on the same saved responses, so a few LLM-judged counts differ from the recorded table in section 2.
-
-</details>
-
-</details>
+**Next:** [Finish Level 2](#finish-level-2). The [optional portal comparison](#optional-compare-the-runs-in-the-portal) is at the end of this page; do it before cleanup.
 
 <a id="finish-level-2"></a>
 
 ## Finish Level 2
 
-Add the following to your [report](../README.md#finish), using **your results as evidence**. This is a note, not a command.
+**Report note:** copy this shape into your [main report](../README.md#finish) and fill it with **your results**. It is not a command.
 
 ```text
 Business contract: .../18 -> .../18; rubric with evidence: .../18 -> .../18
@@ -205,3 +182,22 @@ Comparison/cluster: evaluator=...; delta/effect=...; verified failure cause, or 
 **If not:** return to the first unfinished section and resume only its command; do not repeat finished commands ([Level 2–3 recovery](troubleshooting.en.md#levels)).
 
 **Next:** [Level 3](level-3.en.md), or return to [step 10 cleanup](../README.md#cleanup). Cleanup also deletes the custom evaluators from this level; the eval groups and results stay as evidence.
+
+<a id="optional-compare-the-runs-in-the-portal"></a>
+
+<details>
+<summary>Optional: compare runs in the portal — only for an additional check</summary>
+
+**Portal:** open the `Portal:` link from section 2. The eval group lists your `baseline-...` and `improved-...` runs with one column per criterion.
+
+**Example screen:** both runs selected in the eval group. It is a second run on the same saved responses, so a few LLM-judged counts differ from the recorded table in section 2.
+
+![Eval group with the baseline and improved runs selected](assets/levels-20260923/en-l2-runs.webp)
+
+**Checkpoint:** both runs show `Completed`, and the `business_contract` column matches the CLI table from section 2.
+
+**If not:** use the CLI table and see [portal differences](troubleshooting.en.md#portal-differs).
+
+For Foundry's statistical view, select both runs, choose **Compare runs**, and pick the `baseline-...` run as **Baseline** ([official guide](https://learn.microsoft.com/azure/foundry/how-to/evaluate-results#compare-the-evaluation-results)). If your group shows extra attempts, select the latest `Completed` `baseline-...` and `improved-...` runs that match the CLI table.
+
+</details>

@@ -2,39 +2,73 @@
 
 [한국어 실습](../README.ko.md) · [English](reference.en.md)
 
-**실습 중에는 [참가자 가이드](../README.ko.md)만 순서대로 진행해도 됩니다.** 이 문서는 왜 그렇게 구현했는지 궁금할 때 읽는 참고 자료입니다.
+**실습은 [참가자 가이드](../README.ko.md)를 순서대로 진행합니다.** 이 문서는 용어, label, 모델·배포 이름, 엔드포인트, 근거 필드, 평가 범위만 빠르게 확인하는 참고 자료입니다. 재시작하지 마세요.
 
-**궁금한 항목만 찾기:** [용어](#terms) · [판단값](#decision-values) · [모델과 배포 이름](#model-names) · [endpoint](#endpoints) · [평가 범위](#evaluation-scope).
+| 찾는 것 | 볼 곳 | 돌아갈 곳 |
+|---|---|---|
+| 용어 또는 결과 label | [용어](#terms), [판단값](#decision-values) | [시작](../README.ko.md#start) 또는 [6단계 review](../README.ko.md#lab-d) |
+| 모델 또는 배포 이름 | [모델과 배포 이름](#model-names) | [5단계](../README.ko.md#lab-c) 또는 [8단계](../README.ko.md#lab-f) |
+| 근거 필드, 평가 게이트, trace, Monitor | [검색 결과 읽기](#retrieval-evidence), [평가 범위](#evaluation-scope), [Trace와 Monitor](#trace-monitor) | [6단계 review](../README.ko.md#lab-d), [8단계 holdout](../README.ko.md#lab-f), [9단계 evidence](../README.ko.md#lab-g) |
+| 배경만 확인 | [시나리오](#scenario), [실행 경로](#execution-path), [엔드포인트](#endpoints), [언어별 실행 분리](#language), [선택 배경](#background) | [시작](../README.ko.md#start) |
+| 준비·복구 | [강사 준비](instructor.ko.md), [문제 해결](troubleshooting.ko.md) | [시작](../README.ko.md#start) |
 
 <a id="terms"></a>
 
 ## 먼저 알아둘 용어
 
+**짧은 답:** 도구, 에이전트, 모델, 데이터, 결과 label 구분입니다.
+
+**도구와 실행 환경**
+
 | 용어 | 이 실습에서의 뜻 |
 |---|---|
-| Copilot CLI / 실습 agent | Copilot CLI는 명령 실행을 돕는 개발 도구. 실습 agent는 Azure에 배포해 출장 규정에 답하게 하는 Python 앱 |
-| Agent / 모델 | Python agent 하나가 요청마다 Sol·Luna·Astra(`gpt-6-sol`·`gpt-6-luna`·`gpt-6-astra`) 중 하나를 호출하며, 모델끼리 투표하지 않음 |
-| Foundry / Agent Framework | Foundry는 Azure 서비스와 포털, Agent Framework는 Python agent가 사용하는 라이브러리 |
-| KB / knowledge base | 회사 문서를 검색하는 지식 계층 |
-| Hosted Agent | Python 코드를 Azure의 관리형 환경에서 실행하는 에이전트 |
-| V1 / V2 / `agent_version` | 제공된 지침 두 버전. 배포할 때마다 별도의 숫자 agent 버전도 생성됨 |
-| baseline / `improved` | V2를 선택하기 전 / 후의 결과 label |
-| dev | 실패를 보고 개선하는 데 쓰는 질문 6개 |
-| holdout | 후보를 고정한 뒤 확인하는 질문 4개 |
-| Judge / calibration | 답변 텍스트에 점수를 매기는 별도 모델 / 근거 있는 답과 없는 답을 구분하는지 예제 2개로 점검 |
-| Native 평가 / 업무 검사 | Foundry의 답변 텍스트 채점 / Python의 고정 판단·금액·인용 계약 검사. 한쪽 결과가 다른 쪽을 대신하지 않음 |
-| Rubric / 품질 gate | Rubric은 응답의 채점 기준. Gate는 모델별 집계 결과가 실습 기준을 넘었는지 판단하며, 운영 승인과는 다름 |
-| trace | 한 요청의 검색·모델 호출·응답을 연결한 실행 기록 |
-| regression / 회귀 데이터 | 검토한 사례와 정답·원래 trace를 남겨 다음 버전에서 다시 확인하는 자료 |
-| lineage | 모델·지침·데이터·버전·실행 결과가 어디에서 왔는지 연결한 이력 |
-| `case_id` / `row_id` | `case_id`는 고정 질문 ID, `row_id`는 label·모델·질문을 조합한 응답 ID. V1/V2의 같은 사례는 **`case_id` + `model_key`**로 찾음 |
-| JSON / JSONL | JSON은 구조화된 문서, JSONL은 한 줄에 JSON 객체 하나를 저장한 형식. 응답은 줄 번호가 아니라 `row_id`로 찾음 |
+| Copilot CLI | 명령 실행 보조 도구. |
+| 실습 에이전트 | Azure에 배포된 Python 출장 규정 앱. |
+| 요청별 에이전트 | 요청마다 Sol, Luna, Astra 중 하나를 호출하는 Python Agent Framework 객체. 투표하지 않습니다. |
+| Foundry | 실습용 Azure 서비스와 포털. |
+| Agent Framework | Python 에이전트 라이브러리. |
+| knowledge base / KB | 회사 문서 검색 지식 계층. |
+| Hosted Agent | Azure 관리형 환경의 Python 코드. |
+
+**모델과 label**
+
+| 용어 | 이 실습에서의 뜻 |
+|---|---|
+| 모델 | `gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`의 고정 배포 중 하나. |
+| V1 / V2 | 지침 두 버전. |
+| `agent_version` | 배포마다 생성되는 숫자 Hosted Agent 버전. |
+| `baseline` / `improved` | V2 전후 결과 label. |
+| dev | 실패를 보고 개선하는 고정 질문 6개. |
+| holdout | 후보 고정 뒤 별도 질문 4개. |
+
+**평가**
+
+| 용어 | 이 실습에서의 뜻 |
+|---|---|
+| judge | 답변 텍스트 채점 모델. |
+| calibration | judge 확인 예제 2개. |
+| native 평가 | Foundry 기본 평가입니다. 답변 텍스트를 채점합니다. |
+| 업무 검사 | Python이 판단값, 금액, 인용 계약을 확인합니다. native 평가 점수를 대신하지 않음. |
+| rubric | 채점 기준 |
+| 품질 게이트 | 모델별 집계 기준. 운영 승인 아님. |
+
+**근거와 파일**
+
+| 용어 | 이 실습에서의 뜻 |
+|---|---|
+| trace | 한 요청의 검색, 모델 호출, 응답을 연결한 실행 기록. |
+| 회귀 사례 | 고정 기준과 원래 trace를 보존한 사례. |
+| lineage | 언어, 모델, 지침, 데이터, 버전, 결과 이력. |
+| `case_id` / `row_id` | `case_id`는 고정 질문 ID, `row_id`는 label·모델·질문별 응답 ID. V1/V2의 같은 사례는 **`case_id` + `model_key`**로 찾습니다. |
+| JSON / JSONL | JSON은 문서, JSONL은 줄별 JSON 객체입니다. 응답은 `row_id`로 찾습니다. |
+
+↩ [시작](../README.ko.md#start).
 
 <a id="decision-values"></a>
 
 ## 답변 설명과 판단값을 따로 읽기
 
-**`answer`는 설명문, `decision`은 Python이 고정 기준 `expected_decision`과 대조하는 판단값**입니다. 설명이 타당해도 판단값은 틀릴 수 있습니다. 고정 기준과 제공 V2가 사용하는 다섯 값은 다음과 같습니다.
+**짧은 답:** `answer`는 설명문, `decision`은 Python이 `expected_decision`과 비교하는 label입니다.
 
 | `decision` | 이 실습에서의 뜻 | 혼동하지 말 것 |
 |---|---|---|
@@ -44,48 +78,39 @@
 | `needs_info` | 판단에 필요한 요청 정보가 부족 | 제공 정책에 없는 주제와 구분 |
 | `not_covered` | 제공된 정책이 다루지 않는 범위 | 정책이 금지한다는 뜻이 아님 |
 
-불일치하면 설명·판단값·고정 기준을 따로 대조합니다. 응답에 맞추려고 `expected_decision`이나 평가 기준을 바꾸지 않습니다.
+설명이 타당해도 판단값은 틀릴 수 있습니다. 불일치하면 설명, label, 고정 기준을 따로 대조합니다. 응답에 맞춰 `expected_decision`이나 평가 기준을 바꾸지 않습니다.
+
+↩ [5단계 baseline](../README.ko.md#lab-c) 또는 [6단계 review](../README.ko.md#lab-d).
+
+<a id="scenario"></a>
 
 ## 시나리오와 남는 자산
 
-가상의 **한빛기술 출장 규정 상담 에이전트**가 현행·과거 규정, 사전 승인, 영수증, 근거 없는 해외 출장 질문을 처리합니다.
-현재·과거 정책뿐 아니라 미승인 초안도 있으므로 **적용일과 문서 상태**를 읽어야 합니다.
-에이전트는 안내만 하며 실제 예약·출장 승인·지급은 하지 않습니다.
+**짧은 답:** 한빛기술은 가상 회사이며 KRW 금액, 적용일, 문서 상태, 인용 근거가 남습니다.
 
-정책·기준 정답·calibration은 AI 보조로 작성한 합성 초안입니다. 실제 회사의 승인된 규정이 아니므로 운영에 사용하려면 업무 전문가의 검토가 먼저 필요합니다.
+가상의 한빛기술 에이전트는 한국 국내 출장 규정을 설명합니다. 영어판에서도 통화는 **Korean won (KRW)**이며, 언어를 바꿔도 한도와 규칙은 바뀌지 않습니다.
 
-```mermaid
-flowchart LR
-    Q["합성 질문"] --> A["Python Hosted Agent"]
-    A --> K["Foundry IQ\n정책 원문 검색"]
-    K --> A
-    A --> M["고정한 세 모델 중 하나"]
-    M --> R["답변 · 문서 ID · trace"]
-    R --> E["Foundry 평가\n+ 업무 검사"]
-    R --> T["Trace / Monitor"]
-    E --> H["사람의 원인 검토"]
-    T --> H
-    H --> P["회귀 데이터 · 개선 지침"]
-    P --> A
-```
+정책에는 현행 규정, 과거 규정, 미승인 초안이 함께 있습니다. 올바른 답은 **출장일과 문서 상태**에 달려 있습니다.
 
-모델을 교체해도 KB, 고정 정답, 평가 기준, 지침, 검토한 실패 사례는 조직의 자산으로 남습니다.
+에이전트는 안내만 하며 예약, 승인, 지급, 예외 승인을 실행하지 않습니다. 정책, 기준 정답, calibration 예제는 합성 교육 자료이며 승인된 회사 규정이 아닙니다.
 
-이 과정은 **지침과 검증 체계의 개선**이며, 로그를 켠다고 모델 가중치가 학습되지 않습니다. [레벨 3](level-3.ko.md#continuous-eval)에서는 trace를 일정에 따라 평가합니다. Fine-tuning/RL·자동 재학습·자동 운영 배포는 실습 범위 밖입니다.
+이 루프는 지침과 검증 체계를 개선합니다. trace는 모델 가중치를 학습시키지 않습니다. [레벨 3](level-3.ko.md#continuous-eval)은 trace를 일정 평가하지만 fine-tuning, RL, 자동 재학습, 자동 운영 배포는 범위 밖입니다.
+
+↩ [시작](../README.ko.md#start).
 
 <a id="model-names"></a>
 
-## 고정한 모델과 보조 모델
+## 고정 모델 식별자
 
-**입력하는 위치에 맞는 이름을 사용합니다.**
+**짧은 답:** 요청에는 모델 키, 검증에는 모델 ID·버전, 환경에는 Azure 배포 이름을 씁니다.
 
-| 이름 | 예시 또는 확인할 곳 | 사용하는 위치 |
+| 이름 | 확인할 곳 | 사용하는 위치 |
 |---|---|---|
-| 모델 키 | `sol` | Agent 요청의 `model_key`, 결과 집계 |
+| 모델 키 | `sol` | 에이전트 요청의 `model_key`, 결과 집계 |
 | 모델 ID와 버전 | `gpt-6-sol` / `2026-09-22` | `preflight`가 대조하는 고정 모델 |
-| Azure 배포 이름 | 강사가 전달했거나 Foundry **Build → Models**에서 확인한 실제 배포 이름 | `.env`의 `MODEL_SOL_DEPLOYMENT`. 모델 키·ID와 같을 필요 없음 |
+| Azure 배포 이름 | 강사가 전달한 `.env` 또는 Foundry **Build → Models** | `.env`의 `MODEL_SOL_DEPLOYMENT`, `MODEL_LUNA_DEPLOYMENT`, `MODEL_ASTRA_DEPLOYMENT`, 보조 배포 `LAB_AUX_DEPLOYMENT`. 모델 키·ID와 같을 필요 없음 |
 
-Luna·Astra와 보조 배포도 같은 방식으로 구분합니다. 새 조의 `LAB_PREFIX`를 바꾸어도 공유 모델의 배포 이름은 바뀌지 않습니다.
+새 조의 `LAB_PREFIX`를 바꾸어도 공유 모델의 배포 이름은 바뀌지 않습니다.
 
 | 키 | 실제 모델 ID | 버전 |
 |---|---|---|
@@ -93,149 +118,208 @@ Luna·Astra와 보조 배포도 같은 방식으로 구분합니다. 새 조의 
 | `luna` | `gpt-6-luna` | `2026-09-22` |
 | `astra` | `gpt-6-astra` | `2026-09-03` |
 
-`preflight`가 각 실제 배포의 모델·버전과 지역별 지원·할당량을 확인합니다. 다른 구독에서도 접근·배포가 보장되는 목록은 아닙니다. 하나가 없으면 중단하며 다른 모델로 대체하지 않습니다.
+`preflight`가 실제 배포의 모델·버전, 지역 카탈로그, 할당량을 확인합니다. 카탈로그 항목이 다른 구독의 사용 가능성을 보장하지 않습니다. 필요한 모델이 없으면 다른 모델로 대체하지 말고 중단합니다.
 
-세 모델은 **같은 dev/holdout, KB, 지침, 평가 기준**으로 각각 답합니다. 동시 합의형 multi-agent council이 아닙니다.
-검색 planner와 공통 LLM judge에는 별도 고정 배포를 사용합니다. 예시의 `gpt-5.4-mini`는 보조 모델이며 후보 모델의 대체물이 아닙니다.
-세 후보가 모두 OpenAI 모델이므로 여러 공급자 간 이식성을 검증했다고 주장하지 않습니다.
+- 세 후보 모델은 같은 dev/holdout, KB, 지침, 평가 기준으로 답합니다. 투표 합의 구조가 아닙니다.
+- 검색 planner와 judge에는 고정 배포(`gpt-5.4-mini`)를 사용하며, 이 보조 모델은 후보 모델을 대체하지 않습니다.
+- 세 후보는 모두 OpenAI 모델이므로 여러 공급자 간 이식성을 검증했다고 주장하지 않습니다.
+
+↩ [5단계 baseline](../README.ko.md#lab-c) 또는 [8단계 holdout](../README.ko.md#lab-f).
+
+<a id="execution-path"></a>
 
 ## 실행 경로를 이렇게 고른 이유
 
-- **Direct code deployment:** `azure.yaml`의 Python 3.13 소스 ZIP을 배포합니다. 로컬 Docker는 필요 없습니다.
-- **Invocations protocol:** `model_key`, `case_id`, `run_id`를 명시해 기계적으로 비교합니다. 모델 선택은 허용 목록으로 제한합니다. Foundry의 target 평가는 대신 `{"type": "input_text", "text": ...}`를 보냅니다. 에이전트는 그 text의 호출 JSON을 같은 엄격한 요청으로 실행하고, 일반 텍스트는 `case_id` `external`로 Sol에 보냅니다([레벨 3의 4절](level-3.ko.md#evaluate-agent)).
-- **요청 간 대화 분리:** session은 컴퓨트 재사용에 쓰지만, 각 요청은 새 Agent로 실행해 모델·사례 간 대화 이력을 공유하지 않습니다.
-- **엄격한 출력 계약:** 세 모델 모두 같은 JSON 텍스트 지침을 쓰고 Pydantic으로 검증합니다. 잘못된 JSON을 고쳐 성공으로 처리하지 않습니다. 서비스가 보장하는 Structured Outputs와는 다릅니다.
+**짧은 답:** 실습은 Python 소스 직접 배포, 엄격한 JSON 요청, 질문별 상태 분리, 같은 Foundry 계정의 Chat Completions 엔드포인트를 씁니다.
 
-검증 환경의 Astra는 프로젝트 Responses API의 `json_schema`를 거부했고 최소 일반 요청도 실패했습니다.
-프로젝트 Chat Completions는 사용자와 hosted identity의 권한 동작이 달랐습니다.
-최종 검증 경로는 **같은 Foundry 계정의 Azure OpenAI v1 Chat Completions endpoint**입니다.
-`AIProjectClient.get_openai_client()`의 `base_url`/credential override와 Agent Framework의 `OpenAIChatCompletionClient`를 사용합니다.
-다른 모델이나 공개 OpenAI 서비스로 보내는 fallback이 아닙니다.
+- **소스 직접 배포:** `azure.yaml`은 Python 3.13 런타임의 소스 직접 배포를 지정합니다. 로컬 Docker나 ACR 빌드는 필요 없습니다.
+- **실습 호출:** 각 요청은 `model_key`, `case_id`, `run_id`를 명시합니다. 모델 라우팅은 허용 목록으로 제한합니다.
+- **레벨 3 대상 평가:** Foundry는 `{"type": "input_text", "text": ...}`를 보냅니다. 에이전트는 그 text에서 호출 JSON을 추출해 같은 엄격한 요청으로 실행하거나, 일반 텍스트를 `case_id` `external`로 Sol에 보냅니다([레벨 3의 4절](level-3.ko.md#evaluate-agent)).
+- **요청 간 상태 분리:** Hosted session은 컴퓨트 재사용에 쓰지만, 각 질문·모델 요청은 새 에이전트 인스턴스로 실행합니다.
+- **엄격한 JSON 계약:** 모델은 JSON 텍스트를 반환하고 Pydantic이 검증합니다. 잘못된 출력을 고쳐 성공으로 처리하지 않습니다.
+
+추론 경로는 **같은 Foundry 계정의 Azure OpenAI v1 Chat Completions 엔드포인트**입니다. 코드는 `AIProjectClient.get_openai_client()` 엔드포인트/자격 증명 재정의와 `OpenAIChatCompletionClient`를 사용합니다. 공개 OpenAI 서비스로 보내는 대체 경로가 아닙니다.
+
+애플리케이션의 JSON 검증은 모델 서비스가 강제하는 Structured Outputs와 다릅니다. 두 언어 모두 기존 모델 호환 경로를 유지합니다.
+
+↩ [3단계 local](../README.ko.md#local).
 
 <a id="endpoints"></a>
 
+## 엔드포인트와 토큰 범위
+
+**짧은 답:** 프로젝트 관리, 모델 추론, IQ 검색은 서로 다른 엔드포인트와 Entra 토큰 범위를 씁니다.
+
 | 연결 | 설정 | Entra 토큰 범위 |
 |---|---|---|
-| Agent 관리 / Foundry Evaluation | `FOUNDRY_PROJECT_ENDPOINT` | `https://ai.azure.com/.default` |
-| 후보 모델 추론 | 같은 계정의 `AZURE_OPENAI_ENDPOINT` | `https://cognitiveservices.azure.com/.default` |
-| Foundry IQ retrieval | `AZURE_SEARCH_ENDPOINT` | `https://search.azure.com/.default` |
+| 에이전트 관리 / Foundry Evaluation | `FOUNDRY_PROJECT_ENDPOINT` | `https://ai.azure.com/.default` |
+| 후보 모델 추론 | `AZURE_OPENAI_ENDPOINT` | `https://cognitiveservices.azure.com/.default` |
+| Foundry IQ 검색 | `AZURE_SEARCH_ENDPOINT` | `https://search.azure.com/.default` |
 
-서비스 GA와 개별 SDK/API의 Preview 여부는 구분합니다. 아래 공식 출처와 [평가 방법·개선 결과](validation.ko.md)를 함께 확인합니다.
+호스팅 서비스가 GA라고 해서 함께 쓰는 모든 SDK나 API도 GA라는 뜻은 아닙니다.
+
+↩ [1단계 setup](../README.ko.md#lab-a).
 
 <a id="language"></a>
 
 ## 언어별 실행 분리
 
-`LAB_LANGUAGE=ko`가 기본값이며, `en`은 영어 정책·질문·지침·calibration과 응답 metadata를 선택합니다.
-한국어 데이터와 지침은 `data/`, `src/agent/prompts/`에, 영어 자료는 각각 그 아래 `en/`에 있습니다.
+**짧은 답:** 언어가 바뀌면 데이터, 지침, 응답, 평가, 원격 분석, lineage가 따로 생깁니다.
 
-언어마다 폴더·접두사·agent 이름을 분리합니다. 소유권·응답·평가·telemetry·회귀 출처는 언어를 함께 기록합니다.
-언어 필드가 없는 과거 기록은 **한국어**로 취급하며 영어 결과로 바꾸어 표시하지 않습니다.
+`LAB_LANGUAGE=ko`가 기본값입니다. `LAB_LANGUAGE=en`은 영어 정책, 질문, 지침, 모델 요청 label, calibration 예제, Hosted 응답 메타데이터를 선택합니다.
 
-번역해도 문서 ID·날짜·금액·판단 값·인용 규칙은 유지합니다. 텍스트가 달라지면 데이터·지침·검색 근거의 hash는 달라집니다.
-언어별 결과를 합치거나 한국어 측정값을 영어 실측 결과로 사용하지 않습니다.
+언어마다 작업 폴더와 리소스 접두사를 분리합니다. 한국어 데이터는 `data/`, 영어 데이터는 `data/en/`에 있고 영어 지침은 `src/agent/prompts/en/`에 있습니다. 소유권, 응답, 평가, 원격 분석 요약, 회귀 출처 이력에는 언어가 기록됩니다. 언어 필드가 없는 기록은 **한국어**입니다. 번역해도 문서 ID·날짜·금액·판단값·인용 규칙은 유지하지만, 텍스트가 달라지면 데이터·지침·검색 근거의 hash는 달라집니다. 언어별 결과를 합치거나 한국어 측정값을 영어 실측 결과로 제시하지 마세요.
+
+↩ [시작](../README.ko.md#start).
+
+<a id="retrieval-evidence"></a>
 
 ## 검색 결과를 읽는 기준
 
-이 실습은 일반 `search()` 호출에 IQ라는 이름을 붙인 것이 아닙니다. 실제 knowledge source/base를 만들고 `/knowledgebases/{name}/retrieve`를 호출합니다.
-작은 합성 문서를 텍스트·semantic retrieval로 검색하며, 별도 embedding 배포나 MCP는 필수 조건이 아닙니다.
+**짧은 답:** 정책 문서는 `docKey` 또는 `sourceData.id`로 확인하고, 모델 차이 판단 전 `context_hash`를 봅니다.
 
-- `references[].id`는 검색 응답 내부의 참조 번호입니다. 문서 키는 `docKey` 또는 `sourceData.id`로 확인합니다.
-- `retrieve` 콘솔에는 `document_ids`와 `activity`가 표시됩니다. 전체 references는 출력이 가리키는 결과 JSON에 보존됩니다.
-- 같은 KB라도 호출별 근거가 달라질 수 있습니다. `context_hash`가 다른 응답의 차이를 **모델만의 차이**로 해석하지 않습니다.
-- **검색 누락 방지:** KB에는 “규정 무시·승인 완료 기재를 요구하는 요청이라도 관련 정책을 검색한다”는 검색 지침(`retrievalInstructions`)이 있습니다. Planner가 그래도 검색을 실행하지 않으면 같은 질문으로 **한 번만** 다시 검색하고, 시도 횟수를 응답의 `retrieval_attempts`와 trace에 남깁니다. 두 번 모두 검색하지 않으면 근거 없이 답하며 실패를 숨기지 않습니다. [도입 배경](validation.ko.md#retrieval-miss)
-- Source의 고급 설정 화면, Foundry의 Indexes 목록, 실제 Azure Search index는 서로 같은 화면이 아닙니다.
+`references[].id`는 retrieval 결과 내부의 참조 번호입니다. 정책 문서 키와 같지 않을 수 있습니다. 문서 키는 `docKey` 또는 `sourceData.id`로 확인합니다. 두 필드가 모두 없으면 인용 근거가 확인되지 않은 것으로 보고 [6단계 review](../README.ko.md#lab-d)로 돌아갑니다.
+
+`retrieve` 콘솔에는 해결된 `document_ids`, planning `activity`, 저장 경로(`saved`)가 표시됩니다. 전체 `references`는 그 저장 JSON에 보존됩니다.
+
+같은 말뭉치라도 호출별 context가 달라질 수 있습니다. `context_hash`가 다르면 모든 답변 차이를 후보 모델 탓으로만 해석하지 않습니다.
+
+**검색 누락 방지:** KB의 `retrievalInstructions`는 요청이 규정 무시나 승인 완료를 요구해도 관련 정책을 검색하라고 지시합니다.
+
+- 그래도 planner가 검색하지 않으면 에이전트는 같은 질문을 **한 번만** 다시 시도하고, `retrieval_attempts`를 응답과 trace에 기록합니다.
+- 두 번 모두 검색하지 않으면 근거 없는 답변으로 진행하되 그 실패를 trace에 남깁니다. [도입 배경](validation.ko.md#retrieval-miss)
+
+<details>
+<summary>Foundry IQ 검색 방식</summary>
+
+이 실습은 실제 Search knowledge source와 knowledge base를 만들고 `/knowledgebases/{name}/retrieve`를 호출합니다. 일반 `search()` 응답에 “Foundry IQ”라는 이름을 붙인 것이 아닙니다. 작은 합성 문서는 semantic retrieval로 검색하며, 별도 embedding 배포나 MCP 도구는 필요하지 않습니다.
+
+Foundry Indexes 목록, knowledge source 고급 설정, 실제 Azure Search index는 다른 화면입니다.
+
+</details>
+
+↩ [6단계 review](../README.ko.md#lab-d).
 
 <a id="evaluation-scope"></a>
 
 ## 평가와 채택 기준
 
-**아래 기준은 기본 10단계 실습(레벨 1)의 기준입니다.** [레벨 2](level-2.ko.md)는 저장된 응답에 custom 기준을 추가하고, [레벨 3](level-3.ko.md)은 모델 배포·에이전트 새 호출·trace도 평가합니다. 입력·threshold가 다르므로 본평가 48응답과 점수를 합치지 않습니다.
+**짧은 답:** 레벨 1은 48개 응답과 trace, 고정 평가기, 여섯 개의 `true` 업무 게이트, 별도 native 평가 점수가 필요합니다. 운영 승인이 아닙니다.
+
+**아래 기준은 기본 10단계 실습(레벨 1)용입니다.** [레벨 2](level-2.ko.md)는 저장된 응답에 사용자 지정 기준을 추가하고, [레벨 3](level-3.ko.md)은 모델 배포, 새 에이전트 호출, trace도 평가합니다. 입력과 기준값이 다르므로 본평가 48개 응답과 점수를 합치지 않습니다.
 
 | 평가 | 확인하는 것 | 대신하지 못하는 것 |
 |---|---|---|
-| Foundry `groundedness` | 주장이 검색 근거로 뒷받침되는가 | 최신 정책 선택·업무 정답 전체 |
-| Foundry `relevance` | 질문과 관련 있는 답변인가 | 정확한 업무 판단·적절한 보류의 전부 |
-| 결정적 업무 검사 | 판단 값·필수 금액·허용된 문서 인용 | 답변 전체의 의미·운영 적합성 |
-| 사람의 검토 | 적용일·예외·원인·개선의 타당성 | 대규모 운영 품질의 통계적 증명 |
+| native groundedness | 답변 주장이 검색 근거로 뒷받침되는가 | 업무 판단, 최신 정책 선택, 인용 ID 전체 |
+| native relevance | 답변이 질문에 응답하는가 | 업무 정답 전체나 정당한 보류의 품질 전체 |
+| 결정적 업무 검사 | 판단값, 필수 금액, 허용된 검색 문서 인용 | 답변 전체의 의미 정확성 |
+| 사람의 검토 | 적용일, 예외, 원인, 제안한 개선의 타당성 | 작은 표본에서 운영 품질을 통계적으로 증명 |
 
-레벨 1은 실제 Hosted Agent 응답을 Foundry에 제출하는 **JSONL 데이터셋 평가**입니다. Judge를 호출하지만 에이전트를 다시 호출하지는 않습니다. Native 평가에는 `answer` 텍스트를 보내고, 구조화된 판단·인용 배열은 업무 검사로 따로 확인합니다.
+레벨 1 native 평가 경로는 캡처한 에이전트 답변의 **JSONL 데이터셋 평가**입니다. judge를 호출하지만 에이전트를 다시 호출하지 않습니다. native `response`는 답변 텍스트이고, 판단값과 인용 배열은 업무 검사로 따로 봅니다.
 
-**실험 동안 바꾸지 않는 학습 기준**
+실험 중에는 다음을 확인합니다.
 
-- 응답 누락·중복·실행 오류는 허용하지 않습니다.
-- 모델별 업무 통과율은 80% 이상입니다. dev 6문항이면 최소 5/6입니다.
-- 근거가 필요한 답변의 유효 인용은 100%여야 합니다.
-- holdout의 금지 요청을 허용하는 회귀는 0건이어야 합니다.
-- LLM evaluator 버전과 1–5점 척도, **threshold 4**를 고정합니다. 오류·`null`을 점수나 합격으로 바꾸지 않습니다.
-- 같은 dev dataset hash, corpus, 동시성을 유지합니다. 지연·토큰과 native 결과를 함께 보고 판단합니다.
+| 확인 항목 | 필요한 값 | 다르면 |
+|---|---|---|
+| 응답 행렬 | baseline dev 18행, improved dev 18행, holdout 12행. 오류·중복·누락 없음 | 다시 실행하거나 별도 실험으로 보고 |
+| 고정 입력 | 같은 dev 데이터, 말뭉치, 동시성, judge, evaluator 정의 | baseline과 비교하지 않음 |
+| 업무 게이트 | 모든 모델의 dev·holdout `business_gate`가 `true`. 업무 통과율 80% 이상, 필요한 인용 모두 유효. dev는 최소 5/6, holdout은 4/4 | 채택하지 않음 |
+| native 평가 점수 | native 1–5 척도와 통과 기준 4. null·오류를 점수로 바꾸지 않음 | 실패 또는 누락 증거로 유지 |
+| holdout 사용 | holdout 전에 후보 고정. holdout 답변으로 개선하지 않음 | 새 실험으로 취급 |
+| 결과 읽기 | native 평가 점수, 업무 검사, 지연 시간, 토큰 수, 사람 검토를 따로 읽음 | 한 점수로 합치지 않음 |
 
-표본이 작으므로 holdout 4/4도 운영 SLA나 모델의 통계적 우월성을 증명하지 않습니다.
-후보의 업무 gate 통과, 구성 요소 실행 검증, 실제 운영 승인은 각각 다른 판단입니다.
+`candidate_quality_gates`와 레벨 3 릴리스 게이트는 실습 증거만 확인하며 `production_release_approved`는 false로 남습니다.
+
+방법, 측정값, 해석은 [평가 방법·개선 결과](validation.ko.md)에 있습니다. 업무 게이트는 운영 승인이 아닙니다.
+
+↩ [5단계 baseline](../README.ko.md#lab-c) 또는 [8단계 holdout](../README.ko.md#lab-f).
+
+<a id="trace-monitor"></a>
 
 ## Trace와 Monitor
 
-`queries/monitor.kql`은 실습 agent의 `requests`를 고른 뒤 `operation_Id`로 `dependencies`를 연결합니다.
-실습 CLI의 `monitor`는 기본 최근 2시간을 조회하며, `--hours 24`는 KQL과 API의 시간 범위를 함께 늘립니다. Agent/run 필터와 정확한 trace 수·sampling 검사는 유지됩니다. 포털의 날짜 선택이나 `azd ai agent monitor` 로그 스트리밍과는 다른 기능입니다.
-기본 단위와 custom span을 섞어 토큰·지연을 이중 집계하지 않습니다.
-실습 agent만 `microsoft.fixed_percentage` / `1.0`으로 100% trace를 수집하며, 공유 App Insights 설정은 바꾸지 않습니다.
+**짧은 답:** trace 확인은 본평가 응답마다 성공한 unsampled trace가 있음을 증명하고, 포털 대시보드는 더 넓은 운영 집계입니다.
 
-포털의 운영 집계에는 smoke·추가 포털 호출 등이 섞일 수 있어 48개 본평가와 분모가 다릅니다.
-표시된 추정 비용 `$0`은 실제 전체 청구액이 아닙니다.
-Monitor의 Tools 목록이 비어도 코드 내부의 IQ 호출은 trace에 남을 수 있습니다.
-운영의 샘플링·개인정보·비용·알림 정책은 별도 설계가 필요합니다.
+`queries/monitor.kql`은 실습 에이전트의 `requests`를 고르고 `operation_Id`로 `dependencies`를 연결합니다. framework span과 custom span을 중복 모델 호출로 세지 않습니다.
 
-## 시간과 자료
+리포지토리 루트에서 실행:
 
-120분은 환경 준비가 끝난 참가자의 설명·실행·검토·정리 시간입니다.
-영상에서는 대기와 화면 탐색을 줄였으므로 영상 길이를 실제 Azure 소요 시간으로 해석하지 않습니다.
-조가 10분 이상 환경 문제로 지연되면 강사와 해당 폴더의 설정·권한을 복구합니다. 다른 환경이 필요하면 새 폴더·이름으로 별도 실행하며, 이전 응답·소유권을 옮겨 이어 붙이지 않습니다.
+```bash
+python scripts/workshop.py monitor --label baseline
+```
 
-[참가자 가이드](../README.ko.md) · [강사 준비·시간표](instructor.ko.md) · [문제 해결](troubleshooting.ko.md) · [평가 방법·개선 결과](validation.ko.md)
+**완료 확인:** JSON 출력에 run의 `expected_trace_count`, 같은 `observed_trace_count`, `complete: true`가 나옵니다. **다르면:** 중단한 실행에만 `--hours 24`를 붙이고 [9단계](../README.ko.md#lab-g)로 돌아갑니다.
+
+`monitor`는 기본으로 최근 2시간을 조회합니다. `--hours`는 같은 trace coverage 조회의 KQL 필터와 API 시간 범위를 함께 늘리며, agent/run 필터와 정확한 trace 수·sampling 검사는 유지됩니다. 포털의 날짜 선택이나 `azd ai agent monitor` 로그 스트리밍과는 다른 기능입니다.
+
+실습 에이전트는 `microsoft.fixed_percentage` 값 `1.0`으로 완전한 trace coverage를 수집하며 공유 Application Insights sampling 정책은 그대로 둡니다.
+
+- 포털 대시보드에는 smoke 또는 추가 UI 호출이 섞여 48개 본평가 응답보다 범위가 넓을 수 있습니다.
+- 표시된 추정 비용 `$0`은 전체 Azure 청구액이 아닙니다.
+- Tools chart가 비어 있어도 코드 수준 IQ span이 없었다는 뜻은 아닙니다.
+
+운영에는 sampling, 개인정보, retention, alert, 비용, 권한 부여 정책이 필요합니다.
+
+↩ [9단계 evidence](../README.ko.md#lab-g).
 
 <a id="background"></a>
 <a id="배경-learning-loop와-frontier-ecosystems"></a>
 
-## 배경: Learning loop와 frontier ecosystems — 선택 자료
+<details>
+<summary>선택 배경과 공식 출처</summary>
 
-**모델은 바꿀 수 있어도, 조직의 지식·판단 기준·개선 경험은 남아야 합니다.**
+### 배경: Learning loop와 frontier ecosystems — 선택 자료
 
-사티야 나델라는 [AI 시대 기업의 미래에 관한 원문](https://x.com/satyanadella/status/2066182223213293753)에서, 기업의 기회는 가장 좋은 모델을 고르는 데 그치지 않고 **사람과 AI의 역량이 함께 축적되는 learning loop를 소유하는 데 있다**고 설명합니다.
-여기서 *human capital*은 사람의 전문성·판단·관계이고, *token capital*은 기업이 구축하고 소유하는 AI 역량입니다. 후자는 단순한 토큰 사용량을 뜻하지 않습니다.
+**짧은 답:** 모델은 바꿀 수 있어도 조직의 지식, 판단 기준, 개선 경험은 남아야 합니다.
 
-**Learning loop**는 업무에서 얻은 경험을 평가하고, 사람의 판단을 반영해 다음 실행을 개선하는 순환 구조입니다.
-나델라는 외부 벤치마크뿐 아니라 **자기 업무의 성과를 확인하는 사내 평가(private evals)**, 실제 trace를 활용하는 학습 환경, 조회 가능한 조직의 지식베이스를 강조합니다.
-그렇게 축적한 업무 지식과 판단을 일반 모델 하나에 종속시키지 않고, 모델을 교체해도 유지하는 것이 중요합니다.
+```mermaid
+flowchart LR
+    Q["합성 질문"] --> A["Python Hosted Agent"]
+    A --> K["Foundry IQ 정책 원문 검색"]
+    K --> A
+    A --> M["고정한 세 모델 중 하나"]
+    M --> R["답변, 인용, trace"]
+    R --> E["Foundry 평가 + 업무 검사"]
+    R --> T["Trace / Monitor"]
+    E --> H["실제 원인 검토"]
+    T --> H
+    H --> P["회귀 사례 + 후보 지침"]
+    P --> A
+```
 
-**Frontier ecosystems**는 프런티어 모델 하나의 성능을 넘어, **각 기업·산업·국가가 자기 학습 루프와 지식재산을 바탕으로 가치를 만들어 갈 수 있는 생태계**라는 관점입니다.
-최신 모델을 소비하는 것만으로 끝나는 것이 아니라, 조직이 자신의 지식과 개선 과정을 통제하고 지속적으로 혁신할 수 있어야 한다는 뜻입니다.
+사티야 나델라는 [AI 시대 기업의 미래에 관한 원문](https://x.com/satyanadella/status/2066182223213293753)에서, AI 시대의 기회는 가장 좋은 모델을 고르는 데서 끝나지 않는다고 설명합니다. 사람의 전문성과 조직이 소유한 AI 역량이 함께 축적되는 learning loop가 필요하다는 뜻입니다. *human capital*은 사람의 전문성, 판단, 관계이고, *token capital*은 기업이 구축하고 소유하는 AI 역량입니다. 단순한 토큰 사용량을 뜻하지 않습니다.
 
-아래는 나델라의 관점을 **이 워크숍에 적용한 교육적 해석**입니다.
+**Learning loop**는 실제 업무, 업무별 평가, 사람의 판단, 다음 개선을 연결합니다. 조회 가능한 조직 지식, 비공개 eval, trace는 조직이 배운 내용을 보존하는 데 도움을 줍니다.
+
+**Frontier ecosystems**는 하나의 frontier 모델을 넘어 기업, 산업, 국가가 자신의 전문성과 가치를 만들 수 있어야 한다는 관점입니다.
+
+이 실습은 그 관점을 작게 해석한 교육용 예시입니다.
 
 | 관점 | 이 실습에서 해볼 일 | 조직에 남는 자산 |
 |---|---|---|
-| 조직의 기억을 활용 | 합성 출장 규정을 Foundry IQ로 검색 | 정책 원문·문서 ID·적용 기준 |
-| 업무 성과로 평가하는 learning loop | 실제 응답 → 업무 검사·Foundry 평가 → trace 검토 → V2 지침 → 같은 조건의 재평가 | 고정 정답·평가 기준·검토한 사례·개선 이유 |
-| 모델과 조직의 학습 자산을 분리 | 같은 지식·질문·평가 체계에서 Sol/Luna/Astra를 비교 | 특정 모델과 분리해 관리하는 데이터·지침·trace 연결 관계 |
+| 조직의 기억 | 합성 출장 규정을 Foundry IQ로 검색 | 정책 문서, ID, 적용 기준 |
+| 업무별 learning loop | 실제 답변 생성, 평가, trace 검토, V1/V2 비교 | 기준 정답, 평가 기준, 검토 사례, 개선 이유 |
+| 모델과 조직 자산 분리 | 같은 정책 말뭉치와 질문으로 세 고정 모델 비교 | 모델 선택과 분리해 관리하는 데이터, 지침, trace lineage |
 
-**실습의 범위:** 원문이 제시하는 비전 전체를 구현하는 것은 아닙니다.
-이 실습은 고정 모델을 사용한 **프롬프트·평가 체계의 개선**이며, fine-tuning/RL이나 자동 재학습·운영 배포를 수행하지 않습니다.
-세 후보는 모두 OpenAI 모델이므로 여러 공급자 사이의 상호운용성까지 검증했다고 주장하지 않습니다.
+이 실습은 **프롬프트와 평가 체계 개선**입니다. fine-tuning, reinforcement learning, 자동 운영 배포가 아닙니다. 세 후보는 모두 OpenAI 모델이므로 여러 공급자 간 상호운용성을 검증했다고 주장하지 않습니다.
 
-[참가자 1단계로 이동](../README.ko.md#start).
+↩ [시작](../README.ko.md#start).
 
-## 공식 출처
+### 공식 출처
 
 | 문서 | 실습에서 사용하는 내용 |
 |---|---|
-| [Foundry 모델 카탈로그](https://ai.azure.com/explore/models) · [Azure 판매 모델](https://learn.microsoft.com/azure/ai-foundry/foundry-models/concepts/models-sold-directly-by-azure) · [Endpoint와 배포 이름](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/endpoints) | 모델 ID·지역·배포 유형·추론에 쓰는 이름. 실제 접근·할당량은 지정 구독의 `preflight`로 확인 |
-| [Agent Framework Foundry hosting](https://learn.microsoft.com/agent-framework/hosting/foundry-hosted-agent?pivots=programming-language-python) | Python Hosted Agent와 Invocations hosting |
-| [OpenAI adapter](https://learn.microsoft.com/agent-framework/integrations/by-component/model-providers/openai) · [AIProjectClient](https://learn.microsoft.com/python/api/azure-ai-projects/azure.ai.projects.aiprojectclient) | 같은 Foundry 계정의 Chat Completions client와 인증된 endpoint override |
-| [Agent Server Core](https://learn.microsoft.com/python/api/overview/azure/ai-agentserver-core-readme?view=azure-python) · [Invocations](https://learn.microsoft.com/python/api/overview/azure/ai-agentserver-invocations-readme?view=azure-python) | readiness, request context, OpenTelemetry, 명시적 JSON 입출력 |
-| [Hosted session 관리](https://learn.microsoft.com/azure/foundry/agents/how-to/manage-hosted-sessions?pivots=python) | 버전에 고정한 session과 batch 요청 |
-| [구조화 출력](https://learn.microsoft.com/agent-framework/agents/structured-outputs?pivots=programming-language-python) | 서비스 강제 schema와 애플리케이션의 JSON 검증 구분 |
-| [Foundry IQ quickstart](https://learn.microsoft.com/azure/foundry/agents/quickstarts/quickstart-foundry-iq-hosted-agent) · [Retrieval pipeline](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-create-pipeline) · [Retrieve](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-retrieve) | 실제 source/base와 retrieve 호출, activity, 원본 문서 키 |
-| [데이터셋 cloud evaluation](https://learn.microsoft.com/azure/foundry/observability/how-to/cloud-evaluation-datasets) · [Hosted agent 평가](https://learn.microsoft.com/azure/foundry/observability/quickstarts/quickstart-evaluate-hosted-agent) | JSONL 데이터셋 평가와 agent-target 평가의 구분, judge와 field mapping |
-| [Tracing](https://learn.microsoft.com/azure/foundry/observability/how-to/trace-agent-setup) · [Monitor](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard) | 요청 trace와 운영 집계의 차이 |
-| [OpenTelemetry sampling](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-configuration#enable-sampling) | 실습 agent의 100% sampling과 운영 비용·개인정보 경계 |
-| [공식 Python Hosted Agent 예제](https://github.com/microsoft-foundry/foundry-samples/tree/main/samples/python/hosted-agents/agent-framework) | azd direct-code deployment와 protocol manifest |
+| [Nadella의 learning-loop와 frontier-ecosystem 논의](https://x.com/satyanadella/status/2066182223213293753) | 배경 관점. 실습은 교육적 해석입니다. |
+| [Foundry 모델 카탈로그](https://ai.azure.com/explore/models) · [Azure 판매 모델](https://learn.microsoft.com/azure/ai-foundry/foundry-models/concepts/models-sold-directly-by-azure) · [엔드포인트와 배포 이름](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/endpoints) | 모델 ID, 지역, 배포 유형, 추론에 쓰는 이름 |
+| [Agent Framework Foundry hosting](https://learn.microsoft.com/agent-framework/hosting/foundry-hosted-agent?pivots=programming-language-python) | Python Hosted Agents |
+| [OpenAI adapter](https://learn.microsoft.com/agent-framework/integrations/by-component/model-providers/openai) · [AIProjectClient](https://learn.microsoft.com/python/api/azure-ai-projects/azure.ai.projects.aiprojectclient) | 인증된 Chat Completions 클라이언트 통합 |
+| [Agent Server Core](https://learn.microsoft.com/python/api/overview/azure/ai-agentserver-core-readme?view=azure-python) · [Invocations](https://learn.microsoft.com/python/api/overview/azure/ai-agentserver-invocations-readme?view=azure-python) | readiness, request context, 원격 분석, JSON 입출력 |
+| [Hosted session 관리](https://learn.microsoft.com/azure/foundry/agents/how-to/manage-hosted-sessions?pivots=python) | 버전에 고정한 세션과 일괄 요청 |
+| [Structured Outputs](https://learn.microsoft.com/agent-framework/agents/structured-outputs?pivots=programming-language-python) | 서비스 강제 스키마와 애플리케이션 JSON 검증의 구분 |
+| [Foundry IQ quickstart](https://learn.microsoft.com/azure/foundry/agents/quickstarts/quickstart-foundry-iq-hosted-agent) · [Retrieval pipeline](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-create-pipeline) · [Retrieve API](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-retrieve) | 지식 개체, 실제 검색, 참조, 활동 |
+| [Dataset evaluation](https://learn.microsoft.com/azure/foundry/observability/how-to/cloud-evaluation-datasets) · [Hosted evaluation](https://learn.microsoft.com/azure/foundry/observability/quickstarts/quickstart-evaluate-hosted-agent) | 평가 모드, judge, 입력 매핑 |
+| [Tracing](https://learn.microsoft.com/azure/foundry/observability/how-to/trace-agent-setup) · [Monitoring](https://learn.microsoft.com/azure/foundry/observability/how-to/how-to-monitor-agents-dashboard) | 개별 요청 trace와 운영 집계 |
+| [Sampling configuration](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-configuration#enable-sampling) | trace 완전성과 운영 절충 |
+| [공식 Python Hosted Agent 예제](https://github.com/microsoft-foundry/foundry-samples/tree/main/samples/python/hosted-agents/agent-framework) | azd direct-code deployment와 프로토콜 manifest |
+
+</details>
