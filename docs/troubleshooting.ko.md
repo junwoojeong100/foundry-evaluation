@@ -2,14 +2,18 @@
 
 [참가자 가이드로 돌아가기](../README.ko.md) · [English](troubleshooting.en.md)
 
+**현재 폴더와 오류 출력을 유지하고, 실패한 단계만 찾습니다.**
+[로그인](#login) · [환경 준비](#setup-resume) · [검색](#retrieval) · [calibration](#calibration) · [수집](#collection-retry) · [평가](#evaluation-retry) · [trace](#telemetry) · [레벨 2·3](#levels) · [정리](#cleanup-recovery).
+어디서 멈췄는지 모르면 아래 표로 확인합니다. **실습 전체를 처음부터 반복하지 않습니다.**
+
 **명령 오류와 낮은 평가 점수부터 구분하세요.**
 
 | 보이는 결과 | 지금 할 일 |
 |---|---|
-| 명령이 예외·오류로 끝남, 응답 누락·중복·실행 오류 | 다음 단계를 중단하고 아래에서 원인을 해결 |
+| 명령이 예외·오류로 끝남, 응답 누락·중복·실행 오류 | 다음 단계를 중단하고 [실패한 명령부터 복구](#resume) |
 | `collect`가 `business=False`를 출력함 | 업무 검사 미통과 표시이지 실행 오류가 아님. 수집이 오류 없이 끝나면 해당 단계의 평가로 진행 |
 | 평가 job은 완료됐지만 업무/native 점수가 낮음 | 점수는 그대로 기록하고 해당 단계의 완료·포털 확인을 마침. `baseline`은 [6단계 검토](../README.ko.md#lab-d), `improved`는 [7-4 비교](../README.ko.md#compare-results), `holdout`은 [9단계 검증](../README.ko.md#lab-g)으로 진행 |
-| trace가 아직 0건이거나 일부만 보임 | 정상 운영으로 판정하지 않고 수집 지연·필터·권한 확인 |
+| trace가 아직 0건이거나 일부만 보임 | [수집 지연·조회 기간·권한 확인](#telemetry). 전체 증거가 확인됐다고 판정하지 않음 |
 | 녹화 화면만 봄 | 직접 실행 완료가 아니라 관찰로 기록 |
 
 강사에게는 **실패한 명령, 오류 문구, 현재 단계, 결과 폴더 이름**을 전달합니다.
@@ -74,7 +78,7 @@
 | 시작 시 `connections/read` 거부 | 플랫폼이 주입한 telemetry 설정을 사용하는지 확인합니다. 무작정 넓은 연결 조회 권한을 주지 않습니다. |
 | 평가 완료인데 오류 행이나 `null` 점수 | [평가 복구](#evaluation-retry)를 따릅니다. 오류를 0점·합격으로 변환하지 않습니다. |
 | `verify`는 성공했는데 `candidate_quality_gates`에 `false`가 있음 | 유효한 실행의 품질 미통과 결과입니다. [완료 후 판단](../README.ko.md#completion-decision)에 따라 그대로 보고하고 정리하며, 점수를 높이려고 재실행하지 않습니다. |
-| `production_release_approved: false` | 업무 gate를 통과해도 정상입니다. 권한 오류나 편집할 값이 아닙니다. [세 결과의 다음 행동](../README.ko.md#completion-decision)을 확인합니다. |
+| `production_release_approved: false` | 업무 gate를 통과해도 정상입니다. 권한 오류나 편집할 값이 아닙니다. [실행·품질·운영 승인의 구분](../README.ko.md#completion-decision)을 확인합니다. |
 | JSON 뒤의 azd 업데이트 안내 | 제공 실행기는 UTF-8 HTTP 본문과 확인된 안내만 분리합니다. 확장/SDK를 수업 중 무조건 업그레이드하지 않습니다. |
 | CLI credential 시간 초과 | 실제 로그인 실패와 토큰 갱신 지연을 구분합니다. 제공 코드의 60초 제한을 무한 대기로 바꾸지 않습니다. |
 | `ResourceId metadata` 평가 오류 | 강사에게 실습 전용 App Insights 연결 metadata 확인을 요청합니다. 참가자가 공유 연결을 직접 변경하지 않습니다. |

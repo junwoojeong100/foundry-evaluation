@@ -2,11 +2,11 @@
 
 [English workshop](../README.md) · [한국어](environment.ko.md)
 
-**Outcome:** an English-only workshop group in **Sweden Central**, with Foundry, Search, telemetry, three candidate models (`gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`), and a fixed auxiliary planner/judge.
+**Outcome:** a new, paid English workshop environment in **Sweden Central**, with Foundry, Search, telemetry, three candidates, a planner/judge, and a ready-to-use `.env`.
 
-Participants with a prepared `.env` should skip this document and start at [README step 1](../README.md#start).
+**Use only when you need new foundation services.** With a complete `.env`, go to [README step 1](../README.md#start). With existing services but incomplete setup, use [existing-environment preparation](instructor.en.md#existing-foundation). Do not run both paths.
 
-For self-study, you are the environment owner. Complete the [basic tool checks](instructor.en.md#tools) and [access prerequisites](instructor.en.md#access) first. Run one block at a time in the same Bash/WSL terminal; keep it open so its paths and login profile remain available.
+**Before starting:** the environment owner (you, for self-study) completes the [tool](instructor.en.md#tools) and [access](instructor.en.md#access) checks. Use one Bash/WSL terminal and one command block at a time; keep it open to preserve the path variables and login profile.
 
 **To delegate environment creation to GHCP:** start with the [separate installation and startup guide](copilot.en.md). Do not jump to execution prompts before installation and sign-in. Review the account, subscription, and billable scope; installing tools does not grant Azure permissions.
 
@@ -14,7 +14,7 @@ For self-study, you are the environment owner. Complete the [basic tool checks](
 
 **Route:** [1. Workspace](#setup-workspace) → [2. Identity/capacity](#setup-identity) → [3. Services](#setup-foundation) → [4. Access/connections](#setup-access) → [5. Auxiliary model](#setup-auxiliary) → [6. Candidates](#setup-candidates) → [handoff](#handoff).
 
-Step 2 uses only the README's **sign-in section**, then returns here. If the foundation already exists, use [existing-foundation preparation](instructor.en.md#existing-foundation) instead.
+Step 2 uses only the README's **sign-in section**, then returns here. After step 6, use the [handoff table](#handoff); do not restart setup.
 
 > New services incur costs. Use synthetic data, preserve shared/Korean resources, and never change the default Azure CLI subscription used by other work. Sweden Central resource placement does not mean GlobalStandard model inference is confined to that region.
 
@@ -23,6 +23,14 @@ Step 2 uses only the README's **sign-in section**, then returns here. If the fou
 ## 1. Create an isolated English source workspace
 
 Use a **Git clone**, not an extracted ZIP: the preparation tool records the actual source commit and file hashes. Work in the same Bash terminal and stop on an error.
+
+**There will be three paths; only two are working folders:**
+
+| Path | Purpose | Where commands run |
+|---|---|---|
+| `REPO_ROOT` | Original clone, guides, and preparation tools | Initial setup and provisioning in steps 2–5 |
+| `RUN_DIR` | This run's configuration and creation records | Passed as `--run-dir`; **do not run the participant exercise here** |
+| `RUN_DIR/workshop` | Isolated source and its generated `.env` | Python tests, sign-in, step 6, and the participant exercise |
 
 If you are not already at the root of an **unused Git clone**, start here:
 
@@ -74,12 +82,6 @@ python scripts/prepare_environment.py prepare --run-dir "$RUN_DIR"
 ```
 
 **Checkpoint:** **`$RUN_DIR/source-manifest.json`** and **`$RUN_DIR/workshop/.env`** exist. If either command failed, preserve this path and use [setup recovery](troubleshooting.en.md#setup-resume), not a new `RUN_ID`.
-
-| Folder | Purpose | When used |
-|---|---|---|
-| `REPO_ROOT` | Original clone with the guide and preparation tools | Initial setup, then provisioning in steps 2–5 |
-| `RUN_DIR` | This setup's `config.json`, source manifest, and infrastructure records | Provisioning scripts read it through `--run-dir`; it is **not** the runnable source root |
-| `RUN_DIR/workshop` | Isolated runnable source, generated `.env`, Python environment, and CLI profile | Sign-in, step 6, and the participant exercise |
 
 **The runnable configuration is now `RUN_DIR/workshop/.env`.** Editing the original clone's `.env` does not update this generated copy. Keep the saved configuration and ownership records intact when resuming.
 
@@ -141,7 +143,10 @@ The provisioner requires both ownership tags and this run's creation record. A t
 
 Search uses Basic with one replica/partition. Its `semanticSearch` and `knowledgeRetrieval` free settings do **not** make Search uptime or model calls free.
 
-If only the local Search wait expires, preserve that attempt and continue waiting for the **same resource**:
+<details>
+<summary>Recovery only: the local Search wait expired</summary>
+
+Preserve that attempt and continue waiting for the **same resource**:
 
 ```bash
 python scripts/provision_environment.py search-status --run-dir "$RUN_DIR" &&
@@ -151,11 +156,13 @@ python scripts/provision_environment.py search-status --run-dir "$RUN_DIR"
 
 Require `provisioning_state: Succeeded` and `status: running`; do not recreate the service or change region just to obtain a green screen.
 
+</details>
+
 <a id="setup-access"></a>
 
 ## 4. Grant scoped access and create connections
 
-The `user-*` operations target **the user verified in step 2**, not every future participant. Prepare other users according to the [instructor access checklist](instructor.en.md#access-boundaries).
+The `user-*` operations target **the user verified in step 2**, not every future participant. Prepare other users according to the [instructor access checklist](instructor.en.md#access).
 
 ```bash
 python scripts/provision_environment.py user-foundry --run-dir "$RUN_DIR" &&

@@ -2,11 +2,11 @@
 
 [한국어 실습](../README.ko.md) · [English](environment.en.md)
 
-**목표:** Sweden Central에 실습 전용 그룹·Foundry·Search·관측·모델을 준비하고, 참가자에게 조별 `.env`를 전달합니다.
-이미 준비된 환경을 받았다면 이 문서를 건너뛰고 [참가자 1단계](../README.ko.md#start)로 이동하세요.
+**목표:** **Sweden Central**에 새 유료 한국어 실습 환경을 만듭니다. Foundry·Search·관측 서비스·세 후보·planner/judge와 바로 쓸 수 있는 `.env`를 준비합니다.
 
-혼자 실습한다면 본인이 환경 소유자를 맡습니다. [기본 도구 확인](instructor.ko.md#tools)과 [권한 준비](instructor.ko.md#access)를 먼저 마칩니다.
-아래는 **같은 Bash/WSL 터미널에서 한 블록씩** 실행하며 오류가 나면 멈춥니다. 경로 변수와 로그인 프로필을 유지하도록 준비가 끝날 때까지 이 터미널을 열어 둡니다.
+**새 기반 서비스가 필요할 때만 사용합니다.** 완성된 `.env`가 있으면 [README 1단계](../README.ko.md#start), 서비스는 있지만 준비가 미완료라면 [기존 환경 준비](instructor.ko.md#existing-foundation)로 갑니다. 두 경로를 모두 실행하지 않습니다.
+
+**시작 전:** 환경 소유자(개인 실습이면 본인)가 [도구](instructor.ko.md#tools)·[권한](instructor.ko.md#access)을 확인합니다. 같은 Bash/WSL 터미널에서 한 블록씩 실행하며, 경로 변수·로그인 프로필을 유지하도록 끝까지 열어 둡니다.
 
 **GHCP에 환경 생성을 맡기려면:** [별도 도구 설치·시작 안내](copilot.ko.md)를 먼저 따릅니다. 설치·로그인 전 실행 요청 단계로 건너뛰지 않습니다. 계정·구독·과금 범위를 확인하고 승인하며, 도구 설치가 Azure 권한을 대신하지 않습니다.
 
@@ -14,7 +14,7 @@
 
 **순서:** [1. 실행 폴더](#setup-workspace) → [2. 계정·용량](#setup-identity) → [3. 서비스](#setup-foundation) → [4. 권한·연결](#setup-access) → [5. 보조 모델](#setup-auxiliary) → [6. 후보 모델](#setup-candidates) → [실습으로 복귀](#handoff).
 
-2단계에서는 README의 **로그인 부분만** 실행하고 이 문서로 돌아옵니다. 기반 서비스가 이미 있으면 새로 만들지 말고 [기존 환경 준비](instructor.ko.md#existing-foundation)를 따릅니다.
+2단계에서는 README의 **로그인 부분만** 실행하고 돌아옵니다. 6단계를 마치면 [전달 경로](#handoff)를 따르며 준비를 처음부터 반복하지 않습니다.
 
 > 새 서비스에는 비용이 발생합니다. 합성 데이터만 사용하고, 공유 자원과 기본 Azure CLI 구독은 변경하지 않습니다.
 > 서비스 위치가 Sweden Central이어도 **GlobalStandard 모델의 추론이 그 리전 안에만 머문다는 뜻은 아닙니다.**
@@ -23,7 +23,17 @@
 
 ## 1. 새 실행 폴더 준비
 
-**할 일:** 이 도구는 Git commit으로 소스 버전을 확인하므로 ZIP이 아니라 **아직 실습하지 않은 Git clone**에서 실행합니다. 그런 폴더의 루트에 있지 않다면 먼저 아래를 실행합니다.
+이 도구는 Git commit으로 소스 버전을 확인하므로 ZIP이 아니라 **아직 실습하지 않은 Git clone**에서 실행합니다.
+
+**경로는 세 개이며, 명령을 실행할 곳은 두 곳입니다.**
+
+| 경로 | 역할 | 명령을 실행하는 단계 |
+|---|---|---|
+| `REPO_ROOT` | 원래 clone·가이드·준비 도구 | 초기 준비와 2–5단계 서비스 생성 |
+| `RUN_DIR` | 이번 실행의 설정·생성 기록 | `--run-dir` 인자로만 전달. **여기서 참가자 실습을 실행하지 않음** |
+| `RUN_DIR/workshop` | 독립 소스와 생성된 `.env` | Python 테스트·로그인·6단계·이후 참가자 실습 |
+
+미사용 clone의 루트에 있지 않다면 먼저 실행합니다.
 
 ```bash
 git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evaluation-setup-ko &&
@@ -76,12 +86,6 @@ python scripts/prepare_environment.py prepare --run-dir "$RUN_DIR"
 ```
 
 **완료 확인:** **`$RUN_DIR/source-manifest.json`**과 **`$RUN_DIR/workshop/.env`**가 있습니다. 두 명령 중 하나라도 실패하면 새 `RUN_ID`를 만들지 말고, 이 경로를 유지한 채 [환경 준비 복구](troubleshooting.ko.md#setup-resume)를 따릅니다.
-
-| 폴더 | 역할 | 사용하는 단계 |
-|---|---|---|
-| `REPO_ROOT` | 가이드와 준비 도구가 있는 원래 clone | 초기 준비, 이후 2–5단계의 서비스 생성 |
-| `RUN_DIR` | 이번 준비의 `config.json`·소스 manifest·서비스 생성 기록 | 준비 스크립트가 `--run-dir`로 읽는 폴더. **실습 소스 루트가 아님** |
-| `RUN_DIR/workshop` | 생성된 `.env`·Python 환경·CLI 프로필을 쓰는 실제 실행 폴더 | 로그인, 6단계, 이후 참가자 실습 |
 
 **이후 실습이 읽는 설정은 `RUN_DIR/workshop/.env`입니다.** 원래 clone의 `.env`를 수정해도 생성된 복사본은 바뀌지 않습니다. 재개할 때는 저장된 설정과 소유권 기록을 유지합니다.
 
@@ -166,7 +170,7 @@ python scripts/provision_environment.py search-status --run-dir "$RUN_DIR"
 ## 4. 필요한 권한과 연결 준비
 
 **할 일:** 새 자원 범위에만 역할과 연결을 만듭니다. `user-*` 명령은 **2단계에서 검증한 사용자 한 명**에게 적용됩니다.
-다른 참가자는 [강사의 권한 체크리스트](instructor.ko.md#권한)에 따라 별도로 준비합니다.
+다른 참가자는 [강사의 권한 체크리스트](instructor.ko.md#access)에 따라 별도로 준비합니다.
 
 ```bash
 python scripts/provision_environment.py user-foundry --run-dir "$RUN_DIR" &&

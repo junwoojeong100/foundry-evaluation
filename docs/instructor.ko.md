@@ -2,11 +2,9 @@
 
 [한국어 실습](../README.ko.md) · [English](instructor.en.md)
 
-새 그룹부터 준비하는 명령과 화면은 [새 Azure 환경 가이드](environment.ko.md)에 있다. 수업에서 결과를 설명할 때는 [평가 방법과 개선 결과](validation.ko.md)를 사용한다.
+**완료 후 남길 것:** 준비된 Azure 서비스·모델 배포, 완성된 조별 `.env`, 리허설을 마친 참가자 경로다. 이 준비는 **참가자 실습 120분에 포함하지 않는다.**
 
-이 문서는 참가자 120분에 포함하지 않는 **환경 준비**다. 빈 Azure 구독에서의 전체 소요 시간은 모델 접근 승인·할당량·권한 전파에 따라 달라진다.
-
-**혼자 실습한다면:** 여기서 “강사”는 환경 소유자를 뜻하며 본인이 맡아도 된다. 준비를 한 번 마친 뒤 참가자 경로로 진행한다. 다만 승인된 구독·모델 접근·용량·아래 권한이 필요하며 문서가 이를 대신 부여하지는 않는다.
+**개인 실습을 포함한 환경 소유자용 문서다.** 완성된 환경을 받은 참가자는 [README 1단계](../README.ko.md#start)로 간다. 혼자 실습하면 “강사”는 본인이며, 승인된 구독·모델 접근·용량·아래 권한은 여전히 필요하다.
 
 **준비 순서:** [도구](#tools) → [권한](#access) → 아래 환경 경로 선택. **수업 준비일 때만** [분리된 리허설](#rehearsal-workspace) → [조별 전달](#handoff)까지 진행한다. 개인 실습은 준비 경로가 지정하는 README 단계로 바로 복귀한다.
 
@@ -78,7 +76,10 @@ azd ai agent --help
 | GHCP에 실행을 맡김 | [GHCP 설치·시작 안내](copilot.ko.md#install). 기본 도구 설치는 반복하지 않음 |
 | 환경 소유자가 직접 Azure 준비 | [권한](#access) 확인 후 새 환경 / 기존 환경 경로 선택 |
 
-## 사전 준비
+<a id="사전-준비"></a>
+
+<details>
+<summary>참고: 준비할 Azure 서비스와 조건</summary>
 
 | 항목 | 준비 상태 |
 |---|---|
@@ -93,6 +94,8 @@ azd ai agent --help
 | 데이터 | 합성 문서만 사용, 실습 접두사는 조마다 다름 |
 
 지원 환경은 [Hosted Agent quickstart](https://learn.microsoft.com/azure/foundry/agents/quickstarts/quickstart-hosted-agent)를 참고한다. Agent hosting과 SDK 패키지의 GA/preview 상태를 혼동하지 않는다.
+
+</details>
 
 <a id="access"></a>
 
@@ -239,6 +242,12 @@ python -m unittest discover -s tests -v
 
 **수업용 모델의 소유권은 준비 폴더에 남긴다.** 그 폴더에서 전체 실습을 리허설하면 10단계 cleanup이 참가자에게 공유할 모델까지 삭제할 수 있다.
 
+```text
+모델 준비 폴더 (공유 모델의 소유권 유지)
+  -> .env만 복사 + 미사용 이름 -> 리허설 폴더 -> 1-10단계
+  -> .env만 복사 + 미사용 이름 -> 각 조의 폴더 -> 1-10단계
+```
+
 모델 준비가 끝나면 별도 리허설 clone을 만든다. 아래 폴더가 이미 있으면 다른 미사용 이름을 쓰며 기존 폴더를 지우지 않는다.
 
 ```bash
@@ -327,7 +336,7 @@ cd foundry-evaluation-rehearsal-ko
 
 ## 운영 확장 범위
 
-[레벨 2·3](#levels)이 custom 평가기, 인사이트, 생성 rubric, 스트레스 테스트, red team, CI 릴리스 gate를 다룬다. 그 밖에 확장할 수 있는 주제는 continuous evaluation, 알림, prompt optimizer, fine-tuning/RL, 여러 공급자의 모델, 사용자별 문서 권한이다. 이번 실습의 “사람이 검토한 회귀 데이터 → 개선 후보 → holdout” 통제 구조를 유지하면서 추가한다.
+[레벨 2·3](#levels)이 custom 평가기, 인사이트, 생성 rubric, 스트레스 테스트, red team, agent·trace 평가, 연속 평가와 릴리스 gate를 다룬다. 알림, prompt optimizer, fine-tuning/RL, 여러 공급자의 모델, 사용자별 문서 권한은 실습 범위 밖이다. 확장할 때도 “검토한 회귀 데이터 → 개선 후보 → holdout”의 통제 구조를 유지한다.
 
 ## 정리 원칙
 
@@ -342,3 +351,19 @@ Foundry 에이전트를 수정하거나 설명하기 전에 `microsoft-foundry` 
 모델·지침·데이터셋·trace의 연결 관계를 보존하고, 다른 모델로 대체하거나 누락·오류 행을 성공으로 집계하지 않는다.
 문서의 명령은 실제 코드와 일치해야 하며, Azure 실행 전에 [로컬 테스트](#로컬-설치와-테스트)를 통과시킨다.
 실제 cloud 실행 결과는 [평가 방법과 개선 결과](validation.ko.md)에 별도로 구분한다.
+
+<a id="documentation-checks"></a>
+
+## 가이드를 수정할 때
+
+영문·국문 실행 경로를 함께 유지한다. 결과와 시작 조건부터 쓰고, 선택 배경 설명은 접어 둔다. 실행 단계마다 **작업 위치·명령·완료 증거·복구 경로**를 명시한다. 기록된 예시 점수와 독자의 통과 기준은 구분한다.
+
+가상환경을 활성화한 **원래 clone**에서 실행한다.
+
+```bash
+python -m unittest discover -s tests -p 'test_docs.py' -v
+```
+
+로컬 링크·앵커·첨부 파일, 코드 블록 구조, Bash·JSON 문법, 실제 파서와 Python 명령 인자의 일치, 한영 명령 순서를 확인한다. 예시 명령을 실행하거나 Azure에 접속하지 않으며, 과거 cloud 점수를 재검증하는 테스트가 아니다. 가이드가 없는 실행용 소스 스냅샷에서는 문서 검사를 건너뛴다.
+
+추가로 참가자·환경 소유자·재개 사용자 입장에서 [시작점 표](../README.ko.md#start-here)를 따라 읽는다. 자동 검사가 처음 읽는 사람의 이해도까지 입증하지는 않는다.

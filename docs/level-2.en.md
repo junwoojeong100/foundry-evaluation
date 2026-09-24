@@ -4,18 +4,18 @@
 
 **What you finish with in about 40 minutes:** a comparison of the same 36 saved V1 and V2 responses, with an explanation that **distinguishes business checks from LLM scores**.
 
-1. [Register](#register-evaluators) the five decision, amount, and citation checks (your **business contract**) as a **code evaluator**, and a scoring guide as a **rubric evaluator**.
-2. [Evaluate](#evaluate-suite) your saved V1 and V2 responses with **nine evaluators in one comparison group (eval group)**.
-3. [Read](#insights) Foundry's **run comparison** (statistical test) and **failure clusters**.
+**Route:** [1. Register two evaluators](#register-evaluators) → [2. Score the saved responses](#evaluate-suite) → [3. Compare runs and failures](#insights) → [report](#finish-level-2).
 
-**You need:** steps 1–9 of the [main guide](../README.md) finished in this folder, and **step 10 not yet run**.
-
-- No new agent responses are collected; only the judge model is called (**additional cost**).
-- Afterwards, go on to [Level 3](level-3.en.md) or return to [step 10](../README.md#cleanup), which also deletes the evaluators you create here.
+| Before you start | Required state |
+|---|---|
+| Main workshop | Steps 1–9 finished in this folder; **step 10 cleanup not yet run** |
+| Inputs | Saved `baseline` and `improved` responses: 18 each. Holdout is not used. |
+| Cost | Additional judge calls; **no new agent responses** |
+| After this level | [Level 3](level-3.en.md) or [step 10 cleanup](../README.md#cleanup), which also removes these custom evaluators |
 
 **Where to run:** your existing **Terminal A, at the repository root**. In a new terminal, [restore the environment only](../README.md#resume-shell). Keep names and instructions unchanged. If you used recovery labels, replace `baseline` and `improved` below with those labels.
 
-**How to proceed:** follow sections 1–3 in order. Read pass counts in section 2, then mean scores and failure causes in section 3, and add them to your [closing notes](#finish-level-2). You can finish without opening the example scores or optional portal view.
+**Read pass counts in section 2; read mean scores and failure causes in section 3.** Add both to your report. Example scores and the optional portal view are not required steps.
 
 <a id="register-evaluators"></a>
 
@@ -98,7 +98,7 @@ indirect_attack            safety   18/18     18/18
 
 `business_contract` matches the recorded local result (0/18 → 17/18). The remaining V2 failure is Sol's D02 decision label; `policy_rubric` passed that row, which is why a deterministic contract check and an LLM rubric complement each other.
 
-A second run on the same saved responses gave identical `business_contract` counts, while LLM-judged counts moved by one to three rows (for example, `policy_rubric` on baseline went from 7/18 to 10/18). Compare LLM-judged criteria by their direction, not by a single row.
+A second run on the same saved responses gave identical `business_contract` counts, while LLM-judged counts moved by one to three rows (for example, `policy_rubric` on baseline went from 7/18 to 10/18). Inspect the failed rows; one small run does not establish a reliable improvement.
 
 </details>
 

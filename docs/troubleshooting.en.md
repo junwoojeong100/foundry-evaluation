@@ -2,6 +2,10 @@
 
 [Return to the English guide](../README.md) · [한국어](troubleshooting.ko.md)
 
+**Keep the current folder and error output. Find only the failed stage:**
+[sign-in](#login) · [environment setup](#setup-resume) · [retrieval](#retrieval) · [calibration](#calibration) · [collection](#collection-retry) · [evaluation](#evaluation-retry) · [traces](#telemetry) · [Levels 2–3](#levels) · [cleanup](#cleanup-recovery).
+If the stage is unclear, use the tables below. **Do not restart the whole workshop.**
+
 **First distinguish execution failure from low quality.**
 
 | What you see | Next action |
@@ -72,7 +76,7 @@ For a new experiment or another language, obtain unused names and use a separate
 | `connections/read` on startup | Use injected telemetry configuration rather than broadening access indiscriminately |
 | Completed job with errors or null scores | Follow [evaluation recovery](#evaluation-retry); do not turn errors into zero scores or passes |
 | `verify` succeeds but a `candidate_quality_gates` value is `false` | A valid execution can expose a quality failure. [Follow the completion decision](../README.md#completion-decision); report it and clean up, not rerun for a better score. |
-| `production_release_approved: false` | Expected, even when business gates pass. This is not a permission error or a field to edit. [Read the three outcomes](../README.md#completion-decision). |
+| `production_release_approved: false` | Expected, even when business gates pass. This is not a permission error or a field to edit. [Separate execution, quality, and approval](../README.md#completion-decision). |
 | CLI extension notice after JSON | The supplied parser separates recognized notices only. Do not upgrade the extension mid-experiment just to remove a notice. |
 | Missing App Insights `ResourceId` metadata | Ask an authorized instructor to inspect the dedicated connection; do not modify a shared connection |
 | Unfamiliar cleanup target | Stop and use [cleanup recovery](#cleanup-recovery). Do not edit or delete the ownership ledger to force deletion. |

@@ -2,21 +2,31 @@
 
 [English guide](README.md)
 
-**120분 동안 하는 일:**
+**제공된 에이전트를 실행하고, 세 모델의 V1·V2 결과를 비교해 변화를 근거로 설명합니다.** 120분 동안 앱 코드 작성 없이 **실제 응답 48개**를 수집합니다. 마지막에는 **검토한 사례, V1 → V2 비교, holdout 판단** 세 항목을 보고합니다. 목표는 만점이나 운영 승인이 아닙니다.
 
-1. Microsoft Foundry에서 제공된 출장 규정 에이전트를 로컬과 Azure에서 실행합니다.
-2. V1 지침을 세 모델로 평가하고, 실제 사례 하나를 검토합니다.
-3. 제공된 V2 지침을 배포해 같은 질문과 따로 남겨 둔 질문으로 평가합니다.
+<a id="start-here"></a>
+<a id="other-starts"></a>
+<a id="다른-상황"></a>
 
-앱 코드는 작성하지 않고 **실제 응답 48개**를 비교합니다. 마지막에는 **검토한 사례, V1 → V2 변화, holdout 판단** 세 가지만 보고합니다. 목표는 근거로 설명하는 개선이지 **만점이나 운영 승인이 아닙니다.**
+## 내 상황에 맞는 시작점
 
-**준비물:**
+| 현재 상태 | 시작할 곳 |
+|---|---|
+| 준비된 Azure 환경과 완성된 조별 `.env`가 있음 | 아래 도구를 확인하고 [1–10단계](#start)를 순서대로 진행 |
+| Azure 서비스는 있지만 설정·모델·권한 준비가 필요함 | 환경 소유자가 [기존 환경 준비](docs/instructor.ko.md#existing-foundation) 진행 |
+| 준비된 Azure 환경이 없음 | [새 전용 환경 준비](docs/environment.ko.md)를 마치고 그 문서가 지정한 단계로 복귀 |
+| 이전 실행을 이어가는 중 | [같은 폴더에서 복구](docs/troubleshooting.ko.md#resume). 다시 clone하지 않음 |
+| Copilot CLI(GHCP)에 실행을 맡기고 싶음 | [선택 Copilot 가이드](docs/copilot.ko.md) 사용. 수동 실행과 동시에 진행하지 않음 |
+
+혼자 실습하면 본인이 환경 소유자입니다. **환경 준비 경로는 하나만 선택합니다.**
+
+**1단계 전에 필요한 것:**
 
 - **환경:** 강사가 준비한 Azure 환경(**유료** 서비스)과 완성된 조별 `.env`.
 - **로컬 도구:** Git, Python 3.13, Bash, curl, 편집기, 브라우저. Windows는 WSL을 씁니다.
 - **Azure 도구:** Azure CLI와 azd(`microsoft.foundry` 확장). [도구 설치·확인](docs/instructor.ko.md#tools)
 
-**처음 실습한다면:** 위 도구와 완성된 `.env`를 준비한 뒤 [1단계](#start)부터 **10단계까지 순서대로** 진행합니다. Azure 환경·기본 도구 준비 시간은 120분에 포함하지 않습니다. 준비가 안 됐다면 [다른 상황](#other-starts), 이전 실습을 이어간다면 [기존 폴더에서 재개](docs/troubleshooting.ko.md#resume)를 따릅니다.
+도구 설치·Azure 환경 준비는 120분에 포함하지 않습니다. **로컬 실행도 유료 Azure 모델과 Search를 호출합니다.** 직접 실행할 때는 Copilot·Playwright가 필요 없습니다.
 
 <a id="실습-개요"></a>
 
@@ -35,13 +45,7 @@ V1: 18응답 → trace 하나 검토 → V2: 18응답 → 후보 고정 → hold
 
 <a id="evaluation-runs"></a>
 
-**질문과 결과 이름은 아래처럼 연결됩니다.** `--split`은 질문 묶음, `--label`은 결과를 저장할 폴더 이름입니다. 기본 경로에서는 명령의 이름을 그대로 씁니다.
-
-| 단계 | 지침 | 질문 묶음(`--split`) | 결과 이름(`--label`) | 응답 수 |
-|---|---|---|---|---|
-| 5. 첫 평가 | V1 | `dev`: 비교에 쓸 6문항 | `baseline` | 6 × 3모델 = 18 |
-| 7. 변경 후 평가 | V2 | `dev`: **같은 6문항** | `improved` | 6 × 3모델 = 18 |
-| 8. 마지막 확인 | 고정 V2 | `holdout`: 따로 남겨 둔 4문항 | `holdout` | 4 × 3모델 = 12 |
+`--split`은 질문 묶음, `--label`은 결과 폴더 이름입니다. 아래 이름을 그대로 씁니다. **`improved`는 V2 후보의 이름이지, 점수가 좋아졌다는 판정이 아닙니다.**
 
 | 단계 | 다음으로 넘어가는 기준 |
 |---|---|
@@ -49,14 +53,14 @@ V1: 18응답 → trace 하나 검토 → V2: 18응답 → 후보 고정 → hold
 | [2. 정책 검색](#lab-a) | 내 지식베이스가 `TRAVEL-2026`을 반환 |
 | [3. 로컬 실행](#local) | `HTTP 200`과 실제 V1 답변 |
 | [4. 배포](#deploy) | 원격 답변에 숫자 agent 버전이 있음 |
-| [5. V1 평가](#lab-c) | 18응답 수집·평가 완료 |
+| [5. V1 평가](#lab-c) | `baseline`: `dev` 6문항 × 3모델 = V1 18응답 평가 완료 |
 | [6. 한 사례 검토](#lab-d) | 원래 trace와 함께 검토 기록 저장 |
-| [7. V2 평가](#lab-e) | **같은 dev 6문항**에 대한 V2 18응답 평가 완료 |
-| [8. Holdout 평가](#lab-f) | 바꾸지 않은 V2의 12응답 평가 완료 |
+| [7. V2 평가](#lab-e) | `improved`: **같은 `dev` 6문항** × 3모델 = V2 18응답 평가 완료 |
+| [8. Holdout 평가](#lab-f) | `holdout`: 따로 남겨 둔 4문항 × 3모델 = 바꾸지 않은 V2의 12응답 평가 완료 |
 | [9. 증거 확인·보고](#lab-g) | 48응답·48 trace·검토 이력 검증과 세 항목 보고 |
 | [10. 정리](#cleanup) | 내 소유 객체만 삭제 |
 
-**시간:** 1–2단계 25분, 3–4단계 15분, 5–6단계 30분, 7–8단계 30분, 9–10단계 15분, 여유 5분입니다. **9단계에서 결과를 보고한 뒤 10단계에서 정리**합니다. [레벨 2·3](#levels)은 시간이 더 있을 때만 정리 전에 추가합니다.
+**시간:** 1–2단계 25분 · 3–4단계 15분 · 5–6단계 30분 · 7–8단계 30분 · 9–10단계 15분 · 여유 5분. **9단계 보고 → 10단계 정리** 순서입니다. 선택 실습인 [레벨 2·3](#levels)은 그 사이에 하며, 정리 뒤에는 시작하지 않습니다.
 
 **진행 방법**
 
@@ -83,6 +87,8 @@ V1: 18응답 → trace 하나 검토 → V2: 18응답 → 후보 고정 → hold
 ### 1-1. 코드와 `.env` 준비
 
 **터미널 A — 폴더 받기:** Bash를 실행한 뒤(이미 Bash라면 첫 블록은 건너뜀) 새 폴더로 clone합니다.
+
+**사용하지 않은 clone이나 압축을 푼 ZIP 폴더**가 이미 있다면 그 루트로 이동하고 clone은 건너뜁니다. 이전 실행이 있다면 새로 시작하지 말고 [복구 안내](docs/troubleshooting.ko.md#resume)를 따릅니다.
 
 ```bash
 bash
@@ -431,12 +437,15 @@ Playground에서 호출한 V1 답변입니다. 금액·판단은 맞지만 `cita
 
 ## 5. 세 모델의 baseline 평가하기
 
-**목표:** V1 응답 18개(dev 6문항 × 3모델)를 `baseline`으로 모아 평가합니다([자세히](#무엇을-평가하나요)).
+**목표:** V1 응답 18개(dev 6문항 × 3모델)를 `baseline`으로 모아 평가합니다.
 
-- **업무 검사:** 판단·금액·인용 ID가 고정 정답과 맞는지 봅니다.
-- **Foundry 점수:** 답변 텍스트의 groundedness(근거성)·relevance(관련성)를 1–5점으로 봅니다. 4점 이상이 통과입니다.
+| 명령 | 하는 일 |
+|---|---|
+| `collect` | 에이전트를 호출해 답변을 만들고, 판단·금액·인용을 Python 업무 검사로 확인 |
+| `evaluate` | **저장된 답변**을 Foundry judge로 채점. 새 답변은 만들지 않으며 groundedness(근거성)·relevance(관련성)는 5점 중 4점 이상이면 통과 |
+| `compare` / `summary` | 저장된 결과를 로컬에서 집계·요약. 모델 호출 없음 |
 
-9단계의 gate(통과 기준)는 업무 검사로 정하고, Foundry 점수는 보조 신호입니다.
+9단계의 품질 gate(통과 기준)는 **업무 검사**로 정합니다. Foundry 점수는 별도 품질 신호이며 업무 검사를 대신하지 않습니다([평가기 입력](#무엇을-평가하나요)).
 
 ### 5-1. Judge 확인
 
@@ -902,7 +911,7 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 
 ## 10. 내 실습 자원만 정리하기
 
-**목표:** 이 폴더가 만든 live agent·지식 객체·역할만 지우고, 로컬 결과와 공유 서비스는 남깁니다.
+**목표:** 이 폴더가 만들어 소유한 객체를 지우고, 로컬 증거와 공유 서비스는 남깁니다. 개인 실습에서는 직접 만든 후보 모델 배포도 삭제 대상일 수 있습니다.
 
 **주의:** 정리 전에 확인합니다.
 
@@ -918,10 +927,15 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 python scripts/workshop.py cleanup --dry-run
 ```
 
-**완료 확인:** 계획에 이 폴더의 객체만 있고, 강사가 준비한 모델 배포는 없습니다.
+**완료 확인:** 모든 대상이 이 폴더의 소유권 기록에 속합니다.
 
-- 내 agent(`LAB_AGENT_NAME`), 내 `LAB_PREFIX` 지식 객체, 내 역할
-- 레벨 2·3을 했을 때만: `schedules`(`<LAB_PREFIX>-continuous`), `custom_evaluators`(`<LAB_PREFIX>-...`), `generated_datasets`(`sys-evalartifacts-<LAB_PREFIX>-generated-rubric`, `stress-test`가 만든 `dgj_...`)
+| 계획 필드 | 있어야 할 대상 |
+|---|---|
+| `agent`, `search_objects`, `role_assignments` | 내 `LAB_AGENT_NAME`, `LAB_PREFIX` 지식 객체, 이 폴더에서 만든 역할 |
+| `models` | **공유 배포를 쓰는 참가자는 빈 목록.** 모델 준비 폴더에서 개인 실습을 했다면 `prepare-models`로 만든 후보가 포함될 수 있으며, 다른 사용자가 필요로 하지 않을 때만 삭제 |
+| `schedules`, `custom_evaluators`, `generated_datasets` | 레벨 2·3을 하지 않았다면 빈 목록. 했다면 이 폴더의 일정·평가기·생성 데이터셋만 포함 |
+
+기반 서비스와 보조 planner/judge는 보존합니다. `.env`에 모델 이름이 있다는 것만으로 소유권이 생기지는 않습니다.
 
 **다르면:** 멈추고 강사에게 알립니다. 아무것도 삭제하지 않습니다.
 
@@ -958,7 +972,7 @@ python scripts/workshop.py check-cleanup
 
 </details>
 
-**기본 실습 완료:** [9-2의 보고](#finish)와 삭제 확인 결과를 보관합니다. 로컬 증거 파일은 지우지 않습니다.
+**기본 실습 완료:** [9-2의 보고](#finish)와 삭제 확인 결과를 보관합니다. 로컬 증거 파일은 지우지 않습니다. 직접 만든 **본인 전용 개인 실습 환경**이라면 [기반 서비스 최종 정리](docs/environment.ko.md#final-cleanup)를 별도로 선택할 수 있으며, 공유 그룹은 삭제하지 않습니다.
 
 <details>
 <summary>저장된 증거의 위치</summary>
@@ -976,22 +990,6 @@ python scripts/workshop.py check-cleanup
 뒤의 실습 명령이 이 파일들을 읽습니다. 지우거나 예시 결과로 바꾸지 않습니다.
 
 </details>
-
-<a id="other-starts"></a>
-
-## 다른 상황
-
-완성된 `.env`로 시작했다면 이 표는 필요 없습니다. 그 밖의 시작이나 개인 실습 종료 때만 봅니다.
-
-| 현재 상태 | 할 일 |
-|---|---|
-| 기반 서비스는 있지만 모델·권한 준비가 필요함 | 환경 소유자가 [기존 환경 준비](docs/instructor.ko.md#existing-foundation)를 **보조 모델 → 세 후보 모델** 순서로 진행 |
-| 기존 서비스의 `.env`를 직접 만듦 | [설정값별 포털 확인 위치](docs/instructor.ko.md#existing-settings)를 따름. 포털 페이지 주소, 프로젝트 endpoint, 모델 endpoint는 서로 다른 값 |
-| 준비된 Azure 환경이 없음 | [새 환경 준비](docs/environment.ko.md)를 마치고 그 문서가 지정한 단계로 복귀. 혼자 실습하면 본인이 환경 소유자입니다. |
-| 이전 실행을 이어가는 중 | **같은 폴더**에서 [복구 안내](docs/troubleshooting.ko.md#resume)를 따름. 다시 clone하지 않습니다. |
-| 사용하지 않은 clone이나 ZIP이 이미 있음 | 1-1에서 clone 대신 그 폴더 루트로 이동. 이전 실행의 결과를 지워 폴더를 재사용하지 않습니다. |
-| GHCP에 실행을 맡김 | [추가 도구·연결·실습 요청 방법](docs/copilot.ko.md)을 따름. 직접 실행에는 GHCP·Playwright가 필요 없습니다. |
-| 직접 만든 전용 환경에서 개인 실습으로 10단계를 마침 | 그때만 [기반 서비스까지 최종 정리](docs/environment.ko.md#final-cleanup)를 선택할 수 있음. 공유 그룹은 삭제하지 않습니다. |
 
 ## 참고 문서
 

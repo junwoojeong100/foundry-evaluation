@@ -2,21 +2,31 @@
 
 [한국어 가이드](README.ko.md)
 
-**In 120 minutes you will:**
+**Run a provided agent, compare V1 and V2 on three models, and explain the change with evidence.** In 120 minutes, you collect **48 real responses** without writing application code. You finish with a three-point report: **one reviewed case, the V1 → V2 comparison, and a holdout decision**. Perfect scores and production approval are not the goal.
 
-1. Run a provided travel-policy agent on Microsoft Foundry, locally and in Azure.
-2. Evaluate its V1 instructions with three models and review one real case.
-3. Deploy the provided V2 instructions and evaluate them on the same questions and on held-out questions.
+<a id="start-here"></a>
+<a id="other-starts"></a>
+<a id="other-situations"></a>
 
-You compare **48 real responses** without writing application code, then report your reviewed case, the V1 → V2 change, and your holdout decision. The goal is an evidence-based improvement, **not perfect scores or production approval**.
+## Choose your starting point
 
-**You need:**
+| Your situation | Start here |
+|---|---|
+| You have a prepared Azure environment and a complete team `.env` | Check the tools below, then follow [steps 1–10](#start) in order |
+| Azure services exist, but you need settings, models, or access | As the environment owner, use [existing-environment preparation](docs/instructor.en.md#existing-foundation) |
+| You have no prepared Azure environment | [Create a dedicated environment](docs/environment.en.md); return at the step that guide names |
+| You are continuing an earlier attempt | [Resume in the same folder](docs/troubleshooting.en.md#resume); do not clone again |
+| You want Copilot CLI (GHCP) to execute the steps | Use the [optional Copilot guide](docs/copilot.en.md); do not also execute the steps manually |
+
+For self-study, you are the environment owner. **Choose one preparation path, not both.**
+
+**Before step 1, you need:**
 
 - **Environment:** the instructor's prepared Azure environment (**paid** services) and your team's complete `.env`.
 - **Local tools:** Git, Python 3.13, Bash, curl, an editor, and a browser; on Windows, use WSL.
 - **Azure tools:** Azure CLI and azd with the `microsoft.foundry` extension. [Install and check the tools](docs/instructor.en.md#tools)
 
-**First run:** once the tools above and your complete `.env` are ready, follow **steps 1–10 in order**, starting at [step 1](#start). Preparing Azure and installing the basic tools are outside the 120 minutes. If you are not ready, see [other situations](#other-starts). For an earlier attempt, [resume in its existing folder](docs/troubleshooting.en.md#resume).
+Tool installation and Azure preparation are outside the 120 minutes. **Local execution still calls paid Azure models and Search.** Manual execution needs neither Copilot nor Playwright.
 
 <a id="workshop-overview"></a>
 
@@ -35,13 +45,7 @@ V1: 18 responses → review one trace → V2: 18 responses → freeze → holdou
 
 <a id="evaluation-runs"></a>
 
-**These names connect the questions to their results.** `--split` selects the question set; `--label` names the result folder. Keep the names in the provided commands for the main path.
-
-| Stage | Instructions | Question set (`--split`) | Result name (`--label`) | Responses |
-|---|---|---|---|---|
-| 5. First evaluation | V1 | `dev`: six comparison questions | `baseline` | 6 × 3 models = 18 |
-| 7. Evaluation after the change | V2 | `dev`: **the same six questions** | `improved` | 6 × 3 models = 18 |
-| 8. Final check | Frozen V2 | `holdout`: four held-out questions | `holdout` | 4 × 3 models = 12 |
+`--split` selects the questions; `--label` names their result folder. Keep the names below. **`improved` is the V2 candidate's name, not a claim that it scored better.**
 
 | Step | Continue when |
 |---|---|
@@ -49,14 +53,14 @@ V1: 18 responses → review one trace → V2: 18 responses → freeze → holdou
 | [2. Retrieve policies](#lab-a) | Your knowledge base returns `TRAVEL-2026` |
 | [3. Run locally](#local) | Readiness is `HTTP 200` and the agent returns a real V1 answer |
 | [4. Deploy](#deploy) | The hosted answer has a numeric agent version |
-| [5. Evaluate V1](#lab-c) | 18 responses are collected and evaluated |
+| [5. Evaluate V1](#lab-c) | `baseline`: `dev` 6 questions × 3 models = 18 evaluated V1 responses |
 | [6. Review one case](#lab-d) | Your review is saved with the case's original trace |
-| [7. Evaluate V2](#lab-e) | 18 V2 responses to the **same six dev questions** are evaluated |
-| [8. Evaluate holdout](#lab-f) | The unchanged V2 produces 12 evaluated responses |
+| [7. Evaluate V2](#lab-e) | `improved`: the **same `dev` 6 questions** × 3 models = 18 evaluated V2 responses |
+| [8. Evaluate holdout](#lab-f) | `holdout`: 4 held-out questions × 3 models = 12 evaluated responses from unchanged V2 |
 | [9. Verify and report](#lab-g) | 48 responses, 48 traces, and your review lineage are verified; your three-point report is filled in |
 | [10. Clean up](#cleanup) | Only your owned objects are removed |
 
-**Time:** about 25 minutes for steps 1–2, 15 for 3–4, 30 for 5–6, 30 for 7–8, and 15 for 9–10, plus a 5-minute buffer. **Report your results in step 9, then clean up in step 10.** Add [Levels 2–3](#levels) before cleanup only if you have more time.
+**Time:** 1–2: 25 min · 3–4: 15 min · 5–6: 30 min · 7–8: 30 min · 9–10: 15 min · buffer: 5 min. **Report in step 9, then clean up in step 10.** Optional [Levels 2–3](#levels) go between those steps, not after cleanup.
 
 **How to follow the steps**
 
@@ -81,6 +85,8 @@ V1: 18 responses → review one trace → V2: 18 responses → freeze → holdou
 ### 1-1. Get the source and `.env`
 
 **Terminal A — get the folder:** start Bash (skip the first block if your terminal already runs Bash), then clone into a new folder:
+
+If you already have an **unused clone or extracted ZIP**, enter its root and skip cloning. For a previous run, use [recovery](docs/troubleshooting.en.md#resume), not a fresh start.
 
 ```bash
 bash
@@ -418,7 +424,15 @@ python scripts/workshop.py smoke
 
 ## 5. Evaluate the three-model baseline
 
-**Goal:** collect and evaluate 18 V1 responses (6 dev questions × 3 models) as `baseline`. You get two result types: **business checks** for the required decision, amounts, and cited IDs, and **Foundry scores** (1–5, passing at 4) for answer quality ([details](#what-is-being-evaluated)). The business checks decide step 9's pass/fail gates; Foundry scores are a second signal.
+**Goal:** collect and evaluate 18 V1 responses (6 dev questions × 3 models) as `baseline`.
+
+| Command | What happens |
+|---|---|
+| `collect` | Calls the agent to generate answers; checks their decisions, amounts, and citations in Python |
+| `evaluate` | Calls the Foundry judge to score **those saved answers**, not generate new ones; groundedness and relevance pass at 4/5 |
+| `compare` / `summary` | Summarizes saved results locally; no model calls |
+
+Step 9's quality gates use the **business checks**. Foundry scores are a separate quality signal, not a substitute ([evaluator inputs](#what-is-being-evaluated)).
 
 ### 5-1. Check the judge
 
@@ -865,7 +879,7 @@ Stay in this folder. **Do not start these extras after step 10; it deletes the a
 
 ## 10. Clean up only your owned workshop objects
 
-**Goal:** this folder's live agent, knowledge objects, and roles removed; local results and shared services kept.
+**Goal:** remove the objects this folder created and owns; keep local evidence and shared services. For self-study, this can include candidate-model deployments.
 
 **Warning:** before cleanup:
 
@@ -881,10 +895,15 @@ Stay in this folder. **Do not start these extras after step 10; it deletes the a
 python scripts/workshop.py cleanup --dry-run
 ```
 
-**Checkpoint:** the plan lists only this folder's objects, and no instructor-prepared model deployment:
+**Checkpoint:** every target belongs to this folder's ownership record:
 
-- your agent (`LAB_AGENT_NAME`), your `LAB_PREFIX` knowledge objects, and your role assignments;
-- only if you did Levels 2–3: `schedules` (`<LAB_PREFIX>-continuous`), `custom_evaluators` (`<LAB_PREFIX>-...`), and `generated_datasets` (`sys-evalartifacts-<LAB_PREFIX>-generated-rubric`, and `dgj_...` from `stress-test`).
+| Plan field | Expected target |
+|---|---|
+| `agent`, `search_objects`, `role_assignments` | Your `LAB_AGENT_NAME`, `LAB_PREFIX` knowledge objects, and roles created by this folder |
+| `models` | **Empty for participants using shared deployments.** For self-study in the model-preparation folder, it can contain the candidates you created with `prepare-models`; delete them only if nobody else needs them. |
+| `schedules`, `custom_evaluators`, `generated_datasets` | Empty unless you added Levels 2–3; then only this folder's schedule, evaluators, and generated datasets |
+
+The foundation and auxiliary planner/judge are preserved. A model's name in `.env` does not establish ownership.
 
 **If not:** stop and tell the instructor; delete nothing.
 
@@ -921,7 +940,7 @@ python scripts/workshop.py check-cleanup
 
 </details>
 
-**Main workshop complete:** keep your [9-2 report](#finish) and cleanup confirmation. Preserve the local evidence files.
+**Main workshop complete:** keep your [9-2 report](#finish) and cleanup confirmation. Preserve the local evidence files. If you created an **exclusively owned self-study environment**, you may separately choose [final foundation cleanup](docs/environment.en.md#final-cleanup); never delete a shared group.
 
 <details>
 <summary>Where your saved evidence is</summary>
@@ -939,22 +958,6 @@ python scripts/workshop.py check-cleanup
 Later workshop commands read these files. Do not delete them or replace them with an example run.
 
 </details>
-
-<a id="other-starts"></a>
-
-## Other situations
-
-Use this table only if you did not start from a complete `.env`, or after finishing a dedicated self-study run.
-
-| Your situation | What to do |
-|---|---|
-| Foundation services exist, but models or access are not ready | As the owner, [prepare the existing foundation](docs/instructor.en.md#existing-foundation): **auxiliary model first, then the three candidates** |
-| You are preparing `.env` yourself for existing services | Use the [setting-to-portal map](docs/instructor.en.md#existing-settings); a portal URL, a project endpoint, and a model endpoint are different values |
-| You have no prepared Azure environment | [Create an environment](docs/environment.en.md), then return at the step it names. For self-study, you are the environment owner. |
-| You are resuming an earlier attempt | [Resume safely](docs/troubleshooting.en.md#resume) in the **same folder**; do not clone again |
-| You already have an unused clone or extracted ZIP | In 1-1, enter its root instead of cloning; never wipe an earlier run's results to reuse a folder |
-| You want GHCP to run the steps | Follow the [additional tools, connections, and prompts](docs/copilot.en.md). Manual execution needs neither GHCP nor Playwright. |
-| You finished step 10 in a dedicated self-study environment you created | Only then may you choose [final foundation cleanup](docs/environment.en.md#final-cleanup); never delete a shared group |
 
 ## References
 

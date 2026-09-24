@@ -4,21 +4,25 @@
 
 **이 페이지는 선택 사항입니다.** 직접 실습할 때는 기본 도구만 있으면 됩니다. 여기서 GHCP는 **GitHub Copilot CLI의 `copilot` 명령**을 뜻하며, VS Code 확장의 설정과 구분합니다.
 
-**추천 시작 방식:** GHCP가 명령을 실행하고, 사람이 로그인·승인·포털 확인을 맡습니다. 포털 클릭까지 맡기고 싶을 때만 Playwright를 추가합니다. GitHub 로그인과 Azure 로그인은 별개이며, 도구 설치만으로 Azure 권한이 생기지는 않습니다.
+**추천:** GHCP가 명령을 실행하고, 사람이 로그인·승인·포털 확인을 맡습니다. 순서는 **읽기 전용 계획 → 범위 확인 → 승인한 실행**입니다. 모든 도구를 먼저 설치할 필요는 없습니다.
 
 **새 실습은 1단계부터**, 이미 시작한 실습을 이어가거나 중간에 GHCP를 연결하려면 [4단계의 기존 실행 복구](#finish)를 따릅니다. 기존 실행을 새 clone에서 다시 시작하지 않습니다.
 
-## 먼저 필요한 도구만 선택
+<a id="먼저-필요한-도구만-선택"></a>
 
-| 도구 | 필요한 경우 | 준비할 곳 |
+## 누가 무엇을 할지 선택
+
+| 방식 | 사람이 할 일 | Copilot이 할 일 |
 |---|---|---|
-| Git·Python 3.13·`az`·`azd`와 Foundry 확장·Bash·curl·편집기·브라우저 | 모든 실습의 기본 환경 | [기존 설치 안내](instructor.ko.md#tools) |
-| GitHub Copilot CLI | GHCP에 명령 실행을 맡길 때 | [1단계](#install) |
-| Node.js 22 이상·npm | 아래 npm 설치 방식, 또는 추가 MCP 서버를 사용할 때 | [1단계](#install) |
-| Playwright MCP·지원 브라우저 | 포털 화면 조작까지 자동화할 때만 | [선택 설치](#playwright) |
-| Azure Skills 플러그인 | 새 Foundry 코드 작성·Azure 작업 확장에 전문 지침이 필요할 때 | [선택 설치](#azure-skills) |
+| 수동 | [README 전체](../README.ko.md#start) 실행 | 없음. 이 페이지는 건너뜀 |
+| **추천: 명령 실행만 맡기기** | 로그인·승인·포털 확인 | [아래 1–4단계](#install)에 따라 명령 실행 |
+| 명령과 포털 확인 맡기기 | 로그인·MFA·승인 | 명령·브라우저 확인. 3단계 전에 [Playwright](#playwright) 추가 |
+
+모든 방식에 [기본 실습 도구](instructor.ko.md#tools)가 필요합니다. Node.js·npm은 npm 설치 방식이나 MCP 서버를 쓸 때만, [Azure Skills](#azure-skills)는 코드를 확장할 때 선택합니다.
 
 **제공된 Python·az·azd 명령으로 환경을 생성하고 실습하는 데 Azure MCP는 필수가 아닙니다.** Docker도 필요 없습니다. Copilot 사용량과 Azure 서비스 비용은 별도입니다.
+
+GitHub·Azure CLI·azd·포털의 로그인은 서로 별개입니다. 도구 설치가 Azure 권한을 부여하지 않습니다.
 
 이 문서의 `bash` 블록은 **일반 터미널**, `/login` 같은 명령과 요청문은 **Copilot 입력창**에 넣습니다. Windows에서는 기본 실습과 동일하게 **WSL 안에 CLI 도구를 설치하고 실행**합니다.
 

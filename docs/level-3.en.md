@@ -4,10 +4,12 @@
 
 **What you finish with in about 70 minutes:** one table separating evaluation targets, the first scheduled evaluation's results, and the release gate's exit code. **Model-only, agent, and trace evaluations use different targets and inputs; do not combine their scores.**
 
-**You need:** [Level 2](level-2.en.md) finished in this folder, and **step 10 not yet run**. Afterwards, return to [step 10](../README.md#cleanup).
-
-- Sections 4 and 6 use your deployed agent, which step 10 deletes.
-- The instructor prepares shared model capacity (sections 2–4) and trace access (sections 5–6) before class ([instructor guide](instructor.en.md#levels)).
+| Before you start | Required state |
+|---|---|
+| Previous work | [Level 2](level-2.en.md) finished in this folder; **step 10 cleanup not yet run** |
+| Live resources | The same deployed V2 agent for sections 4 and 6; prepared [model capacity and trace access](instructor.en.md#levels) |
+| Red-team permission | Section 3 only if your organization permits the scan; otherwise record it as skipped |
+| After this level | Append your results to the main report, then [step 10 cleanup](../README.md#cleanup) |
 
 **Follow sections 1–7 in order** in your existing **Terminal A, at the repository root**. In a new terminal, [restore the environment only](../README.md#resume-shell). Keep names, V2 instructions, and the deployed version unchanged. If you used a recovery label, replace `--label improved` below with your actual candidate label.
 
@@ -108,7 +110,7 @@ Most failures were trips to Chicago or London, which the domestic policy does no
 
 ## 3. Red-team the candidate model
 
-**Warning:** this scan sends harmful prompts on purpose. Keep it small, review its results only in your project, and do not paste attack content into your notes.
+**Before running:** confirm that your organization permits this scan. If not, record section 3 as **skipped, not completed**, and go to [section 4](#evaluate-agent). The scan intentionally sends harmful prompts; keep it small, review results only in your project, and do not copy attack content into your notes.
 
 **Terminal A:** a small cloud scan sends six attacks to the Sol deployment: for each of two risk categories, one plain attack (`baseline`) and one for each of two attack strategies. It runs as a Foundry evaluation and takes about a minute. It targets the model because Foundry's agent red teaming does not support this hosted agent ([details](#beyond)):
 
@@ -215,7 +217,7 @@ This run took 12 minutes in a rehearsal folder without saved step 7 responses, s
 
 ## 5. Evaluate the traces from step 7
 
-**Terminal A:** Foundry reads the 18 traces of your step 7 run from Application Insights and scores them. Nothing is replayed:
+**Terminal A:** Foundry reads and scores the 18 traces from step 7 in Application Insights. **The agent and retrieval are not rerun; the judge still makes paid model calls.**
 
 ```bash
 python scripts/workshop.py evaluate-traces --label improved

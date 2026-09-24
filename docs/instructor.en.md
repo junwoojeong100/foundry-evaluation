@@ -2,9 +2,9 @@
 
 [English workshop](../README.md) · [한국어](instructor.ko.md)
 
-Participants follow [README.md](../README.md#start). Keep infrastructure creation and recording production out of their 120-minute path. Use [new-environment setup](environment.en.md) when the required Azure foundation does not yet exist.
+**Finish with:** ready Azure services and model deployments, a complete `.env` for each team, and a rehearsed participant path. This preparation is **outside the 120-minute workshop**.
 
-**Self-study:** “instructor” means the environment owner, which can be you. Complete preparation once, then use the participant path. You still need an approved subscription, model access/capacity, and the permissions below; this guide cannot grant them.
+**For environment owners, including self-study.** Participants with a complete environment go to [README step 1](../README.md#start). For self-study, “instructor” means you; you still need an approved subscription, model access/capacity, and the permissions below.
 
 **Preparation order:** [tools](#tools) → [access](#access) → choose the setup path below. **For a class**, continue with [separate rehearsal](#rehearsal-workspace) → [team handoff](#handoff). Self-study returns directly to the README at the setup path's specified step.
 
@@ -218,6 +218,12 @@ Keep the local server in a trusted development environment, never expose it publ
 
 **For a class, keep model ownership in the preparation folder.** Do not rehearse the full exercise in that folder: its step-10 cleanup can delete the models you intend to share with participants.
 
+```text
+Preparation folder (owns the shared models)
+  -> .env only + unused names -> rehearsal folder -> steps 1-10
+  -> .env only + unused names -> each team's folder -> steps 1-10
+```
+
 After model preparation completes, create a separate rehearsal clone. If the example folder already exists, use another unused name; do not delete the existing folder.
 
 ```bash
@@ -306,3 +312,19 @@ For **one-off self-study in an exclusively owned group created by this repositor
 Before changing Foundry agent code or instructions, read the `microsoft-foundry` skill guidance. Keep synthetic-data-only boundaries, the configured subscription, model identities, prompt/data versions, and trace lineage. Run the offline tests before cloud operations.
 
 Actual English cloud results belong in [the English evaluation explanation](validation.en.md), separately from the [Korean experiment](validation.ko.md). A translated question is not a newly independent holdout case.
+
+<a id="documentation-checks"></a>
+
+## When updating the guides
+
+Keep English and Korean execution paths aligned. Lead with the outcome and starting conditions; put optional background in collapsed sections. Each execution step must name **where to act, the command, its completion evidence, and the recovery path**. Keep recorded scores separate from the reader's acceptance criteria.
+
+From the **original clone**, with its virtual environment active, run:
+
+```bash
+python -m unittest discover -s tests -p 'test_docs.py' -v
+```
+
+This checks local links/anchors/assets, code-block structure, Bash/JSON syntax, Python CLI arguments against the actual parsers, and matching English/Korean command sequences. It does **not** execute the example commands, contact Azure, or revalidate recorded cloud scores. Runnable source snapshots omit the guides and skip these documentation checks.
+
+Also walk through [the starting-point table](../README.md#start-here) as a participant, an environment owner, and a returning user. Automated checks cannot establish that a first-time reader understands the instructions.

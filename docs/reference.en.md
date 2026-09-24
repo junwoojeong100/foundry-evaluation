@@ -4,6 +4,8 @@
 
 Follow [the English README](../README.md) for the execution path. This document explains the implementation choices and their boundaries.
 
+**Look up a specific question:** [terms](#terms) · [decision labels](#decision-values) · [model versus deployment names](#model-names) · [endpoints](#endpoints) · [evaluation scope](#evaluation-scope).
+
 <a id="terms"></a>
 
 ## Terms used in the workshop
@@ -67,7 +69,7 @@ flowchart LR
     P --> A
 ```
 
-The loop improves instructions and the validation system. Recording a trace does not train model weights. Fine-tuning, RL, continuous evaluation, automatic retraining, and automatic production promotion are outside this exercise.
+The loop improves instructions and the validation system; recording a trace does not train model weights. [Level 3](level-3.en.md#continuous-eval) adds scheduled trace evaluation. Fine-tuning, RL, automatic retraining, and automatic production promotion remain outside the workshop.
 
 <a id="model-names"></a>
 
@@ -142,7 +144,11 @@ The same corpus can produce different contexts on different calls. If `context_h
 
 The Foundry Indexes list, a knowledge source's advanced settings, and the actual Azure Search index are different surfaces.
 
+<a id="evaluation-scope"></a>
+
 ## Evaluation and adoption criteria
+
+**The criteria below describe the main 10-step workshop (Level 1).** [Level 2](level-2.en.md) adds custom criteria to the saved responses. [Level 3](level-3.en.md) also evaluates model deployments, live agent calls, and traces. Their inputs and thresholds differ; do not combine their scores with the primary 48 responses.
 
 | Layer | What it checks | What it does not establish |
 |---|---|---|
@@ -151,7 +157,7 @@ The Foundry Indexes list, a knowledge source's advanced settings, and the actual
 | Deterministic business checks | Decision, required amounts, and allowed retrieved citations | Full semantic correctness of all answer text |
 | Human review | Applicability, exceptions, cause, and the proposed improvement | Statistical evidence of production quality from a tiny sample |
 
-The native path is a **JSONL dataset evaluation of actual captured agent answers**. It is not an agent-target evaluation that invokes the agent again. The native `response` field is the answer text; the business checks separately inspect the structured decision and citation array.
+Level 1's native path is a **JSONL dataset evaluation of captured agent answers**. It calls a judge but does not invoke the agent again. The native `response` field is the answer text; business checks separately inspect the structured decision and citation array.
 
 During an experiment:
 

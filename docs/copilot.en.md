@@ -4,21 +4,25 @@
 
 **This page is optional.** You only need the basic tools to run the workshop yourself. Here, GHCP means **GitHub Copilot CLI's `copilot` command**, not the VS Code extension or its configuration.
 
-**Recommended starting mode:** let GHCP run commands while you handle sign-in, approvals, and portal checks. Add Playwright only if you want portal interactions automated too. GitHub and Azure sign-ins are separate; installing tools does not grant Azure permissions.
+**Recommended:** GHCP runs commands; you handle sign-in, approvals, and portal checks. The sequence is **read-only plan → scope review → approved execution**, not “install everything and run.”
 
 **For a new run, start at step 1.** To resume a run or add GHCP after starting manually, use [existing-run recovery in step 4](#finish). Do not restart an existing run in a new clone.
 
-## Choose only the tools you need
+<a id="choose-only-the-tools-you-need"></a>
 
-| Tool | When needed | Setup |
+## Choose who does what
+
+| Mode | You do | Copilot does |
 |---|---|---|
-| Git, Python 3.13, `az`, `azd` with the Foundry extension, Bash, curl, editor, browser | Basic workshop environment | [Existing installation guide](instructor.en.md#tools) |
-| GitHub Copilot CLI | To delegate command execution to GHCP | [Step 1](#install) |
-| Node.js 22 or later and npm | For the npm installation below or additional MCP servers | [Step 1](#install) |
-| Playwright MCP and a supported browser | Only for automated portal interactions | [Optional setup](#playwright) |
-| Azure Skills plugin | For specialized guidance when writing new Foundry code or extending Azure operations | [Optional setup](#azure-skills) |
+| Manual | All [README steps](../README.md#start) | Nothing; skip this page |
+| **Recommended: assisted commands** | Sign-in, approvals, portal checks | Commands through [steps 1–4 below](#install) |
+| Assisted commands and portal checks | Sign-in, MFA, approvals | Commands and browser checks; add [Playwright](#playwright) before step 3 |
+
+All modes need the [basic workshop tools](instructor.en.md#tools). Node.js/npm are needed only for the npm installation or MCP servers. [Azure Skills](#azure-skills) is optional guidance for extending the code, not a prerequisite.
 
 **Azure MCP is not required to create the environment and run this workshop with the supplied Python, az, and azd commands.** Docker is not required either. Copilot usage and Azure service costs are separate.
+
+GitHub, Azure CLI, azd, and the portal have separate sign-ins. Installing a tool does not grant Azure permissions.
 
 Run `bash` blocks in a **regular terminal**. Enter slash commands such as `/login` and the supplied prompts in the **Copilot input**. On Windows, install and run the CLI tools **inside WSL**, as required by the main workshop.
 

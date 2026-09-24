@@ -2,11 +2,18 @@
 
 [English participant guide](../README.md#lab-c) · [한국어 실행 결과](validation.ko.md)
 
+**Read your saved results first; use the recorded run only as an example.** This page explains which file answers each question, how the scores are calculated, and what they do not prove. You do not need to reproduce the example scores.
+
+**Read only what you need:** [your result files](#read-your-results) · [recorded measurements](#measured-results) · [retrieval misses](#retrieval-miss) · [tokens and latency](#tradeoffs) · [execution versus quality](#execution-quality).
+
+<details>
+<summary>Recorded English run — September 23, 2026, not your pass criteria</summary>
+
 **Result:** the actual English run improved business-contract passes from **0/18 to 17/18**, with **12/12 on holdout**. Required citation validity improved from **0/15 to 15/15**. Groundedness passes stayed at **18/18**; relevance passes went from **16/18 to 17/18**.
 
 These are measured English results from **September 23, 2026 (KST)**, run `en-20260923b`, with the three fixed candidates `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`. They are not translated Korean scores. The run used the [retrieval-miss guard](#retrieval-miss) added after that day's first Korean run. All **48 responses and 48 distinct real traces** were verified. One V2 dev row failed its decision label and one failed native relevance; the candidate is **not approved for production**.
 
-**Read only what you need:** [your result files](#read-your-results) · [recorded measurements](#measured-results) · [retrieval misses](#retrieval-miss) · [tokens and latency](#tradeoffs) · [execution versus quality](#execution-quality).
+</details>
 
 <a id="read-your-results"></a>
 
