@@ -2,31 +2,39 @@
 
 [한국어 가이드](README.ko.md)
 
-**Run a provided agent, compare V1 and V2 on three models, and explain the change with evidence.** In 120 minutes, you collect **48 real responses** without writing application code. You finish with a three-point report: **one reviewed case, the V1 → V2 comparison, and a holdout decision**. Perfect scores and production approval are not the goal.
+**In 120 minutes, collect 48 real responses and explain what changed when you switched instructions.** The agent code and V1/V2 instructions are provided; you do not write them. You finish with a three-point report: **one reviewed case, the V1 → V2 comparison, and a holdout decision**. Perfect scores and production approval are not the goal.
 
 <a id="start-here"></a>
 <a id="other-starts"></a>
 <a id="other-situations"></a>
+<a id="choose-your-starting-point"></a>
 
-## Choose your starting point
+## Start the workshop
 
-| Your situation | Start here |
-|---|---|
-| You have a prepared Azure environment and a complete team `.env` | Check the tools below, then follow [steps 1–10](#start) in order |
-| Azure services exist, but you need settings, models, or access | As the environment owner, use [existing-environment preparation](docs/instructor.en.md#existing-foundation) |
-| You have no prepared Azure environment | [Create a dedicated environment](docs/environment.en.md); return at the step that guide names |
-| You are continuing an earlier attempt | [Resume in the same folder](docs/troubleshooting.en.md#resume); do not clone again |
-| You want Copilot CLI (GHCP) to execute the steps | Use the [optional Copilot guide](docs/copilot.en.md); do not also execute the steps manually |
+**New workshop:** if you have the prerequisites below, start at [step 1](#start) and follow **only steps 1–10, in order**. You do not need to read the references, watch the video, or do Levels 2–3 first.
 
-For self-study, you are the environment owner. **Choose one preparation path, not both.**
+**Continuing an earlier attempt?** [Resume in the same folder](docs/troubleshooting.en.md#resume), rather than starting again.
 
 **Before step 1, you need:**
 
-- **Environment:** the instructor's prepared Azure environment (**paid** services) and your team's complete `.env`.
+- **Environment:** a prepared Azure environment (**paid** services) and your team's complete `.env`.
 - **Local tools:** Git, Python 3.13, Bash, curl, an editor, and a browser; on Windows, use WSL.
 - **Azure tools:** Azure CLI and azd with the `microsoft.foundry` extension. [Install and check the tools](docs/instructor.en.md#tools)
 
-Tool installation and Azure preparation are outside the 120 minutes. **Local execution still calls paid Azure models and Search.** Manual execution needs neither Copilot nor Playwright.
+Tool installation and Azure preparation are outside the 120 minutes. **Local execution still calls paid Azure models and Search.**
+
+<details>
+<summary>Need to prepare Azure or delegate execution to Copilot?</summary>
+
+| Your situation | Start here |
+|---|---|
+| Azure services exist, but you need settings, models, or access | As the environment owner, use [existing-environment preparation](docs/instructor.en.md#existing-foundation) |
+| You have no prepared Azure environment | [Create a dedicated environment](docs/environment.en.md); return at the step that guide names |
+| You want Copilot CLI (GHCP) to execute the steps | Use the [optional Copilot guide](docs/copilot.en.md); do not also execute the steps manually. Manual execution needs neither Copilot nor Playwright. |
+
+For self-study, you are the environment owner. **Choose one preparation path, not both.**
+
+</details>
 
 <a id="workshop-overview"></a>
 
@@ -45,7 +53,7 @@ V1: 18 responses → review one trace → V2: 18 responses → freeze → holdou
 
 <a id="evaluation-runs"></a>
 
-`--split` selects the questions; `--label` names their result folder. Keep the names below. **`improved` is the V2 candidate's name, not a claim that it scored better.**
+**dev** is the six-question set used to compare V1 and V2; **holdout** is four separate questions used after freezing V2. `--split` selects one of these sets; `--label` names its result folder. **`improved` names the V2 results; it does not mean they improved.**
 
 | Step | Continue when |
 |---|---|
@@ -64,15 +72,18 @@ V1: 18 responses → review one trace → V2: 18 responses → freeze → holdou
 
 **How to follow the steps**
 
-- Act where the bold label says: **Terminal A**, **Terminal B** (step 3 only), **Editor**, or **Portal**.
-- Run **one command block at a time** from the repository root, without a leading `$`. Wait for the prompt to return (except for step 3's local server).
-- After each block, check its **Checkpoint**. If it fails, keep the output, follow **If not**, and [resume only that command](docs/troubleshooting.en.md#resume); never rerun a finished step for a better score.
-- **Do not open `data/en/holdout.jsonl` before step 8.** Portal checks use **New Foundry with English menus**; "your agent" means `LAB_AGENT_NAME`.
-- Keep your version numbers, review, and comparison in **one set of notes**. Open collapsed **example screens and reference explanations** only when needed. A different score from an example is not a reason to stop a successfully completed run.
+- **Where:** act where the bold label before each block says: **Terminal A**, **Terminal B** (step 3 only), **Editor**, or **Portal**. Portal checks use **New Foundry with English menus**; "your agent" means `LAB_AGENT_NAME`.
+- **Commands:** run **one block at a time** from the repository root, without a leading `$`. Wait for the prompt to return (except for step 3's local server).
+- **Checks:** after each block, read its **Checkpoint**. If it differs, keep the output, follow **If not**, and [resume only that command](docs/troubleshooting.en.md#resume). Never rerun a finished step for a better score.
+- **Notes:** keep your version numbers, review, and comparison in **one set of notes** for the step 9 report.
+- **Examples:** open collapsed **example screens and reference explanations** only when needed. A score that differs from an example is not a reason to stop a successfully completed run.
+- **Holdout:** **do not open `data/en/holdout.jsonl` before step 8.**
 
 <a id="background-learning-loops-and-frontier-ecosystems"></a>
 
 **Optional:** [why this is a learning loop](docs/reference.en.md#background) · [glossary](docs/reference.en.md#terms) · [summary video](#summary-video)
+
+**Go to [step 1](#start) now.**
 
 <a id="start"></a>
 
@@ -84,9 +95,7 @@ V1: 18 responses → review one trace → V2: 18 responses → freeze → holdou
 
 ### 1-1. Get the source and `.env`
 
-**Terminal A — get the folder:** start Bash (skip the first block if your terminal already runs Bash), then clone into a new folder:
-
-If you already have an **unused clone or extracted ZIP**, enter its root and skip cloning. For a previous run, use [recovery](docs/troubleshooting.en.md#resume), not a fresh start.
+**Terminal A — get the folder:** start Bash (skip the first block if your terminal already runs Bash), then clone into a new folder. If you already have an **unused clone or extracted ZIP**, enter its root instead of cloning.
 
 ```bash
 bash
@@ -196,16 +205,6 @@ python scripts/workshop.py preflight
 
 **If not:** for `language: ko`, fix `.env` only if this folder is unused. For a nonempty `missing_models`, ask the instructor to prepare those deployments.
 
-**Terminal A — bind:** only after that checkpoint, bind this folder:
-
-```bash
-python scripts/workshop.py bind
-```
-
-**Checkpoint:** `Bound <your agent> to /subscriptions/.../projects/<your project>`.
-
-**If not:** see [common symptoms](docs/troubleshooting.en.md#symptoms).
-
 <details>
 <summary>Example screen: successful preflight</summary>
 
@@ -214,6 +213,18 @@ Find `language: en` and `missing_models: []`; the lines above them list the thre
 ![English project and model preflight](docs/assets/live-en-20260923b/screenshots/01-ready.webp)
 
 </details>
+
+<a id="bind-project"></a>
+
+**Terminal A — bind:** bind only after this folder passes the preflight checkpoint above. If a setup guide brought you here, do not repeat cloning, installation, or sign-in.
+
+```bash
+python scripts/workshop.py bind
+```
+
+**Checkpoint:** `Bound <your agent> to /subscriptions/.../projects/<your project>`.
+
+**If not:** see [common symptoms](docs/troubleshooting.en.md#symptoms).
 
 <a id="resume-shell"></a>
 
@@ -405,7 +416,7 @@ python scripts/workshop.py smoke
 
 **Portal:** open **Agents → your agent → Playground** and select the version from 4-3.
 
-**Checkpoint:** the Playground's version selector shows the numeric `agent_version` from 4-3, also after you change tabs.
+**Checkpoint:** the Playground's version selector shows the numeric `agent_version` from 4-3.
 
 **If not:** see [portal differences](docs/troubleshooting.en.md#portal-differs).
 
@@ -436,7 +447,7 @@ Step 9's quality gates use the **business checks**. Foundry scores are a separat
 
 ### 5-1. Check the judge
 
-**Terminal A:**
+**Terminal A:** use two examples to check that the scoring model (the judge) distinguishes a grounded answer from a wrong one. This is calibration, separate from the 48 evaluated agent responses.
 
 ```bash
 python scripts/workshop.py calibrate
@@ -508,27 +519,45 @@ python scripts/workshop.py evaluate --label baseline
 
 **Goal:** explain one real response with its fixed reference and its **trace** (the record of that request's retrieval and model calls), then save it as a **regression case** that V2's collection reuses.
 
-### 6-1. Prepare the report and confirm its traces
+### 6-1. Aggregate the results and find a row to review
 
-**Terminal A:**
+**Terminal A — aggregate the results** into `comparison.json`, which `summary` reads:
 
 ```bash
-python scripts/workshop.py compare --labels baseline &&
-python scripts/workshop.py monitor --label baseline &&
+python scripts/workshop.py compare --labels baseline
+```
+
+**Checkpoint:** the comparison JSON has `sol`, `luna`, and `astra` under `labels → baseline → models`.
+
+**If not:** confirm step 5's collection and evaluation completed, then [recover only the failed command](docs/troubleshooting.en.md#resume).
+
+**Terminal A — check the traces:**
+
+```bash
+python scripts/workshop.py monitor --label baseline
+```
+
+**Checkpoint:** the command finishes without errors and shows `complete: true`, `expected_trace_count: 18`, and `observed_trace_count: 18`.
+
+**If not:** [recover monitoring](docs/troubleshooting.en.md#telemetry); do not recollect responses.
+
+**Terminal A — find a row to review:**
+
+```bash
 python scripts/workshop.py summary --labels baseline
 ```
 
-**Checkpoint:** `complete: true`, `expected_trace_count: 18`, and `observed_trace_count: 18`, followed by a model summary table and `baseline business-check failures:`. The summary reads saved results; it does not evaluate again.
+**Checkpoint:** a model summary table and `baseline business-check failures:` appear. The summary reads saved results; it does not evaluate again.
 
-**If not:** for missing traces, [recover monitoring](docs/troubleshooting.en.md#telemetry). If only the summary failed, check the file or label named in the error and repeat only `summary`.
+**If not:** check the file or label named in the error and repeat only `summary`.
 
 <a id="review-case"></a>
 
 ### 6-2. Choose and explain one case
 
-**Choose:** from the 6-1 summary's `baseline business-check failures:`, pick one `row_id` and the failed checks in parentheses. If it says `none`, select one dev response from the response file below and review **why it passed**. You do not need to invent a failure.
+**Choose:** use the **first `row_id`** in the 6-1 summary's `baseline business-check failures:` and the failed checks in parentheses. If it says `none`, use the first row in the response file below and review **why it passed**. You do not need to invent a failure.
 
-**Inspect the response, its reference, then its trace.** In the editor, use Find (`Ctrl+F`, or `Cmd+F` on macOS) to locate each ID. Paths are relative to the repository root; edit nothing.
+**Inspect the response, its reference, then its trace.** A `.jsonl` file stores one JSON object per line. In the editor, use Find (`Ctrl+F`, or `Cmd+F` on macOS) to locate **IDs, not line numbers**. Paths are relative to the repository root; edit nothing.
 
 | Order | Open and search | Check |
 |---|---|---|
@@ -541,6 +570,13 @@ python scripts/workshop.py summary --labels baseline
 **Checkpoint:** you compared the same case's response, fixed reference, and both spans, and wrote an evidence-based review.
 
 **If not:** for a missing file or row, check that you opened the right label. For a missing trace, widen the time range and search by the full `trace_id` ([portal differences](docs/troubleshooting.en.md#portal-differs)).
+
+<details>
+<summary>Example screen: the reviewed request's trace</summary>
+
+![Real English trace review](docs/assets/live-en-20260923b/screenshots/06-trace.webp)
+
+</details>
 
 <details>
 <summary>Terms in this table</summary>
@@ -576,20 +612,15 @@ python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
   --reason "$REVIEW_REASON" --reviewer human
 ```
 
-**Checkpoint:** `Reviewed trace-to-dataset record saved: src/agent/.foundry/datasets/regression-....jsonl`.
+**Checkpoint:** `Reviewed trace-to-dataset record saved:` followed by the actual path `src/agent/.foundry/datasets/regression-<your row_id>.jsonl`.
 
 **If not:** a review for this row may already exist; check it as in [resume](docs/troubleshooting.en.md#resume) and never overwrite it.
 
-**Editor:** open the saved `regression-....jsonl` file.
+**Editor:** open **the actual file path just printed**. Do not type `<your row_id>` literally, create another file, or edit the saved file.
 
-**Checkpoint:** `lineage → source_row_id` and `source_trace_id` equal your row and trace, and the fixed reference answer is unchanged.
+**Checkpoint:** `lineage → source_row_id` and `source_trace_id` equal your row and trace, and `ground_truth` matches the fixed reference you read in 6-2, not the model's answer.
 
-<details>
-<summary>Example screen: the reviewed request's trace</summary>
-
-![Real English trace review](docs/assets/live-en-20260923b/screenshots/06-trace.webp)
-
-</details>
+**If not:** do not edit or delete the file; stop and show the instructor the 6-3 output.
 
 **Next:** [7. Deploy V2 and evaluate the same dev set](#lab-e)
 
@@ -653,16 +684,25 @@ python scripts/workshop.py collect --split dev --label improved
 
 <a id="candidate-evaluation"></a>
 
-**Terminal A — evaluate and compare:**
+**Terminal A — evaluate:**
 
 ```bash
-python scripts/workshop.py evaluate --label improved &&
+python scripts/workshop.py evaluate --label improved
+```
+
+**Checkpoint:** `Foundry evaluation completed: ... (18 rows)`, followed by a report URL.
+
+**If not:** [recover evaluation](docs/troubleshooting.en.md#evaluation-retry).
+
+**Terminal A — save the comparison:**
+
+```bash
 python scripts/workshop.py compare --labels baseline improved
 ```
 
-**Checkpoint:** `Foundry evaluation completed: ... (18 rows)`, then the printed comparison JSON includes `labels → baseline`, `labels → improved`, and `comparison_notes`.
+**Checkpoint:** the printed comparison JSON includes `labels → baseline`, `labels → improved`, and `comparison_notes`.
 
-**If not:** [recover evaluation](docs/troubleshooting.en.md#evaluation-retry).
+**If not:** check the label named in the error and step 7-3's evaluation completion, then [recover only the failed command](docs/troubleshooting.en.md#resume). Do not repeat collection.
 
 <a id="compare-results"></a>
 
@@ -682,7 +722,9 @@ python scripts/workshop.py summary --labels baseline improved
 
 **If not:** for a missing comparison file or label, confirm 7-3's evaluation completed, then rerun only `compare` and `summary`. If `Reviewed case` is absent or says `source trace carried: no`, stop and check the 6-3 review record with the instructor. Do not recollect or replace the review to hide the missing link.
 
-**Warning:** report results as they are, even if unchanged or worse. Never lower the criteria, swap models, or adopt V2 automatically.
+**Read the reviewed case first:** `source trace carried: yes` means **the review's provenance is linked**, not that quality improved. Read `business passed` or `business failed (...)` on that same line and record this case's V2 business-check result.
+
+**Then read the three-model table:** `business` and `required citations` show compliance with your business rules. Next, read `groundedness` and `relevance` for answer quality, then `tokens in/out` and `p50/p95 s` for resource use and processing time. Each cell shows **V1 → V2**; report regressions too. Never lower the criteria, swap models, or adopt V2 automatically.
 
 <a id="metric-fields"></a>
 
@@ -721,7 +763,7 @@ Open **your agent → Playground → Version dropdown → Compare versions**. Se
 
 Click **Send once**: the comparison view sends the question to both versions. Check each response's `language`, `prompt_version`, `citations`, and distinct `trace_id`. These are extra demo calls, not replacements for the 18 + 18 collected responses.
 
-**Read the screenshot:** both answers allow the lodging, but V1 cites a title while V2 cites the original `TRAVEL-2026` ID.
+**The screenshot is a recorded example:** both answers allowed the lodging, but V1 cited a title while V2 cited the original `TRAVEL-2026` ID. Your decisions and citations may differ. Read the actual differences; do not call again to match the example.
 
 ![Real English V1 and V2 comparison](docs/assets/live-en-20260923b/screenshots/07-comparison.webp)
 
@@ -757,16 +799,25 @@ python scripts/workshop.py collect --split holdout --label holdout
 
 ### 8-2. Evaluate and compare the holdout
 
-**Terminal A:**
+**Terminal A — evaluate:**
 
 ```bash
-python scripts/workshop.py evaluate --label holdout &&
+python scripts/workshop.py evaluate --label holdout
+```
+
+**Checkpoint:** `Foundry evaluation completed: ... (12 rows)`, followed by a report URL.
+
+**If not:** [recover evaluation](docs/troubleshooting.en.md#evaluation-retry); do not repeat collection.
+
+**Terminal A — check that V2 stayed frozen:**
+
+```bash
 python scripts/workshop.py compare --labels baseline improved holdout
 ```
 
-**Checkpoint:** `Foundry evaluation completed: ... (12 rows)`, and the printed comparison JSON shows the same `agent_version` and `prompt_hash` under `labels → improved` and `labels → holdout`, so the holdout ran on the frozen V2.
+**Checkpoint:** the printed comparison JSON shows the same `agent_version` and `prompt_hash` under `labels → improved` and `labels → holdout`.
 
-**If not:** for an evaluation command error, [recover evaluation](docs/troubleshooting.en.md#evaluation-retry). Different versions or hashes mean **the comparison conditions changed**; stop and check with the instructor. Do not reevaluate or edit files to make them match.
+**If not:** for a command error, [recover only the failed command](docs/troubleshooting.en.md#resume). Different versions or hashes mean **the comparison conditions changed**; stop and check with the instructor. Do not reevaluate or edit files to make them match.
 
 ### 8-3. Open the holdout report
 
@@ -792,30 +843,74 @@ python scripts/workshop.py compare --labels baseline improved holdout
 
 ## 9. Check operational signals and complete evidence
 
-**Goal:** all 48 responses, their evaluations and traces, and your review lineage verified; then the operational dashboard reviewed.
+**Goal:** verify the evidence, inspect the operational dashboard, then write the final report. Gather all the values before assembling the report once.
 
 ### 9-1. Verify the complete response matrix
 
-**Terminal A:**
+**Terminal A — V2 dev traces:**
 
 ```bash
-python scripts/workshop.py monitor --label improved &&
-python scripts/workshop.py monitor --label holdout &&
+python scripts/workshop.py monitor --label improved
+```
+
+**Checkpoint:** the command finishes without errors and shows `complete: true`, `expected_trace_count: 18`, and `observed_trace_count: 18`.
+
+**If not:** `monitor` looks back two hours; for an older run, [extend the window](docs/troubleshooting.en.md#telemetry). Do not recollect responses.
+
+**Terminal A — holdout traces:**
+
+```bash
+python scripts/workshop.py monitor --label holdout
+```
+
+**Checkpoint:** the command finishes without errors and shows `complete: true`, `expected_trace_count: 12`, and `observed_trace_count: 12`.
+
+**If not:** [recover monitoring](docs/troubleshooting.en.md#telemetry) with the same label.
+
+**Terminal A — verify all evidence:**
+
+```bash
 python scripts/workshop.py verify --baseline baseline --candidate improved --holdout holdout
 ```
 
 **Checkpoint:** `language: en`, `component_execution_verified: true`, `primary_model_outputs: 48`, and `distinct_verified_traces: 48`.
 
-**If not:** `monitor` looks back two hours, so for an older run [extend the window](docs/troubleshooting.en.md#telemetry) instead of recollecting. For other failures, [recover the failed stage](docs/troubleshooting.en.md#resume); never edit evidence.
+**If not:** [recover the failed stage](docs/troubleshooting.en.md#resume); never edit evidence.
+
+<details>
+<summary>Example screen: complete execution evidence</summary>
+
+![English response, evaluation, and trace verification](docs/assets/live-en-20260923b/screenshots/09-verification.webp)
+
+</details>
+
+<a id="operational-dashboard"></a>
+<a id="9-3-inspect-the-operational-dashboard"></a>
+
+### 9-2. Inspect the operational dashboard
+
+**Portal:** open **your agent → Monitor → Last Day**.
+
+**Checkpoint:** the Last Day charts show requests, tokens, and latency during your run's time window. **Note the error count.** Totals include smoke and portal calls, so they need not equal 48.
+
+**If not:** see [portal differences](docs/troubleshooting.en.md#portal-differs).
+
+<details>
+<summary>Example screen: the Foundry monitoring dashboard</summary>
+
+![Actual English Foundry monitoring dashboard](docs/assets/live-en-20260923b/screenshots/09-monitor.webp)
+
+</details>
 
 <a id="completion-decision"></a>
 <a id="9-2-decide-what-to-report"></a>
+<a id="9-2-report-your-results-in-three-points"></a>
 <a id="finish"></a>
 <a id="finish-report-three-points"></a>
 
-### 9-2. Report your results in three points
+### 9-3. Report your results in three points
 
-**Terminal A:** find `candidate_quality_gates` at the end of the `verify` output, also saved in `src/agent/.foundry/results/verified-evidence.json`. A **gate is a quality pass rule**; each model has two values, `dev` and `holdout`.
+**Editor:** open `src/agent/.foundry/results/verified-evidence.json` and find `candidate_quality_gates`. This is the result saved in 9-1; do not rerun the command. A **gate is a quality pass rule**; each model has two values, `dev` and `holdout`.
 
 | Gate | What `true` means, per model |
 |---|---|
@@ -830,35 +925,18 @@ Change: ... (paste step 7-4's summary table for all three models and its failed 
 Decision: sol(dev=..., holdout=...); luna(dev=..., holdout=...); astra(dev=..., holdout=...); limitations=...; production_release_approved=false
 ```
 
-**Interpretation:** report any `false` gate unchanged; **it is not incomplete execution**. Even when all gates are `true`, include Foundry-score failures and limitations. Keep the summary's tokens and processing time, including regressions. **`production_release_approved: false` is expected**; do not claim production approval or statistical model superiority.
+**Interpretation:**
+
+- Report any `false` gate unchanged; **it is a valid quality result, not incomplete execution**.
+- Even when all gates are `true`, include Foundry-score failures and limitations. Add any nonzero error count from 9-2 to **limitations**.
+- Report the summary's tokens and processing time, including regressions.
+- **`production_release_approved: false` is expected.** Even when every gate passes, do not claim production approval or statistical model superiority.
 
 **Checkpoint:** the review, before/after comparison, and all six gates use your own results; limitations and `production_release_approved=false` are recorded. Do not rerun for better scores.
 
 **If not:** for missing gates, return to 9-1. If only your notes are missing, fill them from the **saved results** of the [step 6 review](#save-review) and [7-4 summary](#compare-results). Do not repeat review or collection.
 
-<details>
-<summary>Example screen: complete execution evidence</summary>
-
-![English response, evaluation, and trace verification](docs/assets/live-en-20260923b/screenshots/09-verification.webp)
-
-</details>
-
-### 9-3. Inspect the operational dashboard
-
-**Portal:** open **your agent → Monitor → Last Day**.
-
-**Checkpoint:** the Last Day charts show requests, tokens, and latency during your run's time window. Add any nonzero error count to the **limitations** in your [report](#finish). Totals include smoke and portal calls, so they need not equal 48.
-
-**If not:** see [portal differences](docs/troubleshooting.en.md#portal-differs).
-
-<details>
-<summary>Example screen: the Foundry monitoring dashboard</summary>
-
-![Actual English Foundry monitoring dashboard](docs/assets/live-en-20260923b/screenshots/09-monitor.webp)
-
-</details>
-
-**Next:** on a first run, go to [10. Clean up only your owned workshop objects](#cleanup).
+**Next:** go to [10. Clean up only your owned workshop objects](#cleanup). To add Levels 2–3, open the optional section below before cleanup.
 
 <a id="levels"></a>
 
@@ -940,7 +1018,7 @@ python scripts/workshop.py check-cleanup
 
 </details>
 
-**Main workshop complete:** keep your [9-2 report](#finish) and cleanup confirmation. Preserve the local evidence files. If you created an **exclusively owned self-study environment**, you may separately choose [final foundation cleanup](docs/environment.en.md#final-cleanup); never delete a shared group.
+**Main workshop complete:** keep your [9-3 report](#finish) and cleanup confirmation. Preserve the local evidence files. If you created an **exclusively owned self-study environment**, you may separately choose [final foundation cleanup](docs/environment.en.md#final-cleanup); never delete a shared group.
 
 <details>
 <summary>Where your saved evidence is</summary>

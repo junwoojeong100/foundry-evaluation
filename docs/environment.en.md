@@ -73,6 +73,8 @@ python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language en
 
 Save the printed absolute `RUN_DIR` path now. **Checkpoint:** `init` finishes and creates **`$RUN_DIR/config.json`**. It records the chosen names; it has not copied the source or created Azure resources.
 
+**If not:** keep the output and the same `RUN_DIR`, then use [setup recovery](troubleshooting.en.md#setup-resume). Do not restart with a new run ID.
+
 <a id="setup-snapshot"></a>
 
 Next, create the runnable source snapshot:
@@ -81,7 +83,9 @@ Next, create the runnable source snapshot:
 python scripts/prepare_environment.py prepare --run-dir "$RUN_DIR"
 ```
 
-**Checkpoint:** **`$RUN_DIR/source-manifest.json`** and **`$RUN_DIR/workshop/.env`** exist. If either command failed, preserve this path and use [setup recovery](troubleshooting.en.md#setup-resume), not a new `RUN_ID`.
+**Checkpoint:** **`$RUN_DIR/source-manifest.json`** and **`$RUN_DIR/workshop/.env`** exist.
+
+**If not:** inspect the source-copy state using [setup recovery](troubleshooting.en.md#setup-resume). Do not repeat `init` or overwrite the existing folder.
 
 **The runnable configuration is now `RUN_DIR/workshop/.env`.** Editing the original clone's `.env` does not update this generated copy. Keep the saved configuration and ownership records intact when resuming.
 
@@ -98,6 +102,8 @@ python -m unittest discover -s tests -v
 ```
 
 **Checkpoint:** tests end with `OK`; **`$RUN_DIR/source-manifest.json`** records the source commit and hashes. **`$RUN_DIR/workshop/.env`** has `LAB_LANGUAGE=en`, new owned names, and no reused `.azure`, `.foundry`, or virtual environment.
+
+**If not:** stop before Azure operations and follow [Python setup recovery](troubleshooting.en.md#setup-resume). Do not recreate an existing virtual environment or source snapshot.
 
 Stay in **`$RUN_DIR/workshop`** for sign-in so the later English agent uses the same isolated CLI profile. This snapshot contains runnable source, not another copy of the guide; keep this guide open in your browser/editor.
 
@@ -117,6 +123,8 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 ```
 
 **Checkpoint:** all identity matches are true, the subscription is Enabled, existing groups are explicitly preserved, and capacity is verified for the exact model versions.
+
+**If not:** do not create resources. Use the [sign-in checks](../README.md#login-check) for an identity mismatch; resolve access/capacity errors with the owner, then [resume only the failed setup command](troubleshooting.en.md#setup-resume). Do not substitute a subscription, model, or region.
 
 `--preserve-existing` means **keep all existing groups**, including the Korean workshop. This command does not delete groups. Without that flag, finding previous candidates stops the command for a manual ownership review.
 
@@ -140,6 +148,8 @@ python scripts/provision_environment.py search --run-dir "$RUN_DIR"
 **Checkpoint:** the new group contains the Foundry account/project, Search, Application Insights, and Log Analytics in Sweden Central. Azure Portal **Resources** and **Tags** should match this run's names and `workshop`, `cleanup-scope`, and `run` tags.
 
 The provisioner requires both ownership tags and this run's creation record. A tag alone is not authorization to modify another resource.
+
+**If not:** identify the failed command in the output and [inspect the existing creation record](troubleshooting.en.md#setup-resume). Do not repeat successful creation commands or create another group. If only the Search wait expired, use the recovery immediately below.
 
 Search uses Basic with one replica/partition. Its `semanticSearch` and `knowledgeRetrieval` free settings do **not** make Search uptime or model calls free.
 
@@ -176,6 +186,8 @@ python scripts/provision_environment.py search-connection --run-dir "$RUN_DIR"
 
 **Checkpoint:** user roles are scoped to the new project/account/Search; the project identity can read the new telemetry. Search uses an Entra connection, and the App Insights connection has its actual `ResourceId` metadata.
 
+**If not:** have the owner check the principal and scope in the error, then [resume only the failed role/connection command](troubleshooting.en.md#setup-resume). Do not work around it with broad Owner access or changes to shared connections.
+
 The agent's instance identity is created later. Grant its Search/model access in [README step 4](../README.md#deploy), not by assigning broad Owner permissions to it.
 
 <a id="setup-auxiliary"></a>
@@ -191,20 +203,40 @@ python scripts/provision_environment.py ready --run-dir "$RUN_DIR"
 
 The auxiliary deployment is `gpt-5.4-mini` / `2026-03-17`. It is the planner/judge, not a replacement for one of the three candidates.
 
+**If not:** inspect [the same run's setup state](troubleshooting.en.md#setup-resume). If `auxiliary` succeeded and only `ready` failed, recover only `ready`; never guess the endpoints.
+
 <a id="setup-candidates"></a>
 
 ## 6. Prepare candidates and hand over the English configuration
 
+**Terminal — enter the runtime folder:** use the same terminal that completed step 5.
+
 ```bash
 cd "$RUN_DIR/workshop" &&
-source src/agent/.venv/bin/activate &&
-python scripts/workshop.py preflight --allow-missing-models &&
-python scripts/workshop.py prepare-models &&
-python scripts/workshop.py preflight &&
+source src/agent/.venv/bin/activate
+```
+
+**Terminal — prepare candidate models:** this command **checks readiness, creates only missing paid candidate deployments, then checks again**. It preserves existing deployments; do not repeat a separate `preflight` before or after it.
+
+```bash
+python scripts/workshop.py prepare-models
+```
+
+**Checkpoint:** the command finishes without errors and its **last JSON** has `language: en`, `deployed: true` for all three candidates, and `missing_models: []`. The fixed identities/versions are `gpt-6-sol` / `2026-09-22`, `gpt-6-luna` / `2026-09-22`, and `gpt-6-astra` / `2026-09-03`. The first JSON's `missing_models` may describe the state before creation.
+
+**If not:** resolve model access, quota, or deployment errors, then [recover only the failed preparation in the same folder](troubleshooting.en.md#setup-resume). Do not substitute models or recreate the foundation.
+
+<a id="setup-calibration"></a>
+
+**Terminal — check the judge:** run this after candidate preparation finishes.
+
+```bash
 python scripts/workshop.py calibrate
 ```
 
-**Checkpoint:** `language: en`, the three exact candidate identities/versions (`gpt-6-sol` / `2026-09-22`, `gpt-6-luna` / `2026-09-22`, `gpt-6-astra` / `2026-09-03`), `deployed: true`, `missing_models: []`, and a successful judge calibration. The two calibration examples are not part of the 48 candidate outputs.
+**Checkpoint:** **`Judge calibration passed`**. The two calibration examples are not part of the 48 candidate outputs.
+
+**If not:** [recover only calibration](troubleshooting.en.md#calibration). Do not repeat completed candidate preparation.
 
 <a id="handoff"></a>
 
@@ -212,7 +244,7 @@ python scripts/workshop.py calibrate
 
 | Who continues | Folder and next action |
 |---|---|
-| You, for one-off self-study | Stay in **`$RUN_DIR/workshop`** and continue at [README step 1-4](../README.md#project-binding). Read the preflight checkpoint, then bind. Do not repeat cloning, installation, or sign-in. |
+| You, for one-off self-study | Stay in **`$RUN_DIR/workshop`** and run [the README's binding command (`bind`)](../README.md#bind-project). Do not repeat the preflight you just completed, cloning, installation, or sign-in. |
 | Instructor rehearsing for a class | Keep this folder for model ownership. Use a [separate rehearsal clone](instructor.en.md#rehearsal-workspace) with new runtime names so rehearsal cleanup cannot delete the shared models. |
 | A new participant | Give them a complete English `.env` with **unused** team names and the **actual prepared model deployment names**. They start at [README step 1](../README.md#start) in their own folder. |
 

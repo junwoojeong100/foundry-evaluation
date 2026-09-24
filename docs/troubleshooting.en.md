@@ -175,27 +175,36 @@ Evaluate and monitor the **new label**, and use it in later commands **and file 
 **Failed initial baseline, before any completed comparison:** if reducing concurrency to 2 resolves the cause, use:
 
 ```bash
-python scripts/workshop.py collect --split dev --label baseline-retry --concurrency 2 &&
-python scripts/workshop.py evaluate --label baseline-retry &&
-python scripts/workshop.py compare --labels baseline-retry &&
-python scripts/workshop.py monitor --label baseline-retry &&
-python scripts/workshop.py summary --labels baseline-retry
+python scripts/workshop.py collect --split dev --label baseline-retry --concurrency 2
 ```
 
-Use **`baseline-retry` consistently** for later feedback, comparison, and `verify --baseline`. Use concurrency 2 for candidate and holdout too; changing only one cohort invalidates the comparison.
-After all five commands finish and the summary shows `baseline-retry business-check failures:`, **open the new evaluation's report URL for step 5's portal check**. Use that summary for [case selection in 6-2](../README.md#review-case), keeping this label. Do not repeat completed collection, evaluation, or monitoring.
+**Checkpoint:** collection finishes at `18/18` without errors. Only **V1 collection** is complete; evaluation, portal, and trace checks still remain.
+
+**If not:** do not create another label; give the instructor the error and the original failure record.
+
+**Next:** resume the main guide at [step 5-3's evaluation command](../README.md#baseline-evaluation). Replace `baseline` with **`baseline-retry`** in every later command and file path, including `feedback`, `compare`, `summary`, and `verify --baseline`. Also **add `--concurrency 2`** to the V2 dev and holdout `collect` commands. Note both changes now; do not repeat completed collection.
 
 **Failed V2 dev or holdout after a completed baseline:** keep that baseline's recorded `concurrency` from `manifest.json`. The examples below assume **4**; use its actual value if different. Choose **one** command, not both:
+
+**If V2 dev collection failed:**
 
 ```bash
 python scripts/workshop.py collect --split dev --label improved-retry --concurrency 4
 ```
 
+**Checkpoint:** collection finishes at `18/18` without errors. Resume at [step 7's evaluation and comparison](../README.md#candidate-evaluation), replacing `improved` with `improved-retry`.
+
+**If not:** stop and inspect the error with the instructor. Do not redeploy or change the completed baseline or review.
+
+**If holdout collection failed:**
+
 ```bash
 python scripts/workshop.py collect --split holdout --label holdout-retry --concurrency 4
 ```
 
-After a V2 dev retry reaches **18/18**, return directly to [step 7's evaluation and comparison](../README.md#candidate-evaluation), replacing `improved` with `improved-retry`. After a holdout retry reaches **12/12**, return directly to [step 8's evaluation](../README.md#holdout-evaluation), replacing `holdout` with `holdout-retry`. Do not repeat deployment or collection at the top of those steps.
+**Checkpoint:** collection finishes at `12/12` without errors. Resume at [step 8's evaluation](../README.md#holdout-evaluation), replacing `holdout` with `holdout-retry`.
+
+**If not:** stop and inspect the error with the instructor. Do not redeploy or edit instructions to change the results.
 
 Do not redeploy, change the prompt after seeing holdout, or recreate the completed baseline and its review. A holdout execution retry is **not a new untouched validation set**. If you must change concurrency after baseline completed, start a separately controlled experiment; do not erase the original evidence.
 
@@ -361,6 +370,7 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 | Sign-in | Stay in this workspace and follow [README step 1-3](../README.md#login), then return to [environment step 2](environment.en.md#setup-identity) |
 | Provisioning in environment steps 2–5 | Run `cd "$REPO_ROOT"`, keep `AZURE_CONFIG_DIR` unchanged, and [select the interrupted stage](environment.en.md#setup-route). Resume only its failed command with the same `--run-dir "$RUN_DIR"`. |
 | Candidate preparation in environment step 6 | Stay in `"$RUN_DIR/workshop"` and resume the failed command in [step 6](environment.en.md#setup-candidates) |
+| Candidates ready; only calibration unfinished | Resume at [judge calibration](environment.en.md#setup-calibration) in the same workspace; do not repeat `prepare-models` |
 | Environment already completed | Choose the [self-study or class handoff](environment.en.md#handoff); do not repeat preparation |
 
 If a login has expired, restore it using the configured account. Never use a different account, new resource names, or deleted ownership records to bypass an error.

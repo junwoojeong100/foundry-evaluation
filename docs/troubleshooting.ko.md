@@ -176,28 +176,36 @@ Agent와 run 필터는 그대로이며 trace 누락·중복·다른 trace·sampl
 **완료된 비교가 없는 첫 baseline 실패:** 원인 해결을 위해 동시성을 2로 낮추는 경우의 예시입니다.
 
 ```bash
-python scripts/workshop.py collect --split dev --label baseline-retry --concurrency 2 &&
-python scripts/workshop.py evaluate --label baseline-retry &&
-python scripts/workshop.py compare --labels baseline-retry &&
-python scripts/workshop.py monitor --label baseline-retry &&
-python scripts/workshop.py summary --labels baseline-retry
+python scripts/workshop.py collect --split dev --label baseline-retry --concurrency 2
 ```
 
-이 경우 이후 `feedback`, `compare`, `verify --baseline`도 **같은 `baseline-retry`**를 사용합니다.
-improved/holdout 수집에도 `--concurrency 2`를 유지합니다. label 일부만 바꾸면 비교 대상이 섞입니다.
-위 다섯 명령이 끝나고 요약에 `baseline-retry business-check failures:`가 나오면 **새 평가의 report URL로 5단계 포털 확인**을 마칩니다. 그 요약에서 [6-2 사례 선택](../README.ko.md#review-case)을 이 label로 이어갑니다. 완료한 수집·평가·monitor는 반복하지 않습니다.
+**완료 확인:** 오류 없이 `18/18`로 끝납니다. 완료한 것은 **V1 수집뿐**이며, 평가·포털·trace 확인은 아직 남아 있습니다.
+
+**다르면:** 새 label을 또 만들지 말고 오류와 원래 실패 기록을 강사에게 전달합니다.
+
+**다음:** [5-3의 평가 명령](../README.ko.md#baseline-evaluation)부터 메인 가이드를 이어갑니다. 이후 명령·파일 경로의 `baseline`은 모두 **`baseline-retry`**로 바꿉니다(`feedback`, `compare`, `summary`, `verify --baseline` 포함). V2 dev·holdout의 `collect`에는 **`--concurrency 2`도 추가**합니다. 두 조건을 메모해 두고, 완료한 수집은 반복하지 않습니다.
 
 **Baseline 완료 후 V2 dev나 holdout 실패:** baseline의 `manifest.json`에 기록된 `concurrency`를 유지합니다. 아래는 **4**인 경우이며, 다르면 실제 값으로 바꿉니다. 실패한 단계의 명령 **하나만** 선택합니다.
+
+**V2 dev 수집이 실패한 경우:**
 
 ```bash
 python scripts/workshop.py collect --split dev --label improved-retry --concurrency 4
 ```
 
+**완료 확인:** 오류 없이 `18/18`로 끝납니다. [7단계의 평가·비교](../README.ko.md#candidate-evaluation)부터 `improved`를 `improved-retry`로 바꾸어 이어갑니다.
+
+**다르면:** 멈추고 오류를 강사와 확인합니다. 재배포하거나 완료된 baseline·검토 기록을 바꾸지 않습니다.
+
+**Holdout 수집이 실패한 경우:**
+
 ```bash
 python scripts/workshop.py collect --split holdout --label holdout-retry --concurrency 4
 ```
 
-V2 dev가 **18/18**로 끝나면 바로 [7단계 평가·비교](../README.ko.md#candidate-evaluation)부터 `improved`를 `improved-retry`로 바꾸어 이어갑니다. Holdout이 **12/12**로 끝나면 바로 [8단계 평가](../README.ko.md#holdout-evaluation)부터 `holdout`을 `holdout-retry`로 바꾸어 이어갑니다. 해당 단계 처음의 배포·수집은 반복하지 않습니다.
+**완료 확인:** 오류 없이 `12/12`로 끝납니다. [8단계의 평가](../README.ko.md#holdout-evaluation)부터 `holdout`을 `holdout-retry`로 바꾸어 이어갑니다.
+
+**다르면:** 멈추고 오류를 강사와 확인합니다. 재배포·지침 수정으로 결과를 바꾸지 않습니다.
 
 재배포하거나, holdout을 보고 지침을 바꾸거나, 완료된 baseline과 회귀 검토를 다시 만들지 않습니다. Holdout 실행 오류를 복구한 결과는 **새 미사용 검증셋이 아닙니다.** Baseline 완료 후 동시성까지 바꿔야 한다면 별도로 통제한 새 실험을 시작하며 원래 증거는 지우지 않습니다.
 
@@ -367,6 +375,7 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 | 로그인 | 지금 폴더에서 [README 1-3](../README.ko.md#login)을 수행한 뒤 [환경 준비 2단계](environment.ko.md#setup-identity)로 복귀 |
 | 환경 준비 2–5단계의 서비스 생성 | `cd "$REPO_ROOT"`로 이동하고 `AZURE_CONFIG_DIR`는 유지. [중단한 단계](environment.ko.md#setup-route)를 골라 같은 `--run-dir "$RUN_DIR"`로 실패한 명령만 실행 |
 | 환경 준비 6단계의 후보 모델 준비 | 지금 `"$RUN_DIR/workshop"` 폴더에서 [6단계](environment.ko.md#setup-candidates)의 실패한 명령부터 재개 |
+| 후보 준비 완료, calibration만 미완료 | 같은 실행 폴더에서 [judge 점검](environment.ko.md#setup-calibration)부터 재개. `prepare-models`는 반복하지 않음 |
 | 환경 준비는 이미 완료됨 | [개인 실습 또는 수업 전달 경로](environment.ko.md#handoff)를 선택. 준비를 반복하지 않음 |
 
 로그인이 만료됐다면 설정된 계정으로 복구합니다. 다른 계정·새 자원 이름·소유권 기록 삭제로 오류를 우회하지 않습니다.

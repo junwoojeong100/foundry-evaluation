@@ -314,7 +314,7 @@ echo "exit code: $?"
 **Checkpoint:** either result is valid; report the one you get:
 
 - `Quality gate passed: all six business gates are true. production_release_approved remains false.`, then `exit code: 0`;
-- `Quality gate FAILED: ...`, then `exit code: 1`, when any gate from 9-2 is `false`.
+- `Quality gate FAILED: ...`, then `exit code: 1`, when any [gate from 9-3](../README.md#completion-decision) is `false`.
 
 **If not:** a missing file or traceback is an execution error, not a quality failure. Check `src/agent/.foundry/results/verified-evidence.json` and [9-1's checkpoint](../README.md#lab-g). Do not record a business-gate failure from exit code `1` alone without its output.
 
@@ -334,6 +334,8 @@ A passing gate still does not approve production; human review and the holdout r
 Append the [results table](#level-3-results) you filled in during the sections to your main [report](../README.md#finish). You do not need to rerun finished commands.
 
 **Checkpoint:** sections 1–7 meet their completion checkpoints and the table is filled in. Record skipped sections, errors, or zero traces as **incomplete**. Low valid scores or `Quality gate FAILED` are results of a completed exercise.
+
+**If not:** return to the first unfinished section and resume only its command, or record it as incomplete if time runs out; do not repeat finished commands ([Level 2–3 recovery](troubleshooting.en.md#levels)).
 
 **Next:** return to [step 10 cleanup](../README.md#cleanup). Even if you stop with incomplete sections, clean up the paid resources and schedule you created. Do not repeat cleanup if already finished. It deletes the continuous-evaluation schedule, generated rubric and artifacts, and synthetic question dataset. Eval groups and red-team results stay as evidence.
 

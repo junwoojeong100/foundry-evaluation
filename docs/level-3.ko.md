@@ -319,7 +319,7 @@ echo "exit code: $?"
 **완료 확인:** 다음 둘 중 어느 쪽이든 정상이며, 나온 결과를 그대로 보고합니다.
 
 - `Quality gate passed: all six business gates are true. production_release_approved remains false.`에 이어 `exit code: 0`
-- 9-2의 gate 중 하나라도 `false`일 때 `Quality gate FAILED: ...`에 이어 `exit code: 1`
+- [9-3의 gate](../README.ko.md#completion-decision) 중 하나라도 `false`일 때 `Quality gate FAILED: ...`에 이어 `exit code: 1`
 
 **다르면:** 파일 없음·traceback은 품질 미통과와 다른 실행 오류입니다. `src/agent/.foundry/results/verified-evidence.json`과 [9-1의 완료 기준](../README.ko.md#lab-g)을 확인합니다. 출력 없이 종료 코드 `1`만 보고 업무 gate 실패로 기록하지 않습니다.
 
@@ -339,6 +339,8 @@ gate를 통과해도 운영 승인이 아니며, 사람의 검토와 8단계의 
 각 절에서 채운 [결과표](#level-3-results)를 기본 실습의 [보고](../README.ko.md#finish)에 붙입니다. 끝난 명령을 다시 실행할 필요는 없습니다.
 
 **완료 확인:** 1–7절의 완료 기준을 충족하고 표를 채웠습니다. 생략·오류·0 trace는 **미완료**로 기록합니다. 낮은 유효 점수나 `Quality gate FAILED`는 완료된 실습의 결과입니다.
+
+**다르면:** 끝나지 않은 첫 절로 돌아가 그 명령만 이어가거나, 시간이 없으면 미완료로 기록합니다. 끝난 명령은 반복하지 않습니다([레벨 2·3 복구](troubleshooting.ko.md#levels)).
 
 **다음:** [10단계 정리](../README.ko.md#cleanup)로 돌아갑니다. 미완료로 중단하더라도 만든 유료 자원·일정의 정리는 필요합니다. 이미 정리를 마쳤다면 반복하지 않습니다. 정리하면 연속 평가 일정, 생성된 rubric과 그 산출물, 합성 질문 데이터셋이 삭제되고, eval group과 red team 결과는 증거로 남습니다.
 

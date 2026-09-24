@@ -202,4 +202,6 @@ Comparison/cluster: evaluator=...; delta/effect=...; verified failure cause, or 
 
 **Checkpoint:** sections 1–3 finished, and your notes distinguish pass counts from mean scores when interpreting your results. Low valid scores are not incomplete execution; missing results due to errors are.
 
+**If not:** return to the first unfinished section and resume only its command; do not repeat finished commands ([Level 2–3 recovery](troubleshooting.en.md#levels)).
+
 **Next:** [Level 3](level-3.en.md), or return to [step 10 cleanup](../README.md#cleanup). Cleanup also deletes the custom evaluators from this level; the eval groups and results stay as evidence.

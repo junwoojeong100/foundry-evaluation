@@ -77,6 +77,8 @@ python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language ko
 
 출력된 `RUN_DIR`의 절대 경로를 지금 보관합니다. **완료 확인:** `init`이 끝나고 **`$RUN_DIR/config.json`**이 생깁니다. 새 이름을 기록한 것이며, 아직 소스 복사나 Azure 자원 생성은 하지 않았습니다.
 
+**다르면:** 출력과 같은 `RUN_DIR`를 보존하고 [환경 준비 복구](troubleshooting.ko.md#setup-resume)를 따릅니다. 새 실행 ID로 처음부터 반복하지 않습니다.
+
 <a id="setup-snapshot"></a>
 
 이어서 실제 실행할 소스 스냅샷을 만듭니다.
@@ -85,7 +87,9 @@ python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language ko
 python scripts/prepare_environment.py prepare --run-dir "$RUN_DIR"
 ```
 
-**완료 확인:** **`$RUN_DIR/source-manifest.json`**과 **`$RUN_DIR/workshop/.env`**가 있습니다. 두 명령 중 하나라도 실패하면 새 `RUN_ID`를 만들지 말고, 이 경로를 유지한 채 [환경 준비 복구](troubleshooting.ko.md#setup-resume)를 따릅니다.
+**완료 확인:** **`$RUN_DIR/source-manifest.json`**과 **`$RUN_DIR/workshop/.env`**가 있습니다.
+
+**다르면:** [환경 준비 복구](troubleshooting.ko.md#setup-resume)에서 소스 복사 상태를 확인합니다. `init`을 반복하거나 기존 폴더를 덮어쓰지 않습니다.
 
 **이후 실습이 읽는 설정은 `RUN_DIR/workshop/.env`입니다.** 원래 clone의 `.env`를 수정해도 생성된 복사본은 바뀌지 않습니다. 재개할 때는 저장된 설정과 소유권 기록을 유지합니다.
 
@@ -102,6 +106,9 @@ python -m unittest discover -s tests -v
 ```
 
 **완료 확인:** 테스트가 `OK`입니다. **`$RUN_DIR/source-manifest.json`**에 소스 revision·SHA-256이 있고 **`$RUN_DIR/workshop/.env`**에 `LAB_LANGUAGE=ko`와 새 이름이 있습니다. 이전 `.azure`·`.foundry`·결과·가상환경을 재사용하지 않았습니다.
+
+**다르면:** Azure 작업으로 넘어가지 않고 [Python 준비 복구](troubleshooting.ko.md#setup-resume)를 따릅니다. 이미 만들어진 가상환경·소스를 새로 만들지 않습니다.
+
 **지금의 `$RUN_DIR/workshop` 폴더를 유지합니다.** 다음 로그인도 이 폴더에서 실행해야 이후 로컬 실습과 같은 CLI 캐시를 사용합니다.
 이 스냅샷은 실행할 소스이며 가이드 복사본은 포함하지 않습니다. 가이드는 브라우저나 편집기에 계속 열어 둡니다.
 
@@ -124,7 +131,10 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 ```
 
 **완료 확인:** 세 `matches` 값이 `true`, 구독은 `Enabled`이며 지정한 세 모델(`gpt-6-sol`·`gpt-6-luna`·`gpt-6-astra`)과 보조 모델의 용량 레코드가 있습니다.
-각 Azure CLI 요청에는 설정한 구독이 명시됩니다. 실제 구독 할당량은 6단계의 `preflight`와 모델 준비에서 다시 확인합니다.
+
+**다르면:** 자원을 생성하지 않습니다. 계정 불일치는 [로그인 확인](../README.ko.md#login-check), 권한·용량 오류는 환경 소유자와 확인한 뒤 [실패한 준비 명령만 복구](troubleshooting.ko.md#setup-resume)합니다. 구독·모델·리전을 임의로 바꾸지 않습니다.
+
+각 Azure CLI 요청에는 설정한 구독이 명시됩니다. 실제 구독 할당량은 6단계의 `prepare-models` 내부 검사에서 다시 확인합니다.
 
 위 경로는 **`--preserve-existing`으로 기존 그룹을 모두 보존**하며 삭제하지 않습니다. 옵션 없이 실행하면 이전 후보를 발견했을 때 소유권 확인을 위해 중단할 수 있습니다. 어느 경로든 태그·이름만으로 다른 자원을 삭제하거나 오류를 무시하지 않습니다.
 
@@ -146,6 +156,8 @@ python scripts/provision_environment.py search --run-dir "$RUN_DIR"
 **완료 확인:** Azure Portal의 **새 리소스 그룹 → Resources**에 Foundry 계정·프로젝트·Search·Application Insights·Log Analytics가 있습니다.
 모두 새 그룹과 Sweden Central에 있어야 합니다. **Tags**에서 `workshop`, `cleanup-scope`, `run`을 대조합니다.
 도구는 태그뿐 아니라 이번 실행의 실제 생성 기록도 요구합니다.
+
+**다르면:** 출력의 실패한 명령과 [기존 생성 기록을 확인](troubleshooting.ko.md#setup-resume)합니다. 성공한 생성 명령부터 반복하거나 새 그룹을 만들지 않습니다. Search의 대기 시간 초과만 발생했다면 바로 아래 복구를 사용합니다.
 
 Search는 Basic 1 replica / 1 partition입니다. `semanticSearch`와 `knowledgeRetrieval`의 `free` 설정이 **Search 가동·모델 호출까지 무료라는 뜻은 아닙니다.**
 Portal의 ARM **Deployments** 목록은 Foundry 모델 배포 목록과 다릅니다.
@@ -185,6 +197,8 @@ python scripts/provision_environment.py search-connection --run-dir "$RUN_DIR"
 **완료 확인:** 사용자에게 새 프로젝트의 Foundry User, 새 계정의 OpenAI User, 새 Search의 작성·적재 역할이 있습니다.
 프로젝트 identity에는 새 관측 자원의 Logs 읽기 권한이 있고, Search는 `AAD`, App Insights는 실제 `ResourceId` metadata를 가진 연결입니다.
 
+**다르면:** 환경 소유자가 오류에 나온 주체와 범위를 확인한 뒤 [실패한 권한·연결 명령만 복구](troubleshooting.ko.md#setup-resume)합니다. 넓은 Owner 권한이나 공유 연결 변경으로 우회하지 않습니다.
+
 **사용자·프로젝트 identity·agent instance identity는 다릅니다.**
 배포 후 agent의 Search 읽기·모델 추론 역할은 [참가자 4단계](../README.ko.md#deploy)의 `grant-agent-access`에서 부여합니다. Owner를 일괄 추가하지 않습니다.
 
@@ -202,25 +216,42 @@ python scripts/provision_environment.py ready --run-dir "$RUN_DIR"
 **완료 확인:** 새 그룹·프로젝트·Search와 두 endpoint를 확인합니다. Project endpoint와 Azure OpenAI endpoint는 용도가 다릅니다.
 보조 모델은 `gpt-5.4-mini` / `2026-03-17`이며 세 후보 모델 중 하나를 대신하지 않습니다.
 
+**다르면:** [같은 실행의 준비 상태](troubleshooting.ko.md#setup-resume)를 확인합니다. `auxiliary`가 성공하고 `ready`만 실패했다면 `ready`만 복구하며, endpoint를 추측해 입력하지 않습니다.
+
 <a id="setup-candidates"></a>
 
 <a id="6-네-후보-준비-후-참가자에게-전달"></a>
 
 ## 6. 세 후보 준비 후 참가자에게 전달
 
-**할 일:** 새 소스 폴더로 이동해 모델을 준비하고 judge를 점검합니다.
+**터미널 — 실행 폴더로 이동:** 5단계까지 완료한 같은 터미널을 사용합니다.
 
 ```bash
 cd "$RUN_DIR/workshop" &&
-source src/agent/.venv/bin/activate &&
-python scripts/workshop.py preflight --allow-missing-models &&
-python scripts/workshop.py prepare-models &&
-python scripts/workshop.py preflight &&
+source src/agent/.venv/bin/activate
+```
+
+**터미널 — 후보 모델 준비:** 아래 명령이 **사전 검사 → 없는 후보만 유료 배포 → 최종 검사**까지 합니다. 기존 배포는 유지하며, 별도 `preflight`를 앞뒤로 반복할 필요는 없습니다.
+
+```bash
+python scripts/workshop.py prepare-models
+```
+
+**완료 확인:** 오류 없이 종료되고 **마지막 JSON**에 `language: ko`, 세 후보의 `deployed: true`, `missing_models: []`가 있습니다. 고정 모델·버전은 `gpt-6-sol` / `2026-09-22`, `gpt-6-luna` / `2026-09-22`, `gpt-6-astra` / `2026-09-03`입니다. 첫 JSON의 `missing_models`는 생성 전 상태일 수 있습니다.
+
+**다르면:** 모델 접근·할당량·배포 오류를 해결한 뒤 [같은 폴더에서 실패한 준비만 복구](troubleshooting.ko.md#setup-resume)합니다. 다른 모델로 대체하거나 기반 서비스를 다시 만들지 않습니다.
+
+<a id="setup-calibration"></a>
+
+**터미널 — judge 점검:** 후보 준비를 마친 뒤 실행합니다.
+
+```bash
 python scripts/workshop.py calibrate
 ```
 
-**완료 확인:** `language: ko`, Sol/Luna/Astra의 고정 모델 ID·버전(`gpt-6-sol` / `2026-09-22`, `gpt-6-luna` / `2026-09-22`, `gpt-6-astra` / `2026-09-03`), `deployed: true`, `missing_models: []`, **`Judge calibration passed`**를 확인합니다.
-Calibration 예제 2개는 본평가 48응답이 아닙니다. 모델 접근·할당량이 부족하면 다른 모델로 대체하지 않고 준비를 중단합니다.
+**완료 확인:** **`Judge calibration passed`**. 예제 2개는 본평가 48응답에 포함하지 않습니다.
+
+**다르면:** [calibration만 복구](troubleshooting.ko.md#calibration)합니다. 후보 준비가 끝났다면 `prepare-models`부터 반복하지 않습니다.
 
 <a id="handoff"></a>
 
@@ -228,7 +259,7 @@ Calibration 예제 2개는 본평가 48응답이 아닙니다. 모델 접근·�
 
 | 이어서 실행할 사람 | 사용할 폴더와 다음 행동 |
 |---|---|
-| 본인 — 일회성 개인 실습 | **`$RUN_DIR/workshop`**을 유지하고 [README 1-4](../README.ko.md#project-binding)에서 preflight 기준을 확인한 뒤 bind. Clone·설치·로그인을 반복하지 않습니다. |
+| 본인 — 일회성 개인 실습 | **`$RUN_DIR/workshop`**을 유지하고 [README의 연결 명령(`bind`)](../README.ko.md#bind-project)부터 실행합니다. 방금 완료한 preflight와 clone·설치·로그인은 반복하지 않습니다. |
 | 수업을 준비하는 강사 | 이 폴더에는 모델 소유권을 남기고, 새 실행 이름을 쓰는 [별도 리허설 clone](instructor.ko.md#rehearsal-workspace)에서 실습. 리허설 cleanup으로 공유 모델을 지우지 않도록 분리합니다. |
 | 새 참가자 | **미사용 조별 이름**과 **실제 준비된 모델 배포 이름**을 담은 완성된 `.env`를 전달. 참가자는 자기 폴더에서 [README 1단계](../README.ko.md#start)부터 진행합니다. |
 

@@ -208,13 +208,43 @@ python -m unittest discover -s tests -v
 
 **완료 확인:** 같은 계정의 배포가 위 조건을 만족하고, `.env`의 두 값이 **각각 실제 배포 이름과 모델 ID**에 맞는다. 이 배포 하나를 IQ planner와 평가 judge가 함께 사용한다. 포털에서 새로 만든 보조 배포의 이름·Resource ID는 준비 담당자가 보관하며, 참가자 `cleanup`의 자동 삭제 대상으로 간주하지 않는다.
 
+**다르면:** 다음 검사로 넘어가지 않는다. 환경 소유자가 위 고정 조건·실제 배포 이름을 확인하며, 공유 배포를 고치거나 다른 모델로 대체하지 않는다.
+
 ### 3. 세 후보 모델과 judge 확인 후 전달
 
-1. `python scripts/workshop.py preflight --allow-missing-models`로 환경과 세 모델의 지역별 지원·할당량을 읽기 전용 확인한다. 보조 모델은 위에서 준비되어 있어야 한다.
-2. 후보 모델이 없다면 `python scripts/workshop.py prepare-models`로 **고유 접두사**를 가진 세 배포만 만든다. 새 배포는 `GlobalStandard` 50 capacity이며, 실습 중 모델 버전이 바뀌지 않도록 자동 버전 업그레이드를 끈다(`NoAutoUpgrade`).
-3. `python scripts/workshop.py preflight`를 다시 실행해 `language: ko`, `missing_models: []`를 확인한다.
-4. `python scripts/workshop.py calibrate`의 **`Judge calibration passed`**를 확인한다. 참가자 README 5단계에서도 점검하며, 같은 입력의 완료된 calibration은 재사용한다. 예제 2건은 세 모델의 본평가 48응답에 포함하지 않는다.
-5. 수업 준비라면 [별도 리허설 폴더](#rehearsal-workspace)를 거쳐 참가자에게 전달한다. 일회성 개인 실습이라면 이 폴더에서 [README 1-4](../README.ko.md#project-binding)로 이어간다. 순서는 bind → IQ 검색 → 로컬 smoke → 배포·권한 부여 → 원격 smoke다. 두 경로를 모두 실행하지 않는다.
+**터미널 — 현재 모델 확인:** 같은 모델 준비 폴더에서 실행한다. 보조 모델은 위에서 준비되어 있어야 한다.
+
+```bash
+python scripts/workshop.py preflight --allow-missing-models
+```
+
+**완료 확인:** 오류 없이 끝나고 `language: ko`와 `missing_models` 목록이 나온다. 목록이 **`[]`이면 후보 준비는 완료**이므로 생성 명령을 건너뛰고 [judge 점검](#candidate-calibration)으로 간다.
+
+**다르면:** 보조 모델 오류는 [앞 단계](#auxiliary-model), 나머지는 [증상별 확인](troubleshooting.ko.md#symptoms)에서 원인을 해결한다. 오류가 난 상태로 모델 생성에 넘어가지 않는다.
+
+**터미널 — `missing_models`에 후보가 있을 때만 생성:** 없는 배포만 고유 접두사로 만들고 마지막에 `preflight`까지 수행한다. 새 배포는 `GlobalStandard` 50 capacity, `NoAutoUpgrade`이며 기존 배포는 유지한다.
+
+```bash
+python scripts/workshop.py prepare-models
+```
+
+**완료 확인:** 오류 없이 끝나고 **마지막 JSON**에 `language: ko`, 세 후보의 `deployed: true`, `missing_models: []`가 나온다. 별도 `preflight`를 다시 실행하지 않는다.
+
+**다르면:** 모델 접근·할당량·배포 오류를 해결한 뒤 같은 폴더에서 실패한 명령만 복구한다. 이름·모델을 바꾸거나 새 기반 환경으로 우회하지 않는다([증상별 확인](troubleshooting.ko.md#symptoms)).
+
+<a id="candidate-calibration"></a>
+
+**터미널 — judge 점검(두 경로 공통):**
+
+```bash
+python scripts/workshop.py calibrate
+```
+
+**완료 확인:** **`Judge calibration passed`**. 참가자 README 5단계에서도 점검하며, 같은 입력의 완료된 calibration은 재사용한다. 예제 2건은 본평가 48응답에 포함하지 않는다.
+
+**다르면:** [calibration만 복구](troubleshooting.ko.md#calibration)한다. 끝난 모델 준비부터 반복하지 않는다.
+
+**다음:** 수업 준비라면 [별도 리허설 폴더](#rehearsal-workspace)를 거쳐 참가자에게 전달한다. 일회성 개인 실습이라면 같은 폴더에서 [README의 연결 명령(`bind`)](../README.ko.md#bind-project)부터 이어간다. 완료한 clone·설치·로그인·preflight는 반복하지 않는다. 두 경로를 모두 실행하지 않는다.
 
 평가가 `AppInsights connection is missing ResourceId metadata`로 실패하면 강사가 연결의 소유권과 범위를 먼저 확인한다. **공유 연결은 참가자가 직접 변경하지 않는다.** 수정이 허용된 실습 전용 연결에만 `python scripts/workshop.py repair-observability --confirm`으로 실제 Application Insights ARM ID 메타데이터를 추가한다. target/credential은 변경하지 않으며 보완 기록은 cleanup 후에도 유지된다. 이후 저장된 run 상태에 따라 [calibration 복구](troubleshooting.ko.md#calibration) 또는 [평가 복구](troubleshooting.ko.md#evaluation-retry)를 선택한다. 로컬 오류만으로 `--retry-failed`를 사용하거나 낮은 점수를 통과할 때까지 반복하지 않는다.
 
@@ -356,7 +386,11 @@ Foundry 에이전트를 수정하거나 설명하기 전에 `microsoft-foundry` 
 
 ## 가이드를 수정할 때
 
-영문·국문 실행 경로를 함께 유지한다. 결과와 시작 조건부터 쓰고, 선택 배경 설명은 접어 둔다. 실행 단계마다 **작업 위치·명령·완료 증거·복구 경로**를 명시한다. 기록된 예시 점수와 독자의 통과 기준은 구분한다.
+영문·국문 실행 경로를 함께 유지한다. 결과와 시작 조건부터 쓰고, **새 실습·기존 실행 복구**를 먼저 구분한다. 환경 준비·도구 위임 같은 다른 경로와 배경 설명은 접어 둔다.
+
+실행 단계마다 **작업 위치·명령·완료 증거·복구 경로**를 명시한다. 수집·평가·집계·trace 조회·증거 검증뿐 아니라 **후보 준비와 calibration도 명령 하나와 완료 확인 하나씩** 배치한다. 복구 페이지에 뒤의 실습 명령을 묶어 복제하지 말고, 실패한 작업을 복구한 뒤 **메인 가이드의 다음 미실행 명령**으로 돌려보낸다. 내부에서 이미 수행하는 검사를 별도 명령으로 반복하지 않는다.
+
+접힌 예시 화면은 그것이 보여 주는 완료 확인 바로 뒤에 둔다. 환경 준비 문서의 복귀 링크는 아직 실행하지 않은 명령을 가리킨다. 최종 보고는 증거·포털 확인 뒤에 두며, **출처 연결·실행 완료·품질 통과**를 구분한다. 촬영 예시의 답변·점수를 독자의 목표 결과로 쓰지 않는다.
 
 가상환경을 활성화한 **원래 clone**에서 실행한다.
 
@@ -364,6 +398,6 @@ Foundry 에이전트를 수정하거나 설명하기 전에 `microsoft-foundry` 
 python -m unittest discover -s tests -p 'test_docs.py' -v
 ```
 
-로컬 링크·앵커·첨부 파일, 코드 블록 구조, Bash·JSON 문법, 실제 파서와 Python 명령 인자의 일치, 한영 명령 순서를 확인한다. 예시 명령을 실행하거나 Azure에 접속하지 않으며, 과거 cloud 점수를 재검증하는 테스트가 아니다. 가이드가 없는 실행용 소스 스냅샷에서는 문서 검사를 건너뛴다.
+로컬 링크·앵커·첨부 파일, 코드 블록 구조, Bash·JSON 문법, 실제 파서와 Python 명령 인자의 일치, 한영 명령 순서를 확인한다. 기본·후보 준비·수집 복구 경로의 독립된 완료 확인, 참가자·환경 준비 가이드의 **다르면** 안내, 복구 링크의 다음 명령, **대시보드 → 보고 → 정리** 순서도 검사한다. 예시 명령을 실행하거나 Azure에 접속하지 않으며, 과거 cloud 점수를 재검증하는 테스트가 아니다. 가이드가 없는 실행용 소스 스냅샷에서는 문서 검사를 건너뛴다.
 
-추가로 참가자·환경 소유자·재개 사용자 입장에서 [시작점 표](../README.ko.md#start-here)를 따라 읽는다. 자동 검사가 처음 읽는 사람의 이해도까지 입증하지는 않는다.
+추가로 참가자·환경 소유자·재개 사용자 입장에서 [시작 안내](../README.ko.md#start-here)를 따라 읽는다. **지금 할 일·완료 표시·다음 위치**를 추측 없이 찾을 수 있는지 확인한다. 자동 검사가 처음 읽는 사람의 이해도까지 입증하지는 않는다.

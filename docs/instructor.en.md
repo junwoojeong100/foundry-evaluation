@@ -190,13 +190,43 @@ Stop if the exact model, version, deployment type, or quota is unavailable. Do n
 
 **Checkpoint:** the deployment in the same account meets the requirements above, and the two `.env` values match **the actual deployment name and model ID respectively**. IQ planning and evaluation judging share this deployment. The owner records the name and Resource ID of any auxiliary deployment created in the portal; do not assume participant `cleanup` will delete it.
 
+**If not:** stop before the next check. Have the owner verify the fixed requirements and actual deployment name; do not modify a shared deployment or substitute a model.
+
 ### 3. Check the candidates and judge, then hand off
 
-1. Run `python scripts/workshop.py preflight --allow-missing-models`. The auxiliary deployment must already be ready.
-2. If the three candidates are missing, use `python scripts/workshop.py prepare-models` to create only the owned, prefixed deployments. New deployments use `GlobalStandard` capacity 50, and automatic version upgrades are disabled (`NoAutoUpgrade`) so the fixed model versions do not change during the exercise.
-3. Run `python scripts/workshop.py preflight` again and require `language: en` and `missing_models: []`.
-4. Run `python scripts/workshop.py calibrate` and require **`Judge calibration passed`**. README step 5 repeats this check in each participant workspace; matching completed calibration is reused. The two fixed examples are not part of the 48 candidate responses.
-5. For a class, use the [separate rehearsal folder](#rehearsal-workspace), then hand off to participants. For one-off self-study, stay here and continue at [README step 1-4](../README.md#project-binding): bind → IQ retrieval → local smoke → deployment/access → hosted smoke. Do not run both paths.
+**Terminal — check current models:** use the same model-preparation folder. The auxiliary deployment must already be ready.
+
+```bash
+python scripts/workshop.py preflight --allow-missing-models
+```
+
+**Checkpoint:** the command finishes without errors and prints `language: en` and `missing_models`. If the list is **`[]`, the candidates are ready**: skip creation and go to [judge calibration](#candidate-calibration).
+
+**If not:** resolve auxiliary-model errors in the [previous step](#auxiliary-model), or use the [symptom table](troubleshooting.en.md#symptoms) for other errors. Do not proceed to model creation after a failed check.
+
+**Terminal — create only if `missing_models` lists candidates:** this creates only missing, prefixed deployments and runs `preflight` at the end. New deployments use `GlobalStandard` capacity 50 and `NoAutoUpgrade`; existing deployments are preserved.
+
+```bash
+python scripts/workshop.py prepare-models
+```
+
+**Checkpoint:** the command finishes without errors and its **last JSON** has `language: en`, `deployed: true` for all three candidates, and `missing_models: []`. Do not run another separate `preflight`.
+
+**If not:** resolve model access, quota, or deployment errors, then recover only the failed command in the same folder. Do not change names, substitute models, or create a new foundation as a workaround ([symptom table](troubleshooting.en.md#symptoms)).
+
+<a id="candidate-calibration"></a>
+
+**Terminal — check the judge (both paths):**
+
+```bash
+python scripts/workshop.py calibrate
+```
+
+**Checkpoint:** **`Judge calibration passed`**. README step 5 repeats this check in each participant workspace; matching completed calibration is reused. The two fixed examples are not part of the 48 candidate responses.
+
+**If not:** [recover only calibration](troubleshooting.en.md#calibration), not completed model preparation.
+
+**Next:** for a class, use the [separate rehearsal folder](#rehearsal-workspace), then hand off to participants. For one-off self-study, stay in this folder and continue at [the README's binding command (`bind`)](../README.md#bind-project). Do not repeat completed cloning, installation, sign-in, or preflight. Do not run both paths.
 
 If evaluation reports missing App Insights `ResourceId` metadata, inspect connection ownership first. Only an authorized instructor may use `repair-observability --confirm` on a dedicated workshop connection. Do not modify a shared connection to make an example work.
 
@@ -317,7 +347,11 @@ Actual English cloud results belong in [the English evaluation explanation](vali
 
 ## When updating the guides
 
-Keep English and Korean execution paths aligned. Lead with the outcome and starting conditions; put optional background in collapsed sections. Each execution step must name **where to act, the command, its completion evidence, and the recovery path**. Keep recorded scores separate from the reader's acceptance criteria.
+Keep English and Korean execution paths aligned. Lead with the outcome and starting conditions, distinguishing **a new workshop from an existing run** first. Collapse alternative paths such as environment preparation or tool delegation, along with background explanations.
+
+Each execution step must name **where to act, the command, its completion evidence, and the recovery path**. Give collection, evaluation, aggregation, trace lookup, verification, **candidate preparation, and calibration one command and one checkpoint each**. Recovery pages should fix the failed task, then link to **the main guide's next unexecuted command**, not duplicate a bundle of later steps. Do not repeat checks that a command already performs internally.
+
+Place each collapsed example screen right after the checkpoint it illustrates. A setup guide's return link must target the next unexecuted command. Put the final report after evidence and portal checks; distinguish **provenance links, execution completion, and quality passes**. Recorded answers and scores are examples, not the reader's target results.
 
 From the **original clone**, with its virtual environment active, run:
 
@@ -325,6 +359,6 @@ From the **original clone**, with its virtual environment active, run:
 python -m unittest discover -s tests -p 'test_docs.py' -v
 ```
 
-This checks local links/anchors/assets, code-block structure, Bash/JSON syntax, Python CLI arguments against the actual parsers, and matching English/Korean command sequences. It does **not** execute the example commands, contact Azure, or revalidate recorded cloud scores. Runnable source snapshots omit the guides and skip these documentation checks.
+This checks local links/anchors/assets, code-block structure, Bash/JSON syntax, Python CLI arguments against the actual parsers, and matching English/Korean command sequences. It also checks separate checkpoints in the main, candidate-preparation, and collection-recovery paths; **If not** guidance in participant and environment-preparation guides; recovery links to the next command; and the **dashboard → report → cleanup** order. It does **not** execute the example commands, contact Azure, or revalidate recorded cloud scores. Runnable source snapshots omit the guides and skip these documentation checks.
 
-Also walk through [the starting-point table](../README.md#start-here) as a participant, an environment owner, and a returning user. Automated checks cannot establish that a first-time reader understands the instructions.
+Also follow [the starting instructions](../README.md#start-here) as a participant, an environment owner, and a returning user. Check that **the next action, completion signal, and next destination** require no guesswork. Automated checks cannot establish that a first-time reader understands the instructions.
