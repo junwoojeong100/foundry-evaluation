@@ -1,10 +1,10 @@
-# 레벨 2: Foundry가 업무 계약을 평가하게 만들기
+# 레벨 2: 내 업무 규칙을 Foundry로 평가하기
 
 [English](level-2.en.md) · [메인 가이드로 돌아가기](../README.ko.md#levels) · [요약 영상 11:59부터](../README.ko.md#summary-video)
 
-**약 40분 동안 하는 일:**
+**약 40분 뒤 남길 것:** 같은 V1·V2 응답 36개를 평가한 비교표와, **업무 검사와 LLM 점수를 구분한 해석**입니다.
 
-1. 판단·금액·인용을 확인하는 다섯 업무 검사를 **코드 평가기**로, 채점 기준표를 **rubric 평가기**로 [등록](#register-evaluators)합니다.
+1. 판단·금액·인용을 확인하는 다섯 업무 검사(이하 **업무 계약**)를 **코드 평가기**로, 채점 기준표를 **rubric 평가기**로 [등록](#register-evaluators)합니다.
 2. 저장된 V1·V2 응답을 **평가기 9개로 한 평가 묶음(eval group)에서** [평가](#evaluate-suite)합니다.
 3. Foundry의 **run 비교(통계 검정)**와 **실패 클러스터**를 [읽습니다](#insights).
 
@@ -15,7 +15,7 @@
 
 **실행 위치:** 기존 **터미널 A·저장소 루트**입니다. 새 터미널이면 [환경만 복원](../README.ko.md#resume-shell)합니다. 이름·지침은 바꾸지 않습니다. 복구 label을 썼다면 아래 `baseline`·`improved`를 실제 label로 바꿉니다.
 
-**이 레벨이 필요한 이유:** 촬영한 7단계에서 로컬 업무 검사는 0/18 → 18/18로 바뀌었지만 Foundry groundedness는 18/18 그대로였습니다. 여기서는 Foundry가 내 계약을 직접 측정하고, 다른 평가기 유형과 나란히 비교합니다.
+**진행 방법:** 1–3절만 순서대로 실행합니다. 2절에서 통과 건수를, 3절에서 평균 점수와 실패 원인을 읽어 [마무리 메모](#finish-level-2)에 넣습니다. 예시 점수와 선택 포털 화면은 펼치지 않아도 완료할 수 있습니다.
 
 <a id="register-evaluators"></a>
 
@@ -74,11 +74,11 @@ python scripts/workshop.py evaluate-suite --labels baseline improved --retry-fai
 
 </details>
 
-**읽는 법:** 표는 세 부분으로 봅니다.
+**내 표에서 읽을 순서:**
 
-- **내 계약(`business_contract`)**은 로컬 업무 검사를 Foundry 안에서 그대로 재현합니다.
-- **같은 rubric이라도 근거가 있고 없음에 따라** 다릅니다. `policy_rubric`은 질문과 검색된 정책 본문을 받고, `policy_rubric_no_evidence`는 질문만 받습니다. judge는 매핑해 준 것만 봅니다.
-- **범용·안전 평가기**는 근거성·관련성·안전성 등 각자의 기준을 봅니다. 내 판단·금액·인용 규칙을 모두 검사하는 것은 아니므로 계약 검사를 대신하지 않습니다. 실제 변화는 내 표에서 확인합니다.
+1. **`business_contract`부터 봅니다.** V1 → V2 통과 건수를 적고 7-4의 로컬 업무 검사와 같은지 확인합니다.
+2. **`policy_rubric`과 `policy_rubric_no_evidence`를 비교합니다.** 앞은 질문과 검색된 정책 본문, 뒤는 질문만 받습니다. 같은 rubric이라도 judge에게 근거를 주었을 때와 안 주었을 때 통과 건수가 달랐는지 적습니다.
+3. **나머지 범용·안전 평가기에서 변화 하나를 적습니다**(없으면 없음). 이들은 근거성·관련성·안전성 등 각자의 기준을 보며, 내 판단·금액·인용 규칙을 검사하는 `business_contract`를 대신하지 않습니다.
 
 <details>
 <summary>촬영한 한국어 응답(2026-09-23)의 결과 — 내 목표 점수가 아닌 예시</summary>
@@ -162,9 +162,10 @@ V2에서 클러스터로 묶인 16개 샘플 중 9개가 `policy_rubric_no_evide
 
 **다음:** [레벨 2 마무리](#finish-level-2). 아래 포털 비교는 선택입니다.
 
-## 선택: 포털에서 run 비교
+<a id="선택-포털에서-run-비교"></a>
 
-필수 과정은 3절에서 끝납니다. 시간이 없으면 [레벨 2 마무리](#finish-level-2)로 건너뜁니다.
+<details>
+<summary>선택: 포털에서 run 비교 — 추가 확인이 필요할 때만</summary>
 
 **포털:** 2절의 `Portal:` 링크를 엽니다. eval group에 `baseline-...`과 `improved-...` run이 평가 항목별 열과 함께 보입니다.
 
@@ -180,6 +181,8 @@ Foundry의 통계 비교 화면을 보려면 두 run을 선택하고 **Compare r
 ![baseline과 improved run을 선택한 eval group](assets/levels-20260923/ko-l2-runs.webp)
 
 아래 두 행은 judge 속도 제한 때문에 `--retry-failed`로 다시 실행하기 전의 시도입니다. 위의 두 run을 선택합니다.
+
+</details>
 
 </details>
 

@@ -2,17 +2,7 @@
 
 [한국어](level-3.ko.md) · [Back to the main guide](../README.md#levels) · [Summary video from 06:55](../README.md#summary-video)
 
-**In about 70 minutes you evaluate four targets, then put evaluation into operation:** saved answers, the model alone, your deployed agent, and its traces (sections 1–5), then a schedule and a release gate (sections 6–7).
-
-| Section | What Foundry evaluates | With what |
-|---|---|---|
-| [1. Generate a rubric](#generate-rubric) | Your saved V2 answers | A rubric Foundry writes from the V2 instructions |
-| [2. Stress-test](#stress-test) | Sol with the V2 instructions | 15 questions Foundry generates |
-| [3. Red-team](#red-team) | The Sol deployment | Attack prompts Foundry generates |
-| [4. Call your agent](#evaluate-agent) | Your deployed agent | The same 6 dev questions × 3 models = 18 new responses |
-| [5. Evaluate traces](#evaluate-traces) | Your step 7 run | Its 18 traces in Application Insights |
-| [6. Continuous evaluation](#continuous-eval) | Your agent's recent traffic | Up to 20 recent traces, every hour |
-| [7. Release gate](#release-gate) | The six business gates (Sol, Luna, Astra × dev, holdout) | `verified-evidence.json` from step 9 |
+**What you finish with in about 70 minutes:** one table separating evaluation targets, the first scheduled evaluation's results, and the release gate's exit code. **Model-only, agent, and trace evaluations use different targets and inputs; do not combine their scores.**
 
 **You need:** [Level 2](level-2.en.md) finished in this folder, and **step 10 not yet run**. Afterwards, return to [step 10](../README.md#cleanup).
 
@@ -22,6 +12,20 @@
 **Follow sections 1–7 in order** in your existing **Terminal A, at the repository root**. In a new terminal, [restore the environment only](../README.md#resume-shell). Keep names, V2 instructions, and the deployed version unchanged. If you used a recovery label, replace `--label improved` below with your actual candidate label.
 
 **Cost and evidence:** model and judge calls in sections 1–6 cost extra; section 6 also creates a schedule lasting up to 8 hours. Do not add the extra responses to the main workshop's 48. Section 7 reads **only step 9's saved business gates**, not the new results from sections 1–6.
+
+<a id="level-3-results"></a>
+
+**Use this one table for your notes.** Copy it into your notes now and fill the last column with **your values and interpretation** as you finish each section. Do not copy attack prompts or harmful response text.
+
+| Section | Evaluation target | Your result to record |
+|---|---|---|
+| [1. Generate a scoring guide (rubric)](#generate-rubric) | Your saved V2 answers | Both rubrics' pass counts `/18` and what they missed compared with the business contract (or none) |
+| [2. Stress-test](#stress-test) | Sol with V2 instructions and all seven policies. **No retrieval or agent** | Failures `/15`; confirmed policy gap, judge issue, or safety flag (or none) |
+| [3. Attack-test (red team)](#red-team) | The Sol deployment **without V2 instructions** | Successful attacks `/6` and attack success rate (ASR); lower is better |
+| [4. Call your agent](#evaluate-agent) | **18 new responses** from your deployed V2 agent (6 dev questions × 3 models) | Business passes `/6` per model and the difference from your saved 7-4 result |
+| [5. Evaluate traces](#evaluate-traces) | The 18 Application Insights traces from step 7 | Scores and differences from Level 2 |
+| [6. Continuous evaluation](#continuous-eval) | Up to 20 recent traces, every hour | First `completed` time, trace count, all three results, and portal confirmation of no errors/missing results |
+| [7. Release gate](#release-gate) | The six business gates in step 9's `verified-evidence.json` | Output, exit code, and blocked gates or pass; **not production approval** |
 
 **Waiting:** while a command is still running, wait. Resume with the same command only **after it exits** with `... still running` or `... still in progress`. A network timeout does not establish that a remote run is active. Use [message-specific recovery](troubleshooting.en.md#levels) for other errors.
 
@@ -325,17 +329,7 @@ A passing gate still does not approve production; human review and the holdout r
 
 ## Finish Level 3
 
-Copy this table into your [report](../README.md#finish) and fill in your values and interpretation. Do not copy attack prompts or harmful response text.
-
-| Section | Record |
-|---|---|
-| 1. Generated rubric | Both rubrics' pass counts and what they missed compared with the contract |
-| 2. Synthetic questions | Failures `/15`; confirmed policy gap, judge issue, or safety flag (or none) |
-| 3. Red team | Successful attacks `/6` and ASR; lower is better |
-| 4. Live agent | Business passes `/6` per model and the difference from your saved 7-4 result |
-| 5. Trace evaluation | Scores for the 18 traces and differences from Level 2 |
-| 6. Continuous evaluation | First `completed` time, trace count, all three results, and portal confirmation of no errors/missing results |
-| 7. Release gate | Output, exit code, and blocked business gates or pass; distinct from safety or production approval |
+Append the [results table](#level-3-results) you filled in during the sections to your main [report](../README.md#finish). You do not need to rerun finished commands.
 
 **Checkpoint:** sections 1–7 meet their completion checkpoints and the table is filled in. Record skipped sections, errors, or zero traces as **incomplete**. Low valid scores or `Quality gate FAILED` are results of a completed exercise.
 

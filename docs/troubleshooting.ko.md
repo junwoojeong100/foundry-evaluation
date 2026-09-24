@@ -175,12 +175,13 @@ Agent와 run 필터는 그대로이며 trace 누락·중복·다른 trace·sampl
 python scripts/workshop.py collect --split dev --label baseline-retry --concurrency 2 &&
 python scripts/workshop.py evaluate --label baseline-retry &&
 python scripts/workshop.py compare --labels baseline-retry &&
-python scripts/workshop.py monitor --label baseline-retry
+python scripts/workshop.py monitor --label baseline-retry &&
+python scripts/workshop.py summary --labels baseline-retry
 ```
 
 이 경우 이후 `feedback`, `compare`, `verify --baseline`도 **같은 `baseline-retry`**를 사용합니다.
 improved/holdout 수집에도 `--concurrency 2`를 유지합니다. label 일부만 바꾸면 비교 대상이 섞입니다.
-위 네 명령이 모두 끝나면 **새 평가의 report URL로 5단계 포털 확인**을 마치고 [6-2 사례 선택](../README.ko.md#review-case)부터 이 label로 이어갑니다. 완료한 수집·평가·monitor는 반복하지 않습니다.
+위 다섯 명령이 끝나고 요약에 `baseline-retry business-check failures:`가 나오면 **새 평가의 report URL로 5단계 포털 확인**을 마칩니다. 그 요약에서 [6-2 사례 선택](../README.ko.md#review-case)을 이 label로 이어갑니다. 완료한 수집·평가·monitor는 반복하지 않습니다.
 
 **Baseline 완료 후 V2 dev나 holdout 실패:** baseline의 `manifest.json`에 기록된 `concurrency`를 유지합니다. 아래는 **4**인 경우이며, 다르면 실제 값으로 바꿉니다. 실패한 단계의 명령 **하나만** 선택합니다.
 
@@ -229,9 +230,9 @@ python scripts/workshop.py evaluate --label baseline --retry-failed
 
 실패가 없다는 것도 결과입니다. 실패를 만들거나 답변·정답을 수정하지 않습니다.
 
-1. `src/agent/.foundry/results/baseline/responses.jsonl`에서 검토할 **dev 응답 하나**를 고릅니다. `row_id`·`case_id`·`model_key`·`trace_id`를 적어 둡니다.
-2. [README 6-2의 2–4번](../README.ko.md#review-case)처럼 같은 응답·고정 dev 기준·trace를 대조합니다.
-3. “업무 검사는 전부 통과했고 무엇을 추가로 검토했는지”와 제공 V2를 비교할 이유를 설명합니다. 실패나 품질 개선을 미리 주장하지 않습니다.
+1. `src/agent/.foundry/results/baseline/responses.jsonl`에서 검토할 **dev 응답 하나**를 고릅니다. `row_id`와 `trace_id`를 메모합니다.
+2. [README 6-2의 표](../README.ko.md#review-case)를 따라 같은 응답 → 고정 dev 정답 → trace를 대조합니다.
+3. “업무 검사는 전부 통과했고 무엇을 확인했는지”와 **제공 V2에서도 유지할 동작**을 한 줄로 설명합니다. 실패나 품질 개선을 미리 주장하지 않습니다.
 4. [6-3 검토 기록 저장](../README.ko.md#save-review)으로 돌아갑니다. `feedback`은 통과한 dev 응답도 기록할 수 있습니다. 저장 후 7단계에서 V2의 타당성을 검토합니다.
 
 최종 `verify`는 **검토된 baseline trace가 후보 실행에서 재사용됐는지** 확인합니다.

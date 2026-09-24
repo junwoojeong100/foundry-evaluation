@@ -1,10 +1,10 @@
-# Level 2: Let Foundry evaluate your business contract
+# Level 2: Evaluate your business rules in Foundry
 
 [한국어](level-2.ko.md) · [Back to the main guide](../README.md#levels) · [Summary video from 06:33](../README.md#summary-video)
 
-**In about 40 minutes you will:**
+**What you finish with in about 40 minutes:** a comparison of the same 36 saved V1 and V2 responses, with an explanation that **distinguishes business checks from LLM scores**.
 
-1. [Register](#register-evaluators) the five decision, amount, and citation checks as a **code evaluator**, and a scoring guide as a **rubric evaluator**.
+1. [Register](#register-evaluators) the five decision, amount, and citation checks (your **business contract**) as a **code evaluator**, and a scoring guide as a **rubric evaluator**.
 2. [Evaluate](#evaluate-suite) your saved V1 and V2 responses with **nine evaluators in one comparison group (eval group)**.
 3. [Read](#insights) Foundry's **run comparison** (statistical test) and **failure clusters**.
 
@@ -15,7 +15,7 @@
 
 **Where to run:** your existing **Terminal A, at the repository root**. In a new terminal, [restore the environment only](../README.md#resume-shell). Keep names and instructions unchanged. If you used recovery labels, replace `baseline` and `improved` below with those labels.
 
-**Why this level exists:** in the recorded step 7, local business checks went from 0/18 to 17/18 while Foundry's groundedness stayed at 18/18. Here Foundry measures your contract itself, next to other evaluator types.
+**How to proceed:** follow sections 1–3 in order. Read pass counts in section 2, then mean scores and failure causes in section 3, and add them to your [closing notes](#finish-level-2). You can finish without opening the example scores or optional portal view.
 
 <a id="register-evaluators"></a>
 
@@ -74,11 +74,11 @@ Only failed runs are replaced; earlier attempts remain recorded. If the same err
 
 </details>
 
-**Read it:** the table has three parts.
+**Read your table in this order:**
 
-- **Your contract (`business_contract`)** reproduces the local business checks inside Foundry.
-- **The same rubric with and without evidence** gives different results: `policy_rubric` receives the question plus the retrieved policy text, while `policy_rubric_no_evidence` receives only the question. A judge sees only what you map to it.
-- **Generic and safety evaluators** measure their own criteria, such as groundedness, relevance, and safety. They do not check every decision, amount, and citation rule, so they cannot replace your contract check. Read the actual changes from your table.
+1. **Start with `business_contract`.** Record V1 → V2 pass counts and check that they match your local business checks from 7-4.
+2. **Compare `policy_rubric` with `policy_rubric_no_evidence`.** The former receives the question plus retrieved policy text; the latter receives only the question. Note whether the same rubric's pass counts changed when the judge had evidence.
+3. **Record one change in the remaining generic and safety evaluators** (or none). They measure their own criteria, such as groundedness, relevance, and safety, rather than replacing `business_contract` checks for your decisions, amounts, and citations.
 
 <details>
 <summary>Recorded English result (September 23, 2026 responses) — an example, not your target</summary>
@@ -164,9 +164,10 @@ Ten of the twelve clustered V2 samples came from `policy_rubric_no_evidence`, fo
 
 **Next:** [Finish Level 2](#finish-level-2). The portal comparison below is optional.
 
-## Optional: compare the runs in the portal
+<a id="optional-compare-the-runs-in-the-portal"></a>
 
-The required path ends with section 3. Short on time? Skip to [Finish Level 2](#finish-level-2).
+<details>
+<summary>Optional: compare runs in the portal — only for an additional check</summary>
 
 **Portal:** open the `Portal:` link from section 2. The eval group lists your `baseline-...` and `improved-...` runs with one column per criterion.
 
@@ -182,6 +183,8 @@ For Foundry's statistical view, select both runs, choose **Compare runs**, and p
 ![Eval group with the baseline and improved runs selected](assets/levels-20260923/en-l2-runs.webp)
 
 This example is a second run on the same saved responses, so a few LLM-judged counts differ from the recorded table in section 2.
+
+</details>
 
 </details>
 

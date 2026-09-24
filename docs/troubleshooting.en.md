@@ -174,11 +174,12 @@ Evaluate and monitor the **new label**, and use it in later commands **and file 
 python scripts/workshop.py collect --split dev --label baseline-retry --concurrency 2 &&
 python scripts/workshop.py evaluate --label baseline-retry &&
 python scripts/workshop.py compare --labels baseline-retry &&
-python scripts/workshop.py monitor --label baseline-retry
+python scripts/workshop.py monitor --label baseline-retry &&
+python scripts/workshop.py summary --labels baseline-retry
 ```
 
 Use **`baseline-retry` consistently** for later feedback, comparison, and `verify --baseline`. Use concurrency 2 for candidate and holdout too; changing only one cohort invalidates the comparison.
-After all four commands finish, **open the new evaluation's report URL for step 5's portal check**, then continue at [case selection in 6-2](../README.md#review-case) using this label. Do not repeat completed collection, evaluation, or monitoring.
+After all five commands finish and the summary shows `baseline-retry business-check failures:`, **open the new evaluation's report URL for step 5's portal check**. Use that summary for [case selection in 6-2](../README.md#review-case), keeping this label. Do not repeat completed collection, evaluation, or monitoring.
 
 **Failed V2 dev or holdout after a completed baseline:** keep that baseline's recorded `concurrency` from `manifest.json`. The examples below assume **4**; use its actual value if different. Choose **one** command, not both:
 
@@ -227,9 +228,9 @@ Replace `baseline` with the actual label when recovering another stage. Never re
 
 That is a legitimate result. Do not fabricate a failure or alter an answer/reference.
 
-1. Select **one English dev response** from `src/agent/.foundry/results/baseline/responses.jsonl`. Note its `row_id`, `case_id`, `model_key`, and `trace_id`.
-2. Follow [items 2–4 of README 6-2](../README.md#review-case) to compare that response, its fixed dev reference, and its trace.
-3. Explain that all business checks passed, what you inspected, and why comparing the provided V2 is useful. Do not claim a failure or improvement in advance.
+1. Select **one English dev response** from `src/agent/.foundry/results/baseline/responses.jsonl`. Note its `row_id` and `trace_id`.
+2. Follow [the table in README 6-2](../README.md#review-case): compare the same response, its fixed dev reference, then its trace.
+3. Write one line explaining that all business checks passed, what you inspected, and **behavior the provided V2 should preserve**. Do not claim a failure or improvement in advance.
 4. Return to [6-3 to save the review](../README.md#save-review). `feedback` accepts passing dev responses too. Then review V2's suitability in step 7.
 
 The final verification requires reviewed baseline provenance to be consumed by the candidate. Do not search the holdout for a failure to use during development.
