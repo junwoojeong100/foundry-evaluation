@@ -15,6 +15,7 @@
 - 도구: `git`, `python3.13`, `az`, `azd`, Bash/WSL, curl, 편집기, 브라우저. 아직 확인하지 않았다면 [도구 설치·확인](instructor.ko.md#tools)을 먼저 끝냅니다.
 - 권한: 로그인할 소유자가 나열된 자원과 범위 지정 RBAC 역할을 만들 수 있어야 합니다. 구독 Owner라면 충분합니다([권한 확인](instructor.ko.md#access)).
 - 대기: 생성 명령이 `search: actual provisioning state ...; waiting` 같은 줄을 10초마다 출력하는 동안은 정상입니다. 한 자원의 대기는 최대 15분, Search는 최대 30분입니다.
+- 중단: 준비를 그만두면 이미 만든 서비스의 비용은 계속 발생합니다. 더 쓰지 않을 본인 전용 그룹은 [최종 정리](#final-cleanup)에서 생성 기록을 확인한 뒤 삭제합니다.
 
 1단계에서 미사용 Git clone을 만들거나 그 루트로 들어갑니다.
 
@@ -49,18 +50,30 @@
 
 ### 1-1. Git clone 준비
 
-아직 쓰지 않은 Git clone 루트에 있지 않다면 먼저 실행합니다.
+이미 미사용 Git clone이 있다면 Bash를 시작한 뒤 그 루트로 이동합니다. 아래 clone 블록 대신 `ls README.ko.md && pwd`만 실행합니다.
+
+**터미널 — Bash 시작:** macOS 기본 zsh나 PowerShell이 아니라 Bash에서 진행합니다. Windows는 WSL 터미널을 엽니다.
+
+```bash
+bash
+```
+
+**완료 확인:** 새 입력 프롬프트가 나옵니다. 이후 같은 터미널을 계속 씁니다.
+
+**다르면:** [Bash/WSL 설치](instructor.ko.md#tools)를 확인합니다.
 
 **터미널 — 새 clone을 만들 상위 폴더에서:**
 
 ```bash
 git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evaluation-setup-ko &&
-cd foundry-evaluation-setup-ko
+cd foundry-evaluation-setup-ko &&
+ls README.ko.md &&
+pwd
 ```
 
-**완료 확인:** 현재 폴더에 `README.ko.md`가 있습니다.
+**완료 확인:** `README.ko.md`와 현재 clone의 절대 경로가 출력됩니다.
 
-**다르면:** 중단하고 미사용 clone 루트로 이동한 뒤 계속합니다. ZIP이나 이전 실습 폴더에서 실행하지 않습니다.
+**다르면:** `already exists`이면 블록의 폴더 이름 두 곳을 같은 새 이름으로 바꿉니다. ZIP이나 이전 실습 폴더에서 실행하지 않습니다.
 
 <a id="initial-settings"></a>
 
@@ -68,7 +81,7 @@ cd foundry-evaluation-setup-ko
 
 **편집기 — 현재 clone 루트(곧 `$REPO_ROOT`로 저장할 폴더):**
 
-1. 이 clone 루트에서 `.env.example`을 `.env`로 복사합니다.
+1. VS Code의 **File → Open Folder**로 이 clone을 엽니다. 탐색기에서 `.env.example`을 복사해 같은 위치에 붙여넣고 복사본 이름을 `.env`로 바꿉니다.
 2. 아래 행만 채우고 나머지 템플릿 값은 그대로 둡니다.
 
 - 기존 `.env`를 덮어쓰거나 `.env.txt`를 만들지 않습니다.
@@ -79,7 +92,7 @@ cd foundry-evaluation-setup-ko
 |---|---|
 | `AZURE_SUBSCRIPTION_ID` | 강사가 승인한 실습 구독. 혼자라면 본인이 Owner인 구독 |
 | `AZURE_TENANT_ID` | 그 구독의 tenant |
-| `AZURE_EXPECTED_USERNAME` | 직접 로그인할 계정 |
+| `AZURE_EXPECTED_USERNAME` | 직접 로그인할 계정의 로그인 이름/이메일. 표시 이름이 아님 |
 | `AZURE_RESOURCE_GROUP` | 처음이면 빈 값 **`AZURE_RESOURCE_GROUP=`**. 이전 실행 그룹을 보존 대상으로 확인할 때만 그 이름 |
 | `LAB_LANGUAGE` | `ko` |
 
@@ -105,7 +118,7 @@ python -m pip install -r requirements.lock.txt
 
 ### 1-4. `RUN_DIR` 생성
 
-실행 ID는 한 번만 새로 정합니다. 예시 ID나 기존 `RUN_DIR`를 재사용하지 말고, 출력된 경로를 이후 모든 블록에서 사용합니다.
+아래 블록이 시각을 붙여 새 실행 ID를 정합니다. 한 번만 실행하고, 출력된 경로를 이후 모든 블록에서 사용합니다.
 
 **터미널 — 현재 clone 루트(여기서 `$REPO_ROOT`로 저장):**
 
@@ -119,21 +132,27 @@ python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language ko
 
 출력된 `REPO_ROOT=`와 `RUN_DIR=` 두 줄을 지금 메모에 복사합니다. 터미널을 다시 열면 이 두 경로로 재개합니다.
 
-**완료 확인:** `init`이 끝나고 **`$RUN_DIR/config.json`**이 생깁니다. 새 이름을 기록한 것이며, 아직 소스 복사나 Azure 자원 생성은 하지 않았습니다.
+**완료 확인:** 출력 JSON에 `language: ko`가 있고 **`$RUN_DIR/config.json`**이 생깁니다. 새 이름을 기록한 것이며, 아직 소스 복사나 Azure 자원 생성은 하지 않았습니다.
 
 **다르면:** 출력과 같은 `RUN_DIR`를 보존하고 [환경 준비 복구](troubleshooting.ko.md#setup-resume)를 따릅니다. 새 실행 ID로 처음부터 반복하지 않습니다.
 
 <details>
 <summary>새 터미널에서 재개할 때</summary>
 
+**터미널 — 원래 clone 복원:** 먼저 `bash`를 실행합니다. 입력 요청에는 메모한 경로의 `=` 오른쪽 부분만 따옴표 없이 붙여넣습니다.
+
 ```bash
 read -r -p "이 clone의 절대 경로(REPO_ROOT): " REPO_ROOT &&
 read -r -p "출력된 RUN_DIR 경로: " RUN_DIR &&
 cd "$REPO_ROOT" &&
-source src/agent/.venv/bin/activate
+source src/agent/.venv/bin/activate &&
+export AZURE_CONFIG_DIR="$RUN_DIR/workshop/.azure-cli" &&
+pwd
 ```
 
-2단계 로그인 명령이 `AZURE_CONFIG_DIR`를 설정합니다. 이미 2단계를 지났다면 `export AZURE_CONFIG_DIR="$RUN_DIR/workshop/.azure-cli"`도 실행합니다.
+**완료 확인:** 원래 clone 경로가 출력되고 프롬프트에 `(.venv)`가 보입니다. 2단계 로그인을 마쳤다면 저장된 로그인도 다시 사용합니다.
+
+**다르면:** [환경 준비 복구](troubleshooting.ko.md#setup-resume)에서 기존 경로를 확인합니다. 새 실행 ID를 만들지 않습니다.
 
 </details>
 
@@ -169,7 +188,7 @@ python -m pip install -r requirements.lock.txt &&
 python -m unittest discover -s tests -v
 ```
 
-**완료 확인:** 테스트가 `OK`입니다. **`$RUN_DIR/source-manifest.json`**에 소스 commit과 SHA-256 해시가 있고 **`$RUN_DIR/workshop/.env`**에 `LAB_LANGUAGE=ko`와 새 이름이 있습니다. 이전 `.azure`·`.foundry`·가상환경을 재사용하지 않았습니다.
+**완료 확인:** 테스트가 `OK`입니다(`OK (skipped=1)`도 정상: 실행용 복사본에는 가이드가 없어 문서 검사만 건너뜁니다). **`$RUN_DIR/source-manifest.json`**에 소스 commit과 SHA-256 해시가 있고 **`$RUN_DIR/workshop/.env`**에 `LAB_LANGUAGE=ko`와 새 이름이 있습니다. 이전 `.azure`·`.foundry`·가상환경을 재사용하지 않았습니다.
 
 **다르면:** Azure 작업으로 넘어가지 않고 [Python 준비 복구](troubleshooting.ko.md#setup-resume)를 따릅니다. 이미 만들어진 가상환경·소스를 새로 만들지 않습니다.
 
@@ -183,6 +202,8 @@ python -m unittest discover -s tests -v
 
 **`$RUN_DIR/workshop`**에서 로그인합니다. 그래야 이후 한국어 실습 명령이 이 폴더의 격리된 CLI 프로필을 씁니다. 아직 기반 서비스가 없으므로 README의 `preflight`·`bind`는 실행하지 않습니다.
 
+두 로그인 명령 뒤에는 브라우저에서 `.env`의 `AZURE_EXPECTED_USERNAME` 계정으로 로그인합니다. 다른 계정이 보이면 **다른 계정 사용**을 선택합니다.
+
 **터미널 — 실행 폴더 (`$RUN_DIR/workshop`):** ID를 입력합니다. 이 로그인은 이 폴더의 `.azure-cli/`에만 보관합니다(공유·커밋 금지).
 
 ```bash
@@ -191,17 +212,29 @@ read -r -p ".env의 AZURE_TENANT_ID 값: " LOGIN_TENANT_ID &&
 read -r -p ".env의 AZURE_SUBSCRIPTION_ID 값: " LOGIN_SUBSCRIPTION_ID
 ```
 
+**완료 확인:** 두 ID를 입력한 뒤 프롬프트가 돌아옵니다. 아직 로그인은 시작하지 않았습니다.
+
+**다르면:** `.env`의 `=` 오른쪽 값만 넣어 이 블록을 다시 실행합니다. `read: -p: no coprocess`이면 먼저 `bash`를 실행합니다.
+
 **터미널 — 실행 폴더 (`$RUN_DIR/workshop`):** Azure CLI에 로그인합니다. 구독을 물으면 `.env`의 구독을 고릅니다.
 
 ```bash
 az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" --output none
 ```
 
+**완료 확인:** 브라우저 로그인을 마치고 오류 없이 프롬프트가 돌아옵니다. `--output none`이므로 계정 JSON은 출력하지 않습니다.
+
+**다르면:** [로그인 복구](troubleshooting.ko.md#login)에서 Azure CLI만 복구한 뒤 다음 블록으로 진행합니다.
+
 **터미널 — 실행 폴더 (`$RUN_DIR/workshop`):** 같은 계정으로 azd에 로그인합니다.
 
 ```bash
 azd auth login --tenant-id "$LOGIN_TENANT_ID"
 ```
+
+**완료 확인:** 브라우저 로그인을 마치고 오류 없이 프롬프트가 돌아옵니다.
+
+**다르면:** [로그인 복구](troubleshooting.ko.md#login)에서 azd만 복구합니다. 성공한 Azure CLI 로그인은 반복하지 않습니다.
 
 **터미널 — 실행 폴더 (`$RUN_DIR/workshop`):** 두 로그인을 확인합니다.
 
@@ -232,9 +265,9 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 
 - `identity` 출력: `requested_account_matches: true`, `configured_subscription_matches: true`, `configured_tenant_matches: true`, `subscription_state: Enabled`, `default_subscription_changed: false`
 - `ownership` 출력: `existing_groups_explicitly_preserved: true`
-- `model-capacity` 출력: `gpt-6-sol`·`gpt-6-luna`·`gpt-6-astra`와 보조 모델 `gpt-5.4-mini`의 GlobalStandard 레코드
+- `model-capacity` 출력: 세 후보와 보조 모델 `gpt-5.4-mini`의 GlobalStandard 레코드. 모델마다 `capacity_records` 안에 `availableCapacity`가 `required_capacity` 이상인 레코드가 있어야 합니다(후보 각각 `50`, 보조 모델 `100`). 이것은 서비스 용량이며 구독 할당량은 6-1에서 별도로 검사합니다.
 
-**다르면:** 자원을 생성하지 않습니다. 계정 불일치는 위 로그인 확인으로 돌아갑니다. 권한 오류이면 환경 소유자(혼자라면 본인)가 그 구독에서 Owner 같은 역할 부여 권한이 있는지 [권한 확인](instructor.ko.md#access)으로 확인합니다. 용량 레코드가 없으면 그 구독에서 해당 모델을 쓸 수 없거나 할당량이 부족한 것이므로, [모델 할당량 관리](https://learn.microsoft.com/azure/foundry/openai/how-to/quota)대로 할당량을 요청하거나 다른 승인된 구독으로 처음부터 시작합니다. 해결한 뒤 [실패한 준비 명령만 복구](troubleshooting.ko.md#setup-resume)합니다. 구독·모델·리전을 임의로 바꾸지 않습니다.
+**다르면:** 자원을 생성하지 않습니다. 계정 불일치는 위 로그인 확인으로, 권한 오류는 [권한 확인](instructor.ko.md#access)으로 돌아갑니다. `No verified GlobalStandard capacity`이면 같은 `model-capacity` 명령만 다시 확인합니다. 계속 부족하면 여기서 멈춥니다. 서비스 용량과 구독 할당량은 별개이므로 할당량 증설만으로 해결된다고 가정하지 않습니다. 구독·모델·리전을 바꾸거나 새 실행 ID를 만들지 않습니다.
 
 <a id="setup-foundation"></a>
 
@@ -253,7 +286,11 @@ python scripts/provision_environment.py insights --run-dir "$RUN_DIR" &&
 python scripts/provision_environment.py search --run-dir "$RUN_DIR"
 ```
 
-**포털 — Azure Portal → Resource groups → 이번 실행 그룹:** 새 그룹을 엽니다.
+**완료 확인:** 마지막 JSON에 `resource: search`, `state: Succeeded`가 나오고 프롬프트가 돌아옵니다.
+
+**다르면:** [준비 복구](troubleshooting.ko.md#setup-resume)에서 실패한 명령과 아직 실행되지 않은 나머지 명령만 이어갑니다. Search 대기만 초과했다면 아래 접힌 복구 블록을 씁니다.
+
+**포털 — Azure Portal → Resource groups:** `config.json`의 `resource_group` 이름으로 찾아 새 그룹을 엽니다.
 
 **완료 확인:** 새 리소스 그룹이 아래 구조와 같습니다.
 
@@ -354,6 +391,10 @@ source src/agent/.venv/bin/activate &&
 export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 ```
 
+**완료 확인:** 오류 없이 `(.venv)` 프롬프트로 돌아옵니다. 이후 명령은 원래 clone이 아니라 `$RUN_DIR/workshop`에서 실행합니다.
+
+**다르면:** [준비 복구](troubleshooting.ko.md#setup-resume)에서 기존 `RUN_DIR` 경로를 복원합니다.
+
 **터미널 — 실행 폴더 (`$RUN_DIR/workshop`):** 후보 모델을 준비합니다. 아래 명령은 **사전 검사 → 없는 후보만 유료 배포 → 최종 검사**까지 합니다. 별도 `preflight`를 앞뒤로 반복하지 않습니다.
 
 ```bash
@@ -378,13 +419,13 @@ python scripts/workshop.py prepare-models
 
 </details>
 
-**다르면:** 모델 접근·할당량·배포 오류를 해결한 뒤 [같은 폴더에서 실패한 준비만 복구](troubleshooting.ko.md#setup-resume)합니다.
+**다르면:** `Insufficient quota ... 50 units required`이면 [모델 할당량 관리](https://learn.microsoft.com/azure/foundry/openai/how-to/quota)에서 해당 구독·Sweden Central·모델의 증설을 요청합니다. 반영 후 같은 명령을 다시 실행하면 없는 후보만 만듭니다. 그 밖의 오류는 [같은 폴더에서 복구](troubleshooting.ko.md#setup-resume)하며 모델을 대체하지 않습니다.
 
 <a id="setup-calibration"></a>
 
 ### 6-2. judge 확인
 
-**터미널 — 실행 폴더 (`$RUN_DIR/workshop`):** judge calibration 확인: 후보 준비를 마친 뒤 실행합니다.
+**터미널 — 실행 폴더 (`$RUN_DIR/workshop`):** 후보 준비를 마친 뒤 judge calibration을 확인합니다. 출력 없이 1–3분쯤 기다릴 수 있습니다.
 
 ```bash
 python scripts/workshop.py calibrate
@@ -406,7 +447,7 @@ python scripts/workshop.py calibrate
 | 강사가 수업 리허설을 할 때 | 이 폴더에는 모델 소유권을 남깁니다. 새 실행 이름을 쓰는 [별도 리허설 clone](instructor.ko.md#rehearsal-workspace)에서 실습해, 리허설 cleanup이 공유 모델을 지우지 않게 합니다. |
 | 새 참가자에게 전달할 때 | **미사용 조별 이름**과 **실제 준비된 모델 배포 이름**이 들어 있는 완성된 `.env`를 전달합니다. `.azure`, `.foundry`, 소유권 파일, 인증 캐시, 결과는 보내지 않습니다. 전달 전 [강사 체크리스트](instructor.ko.md#handoff)를 확인합니다. 참가자는 새 폴더에 `.env`를 저장하고 [README 1단계](../README.ko.md#start)부터 진행합니다. |
 
-**터미널 — 본인이 이어서 할 때만, 실습 폴더 열기:** 메모한 `RUN_DIR` 경로를 붙여넣습니다. 새 터미널이면 먼저 `bash`를 실행합니다.
+**터미널 — 본인이 이어서 할 때만, 실습 폴더 열기:** 메모의 `RUN_DIR=` 오른쪽 경로만 붙여넣습니다. 새 터미널이면 먼저 `bash`를 실행합니다.
 
 ```bash
 read -r -p "메모한 RUN_DIR 경로: " RUN_DIR &&
@@ -416,9 +457,11 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli" &&
 pwd
 ```
 
-**완료 확인:** 출력된 경로가 `/workshop`으로 끝납니다. 이 경로가 README의 “이 폴더”(실습 폴더)이며, 나중에 README 3단계 터미널 B에서도 이 경로를 씁니다. 이 터미널에서 [README 1-4의 `bind`](../README.ko.md#bind-project)로 갑니다.
+**완료 확인:** 출력된 경로가 `/workshop`으로 끝납니다. 이 경로도 메모합니다. README의 “이 폴더”와 3단계 터미널 B에서 사용할 실습 폴더입니다.
 
 **다르면:** `No such file or directory`이면 메모한 `RUN_DIR`을 따옴표 없이 다시 붙여넣습니다.
+
+**편집기 — 본인이 이어서 할 때:** VS Code의 **File → Open Folder**로 방금 출력된 `/workshop` 폴더를 엽니다. 이제 `.env`와 결과는 **이 복사본**에서 봅니다. 복사본에는 README·`docs/`·`.git`이 없으므로 가이드는 브라우저나 원래 clone에서 계속 읽습니다. 위 터미널은 그대로 두고 [README 1-4의 `bind`](../README.ko.md#bind-project)로 갑니다.
 
 **완료 확인:** 전달 경로를 하나만 골랐고, 그 행에 적힌 폴더 또는 완성된 `.env`가 준비되었습니다.
 
@@ -442,7 +485,7 @@ pwd
 
 ## 최종 정리: README 10단계 뒤 본인 전용 리소스 그룹 삭제
 
-**README 10단계의 `cleanup`·`check-cleanup`을 끝낸 환경 소유자만 진행합니다.** 혼자 만든 환경은 더 쓰지 않을 때 이 삭제로 Search·로그·모델 배포 비용을 멈춥니다. 삭제는 되돌릴 수 없으므로 아래 확인을 마친 뒤에만 하며, 참가자 정리나 Copilot CLI 실행 요청이 그룹 전체 삭제의 승인은 아닙니다.
+**환경 소유자만 진행합니다.** 실습을 마쳤다면 먼저 README 10단계의 `cleanup`·`check-cleanup`을 끝냅니다. **환경 준비 도중 중단하고 종료하는 경우에도**, 아래 생성 기록과 본인 전용 범위를 확인하면 그룹을 삭제할 수 있습니다. 이때 아직 없는 실습 결과 파일은 요구하지 않습니다. 삭제는 되돌릴 수 없으며, 참가자 정리나 Copilot CLI 실행 요청이 그룹 전체 삭제의 승인은 아닙니다.
 
 | 환경 | 선택할 경로 |
 |---|---|

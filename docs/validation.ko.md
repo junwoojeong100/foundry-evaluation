@@ -29,7 +29,7 @@
 
 **한눈에 보기:** 워크숍 저장소 루트(repository root)에서 내 단계의 블록을 실행한다. `summary`는 저장된 결과를 읽기만 한다.
 
-**6단계 — 검토할 baseline `row_id`:**
+**터미널 — 6단계, 검토할 baseline `row_id`:**
 
 ```bash
 python scripts/workshop.py summary --labels baseline
@@ -41,7 +41,7 @@ python scripts/workshop.py summary --labels baseline
 
 **다음:** [README 6-2](../README.ko.md#review-case)로 돌아가 이 목록의 첫 `row_id`를 고른다.
 
-**7-4 — 같은 dev의 전후 값·검토 사례의 V2 결과·미통과 행:**
+**터미널 — 7-4, 같은 dev의 전후 값·검토 사례의 V2 결과·미통과 행:**
 
 ```bash
 python scripts/workshop.py summary --labels baseline improved
@@ -49,11 +49,11 @@ python scripts/workshop.py summary --labels baseline improved
 
 **완료 확인:** `source trace carried: yes`가 있는 `Reviewed case ...` 줄, V1 `->` V2 표, `improved business-check failures:`와 `improved Foundry-score failures:`가 차례로 나온다.
 
-**다르면:** `comparison.json`이나 label이 없다고 나오면 [7-3](../README.ko.md#7-3-같은-dev-수집평가)의 `compare` 블록을 실행한 뒤 이 `summary`를 다시 실행한다. `collect`나 `evaluate`는 반복하지 않는다. `Reviewed case`가 없거나 `source trace carried: no`이면 멈추고 6-3의 기록을 강사와 확인한다.
+**다르면:** `comparison.json`이나 label이 없으면 [7-3](../README.ko.md#7-3-같은-dev-수집평가)의 `compare` 뒤 이 `summary`만 다시 실행한다. `Reviewed case`가 없거나 `source trace carried: no`이면 [README 7-4의 복구](../README.ko.md#compare-results)를 따른다. 단순 파일 조회 오류 때문에 수집·평가를 반복하지 않는다.
 
 **다음:** [README 7-4](../README.ko.md#compare-results)로 돌아가 세 부분을 메모에 옮긴다.
 
-**8-3 — 별도 holdout의 모델별 통과 수·미통과 행:**
+**터미널 — 8-3, 별도 holdout의 모델별 통과 수·미통과 행:**
 
 ```bash
 python scripts/workshop.py summary --labels holdout
@@ -69,7 +69,7 @@ python scripts/workshop.py summary --labels holdout
 |---|---|---|
 | 모델별로 무엇이 바뀌었나? | `comparison.json` | `labels → <label> → models → sol/luna/astra`에서 `business_passed/total`, `required_citation_passed/required_citation_total`을 비교한다. `foundry_evaluators`는 평균과 통과 건수를 함께 읽는다. |
 | 더 빠르거나 적은 토큰을 쓰게 됐나? | `comparison.json` | 같은 모델 위치에서 `input_tokens`·`output_tokens`, `latency_p50_seconds`·`latency_p95_seconds`를 비교한다. [측정 범위](#tradeoffs)를 유지하고 전체 비용으로 해석하지 않는다. |
-| 어떤 업무 검사가 실패했나? | `python scripts/workshop.py show --label <label> --row-id <row_id>`의 출력(원본은 `<label>/responses.jsonl`과 `data/dev.jsonl`) | `business_checks`의 `false` 항목을 `fixed_reference`의 `expected_decision`, `required_numbers`, `allowed_citations`와 비교하고 `trace_id`를 확인한다. holdout 행은 8단계 이후에만 본다. |
+| 어떤 업무 검사가 실패했나? | `python scripts/workshop.py show --label <label> --row-id <row_id>`의 출력(원본은 `<label>/responses.jsonl`과 해당 split의 `data/dev.jsonl` 또는 `data/holdout.jsonl`) | `business_checks`의 `false` 항목을 `fixed_reference`의 `expected_decision`, `required_numbers`, `allowed_citations`와 비교하고 `trace_id`를 확인한다. holdout 행은 8단계 이후에만 본다. |
 | 어떤 Foundry 평가기에서 미통과했나? | `<label>/evaluation-results.json` | **한 label 안의 같은 `row_id`**를 찾는다. 그 행의 `results` 배열에서 `name: groundedness` 또는 `name: relevance`를 골라 `score`·`passed`를 확인한다. |
 
 <a id="other-lookups"></a>
@@ -93,6 +93,20 @@ python scripts/workshop.py summary --labels holdout
 <a id="native-failures"></a>
 
 ### Foundry 평가기 통과 건수가 전체보다 적을 때
+
+**편집기 — 점수 확인:** README 요약의 `Foundry-score failures:`에서 row ID 하나를 복사한다. `src/agent/.foundry/results/<그 label>/evaluation-results.json`을 열고 **Ctrl+F**(macOS **Cmd+F**)로 전체 row ID를 찾는다. 그 행의 `results`에서 미통과한 `name`과 `score`, `passed: false`를 읽는다.
+
+**터미널 — 같은 응답 확인:** 실제 label(예: `improved`)과 복사한 row ID를 각각 입력한다. 저장된 답변을 읽을 뿐 다시 평가하지 않는다.
+
+```bash
+read -r -p "결과 label: " RESULT_LABEL &&
+read -r -p "row ID: " RESULT_ROW_ID &&
+python scripts/workshop.py show --label "$RESULT_LABEL" --row-id "$RESULT_ROW_ID"
+```
+
+**완료 확인:** `row_id`가 점수 파일의 행과 같고 `query`, `saved_response`, `fixed_reference`가 나온다.
+
+**다르면:** `Unknown row ID`이면 괄호 안의 점수·검사 이름을 빼고 ID만 입력한다. 복구 label을 썼다면 두 입력 모두 그 실제 이름을 사용한다.
 
 | 질문 | 열 곳 | 읽을 값 | 해석 |
 |---|---|---|---|

@@ -76,13 +76,13 @@ baseline (V1, 6 dev) → review one trace → improved (V2, same 6) → holdout 
 **How to follow the steps**
 
 - **Where:** follow the bold label before each block: **Terminal A**, **Terminal B** (step 3 only), **Editor**, or **Portal**. "Your agent" means `LAB_AGENT_NAME`.
-- **Commands:** after the 1-1 clone, paste and run **one block at a time** from the repository root, without a leading `$`, and wait for the prompt (except step 3's server).
+- **Commands:** after the 1-1 clone, paste and run **one block at a time, exactly as shown**, from the repository root. Do not add a leading prompt symbol `$`. Wait for the prompt to return (except step 3's server). `&&` runs the next command only if the previous one succeeds. At an input prompt, paste just the requested value and press Enter.
 - **Long output:** long JSON or queries are normal. **Checkpoint** values are usually at the **bottom** of the output, and a value written as `language: en` appears in JSON as `"language": "en"`. Do not run the `Next:` suggestions or the `Update available` notice at the end of an output.
 - **Hidden files:** `.env` and `src/agent/.foundry/` start with a dot, so ordinary file dialogs hide them. Open this workshop folder with VS Code **File → Open Folder** to see them in the Explorer.
 - **New terminal later:** start Bash and run the [restore block](#resume-shell) with the path you noted; step 3's Terminal B block already includes it.
 - **Checks:** if the output differs from the **Checkpoint**, keep it and follow the **If not** below it to [recover only that command](docs/troubleshooting.en.md#resume). Never rerun a finished step for a better score.
 - **If you are stuck:** follow the **If not** links first. “Instructor” and “environment owner” mean the instructor in a class and you in self-study. When you ask for help, show only the failed command, error, and step; never share passwords or tokens.
-- **Notes:** open one new text file in your editor. Steps 4-3, 6-2, 7-2, 7-4, 8-3, and 9-2 say what to copy, and 9-3 builds the report from it. **Do not open `data/en/holdout.jsonl` before step 8.**
+- **Notes:** open one new text file in your editor. Steps 4-3, 6-2, 7-1, 7-2, 7-4, 8-3, and 9-2 say what to copy, and 9-3 saves it as your report. **Do not open `data/en/holdout.jsonl` before step 8.**
 
 <a id="background-learning-loops-and-frontier-ecosystems"></a>
 
@@ -103,6 +103,10 @@ baseline (V1, 6 dev) → review one trace → improved (V2, same 6) → holdout 
 ```bash
 bash
 ```
+
+**Checkpoint:** a new input prompt appears. No new window or success message is expected.
+
+**If not:** for `command not found`, check [Bash/WSL installation](docs/instructor.en.md#tools).
 
 **Terminal A — clone into a new folder:** if you already have an **unused clone or extracted ZIP**, skip this block; `cd` into its root and run `ls README.md && pwd` instead.
 
@@ -156,6 +160,10 @@ source src/agent/.venv/bin/activate &&
 python -m pip install -r requirements.txt
 ```
 
+**Checkpoint:** installation logs finish and the prompt returns with `(.venv)`. `Requirement already satisfied` is normal too.
+
+**If not:** for a missing `python3.13`, check [tool installation](docs/instructor.en.md#tools). For a package-download error, check your network and repeat only this install block; do not start the tests yet.
+
 **Terminal A — test:**
 
 ```bash
@@ -184,17 +192,29 @@ read -r -p "AZURE_TENANT_ID value from .env: " LOGIN_TENANT_ID &&
 read -r -p "AZURE_SUBSCRIPTION_ID value from .env: " LOGIN_SUBSCRIPTION_ID
 ```
 
+**Checkpoint:** the prompt returns after you enter both IDs. Sign-in has not started yet.
+
+**If not:** rerun only this block to correct an entry. For `read: -p: no coprocess`, run `bash` first, then enter the IDs again.
+
 **Terminal A — 2. sign in to Azure CLI:** choose the `.env` subscription if asked:
 
 ```bash
 az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" --output none
 ```
 
+**Checkpoint:** browser sign-in finishes and the terminal prompt returns without an error. `--output none` suppresses the account JSON.
+
+**If not:** [recover only Azure CLI sign-in](docs/troubleshooting.en.md#login), then continue to block 3.
+
 **Terminal A — 3. sign in to azd** with the same account:
 
 ```bash
 azd auth login --tenant-id "$LOGIN_TENANT_ID"
 ```
+
+**Checkpoint:** browser sign-in finishes and the terminal prompt returns without an error. The next block checks the actual account.
+
+**If not:** [recover only azd sign-in](docs/troubleshooting.en.md#login); do not repeat a successful Azure CLI sign-in.
 
 <a id="login-check"></a>
 
@@ -214,7 +234,7 @@ azd auth status --output json
 
 ### 1-4. Check and bind the project
 
-**Terminal A — check the project:**
+**Terminal A — check the project:** the first output can take around 30 seconds.
 
 ```bash
 python scripts/workshop.py preflight
@@ -261,7 +281,7 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 
 **Checkpoint:** the prompt shows `(.venv)` and no error appears. Never use `az account set`, and never change `LAB_LANGUAGE` after a run has started.
 
-**If not:** for `No such file or directory`, paste the full path starting with `/` again, without quotes and without `~`. If you forgot the path, find it with `ls -d ~/foundry-evaluation-en*`.
+**If not:** for `No such file or directory`, paste the full path starting with `/` again, without quotes and without `~`. If you forgot it, use **Terminal → New Terminal** in the VS Code window that has your workshop folder open, then run `pwd`.
 
 </details>
 
@@ -273,6 +293,8 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 ## 2. Add and retrieve organizational knowledge
 
 **Goal:** a searchable **knowledge base (KB)** of seven synthetic policies that returns the right one.
+
+<a id="knowledge-registration"></a>
 
 ### 2-1. Register the policies
 
@@ -335,6 +357,10 @@ python scripts/workshop.py retrieve --query "What is the lodging limit for a dom
 pwd
 ```
 
+**Checkpoint:** you copied the workshop folder's path, starting with `/`.
+
+**If not:** if it differs from the folder noted in step 1, [restore the terminal](#resume-shell), then check again.
+
 **Terminal A — start the server:** select V1 and start it; leave it running until 3-3. The deployment that `Selected v1; run azd deploy ...` mentions happens in step 4, and the first start takes about 30 seconds to install dependencies.
 
 ```bash
@@ -342,7 +368,7 @@ python scripts/workshop.py set-prompt v1 &&
 azd ai agent run --no-client
 ```
 
-**Checkpoint:** you copied the absolute path. After `Starting agent on http://localhost:8088`, log lines continue until `Running on http://0.0.0.0:8088` appears without a traceback; the prompt does not return.
+**Checkpoint:** after `Starting agent on http://localhost:8088`, log lines continue until `Running on http://0.0.0.0:8088` appears without a traceback; the prompt does not return.
 
 **If not:** see the port 8088 row in [common symptoms](docs/troubleshooting.en.md#symptoms).
 
@@ -353,6 +379,10 @@ azd ai agent run --no-client
 ```bash
 bash
 ```
+
+**Checkpoint:** Terminal B has a new input prompt, while Terminal A's server keeps running.
+
+**If not:** if you stopped A's server, restart it at 3-1. Do not paste the server-start command into B.
 
 **Terminal B — send a request:** when prompted, paste the absolute path from 3-1 and press Enter. The block quotes the path for you, restores the environment, checks readiness, and sends one request:
 
@@ -548,6 +578,8 @@ python scripts/workshop.py compare --labels baseline
 
 **If not:** confirm step 5's collection and evaluation completed, then [recover only the failed command](docs/troubleshooting.en.md#resume).
 
+<a id="baseline-traces"></a>
+
 **Terminal A — check the traces:** a long KQL query prints first, then a result JSON below it.
 
 ```bash
@@ -588,7 +620,8 @@ python scripts/workshop.py show --label baseline --row-id "$ROW_ID"
 **Check the same case in two places.**
 
 1. **Terminal A's output:** compare `answer` and `decision` in `saved_response` with `ground_truth`, `expected_decision`, and `required_numbers` in `fixed_reference`. Then check whether each of the `citations` (cited IDs) appears in `source_ids` (retrieved documents) and in `allowed_citations` (allowed IDs). Any `false` in `business_checks` is a failed check.
-2. **Portal:** open **Agents** on the left → your agent → the **Traces** tab, find that request by its full `trace_id`, and open it (if it is missing, widen the range to **7D**). In the **Graph view** tab of the opened window, select the `foundry_iq.retrieve` (retrieval) and `chat` (model) spans.
+2. **Portal:** open **Agents** on the left → your agent → **Traces → Trace view**. Paste the full `trace_id` into the search box above the table on the left, then click the matching row's **Trace ID** link. If it is missing, widen **Date range → 7D**.
+3. **Portal:** in the opened window's **Graph view**, select the `foundry_iq.retrieve` (retrieval) box and the box starting with `chat` (model call). Each box is a **span**, the record of one operation. **Success** means the operation ran successfully, not that its answer passed the business checks.
 
 **Then record one line:** `row_id=...; trace_id=...; Observation: ...; Evidence: ...; Change: ...`. For a passing case, write the **behavior V2 should preserve** instead of `Change` ([passing cases](docs/troubleshooting.en.md#no-failures)).
 
@@ -839,7 +872,7 @@ python scripts/workshop.py compare --labels baseline improved holdout
 
 **If not:** check the label named in the error and the evaluation above, then [recover only the failed command](docs/troubleshooting.en.md#resume).
 
-**Terminal A — check that V2 stayed frozen:** print one line per label with only its agent version and instruction hash (first 12 characters) from the comparison file you just saved.
+**Terminal A — check that V2 stayed frozen:** print one line per label with only its agent version and instruction hash (a content fingerprint, first 12 characters) from the comparison file you just saved.
 
 ```bash
 python -c 'import json; labels = json.load(open("src/agent/.foundry/results/comparison.json"))["labels"]; [print(name, "agent_version=" + str(item["agent_version"]), "prompt_hash=" + item["prompt_hash"][:12]) for name, item in labels.items()]'
@@ -894,6 +927,8 @@ python scripts/workshop.py summary --labels holdout
 
 ### 9-1. Verify the complete response matrix
 
+<a id="candidate-traces"></a>
+
 **Terminal A — V2 dev traces:**
 
 ```bash
@@ -903,6 +938,8 @@ python scripts/workshop.py monitor --label improved
 **Checkpoint:** the command finishes without errors, and the result JSON shows `complete: true`, `expected_trace_count: 18`, and `observed_trace_count: 18`.
 
 **If not:** `monitor` looks back two hours. If more than two hours passed since the V2 collection, [extend the window](docs/troubleshooting.en.md#telemetry); if you just collected, rerun only this command after 2–3 minutes.
+
+<a id="holdout-traces"></a>
 
 **Terminal A — holdout traces:**
 
@@ -938,9 +975,11 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 
 **Portal:** open **Agents** on the left → your agent → the **Monitor** tab → **Overview**, and keep the range at **Last Day**.
 
-**Checkpoint:** the **Agent runs** and **Runs and token metrics** charts show values in your run's time window. Note the **Agent runs** legend count (for example, `completed: 53`) and `Total tokens`. If the legend shows any status other than `completed`, note that count as the **error count**; otherwise note `0`. Totals include smoke and portal calls, so they need not equal 48.
+**Checkpoint:** the **Agent runs** and **Runs and token metrics** charts show values in your run's time window. Note each status count in the **Agent runs** legend (for example, `completed: 53`) and `Total tokens`. Preserve the names and counts of any other statuses, or write `no statuses other than completed`. Do not count runs still in progress as errors. Totals include smoke and portal calls, so they need not equal 48.
 
-**If not:** see [portal differences](docs/troubleshooting.en.md#portal-differs).
+**If not:** refresh after 2–3 minutes. For a run from an earlier date, widen to **7D**; if it stays empty, see [portal differences](docs/troubleshooting.en.md#portal-differs).
+
+`Estimated cost: $0` does not mean the run was free; you must still complete step 10 cleanup.
 
 <details>
 <summary>Example screen (open if your portal looks different): the Foundry monitoring dashboard</summary>
@@ -963,7 +1002,11 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-evidence.json
 ```
 
-**Your notes:** fill this template (not a command) with the saved value named on each line. Leave no `...`, write empty lists as `none`, and keep `production_release_approved=false`:
+**Checkpoint:** `candidate_quality_gates` contains six `dev` / `holdout` values for `sol`, `luna`, and `astra`. A `false` value is a valid result to record.
+
+**If not:** if the file is missing, check that [9-1 verification](#lab-g) completed. Do not create the file or fill in values yourself.
+
+**Editor — save your report:** in the VS Code Explorer, right-click the `src/agent/.foundry/results` folder → **New File** and name it `workshop-report.txt`. Fill this template (not a command) with the values from your notes and save it. Leave no `...`, write empty lists as `none`, and keep `production_release_approved=false`:
 
 ```text
 1. Review (6-2 line): ...
@@ -973,13 +1016,13 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
    luna: dev=..., holdout=...
    astra: dev=..., holdout=...
    holdout failures (8-3): business=...; Foundry=...
-   limitations (7-4 token or latency increases; nonzero 9-2 errors): ...
+   limitations (7-4 token or latency increases; 9-2 run statuses other than completed): ...
    production_release_approved=false
 ```
 
 **Report as is:** `false` gates, Foundry-score failures, and regressions are valid results; passing gates is not production approval.
 
-**Checkpoint:** no `...` remains, the 7-4 table is pasted, and `production_release_approved=false` is unchanged. Do not rerun for better scores.
+**Checkpoint:** the report file is saved with no `...` left, the 7-4 table pasted, and `production_release_approved=false` unchanged. Do not rerun for better scores.
 
 **If not:** for missing gates, return to 9-1. For missing notes, read the **saved** [review](#save-review), [dev summary](#compare-results), and [holdout summary](#holdout-results); do not repeat review, collection, or evaluation.
 
@@ -1078,6 +1121,7 @@ python scripts/workshop.py check-cleanup
 | `src/agent/.foundry/results/comparison.json` | Before/after model metrics and failing cases |
 | `src/agent/.foundry/datasets/regression-*.jsonl` | Reviewed case, fixed reference answer, and source trace |
 | `src/agent/.foundry/results/verified-evidence.json` | Complete execution and lineage checks |
+| `src/agent/.foundry/results/workshop-report.txt` | Your three-point report saved in 9-3 |
 | `src/agent/.foundry/results/cleanup-check.json` | Deletion verification; the checked plan is in the same folder's `cleanup.json` |
 
 Keep them for your report and any recovery; do not delete them or replace them with an example run.

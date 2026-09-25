@@ -209,7 +209,7 @@ Foundry Indexes 목록, knowledge source 고급 설정, 실제 Azure Search inde
 
 ## 평가와 채택 기준
 
-**짧은 답:** 레벨 1에서는 저장된 응답 48개와 trace 48개, 고정 평가기, 모델별 dev·holdout 업무 게이트 6개 통과를 확인하고, native 평가 점수는 따로 읽습니다. 운영 승인이 아닙니다.
+**짧은 답:** 레벨 1에서는 저장된 응답 48개와 trace 48개, 고정 평가기를 확인합니다. 모델별 dev·holdout 업무 게이트 6개의 결과와 native 평가 점수는 따로 읽습니다. **게이트가 `false`여도 실습은 완료할 수 있으며**, 그 결과를 보고합니다. 운영 승인이 아닙니다.
 
 **아래 기준은 기본 10단계 실습(레벨 1)용입니다.** [레벨 2](level-2.ko.md)와 [레벨 3](level-3.ko.md)은 입력과 기준값이 다르므로 본평가 48개 응답과 점수를 합치지 않습니다.
 
@@ -226,7 +226,7 @@ Foundry Indexes 목록, knowledge source 고급 설정, 실제 Azure Search inde
 
 | 확인 항목 | 필요한 값 | 다르면 |
 |---|---|---|
-| 응답 행렬 | baseline dev 18행, improved dev 18행, holdout 12행. 오류·중복·누락 없음 | 다시 실행하거나 별도 실험으로 보고 |
+| 응답 행렬 | baseline dev 18행, improved dev 18행, holdout 12행. 오류·중복·누락 없음 | [실패한 단계만 복구](troubleshooting.ko.md#resume) |
 | 고정 입력 | 같은 dev 데이터, 말뭉치, 동시성, judge, evaluator 정의 | baseline과 비교하지 않음 |
 | 업무 게이트 | 모든 모델의 dev·holdout `business_gate`가 `true`. 업무 통과율 80% 이상, 필요한 인용 모두 유효. dev는 최소 5/6, holdout은 4/4 | 채택하지 않음 |
 | native 평가 점수 | native 1–5 척도와 통과 기준 4. null·오류를 점수로 바꾸지 않음 | 실패 또는 누락 증거로 유지 |
@@ -247,13 +247,15 @@ Foundry Indexes 목록, knowledge source 고급 설정, 실제 Azure Search inde
 
 `queries/monitor.kql`은 실습 에이전트의 `requests`를 고르고 `operation_Id`로 `dependencies`를 연결합니다. framework span과 custom span을 중복 모델 호출로 세지 않습니다.
 
-baseline 예시는 리포지토리 루트에서 실행합니다(9단계에서 돌아왔다면 가이드가 지정한 label을 씁니다).
+**터미널 — 저장소 루트:** baseline 예시입니다. 복구 중이라면 가이드가 지정한 실제 label을 씁니다.
 
 ```bash
 python scripts/workshop.py monitor --label baseline
 ```
 
-**완료 확인:** JSON 출력에 run의 `expected_trace_count`, 그와 일치하는 `observed_trace_count`, `complete: true`가 나옵니다. **다르면:** 중단한 실행에만 `--hours 24`를 붙이고 [9단계](../README.ko.md#lab-g)로 돌아갑니다.
+**완료 확인:** JSON 출력에 run의 `expected_trace_count`, 그와 일치하는 `observed_trace_count`, `complete: true`가 나옵니다.
+
+**다르면:** [trace 복구](troubleshooting.ko.md#telemetry)에서 반영 지연·조회 기간을 확인합니다. 수집·평가는 반복하지 않습니다.
 
 `monitor`는 기본으로 최근 2시간을 조회합니다. `--hours`는 같은 trace coverage 조회의 KQL 필터와 API 시간 범위를 함께 늘리며, agent/run 필터와 정확한 trace 수·sampling 검사는 유지됩니다. 포털의 날짜 선택이나 `azd ai agent monitor` 로그 스트리밍과는 다른 기능입니다.
 

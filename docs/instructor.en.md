@@ -69,6 +69,8 @@ The recorded English main run showed 53 agent runs and about 125.7K tokens on th
 
 Run workshop commands in Bash: macOS/Linux use the local terminal; Windows uses WSL with the Linux tools installed inside WSL. Windows editors and browsers are fine for manual checks.
 
+**Editor — Windows/WSL users:** install the [WSL extension](https://code.visualstudio.com/docs/remote/wsl) in Windows VS Code. After creating the workshop folder later, use **F1 → WSL: Connect to WSL**, then **File → Open Folder** to open it. The bottom-left **WSL** indicator confirms that the later Linux paths and terminals work in that window.
+
 **Terminal — check CLI tools:** it stops at the first missing command; install only that tool, then repeat the check.
 
 ```bash
@@ -140,7 +142,13 @@ Agent hosting and the SDK packages can have different GA/preview status; do not 
 
 ## Access boundaries
 
-The environment owner needs permission to create or use the workshop resources and to assign the listed roles at their target scopes. **Contributor alone does not grant role-assignment permission** (`Microsoft.Authorization/roleAssignments/write`). In self-study, a **subscription Owner** meets this requirement: read the table below for reference and go to [Create a dedicated environment](environment.en.md). That guide's commands and README 2-1 and 4-2 assign roles only at the new resources' scopes.
+The environment owner needs permission to create or use the workshop resources and to assign the listed roles at their target scopes. **Contributor does not grant role-assignment permission** (`Microsoft.Authorization/roleAssignments/write`). For self-study, first verify **subscription Owner** below. The environment-setup commands and README 2-1 and 4-2 assign roles at the new resources' scopes, so the role table below is for reference.
+
+**Portal — verify Owner for self-study:** in [Azure Portal](https://portal.azure.com/), open **Subscriptions → your subscription → Access control (IAM) → Check access → View my access**. If role assignments appear directly instead of a `View my access` button, read that list ([official access check](https://learn.microsoft.com/azure/role-based-access-control/check-access)).
+
+**Checkpoint:** you have an active **Owner** role on that subscription. You do not need to add roles manually to Search or agent resources that do not exist yet. Continue to [Create a dedicated environment](environment.en.md).
+
+**If not:** recheck the account and subscription. For an `Eligible` role, finish [role activation](https://learn.microsoft.com/azure/role-based-access-control/role-assignments-eligible-activate) first. With Contributor alone, you need an access administrator's help as described below.
 
 An authorized access administrator must provide that permission or perform the assignments. Do not give administrator/Owner permissions to the agent as a shortcut. Participants without assignment permission need the owner for `prepare-iq` and `grant-agent-access`.
 

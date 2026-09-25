@@ -76,13 +76,13 @@ baseline(V1, dev 6문항) → trace 하나 검토 → improved(V2, 같은 6문�
 **진행 방법**
 
 - **작업 위치:** 블록 앞의 굵은 라벨(**터미널 A**, **터미널 B**(3단계만), **편집기**, **포털**)을 따릅니다. “내 에이전트”는 `LAB_AGENT_NAME`입니다.
-- **명령:** 1-1 clone 뒤에는 저장소 루트에서 `$` 없이 **한 블록씩** 붙여넣어 실행하고 프롬프트가 돌아올 때까지 기다립니다(3단계 로컬 서버만 예외).
+- **명령:** 1-1 clone 뒤에는 저장소 루트에서 **한 블록씩 그대로** 붙여넣어 실행합니다. 명령 앞에 프롬프트 기호 `$`를 덧붙이지 않습니다. 프롬프트가 돌아올 때까지 기다립니다(3단계 로컬 서버만 예외). `&&`는 앞 명령이 성공해야 다음 명령을 실행한다는 뜻입니다. 입력 요청에는 값만 붙여넣고 Enter를 누릅니다.
 - **긴 출력:** JSON이나 쿼리가 길게 나와도 정상입니다. **완료 확인**의 값은 대개 출력 **맨 아래**에 있고, `language: ko`처럼 적은 값은 JSON에서 `"language": "ko"`로 보입니다. 출력 끝의 `Next:` 제안 명령과 `Update available` 안내는 실행하지 않습니다.
 - **숨김 파일:** `.env`와 `src/agent/.foundry/`는 이름이 점(.)으로 시작해 일반 파일 창에서 보이지 않습니다. VS Code의 **File → Open Folder**로 이 실습 폴더를 열면 탐색기에 보입니다.
 - **새 터미널:** Bash를 열고 메모한 경로로 [복원 블록](#resume-shell)을 실행합니다(3단계 터미널 B 블록에는 포함됨).
 - **확인:** 출력이 **완료 확인**과 다르면 출력을 남기고 바로 아래 **다르면**대로 [그 명령만 복구](docs/troubleshooting.ko.md#resume)합니다. 점수를 높이려고 끝난 단계를 다시 실행하지 않습니다.
 - **막히면:** **다르면**의 링크부터 따릅니다. “강사”·“환경 소유자”는 수업에서는 강사, 혼자 실습하면 본인입니다. 도움을 요청할 때는 실패한 명령·오류·단계만 보여 주고 암호·토큰은 공유하지 않습니다.
-- **메모:** 편집기에서 새 텍스트 파일 하나를 열어 둡니다. 4-3·6-2·7-2·7-4·8-3·9-2에서 안내하는 값을 적고, 9-3에서 이 메모로 보고서를 만듭니다. **`data/holdout.jsonl`은 8단계 전까지 열지 않습니다.**
+- **메모:** 편집기에서 새 텍스트 파일 하나를 열어 둡니다. 4-3·6-2·7-1·7-2·7-4·8-3·9-2에서 안내하는 값을 적고, 9-3에서 보고서로 저장합니다. **`data/holdout.jsonl`은 8단계 전까지 열지 않습니다.**
 
 <a id="배경-learning-loop와-frontier-ecosystems"></a>
 <a id="이-실습에서는-무엇으로-연결하나요"></a>
@@ -105,6 +105,10 @@ baseline(V1, dev 6문항) → trace 하나 검토 → improved(V2, 같은 6문�
 ```bash
 bash
 ```
+
+**완료 확인:** 새 입력 프롬프트가 나옵니다. 창이 새로 열리거나 성공 문구가 나오지 않아도 정상입니다.
+
+**다르면:** `command not found`이면 [Bash/WSL 설치](docs/instructor.ko.md#tools)를 확인합니다.
 
 **터미널 A — 새 폴더로 clone:** 실습 결과가 없는 **clone이나 압축을 푼 ZIP 폴더**가 이미 있으면 이 블록을 건너뛰고, 그 폴더 루트로 이동해 `ls README.ko.md && pwd`만 실행합니다.
 
@@ -158,6 +162,10 @@ source src/agent/.venv/bin/activate &&
 python -m pip install -r requirements.txt
 ```
 
+**완료 확인:** 설치 로그가 끝나고 `(.venv)`가 붙은 프롬프트로 돌아옵니다. `Requirement already satisfied`도 정상입니다.
+
+**다르면:** `python3.13`을 찾지 못하면 [도구 설치](docs/instructor.ko.md#tools)를 확인합니다. 패키지 다운로드 오류이면 네트워크를 확인한 뒤 이 설치 블록만 다시 실행합니다. 아직 테스트로 넘어가지 않습니다.
+
 **터미널 A — 테스트:**
 
 ```bash
@@ -186,17 +194,29 @@ read -r -p ".env의 AZURE_TENANT_ID 값: " LOGIN_TENANT_ID &&
 read -r -p ".env의 AZURE_SUBSCRIPTION_ID 값: " LOGIN_SUBSCRIPTION_ID
 ```
 
+**완료 확인:** 두 ID를 입력한 뒤 프롬프트가 돌아옵니다. 아직 로그인은 시작하지 않았습니다.
+
+**다르면:** 잘못 입력했다면 이 블록만 다시 실행합니다. `read: -p: no coprocess`이면 `bash`를 실행한 뒤 다시 입력합니다.
+
 **터미널 A — 2. Azure CLI 로그인:** 구독을 물으면 `.env`의 구독을 고릅니다.
 
 ```bash
 az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" --output none
 ```
 
+**완료 확인:** 브라우저 로그인을 마치고 터미널에 오류 없이 프롬프트가 돌아옵니다. `--output none`이므로 계정 JSON은 출력하지 않습니다.
+
+**다르면:** [로그인 복구](docs/troubleshooting.ko.md#login)에서 Azure CLI만 복구한 뒤 3번으로 진행합니다.
+
 **터미널 A — 3. azd 로그인:** 같은 계정을 씁니다.
 
 ```bash
 azd auth login --tenant-id "$LOGIN_TENANT_ID"
 ```
+
+**완료 확인:** 브라우저 로그인을 마치고 터미널에 오류 없이 프롬프트가 돌아옵니다. 실제 계정 일치는 다음 블록에서 확인합니다.
+
+**다르면:** [로그인 복구](docs/troubleshooting.ko.md#login)에서 azd만 복구합니다. 성공한 Azure CLI 로그인은 반복하지 않습니다.
 
 <a id="login-check"></a>
 
@@ -216,7 +236,7 @@ azd auth status --output json
 
 ### 1-4. 프로젝트 확인과 연결
 
-**터미널 A — 프로젝트 확인:**
+**터미널 A — 프로젝트 확인:** 첫 출력까지 30초 안팎 걸릴 수 있습니다.
 
 ```bash
 python scripts/workshop.py preflight
@@ -267,7 +287,7 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 
 **완료 확인:** 프롬프트에 `(.venv)`가 표시되고 오류가 없습니다. `az account set`은 쓰지 않으며, 실행을 시작한 뒤에는 `LAB_LANGUAGE`를 바꾸지 않습니다.
 
-**다르면:** `No such file or directory`이면 `/`로 시작하는 전체 경로를 따옴표 없이 다시 붙여넣습니다(`~`는 쓰지 않음). 경로를 잊었다면 `ls -d ~/foundry-evaluation-ko*`로 찾습니다.
+**다르면:** `No such file or directory`이면 `/`로 시작하는 전체 경로를 따옴표 없이 다시 붙여넣습니다(`~`는 쓰지 않음). 경로를 잊었다면 실습 폴더를 연 VS Code 창에서 **Terminal → New Terminal**을 열고 `pwd`로 확인합니다.
 
 </details>
 
@@ -280,6 +300,8 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 ## 2. 조직의 지식 넣고 검색하기
 
 **목표:** 합성 정책 7개로 만든 **지식베이스(KB)**가 맞는 정책을 찾습니다.
+
+<a id="knowledge-registration"></a>
 
 ### 2-1. 정책 등록
 
@@ -343,6 +365,10 @@ python scripts/workshop.py retrieve --query "2026년 9월 국내 출장 숙박�
 pwd
 ```
 
+**완료 확인:** `/`로 시작하는 실습 폴더 경로를 복사했습니다.
+
+**다르면:** 경로가 1단계에서 메모한 폴더와 다르면 [터미널 복원](#resume-shell) 후 다시 확인합니다.
+
 **터미널 A — 서버 시작:** V1을 선택하고 서버를 시작합니다. 3-3까지 그대로 둡니다. `Selected v1; run azd deploy ...` 안내의 배포는 4단계에서 하며, 처음에는 의존성 설치로 30초쯤 걸립니다.
 
 ```bash
@@ -350,7 +376,7 @@ python scripts/workshop.py set-prompt v1 &&
 azd ai agent run --no-client
 ```
 
-**완료 확인:** 절대 경로를 복사했습니다. `Starting agent on http://localhost:8088` 뒤로 로그가 이어지다가 traceback 없이 `Running on http://0.0.0.0:8088`이 나오고, 입력 프롬프트로 돌아오지 않습니다.
+**완료 확인:** `Starting agent on http://localhost:8088` 뒤로 로그가 이어지다가 traceback 없이 `Running on http://0.0.0.0:8088`이 나오고, 입력 프롬프트로 돌아오지 않습니다.
 
 **다르면:** [증상별 확인](docs/troubleshooting.ko.md#symptoms)의 8088 포트 항목을 봅니다.
 
@@ -361,6 +387,10 @@ azd ai agent run --no-client
 ```bash
 bash
 ```
+
+**완료 확인:** 터미널 B에 새 입력 프롬프트가 나오고 터미널 A의 서버는 계속 실행 중입니다.
+
+**다르면:** A의 서버를 종료했다면 3-1에서 다시 시작합니다. B에는 서버 시작 명령을 붙여넣지 않습니다.
 
 **터미널 B — 요청 보내기:** 입력 요청이 나오면 3-1에서 복사한 절대 경로를 붙여넣고 Enter를 누릅니다. 블록이 경로를 알아서 따옴표로 감싸고, 환경을 복원하고, readiness를 확인한 뒤 요청 하나를 보냅니다.
 
@@ -562,6 +592,8 @@ python scripts/workshop.py compare --labels baseline
 
 **다르면:** 5단계 수집·평가가 완료됐는지 확인하고 [실패한 명령만 복구](docs/troubleshooting.ko.md#resume)합니다.
 
+<a id="baseline-traces"></a>
+
 **터미널 A — trace 확인:** 긴 KQL 쿼리가 먼저 나오고, 그 아래에 결과 JSON이 나옵니다.
 
 ```bash
@@ -602,7 +634,8 @@ python scripts/workshop.py show --label baseline --row-id "$ROW_ID"
 **같은 사례를 두 곳에서 확인합니다.**
 
 1. **터미널 A의 출력:** `saved_response`의 `answer`·`decision`을 `fixed_reference`의 `ground_truth`·`expected_decision`·`required_numbers`와 비교합니다. 이어서 `citations`(인용한 ID)가 `source_ids`(검색된 문서)와 `allowed_citations`(허용 ID)에 있는지 봅니다. `business_checks`에서 `false`인 항목이 실패한 검사입니다.
-2. **포털:** 왼쪽 **Agents** → 내 에이전트 → **Traces** 탭에서 전체 `trace_id`로 그 요청을 찾아 엽니다(보이지 않으면 기간을 **7D**로 넓힘). 열린 창의 **Graph view** 탭에서 `foundry_iq.retrieve`(검색)와 `chat`(모델) span을 눌러 봅니다.
+2. **포털:** 왼쪽 **Agents** → 내 에이전트 → **Traces → Trace view**를 엽니다. 표 위 왼쪽 검색창에 전체 `trace_id`를 붙여넣고, 검색된 행의 **Trace ID** 링크를 누릅니다. 보이지 않으면 **Date range → 7D**로 넓힙니다.
+3. **포털:** 열린 창의 **Graph view**에서 `foundry_iq.retrieve`(검색)와 `chat`으로 시작하는 상자(모델 호출)를 눌러 봅니다. 각 상자가 작업 하나의 기록인 **span**입니다. **Success**는 작업 실행 성공이며, 답변의 업무 검사 통과와는 다릅니다.
 
 **그다음 한 줄로 메모합니다:** `row_id=...; trace_id=...; 관찰: ...; 근거: ...; 바꿀 점: ...`. 통과한 사례라면 `바꿀 점` 대신 **V2에서도 유지할 동작**을 적습니다([통과 사례](docs/troubleshooting.ko.md#no-failures)).
 
@@ -867,7 +900,7 @@ python scripts/workshop.py compare --labels baseline improved holdout
 
 **다르면:** 오류에 나온 label과 위 평가 완료를 확인하고 [실패한 명령만 복구](docs/troubleshooting.ko.md#resume)합니다.
 
-**터미널 A — 고정한 V2인지 확인:** 방금 저장한 비교 파일에서 label별 에이전트 버전과 지침 해시(앞 12자리)만 한 줄씩 출력합니다.
+**터미널 A — 고정한 V2인지 확인:** 방금 저장한 비교 파일에서 label별 에이전트 버전과 지침 해시(내용을 식별하는 값, 앞 12자리)만 한 줄씩 출력합니다.
 
 ```bash
 python -c 'import json; labels = json.load(open("src/agent/.foundry/results/comparison.json"))["labels"]; [print(name, "agent_version=" + str(item["agent_version"]), "prompt_hash=" + item["prompt_hash"][:12]) for name, item in labels.items()]'
@@ -923,6 +956,8 @@ python scripts/workshop.py summary --labels holdout
 
 ### 9-1. 전체 응답·평가·trace 검증
 
+<a id="candidate-traces"></a>
+
 **터미널 A — V2 dev trace:**
 
 ```bash
@@ -932,6 +967,8 @@ python scripts/workshop.py monitor --label improved
 **완료 확인:** 오류 없이 끝나고 결과 JSON에 `complete: true`, `expected_trace_count: 18`, `observed_trace_count: 18`이 있습니다.
 
 **다르면:** `monitor`는 최근 2시간만 봅니다. V2 수집 뒤 2시간이 지났다면 [조회 기간을 늘리고](docs/troubleshooting.ko.md#telemetry), 방금 수집했다면 2–3분 뒤 이 명령만 다시 실행합니다.
+
+<a id="holdout-traces"></a>
 
 **터미널 A — holdout trace:**
 
@@ -967,9 +1004,11 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 
 **포털:** 왼쪽 **Agents** → 내 에이전트 → **Monitor** 탭 → **Overview**에서 기간을 **Last Day**로 둡니다.
 
-**완료 확인:** **Agent runs**와 **Runs and token metrics** 그래프에 내 실행 시간대의 값이 있습니다. 메모에 **Agent runs** 범례의 수(예: `completed: 54`)와 `Total tokens`를 적습니다. 범례에 `completed` 외의 상태가 있으면 그 수를 **오류 수**로, 없으면 `0`으로 적습니다. smoke·포털 호출도 포함되므로 합계가 48과 달라도 됩니다.
+**완료 확인:** **Agent runs**와 **Runs and token metrics** 그래프에 내 실행 시간대의 값이 있습니다. 메모에 **Agent runs** 범례의 상태별 수(예: `completed: 54`)와 `Total tokens`를 적습니다. `completed` 외의 상태도 이름·수를 그대로 적고, 없으면 `completed 외 상태 없음`으로 적습니다. 진행 중인 실행까지 오류로 세지 않습니다. smoke·포털 호출도 포함되므로 합계가 48과 달라도 됩니다.
 
-**다르면:** [포털 화면 차이](docs/troubleshooting.ko.md#portal-differs)를 봅니다.
+**다르면:** 2–3분 뒤 새로 고칩니다. 이전 날짜에 실행했다면 **7D**로 넓히고, 계속 비어 있으면 [포털 화면 차이](docs/troubleshooting.ko.md#portal-differs)를 봅니다.
+
+`Estimated cost: $0`도 무료라는 뜻은 아니므로 10단계 정리는 반드시 합니다.
 
 <details>
 <summary>예시 화면(포털이 다르게 보이면 열기): Foundry Monitor 대시보드</summary>
@@ -994,7 +1033,11 @@ python scripts/workshop.py verify --baseline baseline --candidate improved --hol
 python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-evidence.json
 ```
 
-**내 메모:** 아래 양식(명령 아님)을 각 줄에 적힌 곳의 저장된 값으로 채웁니다. `...`를 남기지 않고, 빈 목록은 `none`으로 적으며, `production_release_approved=false`는 바꾸지 않습니다.
+**완료 확인:** `candidate_quality_gates`에 `sol`·`luna`·`astra`의 `dev`·`holdout` 값 여섯 개가 있습니다. `false`도 기록할 정상 결과입니다.
+
+**다르면:** 파일이 없으면 [9-1의 검증](#lab-g) 완료 여부를 확인합니다. 파일을 직접 만들거나 값을 채워 넣지 않습니다.
+
+**편집기 — 보고서 저장:** VS Code 탐색기에서 `src/agent/.foundry/results` 폴더를 오른쪽 클릭 → **New File**로 `workshop-report.txt`를 만듭니다. 메모의 값으로 아래 양식(명령 아님)을 채워 저장합니다. `...`를 남기지 않고 빈 목록은 `none`으로 적습니다. `production_release_approved=false`는 바꾸지 않습니다.
 
 ```text
 1. 검토(6-2의 한 줄): ...
@@ -1004,13 +1047,13 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
    luna: dev=..., holdout=...
    astra: dev=..., holdout=...
    holdout 미통과(8-3): 업무=...; Foundry=...
-   남은 한계(7-4에서 늘어난 토큰·지연, 0이 아닌 9-2 오류 수): ...
+   남은 한계(7-4에서 늘어난 토큰·지연, 9-2의 completed 외 실행 상태): ...
    production_release_approved=false
 ```
 
 **그대로 보고할 것:** `false`인 게이트, Foundry 점수 미통과, 나빠진 값도 유효한 결과입니다. 게이트 통과는 운영 승인이 아닙니다.
 
-**완료 확인:** `...`가 남아 있지 않고, 7-4의 표를 붙여넣었으며, `production_release_approved=false`를 그대로 두었습니다. 점수를 높이려고 재실행하지 않습니다.
+**완료 확인:** 보고서 파일을 저장했고, `...`가 남아 있지 않으며, 7-4의 표와 `production_release_approved=false`가 있습니다. 점수를 높이려고 재실행하지 않습니다.
 
 **다르면:** 게이트 값이 없으면 9-1로 돌아갑니다. 메모가 빠졌다면 **저장된** [검토 기록](#save-review)·[dev 요약](#compare-results)·[holdout 요약](#holdout-results)을 읽어 채웁니다. 검토·수집·평가를 다시 실행하지 않습니다.
 
@@ -1110,6 +1153,7 @@ python scripts/workshop.py check-cleanup
 | `src/agent/.foundry/results/comparison.json` | 세 모델의 전후 지표와 미통과 사례 |
 | `src/agent/.foundry/datasets/regression-*.jsonl` | 검토 이유·고정 정답·원래 trace |
 | `src/agent/.foundry/results/verified-evidence.json` | 전체 실행·lineage 검증 |
+| `src/agent/.foundry/results/workshop-report.txt` | 9-3에서 저장한 세 항목 보고 |
 | `src/agent/.foundry/results/cleanup-check.json` | 삭제 확인 결과. 확인한 계획은 같은 폴더의 `cleanup.json` |
 
 보고와 복구에 쓰므로 지우거나 예시 결과로 바꾸지 않습니다.

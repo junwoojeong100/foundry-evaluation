@@ -209,7 +209,7 @@ The Foundry Indexes list, a knowledge source's advanced settings, and the actual
 
 ## Evaluation and adoption criteria
 
-**Short answer:** Level 1 needs all 48 saved responses and traces, fixed evaluators, six true business gates (dev and holdout for each model), and native scores read separately; it is not production approval.
+**Short answer:** Level 1 checks all 48 saved responses and traces and fixed evaluators. Read the six business-gate results (dev and holdout for each model) separately from native scores. **A `false` gate does not prevent workshop completion**; report that result. This is not production approval.
 
 **The criteria below describe the main 10-step workshop (Level 1).** [Level 2](level-2.en.md) and [Level 3](level-3.en.md) use other inputs and thresholds, so do not combine their scores with the primary 48 responses.
 
@@ -226,7 +226,7 @@ During an experiment:
 
 | Check | Required value | If different |
 |---|---|---|
-| Response matrix | 18 baseline dev rows, 18 improved dev rows, 12 holdout rows; no errors, duplicates, or missing rows | Rerun or report separately |
+| Response matrix | 18 baseline dev rows, 18 improved dev rows, 12 holdout rows; no errors, duplicates, or missing rows | [Recover only the failed stage](troubleshooting.en.md#resume) |
 | Fixed inputs | Same dev data, corpus, concurrency, judge, and evaluator definitions | Do not compare with baseline |
 | Business gates | Every model's dev and holdout `business_gate` is true: ≥80% business passes and all required citations valid; dev is at least 5/6, holdout is 4/4 | Do not adopt |
 | Native scoring | Native 1–5 scale and pass threshold 4; no null/error replacement | Keep as failed/missing evidence |
@@ -247,13 +247,15 @@ Method, measurements, and interpretation are in [the English evaluation explanat
 
 `queries/monitor.kql` selects this agent's requests and connects dependencies through `operation_Id`. It avoids counting both framework and custom spans as duplicate model calls.
 
-For the baseline example, from the repository root (when returning from step 9, use the label the main guide names):
+**Terminal — repository root:** this is the baseline example. During recovery, use the actual label named in the guide.
 
 ```bash
 python scripts/workshop.py monitor --label baseline
 ```
 
-**Checkpoint:** the JSON output shows `expected_trace_count`, matching `observed_trace_count`, and `complete: true` for the selected agent/run. **If not:** use `--hours 24` only for a paused run, then return to [step 9](../README.md#lab-g).
+**Checkpoint:** the JSON output shows `expected_trace_count`, matching `observed_trace_count`, and `complete: true` for the selected agent/run.
+
+**If not:** check ingestion delay and query windows with [trace recovery](troubleshooting.en.md#telemetry). Do not repeat collection/evaluation.
 
 `monitor` looks back two hours by default. `--hours` extends both the KQL filters and the API time window of the same trace-coverage query; the agent/run filter and exact trace-coverage checks stay unchanged. It is not the portal date selector or `azd ai agent monitor` log streaming.
 

@@ -69,6 +69,8 @@
 
 실습 명령은 Bash에서 실행한다. macOS/Linux는 로컬 터미널을 사용하고, Windows는 WSL 안에 Linux 도구를 설치해 WSL Bash를 사용한다. 수동 확인용 편집기와 브라우저는 Windows 앱을 사용해도 된다.
 
+**편집기 — Windows/WSL 사용자:** Windows의 VS Code에 [WSL 확장](https://code.visualstudio.com/docs/remote/wsl)을 설치한다. 이후 실습 폴더를 만들면 **F1 → WSL: Connect to WSL**로 연결한 뒤 **File → Open Folder**에서 연다. 왼쪽 아래에 **WSL** 표시가 있어야 뒤의 Linux 경로와 터미널을 그대로 쓸 수 있다.
+
 **터미널 — CLI 도구 확인:** 처음으로 찾지 못한 명령에서 멈추므로 해당 도구만 설치한 뒤 다시 확인한다.
 
 ```bash
@@ -142,7 +144,13 @@ Agent hosting과 SDK 패키지의 GA/preview 상태는 서로 다를 수 있으�
 
 ## 권한
 
-환경 소유자는 필요한 리소스 그룹과 리소스를 만들거나 사용할 수 있고, 아래 역할을 해당 범위에 부여할 수 있어야 한다. **Contributor만으로는 역할 부여 권한**(`Microsoft.Authorization/roleAssignments/write`)이 없다. 혼자 실습하며 본인이 **구독 Owner**라면 이 조건을 만족하므로, 아래 표는 참고만 하고 [새 전용 환경 만들기](environment.ko.md)로 간다. 역할은 그 문서의 명령과 README 2-1·4-2가 새 자원 범위에만 부여한다.
+환경 소유자는 필요한 리소스 그룹·리소스를 만들거나 사용할 수 있고, 아래 역할을 해당 범위에 부여할 수 있어야 한다. **Contributor에는 역할 부여 권한**(`Microsoft.Authorization/roleAssignments/write`)이 없다. 혼자 실습하면 먼저 아래에서 **구독 Owner**를 확인한다. 새 자원의 역할은 환경 준비 명령과 README 2-1·4-2가 부여하므로 아래 역할 표는 참고용이다.
+
+**포털 — 혼자 실습할 때 Owner 확인:** [Azure Portal](https://portal.azure.com/)의 **Subscriptions → 사용할 구독 → Access control (IAM) → Check access → View my access**에서 본인의 역할을 확인한다. `View my access` 대신 역할 목록이 바로 보이면 그 목록을 본다([공식 확인 절차](https://learn.microsoft.com/azure/role-based-access-control/check-access)).
+
+**완료 확인:** 해당 구독에 본인의 활성 **Owner** 역할이 있다. 아직 만들지 않은 Search·에이전트의 역할을 여기서 수동으로 추가할 필요는 없다. [새 전용 환경 만들기](environment.ko.md)로 진행한다.
+
+**다르면:** 계정과 구독을 다시 확인한다. 역할이 활성화 대상(`Eligible`)이면 [역할 활성화](https://learn.microsoft.com/azure/role-based-access-control/role-assignments-eligible-activate)를 먼저 마친다. Contributor만 있으면 아래처럼 접근 관리자의 지원이 필요하다.
 
 승인된 접근 관리자가 권한을 준비하거나 해당 작업을 수행해야 한다. 관리자·Owner 권한을 에이전트에 우회로로 주지 않는다. 역할 부여 권한이 없는 참가자는 `prepare-iq`와 `grant-agent-access`에서 환경 소유자의 지원이 필요하다.
 

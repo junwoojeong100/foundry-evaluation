@@ -70,7 +70,7 @@ Use the matching row, then return to the failed checkpoint. If it persists, pres
 | Route | Symptom | Cause or check | Action / exact return |
 |---|---|---|---|
 | Setup | Missing `.env` or required setting | The workshop cannot infer private deployment names. | Add the complete file; return to [step 1-1 `.env` check](../README.md#workspace-settings). |
-| Setup | `read: -p: no coprocess` or activation path missing | The shell or folder is not the recorded workshop shell/path. | Start Bash and use Terminal A's absolute `pwd`; return to [step 1-1 source setup](../README.md#source-setup). |
+| Setup | `read: -p: no coprocess` or activation path missing | The shell or folder is not the recorded workshop shell/path. | Run `bash`, then [restore the terminal](../README.md#resume-shell) in the existing folder. Do not clone again. |
 | Setup | Language mismatch | `LAB_LANGUAGE=en` selects English; `LAB_LANGUAGE=ko` or a missing setting selects Korean. | Use the original language/workspace; return to [step 1-1 `.env` check](../README.md#workspace-settings). |
 | Setup | Nonempty `missing_models` | One of the three exact deployments, versions, access paths, or quotas is unavailable. | Check that the `MODEL_*_DEPLOYMENT` values in `.env` are exactly as received, then ask the environment owner to deploy them (for your own environment, [environment step 6-1](environment.en.md#setup-candidates)); return to [preflight](../README.md#project-binding). |
 | Setup | `The fixed auxiliary planner/judge deployment is missing` | The actual `LAB_AUX_DEPLOYMENT` in `.env` is not ready. | Owner completes [auxiliary model preparation](instructor.en.md#auxiliary-model); return to [preflight](../README.md#project-binding). |
@@ -82,11 +82,11 @@ Use the matching row, then return to the failed checkpoint. If it persists, pres
 
 | Route | Symptom | Cause or check | Action / exact return |
 |---|---|---|---|
-| <a id="symptom-local"></a>Local run | Port 8088 unavailable | Terminal A may not be serving, or another process owns the port. | Check Terminal A and readiness; return to [local run](../README.md#local). |
-| Retrieval | `prepare-iq` cannot create a role assignment | The Search identity needs planner access. | Ask for that access only; return to [policy retrieval](../README.md#policy-retrieval). |
+| <a id="symptom-local"></a>Local run | Port 8088 unavailable | Terminal A may not be serving, or another process owns the port. | For `Connection refused`, wait for A's `Running on ...:8088`, then repeat only B's request block. For `Address already in use`, stop only another workshop server you started with `Ctrl+C` in its window, then resume [3-1](../README.md#local). Do not stop an unfamiliar process. |
+| Retrieval | `prepare-iq` cannot create a role assignment | The Search identity needs planner access. | Check [access](instructor.en.md#access), then rerun the failed [2-1 registration](../README.md#knowledge-registration). Do not skip to 2-2 retrieval yet. |
 | Retrieval | `retrieve` finishes without documents or without `TRAVEL-2026` | Registration and retrieval are separate checks. | [Recover retrieval](#retrieval); return to [policy retrieval](../README.md#policy-retrieval). |
 | <a id="symptom-hosted"></a>Hosted run | Search 403 / role assignment failure | Local user permissions and hosted agent instance permissions differ. | Check both identities; return to [hosted access](../README.md#agent-access). |
-| Hosted run | Hosted 424 / cold start | The hosted version may not be ready. | Inspect deployment and logs; return to [hosted smoke](../README.md#hosted-smoke). |
+| Hosted run | Hosted 424 / cold start | The hosted version may not be ready. | After 1–2 minutes, repeat only `smoke` from [hosted smoke](../README.md#hosted-smoke). If it still fails, inspect the error in **your agent → Playground → Log stream**. Do not redeploy. |
 | Collection | 429 or request timeout | Capacity or service throttling interrupted the run. | Preserve the attempt and inspect Retry-After; return to [collection recovery](#collection-retry). |
 | Trace | `connections/read` on startup | Startup may be reading connection metadata directly. | Use injected telemetry configuration; return to [hosted smoke](../README.md#hosted-smoke). |
 | Evaluation | Completed job with errors or null scores | Completed job status is not row-level success. | [Recover evaluation](#evaluation-retry); return to [baseline](../README.md#baseline-evaluation), [candidate](../README.md#candidate-evaluation), or [holdout](../README.md#holdout-evaluation). |
@@ -119,22 +119,30 @@ First run the **CLI-profile and tenant/subscription input block** from [README s
 
 **Run only the command for the CLI whose sign-in failed.** If both need sign-in, run Azure CLI first, then azd.
 
-**Azure CLI:**
+Open the address each command prints and enter the code from **your own terminal**. Sign in with the `.env` account. Never share or record one-time codes.
+
+**Terminal — Azure CLI:**
 
 ```bash
 az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" \
   --use-device-code --output none
 ```
 
-**azd:**
+**Checkpoint:** browser sign-in finishes and the terminal prompt returns without an error. No account JSON is printed.
+
+**If not:** preserve the error. If organizational policy blocks sign-in, use an approved environment rather than bypassing it.
+
+**Terminal — azd:**
 
 ```bash
 azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 ```
 
-Open the address shown by each command and enter the code from **your own terminal**. Sign in with the configured account, then return to the README's [two-account verification block](../README.md#login-check), without repeating the sign-in commands.
+**Checkpoint:** browser sign-in finishes and the terminal prompt returns without an error.
 
-Never share or record one-time codes. If organizational policy blocks device-code authentication, use an approved environment rather than bypassing the policy.
+**If not:** preserve the error. If organizational policy blocks sign-in, use an approved environment rather than bypassing it.
+
+After all required sign-ins finish, return to the README's [two-account verification block](../README.md#login-check). Do not repeat successful sign-ins.
 
 **Checkpoint:** [the two-account verification block](../README.md#login-check) shows the configured Azure CLI and azd account, tenant, and subscription.
 
@@ -158,12 +166,12 @@ Use this section when step 2's question returns no **`TRAVEL-2026` in `document_
 **Cause:** registration can succeed while the index is not yet queryable or is connected to the wrong KB/source/index.
 
 1. Confirm that `prepare-iq` ended with **`Foundry IQ ready: ...; 7 synthetic documents.`**. Retrieval's `knowledge_base` must also match your `LAB_PREFIX` plus `-kb`. If registration itself failed, resolve that error first.
-2. Open the **`saved` path** printed by `retrieve` in your editor and inspect `documents`, `references`, and `activity`. If registration just finished, allow the index to become queryable, then repeat **[only step 2's same `retrieve` command](../README.md#policy-retrieval)**. Do not repeat `prepare-iq`, deployment, or response collection just to check retrieval.
+2. Open the **`saved` path** printed by `retrieve` in your editor and inspect `documents`, `references`, and `activity`. If registration just finished, wait 1–2 minutes, then repeat **[only step 2's same `retrieve` command](../README.md#policy-retrieval)**. Do not repeat `prepare-iq`, deployment, or response collection just to check retrieval.
 3. If evidence is still missing, ask the environment owner to check your workshop's KB/source/index chain: **`LAB_PREFIX-kb` → `LAB_PREFIX-source` → `LAB_PREFIX-policies`**. Read `LAB_PREFIX` as the actual value from `.env`.
 
 Preserve the result file and KB name. Do not change policies/questions to pass the check or use another team's KB.
 
-**Checkpoint:** the saved retrieval file contains `TRAVEL-2026` in `document_ids` and nonempty retrieval `activity` for your `LAB_PREFIX-kb`.
+**Checkpoint:** the saved file's `knowledge_base` is your KB, its `documents` list includes `"id": "TRAVEL-2026"`, and `activity` is nonempty. **`document_ids` appears only in the terminal summary**, not in that file.
 
 **If not:** give the environment owner the saved path and KB/source/index names; do not change policies, questions, or another team's KB.
 
@@ -175,11 +183,17 @@ Preserve the result file and KB name. Do not change policies/questions to pass t
 
 Check **`src/agent/.foundry/results/judge-calibration/evaluation.json`** if it exists. If the job is **still running**, or a creation/download error has been resolved, resume with:
 
+**Terminal — resume the existing calibration:** run this after the original command stops. There may be no output for 1–3 minutes while scoring.
+
 ```bash
 python scripts/workshop.py calibrate
 ```
 
-Use the following only when the saved `status` is **`failed` / `canceled` / `cancelled`**, or **`run → result_counts → errored` is greater than 0**. Resolve the cause first; the failed job is preserved.
+**Checkpoint:** the last line says `Judge calibration passed; ...`. Skip the retry block below.
+
+**If not:** for `Evaluation is still running`, resume with the same command. Choose the block below only for a recorded failed/errored run. Do not retry a completed run just for low scores.
+
+**Terminal — retry a failed calibration only:** use this when the saved `status` is **`failed` / `canceled` / `cancelled`**, or **`run → result_counts → errored` is greater than 0**. Resolve the cause first; the failed job is preserved.
 
 ```bash
 python scripts/workshop.py calibrate --retry-failed
@@ -187,7 +201,7 @@ python scripts/workshop.py calibrate --retry-failed
 
 Malformed/missing results without a recorded failed/errored run require owner review of this calibration folder's saved status and raw output, not a forced retry. Calibration is separate from the 48 agent responses.
 
-**Checkpoint:** `evaluation.json` shows `status: completed`, `run → result_counts → errored` is `0`, and the judge distinguishes the supplied amounts.
+**Checkpoint:** the last line says `Judge calibration passed; ...`, and `calibration.json` in the same folder has `passed: true`.
 
 **If not:** preserve the calibration folder and raw output for owner review; do not edit examples, thresholds, or rerun a valid low score.
 
@@ -198,6 +212,8 @@ Malformed/missing results without a recorded failed/errored run require owner re
 ## If traces are missing after a pause
 
 `monitor` defaults to the **last two hours**, even if the portal displays Last Day. For a run from the last 24 hours, extend the window while keeping the **same label**:
+
+**Terminal — extend the existing trace query window:**
 
 ```bash
 python scripts/workshop.py monitor --label baseline --hours 24
@@ -216,7 +232,7 @@ The query still filters the exact agent and run, and missing, duplicate, foreign
 
 </details>
 
-**Next:** return to the trace checkpoint for the active label: [baseline](../README.md#baseline-evaluation), [candidate](../README.md#candidate-evaluation), or [holdout](../README.md#holdout-evaluation). If cleanup already ran, read saved evidence only. For a new experiment, use a fresh workspace and names.
+**Next:** do not repeat the recovered command; continue below its trace checkpoint: [baseline traces](../README.md#baseline-traces), [candidate traces](../README.md#candidate-traces), or [holdout traces](../README.md#holdout-traces). If cleanup already ran, read saved evidence only. For a new experiment, use a fresh workspace and names.
 
 <a id="collection-retry"></a>
 
@@ -248,7 +264,7 @@ Choose the failed stage in the first table, run only that subsection's command, 
 
 ### Failed initial baseline
 
-Use this after a 429 or timeout where a lower concurrency is the recovery:
+**Terminal — recollect V1:** use this after a 429 or timeout where a lower concurrency is the recovery:
 
 ```bash
 python scripts/workshop.py collect --split dev --label baseline-retry --concurrency 2
@@ -262,16 +278,16 @@ python scripts/workshop.py collect --split dev --label baseline-retry --concurre
 
 | Later command/path | Substitute |
 |---|---|
-| Every later command and file path that uses `baseline` | Use **`baseline-retry`**, including `feedback`, `compare`, `summary`, and `verify --baseline`. |
+| Every later command, file path, and example row ID that uses `baseline` | Use **`baseline-retry`**, including `feedback`, `compare`, `summary`, and `verify --baseline`. For example, `baseline-retry-sol-D01`. |
 | V2 dev and holdout `collect` commands | Add **`--concurrency 2`**. |
-
-**Failed V2 dev or holdout after a completed baseline:** keep that baseline's recorded `concurrency` from `manifest.json`. The examples below assume **4**; use its actual value if different. Choose **one** command, not both:
 
 <a id="collection-retry-improved"></a>
 
 ### V2 dev collection failed
 
 Also use this command to collect a new label when README 7-4 shows the review was not carried (`source trace carried: no`) or [V2 changed after 7-2](#v2-changed).
+
+**Terminal — recollect V2 dev:** check `concurrency` in the completed baseline's `manifest.json`. If it is `2`, replace `--concurrency 4` below with `--concurrency 2`.
 
 ```bash
 python scripts/workshop.py collect --split dev --label improved-retry --concurrency 4
@@ -286,6 +302,8 @@ python scripts/workshop.py collect --split dev --label improved-retry --concurre
 <a id="collection-retry-holdout"></a>
 
 ### Holdout collection failed
+
+**Terminal — recollect holdout:** check `concurrency` in the completed baseline's `manifest.json`. If it is `2`, replace `--concurrency 4` below with `--concurrency 2`.
 
 ```bash
 python scripts/workshop.py collect --split holdout --label holdout-retry --concurrency 4
@@ -310,15 +328,19 @@ First require complete response collection. Read **`src/agent/.foundry/results/<
 | Job completed with no errored rows, but validation rejects missing/duplicate IDs, null scores, or invalid output | Stop and preserve `evaluation.json` and any `evaluation-output-raw.json`. Ask the owner to inspect the result contract. **Do not force B or edit status/scores.** |
 | Job and rows completed correctly, but valid scores are low | Do not retry. Finish the report/portal checkpoint and continue the workshop. |
 
-The commands below use `baseline` as the example label; if `improved` or `holdout` failed, replace it before copying.
+Replace `baseline` below with **the label that actually failed**, including retry labels such as `improved-retry`. Run only one block, after the original command stops. There may be no output for 1–3 minutes while scoring.
 
-**A — start or resume evaluation with the same inputs:**
+**Terminal — A. start or resume evaluation with the same inputs:**
 
 ```bash
 python scripts/workshop.py evaluate --label baseline
 ```
 
-**B — retry only a recorded failed/errored run:**
+**Checkpoint:** `Foundry evaluation completed: ... (18 rows)`, or `(12 rows)` for holdout, appears with a report URL. Skip B below.
+
+**If not:** use the saved-state table above again. For a polling timeout, resume with A; use B only for a recorded failed/errored run.
+
+**Terminal — B. retry only a recorded failed/errored run:**
 
 ```bash
 python scripts/workshop.py evaluate --label baseline --retry-failed
@@ -362,18 +384,32 @@ Collect the holdout only with **the same V2 version** you evaluated in 7-3. Use 
 | Ran `set-prompt` or edited `.env` or a prompt file, without `azd deploy` | Restore the selection with **A** below, then return to 8-1. |
 | Ran `azd deploy` again | The agent version changed, so the existing `improved` no longer pairs with the holdout. Follow **B** below. |
 
-**A — restore the V2 selection (no redeployment):** if you edited a prompt file, restore it first with `git checkout -- src/agent/prompts` (for a ZIP folder, replace it with the original file), and return any other `.env` values to their 7-2 state. Then select V2 again and check it:
+If you edited prompt files, keep your changes in a separate note, then restore **the provided originals**. Also restore any other `.env` values you changed to their 7-2 values.
+
+| Workshop folder | Restore the original instructions |
+|---|---|
+| A participant's Git clone | **Terminal:** run `git restore -- src/agent/prompts` in this folder. |
+| Self-study `$RUN_DIR/workshop` copy | **Editor:** copy the unchanged `src/agent/prompts/` files from the original clone into the same paths in the workshop copy. The copy has no `.git`; do not use the Git command above there. |
+| Extracted ZIP folder | **Editor:** restore the original `src/agent/prompts/` files from the ZIP you started with. |
+
+**Terminal — A. restore the V2 selection (no redeployment):**
 
 ```bash
 python scripts/workshop.py set-prompt v2 &&
 python scripts/workshop.py smoke
 ```
 
-**Checkpoint:** `prompt_version: v2`, and `agent_version` equals the **V2 version** you noted in 7-2. Continue from [8-1 collection](../README.md#lab-f).
+**Checkpoint:** `prompt_version: v2`, and `agent_version` equals the **V2 version** you noted in 7-2. If holdout collection never started, go to [8-1](../README.md#lab-f). If `holdout/manifest.json` already exists, preserve it and use [holdout recollection](#collection-retry-holdout).
 
-**If not:** if `agent_version` differs or `Hosted prompt does not match` persists, a deployment happened after 7-2; follow **B**.
+**If not:** if the version differs or `Hosted prompt does not match` persists after restoring the original instructions and settings, the conditions no longer match the original V2. Follow **B**.
 
-**B — start again from dev with the current V2 version:** continue until **A**'s block shows `prompt_version: v2`. For `Hosted prompt does not match`, run `azd deploy --no-prompt` **once**, rerun **A**'s block, and note the new `agent_version`. Then collect `improved-retry` with [V2 dev collection recovery](#collection-retry-improved), redo README 7-3's evaluation and comparison and the 7-4 summary with `improved-retry`, and continue with step 8. If you already collected a holdout, use `holdout-retry` from [holdout collection recovery](#collection-retry-holdout). Use the changed labels in later commands and in `verify`.
+**B — start again from dev with the current V2 version:**
+
+1. **Terminal:** check the current version with A's **command block** (reuse its output if you just ran it). For `Hosted prompt does not match`, run `azd deploy --no-prompt` **once**, then repeat A's command block. Once it shows `prompt_version: v2`, note the new `agent_version`.
+2. Collect `improved-retry` with [V2 dev collection recovery](#collection-retry-improved). Complete README 7-3's evaluation/comparison and 7-4's summary with that label.
+3. Then continue to step 8. If `holdout/manifest.json` already exists, use `holdout-retry` from [holdout recollection](#collection-retry-holdout). Use the changed labels in subsequent commands, file paths, and `verify`.
+
+If you already saw the holdout, record `holdout reused during V2-change recovery` in your report. Do not tune instructions using those results or describe this as fresh, untouched validation.
 
 **Checkpoint:** in 8-2's check, the new improved label and the holdout label have the same `agent_version` and `prompt_hash`.
 
@@ -389,6 +425,7 @@ Use your actual account, project, names, version, and time window.
 
 | Difference | Check | Do not |
 |---|---|---|
+| Report URL is lost or opens the wrong report | In your editor, open `src/agent/.foundry/results/<actual-label>/evaluation.json`, copy **`run → report_url`**, and open it. | Do not repeat `collect` or `evaluate` just to retrieve the URL. |
 | Tab changes show a different agent version | Re-select the intended version and compare the saved `prompt_version`. | Do not trust the visible tab after navigation without checking the saved response. |
 | Project-wide **Evaluations** differs from the agent **Evaluation** tab | Open the list named in the README step. | Do not treat the two lists as interchangeable. |
 | Version comparison is hard to find | Use **Version dropdown → Compare versions**, select two versions, then click **Send** once. | Do not use the agent **More** menu or send each pane separately. |
@@ -530,7 +567,7 @@ Keep the same workspace, account, and ownership records. Files below are under *
 | `cleanup --confirm` succeeded; `cleanup.json` records `completed: true`, but `check-cleanup` failed | Preserve that file and its `plan`. Resolve the reported access/propagation problem, then repeat **only the check below**. |
 | Deletion itself stopped, or ownership/targets do not match | Stop automated deletion. Preserve the error, `cleanup-plan.json` if present, and ownership state. Before any further deletion, the owner (you, in self-study) checks that the plan's names match `LAB_AGENT_NAME` and `LAB_PREFIX` in this folder's `.env` and reconciles the original plan with Azure; partial counts are not complete cleanup. |
 
-**Only after the deletion command succeeded:**
+**Terminal — only after the deletion command succeeded:**
 
 ```bash
 python scripts/workshop.py check-cleanup
@@ -544,7 +581,7 @@ After a separately approved full-group deletion, use [final foundation verificat
 
 **If not:** keep the cleanup files and reported Azure state for the owner; do not run `cleanup --confirm` again to replace the original plan.
 
-**Next:** return to [step 10-3 cleanup check](../README.md#cleanup-check), or stop if the instructor is handling a full-group deletion.
+**Next:** return to [10-3 cleanup verification](../README.md#cleanup-check). To retire your exclusive group, follow the [creation-record and deletion-scope checks](environment.en.md#final-cleanup).
 
 <a id="setup-resume"></a>
 <a id="environment-owners-resume-setup-after-closing-the-terminal"></a>
@@ -553,7 +590,7 @@ After a separately approved full-group deletion, use [final foundation verificat
 
 **Participants: stop here unless you were preparing the Azure environment.** Keep the original clone and `RUN_DIR`; do **not** make a new `RUN_ID`, repeat `init`, or overwrite a snapshot.
 
-Start `bash` and enter the original clone path plus existing `RUN_DIR`, without quotation marks:
+**Terminal — check the existing paths:** start `bash`, then paste the original clone path and existing `RUN_DIR` without quotes:
 
 ```bash
 read -r -p "Absolute path of the original setup clone: " REPO_ROOT &&
@@ -562,7 +599,9 @@ read -r -p "Existing absolute RUN_DIR path: " RUN_DIR &&
 ls "$RUN_DIR/config.json"
 ```
 
-Open **`$RUN_DIR/config.json`** and confirm `workspace` is **this `RUN_DIR/workshop`**. If missing or different, stop; do not create a replacement record.
+**Checkpoint:** the existing `config.json` path prints. Open it in your editor and check that `workspace` points to `workshop` under this `RUN_DIR`.
+
+**If not:** recheck both paths in your notes. If the file is missing or belongs to another run, do not create or overwrite records.
 
 | Existing files / completed work | Next action |
 |---|---|
@@ -571,7 +610,7 @@ Open **`$RUN_DIR/config.json`** and confirm `workspace` is **this `RUN_DIR/works
 | Snapshot and manifest; Python or tests unfinished | Enter `"$RUN_DIR/workshop"`, run [isolated Python setup](environment.en.md#setup-python), and require `OK` before sign-in. |
 | Snapshot, Python, and tests done | Restore the runnable workspace below, then pick the interrupted Azure stage. |
 
-**Only once the snapshot and Python tests are complete:**
+**Terminal — only if the snapshot and Python tests are complete:**
 
 ```bash
 cd "$RUN_DIR/workshop" &&
@@ -581,10 +620,14 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 
 **Checkpoint:** activation succeeds and the CLI profile points to the existing runnable workspace; no new source or Azure environment was created.
 
+**If not:** for a path error, compare it with `workspace` in `config.json` above. If the virtual environment is missing, use the incomplete Python/tests row above.
+
+**Did a block joined with `&&` fail?** Commands after the failed command did not run. Resolve the cause, then continue **from the failed line through the end of that block** in order. When running one line at a time, remove its trailing `&&`. Do not repeat the successful earlier lines.
+
 | Interrupted setup stage | Where to resume |
 |---|---|
-| Sign-in | Follow [README step 1-3](../README.md#login), then return to [environment step 2](environment.en.md#setup-identity). |
-| Provisioning in environment steps 2–5 | Run `cd "$REPO_ROOT"`, keep `AZURE_CONFIG_DIR`, [select the interrupted stage](environment.en.md#setup-route), and resume only its failed command with `--run-dir "$RUN_DIR"`. |
+| Sign-in | Resume the unfinished sign-in in [environment 2-1](environment.en.md#setup-identity). Do not repeat successful sign-ins. |
+| Provisioning in environment steps 2–5 | Run `cd "$REPO_ROOT"`, keep `AZURE_CONFIG_DIR`, [select the interrupted stage](environment.en.md#setup-route), and run its failed command and remaining unexecuted commands with the same `--run-dir "$RUN_DIR"`. |
 | Candidate preparation in environment step 6 | Stay in `"$RUN_DIR/workshop"` and resume the failed [step 6](environment.en.md#setup-candidates) command. |
 | Candidates ready; only calibration unfinished | Resume at [judge calibration](environment.en.md#setup-calibration) in the same workspace; do not repeat `prepare-models` |
 | Environment already completed | Choose the [handoff](environment.en.md#handoff); do not repeat preparation. |

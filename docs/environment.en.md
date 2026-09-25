@@ -15,6 +15,7 @@ If you create the environment here, class, rehearsal, and self-study owners all 
 - Tools: `git`, `python3.13`, `az`, `azd`, Bash/WSL, curl, an editor, and a browser. If you have not checked them yet, finish [tool installation and checks](instructor.en.md#tools) first.
 - Access: the signed-in owner can create the listed resources and scoped RBAC role assignments; a subscription Owner is enough ([access checks](instructor.en.md#access)).
 - Waiting: while a creation command prints lines such as `search: actual provisioning state ...; waiting` every 10 seconds, it is working. Each resource waits up to 15 minutes; Search waits up to 30.
+- Stopping: services already created keep costing money if you abandon setup. For a dedicated group you will not use again, inspect its creation records and follow [final cleanup](#final-cleanup).
 
 Start at step 1 in an unused Git clone.
 
@@ -49,18 +50,30 @@ Use a **Git clone**, not an extracted ZIP: the preparation tool records the actu
 
 ### 1-1. Create or enter the clone
 
-If you are not already at the root of an **unused Git clone**, start here.
+If you already have an **unused Git clone**, start Bash and enter its root. Run only `ls README.md && pwd` instead of the clone block below.
+
+**Terminal — start Bash:** use Bash, not macOS's default zsh or PowerShell. On Windows, open a WSL terminal.
+
+```bash
+bash
+```
+
+**Checkpoint:** a new input prompt appears. Keep using this terminal.
+
+**If not:** check [Bash/WSL installation](instructor.en.md#tools).
 
 **Terminal — parent folder for a new clone:**
 
 ```bash
 git clone https://github.com/junwoojeong100/foundry-evaluation.git foundry-evaluation-setup-en &&
-cd foundry-evaluation-setup-en
+cd foundry-evaluation-setup-en &&
+ls README.md &&
+pwd
 ```
 
-**Checkpoint:** `README.md` is in the current folder.
+**Checkpoint:** `README.md` and the current clone's absolute path are printed.
 
-**If not:** stop and move to the unused clone root before continuing. Do not run setup from a ZIP or an old workshop folder.
+**If not:** for `already exists`, replace both folder names in the block with the same unused name. Do not run setup from a ZIP or an old workshop folder.
 
 <a id="initial-settings"></a>
 
@@ -68,7 +81,7 @@ cd foundry-evaluation-setup-en
 
 **Editor — current clone root (later saved as `$REPO_ROOT`):**
 
-1. Copy `.env.example` to `.env` in this clone root.
+1. Open this clone with VS Code **File → Open Folder**. In the Explorer, copy and paste `.env.example` in the same location, then rename the copy to `.env`.
 2. Fill exactly the rows below; leave every other template value unchanged.
 
 - Do not create `.env.txt` or overwrite an existing `.env`.
@@ -79,7 +92,7 @@ cd foundry-evaluation-setup-en
 |---|---|
 | `AZURE_SUBSCRIPTION_ID` | Authorized workshop subscription; in self-study, a subscription where you are Owner |
 | `AZURE_TENANT_ID` | Its tenant |
-| `AZURE_EXPECTED_USERNAME` | Account that will sign in |
+| `AZURE_EXPECTED_USERNAME` | Sign-in name/email of the account you will use, not its display name |
 | `AZURE_RESOURCE_GROUP` | On a first run, leave it empty: **`AZURE_RESOURCE_GROUP=`**. Use a group name only to confirm a previous run's group as preserved |
 | `LAB_LANGUAGE` | `en` |
 
@@ -105,7 +118,7 @@ python -m pip install -r requirements.lock.txt
 
 ### 1-4. Create the run folder
 
-Choose a fresh run ID once. Do not reuse an example ID or an existing `RUN_DIR`; keep the printed path for every later block.
+This block generates a fresh run ID from the current time. Run it once and keep the printed path for every later block.
 
 **Terminal — current clone root (saved as `$REPO_ROOT` here):**
 
@@ -119,21 +132,27 @@ python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language en
 
 Copy the printed `REPO_ROOT=` and `RUN_DIR=` lines into your notes now; you resume with these two paths after reopening a terminal.
 
-**Checkpoint:** `init` finishes and creates **`$RUN_DIR/config.json`**. It records the chosen names; it has not copied the source or created Azure resources.
+**Checkpoint:** the output JSON shows `language: en` and **`$RUN_DIR/config.json`** is created. It records the chosen names; it has not copied the source or created Azure resources.
 
 **If not:** keep the output and the same `RUN_DIR`, then use [setup recovery](troubleshooting.en.md#setup-resume). Do not restart with a new run ID.
 
 <details>
 <summary>Resume in a new terminal</summary>
 
+**Terminal — restore the original clone:** run `bash` first. At each prompt, paste only the recorded path after `=`, without quotes.
+
 ```bash
 read -r -p "Absolute path of this clone (REPO_ROOT): " REPO_ROOT &&
 read -r -p "Printed RUN_DIR path: " RUN_DIR &&
 cd "$REPO_ROOT" &&
-source src/agent/.venv/bin/activate
+source src/agent/.venv/bin/activate &&
+export AZURE_CONFIG_DIR="$RUN_DIR/workshop/.azure-cli" &&
+pwd
 ```
 
-Step 2 sign-in commands set `AZURE_CONFIG_DIR`; if you are already past step 2, also run `export AZURE_CONFIG_DIR="$RUN_DIR/workshop/.azure-cli"`.
+**Checkpoint:** the original clone path prints and the prompt shows `(.venv)`. If you completed step 2, its cached sign-in is reused.
+
+**If not:** use [setup recovery](troubleshooting.en.md#setup-resume) to check the existing paths. Do not create a new run ID.
 
 </details>
 
@@ -169,7 +188,7 @@ python -m pip install -r requirements.lock.txt &&
 python -m unittest discover -s tests -v
 ```
 
-**Checkpoint:** tests end with `OK`; **`$RUN_DIR/source-manifest.json`** records the source commit and hashes. **`$RUN_DIR/workshop/.env`** has `LAB_LANGUAGE=en`, new owned names, and no reused `.azure`, `.foundry`, or virtual environment.
+**Checkpoint:** tests end with `OK` (`OK (skipped=1)` is normal: the runtime copy omits guides, so it skips the documentation checks). **`$RUN_DIR/source-manifest.json`** records the source commit and hashes. **`$RUN_DIR/workshop/.env`** has `LAB_LANGUAGE=en`, new owned names, and no reused `.azure`, `.foundry`, or virtual environment.
 
 **If not:** stop before Azure operations and follow [Python setup recovery](troubleshooting.en.md#setup-resume). Do not recreate an existing virtual environment or source snapshot.
 
@@ -183,6 +202,8 @@ Start step 2 in **`$RUN_DIR/workshop`**; step 2-2 then sends you back to **`$REP
 
 Sign in from **`$RUN_DIR/workshop`** so the English agent later uses this isolated CLI profile. Do **not** run README `preflight` or `bind` yet; the foundation does not exist.
 
+After each sign-in command, finish browser sign-in with the `.env` account, `AZURE_EXPECTED_USERNAME`. Choose **Use another account** if a different one appears.
+
 **Terminal — runtime folder (`$RUN_DIR/workshop`):** enter the IDs. This keeps the sign-in in this folder's `.azure-cli/` (never share or commit it):
 
 ```bash
@@ -191,17 +212,29 @@ read -r -p "AZURE_TENANT_ID value from .env: " LOGIN_TENANT_ID &&
 read -r -p "AZURE_SUBSCRIPTION_ID value from .env: " LOGIN_SUBSCRIPTION_ID
 ```
 
+**Checkpoint:** the prompt returns after you enter both IDs. Sign-in has not started yet.
+
+**If not:** rerun this block with only each value after `=` in `.env`. For `read: -p: no coprocess`, run `bash` first.
+
 **Terminal — runtime folder (`$RUN_DIR/workshop`):** sign in to Azure CLI. Choose the `.env` subscription if asked.
 
 ```bash
 az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" --output none
 ```
 
+**Checkpoint:** browser sign-in finishes and the prompt returns without an error. `--output none` suppresses the account JSON.
+
+**If not:** [recover only Azure CLI sign-in](troubleshooting.en.md#login), then continue to the next block.
+
 **Terminal — runtime folder (`$RUN_DIR/workshop`):** sign in to azd with the same account.
 
 ```bash
 azd auth login --tenant-id "$LOGIN_TENANT_ID"
 ```
+
+**Checkpoint:** browser sign-in finishes and the prompt returns without an error.
+
+**If not:** [recover only azd sign-in](troubleshooting.en.md#login); do not repeat a successful Azure CLI sign-in.
 
 **Terminal — runtime folder (`$RUN_DIR/workshop`):** verify both sign-ins.
 
@@ -232,9 +265,9 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 
 - From the `identity` output: `requested_account_matches: true`, `configured_subscription_matches: true`, `configured_tenant_matches: true`, `subscription_state: Enabled`, and `default_subscription_changed: false`;
 - From the `ownership` output: `existing_groups_explicitly_preserved: true`;
-- From the `model-capacity` output: GlobalStandard records for `gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`, and the auxiliary `gpt-5.4-mini`.
+- From `model-capacity`: GlobalStandard records for the three candidates and auxiliary `gpt-5.4-mini`. Each model's `capacity_records` must include a record whose `availableCapacity` meets `required_capacity` (`50` per candidate, `100` for the auxiliary model). This is service capacity; step 6-1 separately checks subscription quota.
 
-**If not:** do not create resources. For an identity mismatch, return to the sign-in checkpoint above. For an access error, the environment owner (you, in self-study) uses [access checks](instructor.en.md#access) to confirm role-assignment rights such as subscription Owner. A missing capacity record means the subscription cannot use that model or lacks quota; request quota as in [Manage model quota](https://learn.microsoft.com/azure/foundry/openai/how-to/quota), or start over with another authorized subscription. After fixing it, [resume only the failed setup command](troubleshooting.en.md#setup-resume). Do not substitute a subscription, model, or region.
+**If not:** do not create resources. For an identity mismatch, return to the sign-in check; for an access error, use [access checks](instructor.en.md#access). For `No verified GlobalStandard capacity`, recheck only the same `model-capacity` command; stop here if capacity is still insufficient. Service capacity and subscription quota are separate, so a quota increase alone may not resolve this. Do not change subscriptions, models, or regions, or create another run ID.
 
 <a id="setup-foundation"></a>
 
@@ -253,7 +286,11 @@ python scripts/provision_environment.py insights --run-dir "$RUN_DIR" &&
 python scripts/provision_environment.py search --run-dir "$RUN_DIR"
 ```
 
-**Portal — Azure Portal → Resource groups → this run's group:** open the new group.
+**Checkpoint:** the last JSON shows `resource: search` and `state: Succeeded`, and the prompt returns.
+
+**If not:** use [setup recovery](troubleshooting.en.md#setup-resume) to continue only the failed command and the remaining commands that did not run. If only the Search wait expired, use the collapsed recovery block below.
+
+**Portal — Azure Portal → Resource groups:** search for `resource_group` from `config.json` and open that new group.
 
 **Checkpoint:** the new resource group matches this shape:
 
@@ -352,6 +389,10 @@ source src/agent/.venv/bin/activate &&
 export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 ```
 
+**Checkpoint:** the `(.venv)` prompt returns without an error. Run subsequent commands in `$RUN_DIR/workshop`, not the original clone.
+
+**If not:** restore the existing `RUN_DIR` path with [setup recovery](troubleshooting.en.md#setup-resume).
+
 **Terminal — runtime folder (`$RUN_DIR/workshop`):** prepare candidate models. This checks readiness, creates only missing paid candidate deployments, and checks again. Do not run a separate `preflight` around it.
 
 ```bash
@@ -376,13 +417,13 @@ This recorded screenshot shows the fields to check: `language: en`, `missing_mod
 
 </details>
 
-**If not:** resolve model access, quota, or deployment errors, then [recover only the failed preparation in the same folder](troubleshooting.en.md#setup-resume).
+**If not:** for `Insufficient quota ... 50 units required`, use [model quota management](https://learn.microsoft.com/azure/foundry/openai/how-to/quota) to request an increase for that subscription, Sweden Central, and model. After it takes effect, rerun this command; it creates only missing candidates. For other errors, [recover in the same folder](troubleshooting.en.md#setup-resume); do not substitute models.
 
 <a id="setup-calibration"></a>
 
 ### 6-2. Check the judge
 
-**Terminal — runtime folder (`$RUN_DIR/workshop`):** check the judge: run this after candidate preparation finishes.
+**Terminal — runtime folder (`$RUN_DIR/workshop`):** check the judge after candidate preparation finishes. There may be no output for 1–3 minutes.
 
 ```bash
 python scripts/workshop.py calibrate
@@ -404,7 +445,7 @@ python scripts/workshop.py calibrate
 | Instructor rehearsing for a class | Keep this folder for model ownership. Use a [separate rehearsal clone](instructor.en.md#rehearsal-workspace) with new runtime names so rehearsal cleanup cannot delete the shared models. |
 | A new participant | Give them a complete English `.env` with **unused** team names and the **actual prepared model deployment names**. Do not send `.azure`, `.foundry`, ownership files, auth caches, or results. Before sending, run the [team handoff checklist](instructor.en.md#handoff). They save that `.env` in a fresh folder and start at [README step 1](../README.md#start). |
 
-**Terminal — only when you continue yourself, open the workshop folder:** paste the `RUN_DIR` path you noted; in a new terminal, run `bash` first.
+**Terminal — only when you continue yourself, open the workshop folder:** paste only the path after `RUN_DIR=` in your notes; in a new terminal, run `bash` first.
 
 ```bash
 read -r -p "RUN_DIR path from your notes: " RUN_DIR &&
@@ -414,9 +455,11 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli" &&
 pwd
 ```
 
-**Checkpoint:** the printed path ends with `/workshop`. That path is "this folder" (the workshop folder) in the README, and you also use it later for README step 3's Terminal B. In this terminal, go to [README 1-4 `bind`](../README.md#bind-project).
+**Checkpoint:** the printed path ends with `/workshop`. Note this path too: it is "this folder" in the README and the workshop folder you use for step 3's Terminal B.
 
 **If not:** for `No such file or directory`, paste the `RUN_DIR` you noted again, without quotes.
+
+**Editor — when you continue yourself:** open the printed `/workshop` folder with VS Code **File → Open Folder**. Read `.env` and results in **this copy** from now on. It omits the README, `docs/`, and `.git`, so keep reading the guide in your browser or original clone. Keep the terminal above open and go to [README 1-4 `bind`](../README.md#bind-project).
 
 **Checkpoint:** you chose exactly one row, and its recipient has the folder or complete `.env` that row describes.
 
@@ -440,7 +483,7 @@ Stop here. **If you created this environment for self-study,** return to this gu
 
 ## Final cleanup: delete your exclusive resource group after README step 10
 
-**Only the environment owner proceeds, after completing `cleanup` and `check-cleanup` in README step 10.** For an environment you created for self-study, this deletion stops the Search, logging, and model-deployment costs once you no longer need it. Deletion cannot be undone, so do it only after the checks below; participant cleanup or a Copilot CLI execution request does not approve deleting an entire group.
+**Only the environment owner proceeds.** After a completed workshop, first finish README step 10's `cleanup` and `check-cleanup`. **If you abandon an incomplete setup,** you can also delete the group after verifying the creation records and exclusive ownership below; workshop result files that do not exist yet are not required. Deletion is irreversible. Participant cleanup or a Copilot CLI execution request is not authorization to delete a whole group.
 
 | Environment | Choose this path |
 |---|---|
