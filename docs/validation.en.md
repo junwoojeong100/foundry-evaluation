@@ -68,7 +68,7 @@ python scripts/workshop.py summary --labels holdout
 |---|---|---|
 | What changed for each model? | `comparison.json` | Under `labels → <label> → models → sol/luna/astra`, compare `business_passed/total` and `required_citation_passed/required_citation_total`. Read `foundry_evaluators` means and pass counts together. |
 | Did it get faster or use fewer tokens? | `comparison.json` | At the same model path, compare `input_tokens`/`output_tokens` and `latency_p50_seconds`/`latency_p95_seconds`. Preserve the [measurement scope](#tradeoffs); these are not total costs. |
-| Which business check failed? | `<label>/responses.jsonl` | 1) Find the `row_id` and read the `false` values in `business_grade → checks`. 2) Find the same `case_id` in repository-root `data/en/dev.jsonl` (holdout: `data/en/holdout.jsonl`, only after step 8) and compare `expected_decision`, `required_numbers`, and `allowed_citations`. 3) Inspect its `trace_id`. |
+| Which business check failed? | The output of `python scripts/workshop.py show --label <label> --row-id <row_id>` (sources: `<label>/responses.jsonl` and `data/en/dev.jsonl`) | Compare the `false` items in `business_checks` with `expected_decision`, `required_numbers`, and `allowed_citations` in `fixed_reference`, then inspect its `trace_id`. Look at holdout rows only after step 8. |
 | Which Foundry evaluator failed? | `<label>/evaluation-results.json` | Find **the same `row_id` within that label**. In its `results` array, select `name: groundedness` or `name: relevance`, then read `score` and `passed`. |
 
 <a id="other-lookups"></a>
@@ -95,7 +95,7 @@ python scripts/workshop.py summary --labels holdout
 
 | Question | Open | Read | Meaning |
 |---|---|---|---|
-| Why did a Foundry evaluator fail? | That label's `evaluation-results.json`, then its `responses.jsonl`. | Rows with **`passed: false`** in `results` (`row_id`, `name`, `score`); then the **same `row_id`** in responses: `query`, `answer`, `business_grade → checks`, and for groundedness `context`. | Record business and Foundry results separately. A correct policy deferral can get low relevance; a wrong [`decision` label](reference.en.md#decision-values) can accompany a well-grounded explanation. |
+| Why did a Foundry evaluator fail? | That label's `evaluation-results.json`, then its `responses.jsonl`. | Rows with **`passed: false`** in `results` (`row_id`, `name`, `score`); then view the **same `row_id`**'s `query`, `answer`, and business checks with `show`, and for groundedness read `context` in responses. | Record business and Foundry results separately. A correct policy deferral can get low relevance; a wrong [`decision` label](reference.en.md#decision-values) can accompany a well-grounded explanation. |
 
 Report holdout failures as limitations, not as input for tuning instructions. Do not rerun an evaluation simply because its valid score is low.
 

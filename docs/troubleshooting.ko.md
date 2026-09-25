@@ -3,7 +3,7 @@
 [참가자 가이드로 돌아가기](../README.ko.md) · [English](troubleshooting.en.md)
 
 **현재 폴더와 오류 출력을 유지하고, 실습 전체를 처음부터 반복하지 않습니다.**
-- **실패 단계:** [로그인](#login) · [검색](#retrieval) · [로컬 실행](#symptom-local) · [Hosted Agent](#symptom-hosted) · [calibration](#calibration) · [수집](#collection-retry) · [평가](#evaluation-retry) · [정리](#cleanup-recovery).
+- **실패 단계:** [로그인](#login) · [검색](#retrieval) · [로컬 실행](#symptom-local) · [Hosted Agent](#symptom-hosted) · [calibration](#calibration) · [수집](#collection-retry) · [평가](#evaluation-retry) · [V2 변경](#v2-changed) · [정리](#cleanup-recovery).
 - **증거·선택 단계:** [baseline 전부 통과](#no-failures) · [trace](#telemetry) · [포털](#portal-differs) · [완료 판단](#symptom-completion) · [레벨 2·3](#levels).
 - **확실하지 않으면:** [증상별 확인](#symptoms)을 먼저 봅니다. label이나 상태 파일이 있으면 [저장 상태로 이어가기](#resume), 환경 준비 실패라면 [환경 소유자 이어가기](#setup-resume)를 봅니다(환경 소유자만).
 - 참가자 복구 명령은 기존 실습 폴더의 저장소 루트에서 실행합니다. 환경 소유자 복구는 실행 폴더를 따로 안내합니다.
@@ -19,7 +19,7 @@
 | trace가 아직 0건이거나 일부만 보임 | [수집 지연·조회 기간·권한 확인](#telemetry). 전체 증거가 확인됐다고 판정하지 않습니다. |
 | 녹화 화면만 봄 | 직접 실행 완료가 아니라 관찰로 기록합니다. |
 
-강사에게는 실패한 명령, 오류, 단계, 결과 폴더 이름만 전달합니다. 암호·토큰·`.env` 전체·개인 정보 화면은 공유하지 않습니다.
+이 문서의 “강사”·“환경 소유자”는 수업에서는 강사, **혼자 실습하면 본인**입니다. 본인이라면 그 행의 확인을 직접 하고, 해결되지 않으면 멈춘 상태와 오류를 기록합니다. 도움을 요청할 때는 실패한 명령, 오류, 단계, 결과 폴더 이름만 전달하며 암호·토큰·`.env` 전체·개인 정보 화면은 공유하지 않습니다.
 
 <a id="resume"></a>
 
@@ -34,6 +34,7 @@
 | `Evaluation is still running` | [평가 복구](#evaluation-retry). 같은 label의 `evaluate`만 다시 실행 |
 | Foundry 평가 실패 또는 결과 검증·다운로드 중단 | [저장 상태별 복구 표](#evaluation-retry)에서 선택. 모든 로컬 오류에 `--retry-failed`를 쓸 수 있는 것은 아님 |
 | `Telemetry is incomplete` | 수집 지연·권한과 [기본 2시간 조회 범위](#telemetry)를 확인한 뒤 같은 label의 `monitor`만 재실행 |
+| `Hosted prompt does not match`(holdout 수집) 또는 8-2에서 improved·holdout 버전 불일치 | [7-2 뒤 V2가 바뀌었다면](#v2-changed). 결과를 지우거나 고치지 않음 |
 | `Label ... already exists` | 상태 파일을 확인합니다. `completed`면 다음 미완료 평가·trace 단계로 갑니다. `failed`면 수집을 복구합니다. `running`이면 원래 프로세스가 실행 중인지 확인하고, 종료 확인 뒤에만 수집을 복구합니다. |
 | `feedback`에서 이미 같은 회귀 기록이 존재 | 기존 행 ID·검토 이유·언어·출처 trace가 이번에 검토한 내용과 일치할 때만 다음 단계 진행. 다르면 중단하고 확인하며 파일을 지워 우회하지 않음 |
 | 정리 또는 정리 확인 중단 | [정리 복구](#cleanup-recovery). 확인 실패를 해결하려고 성공한 삭제를 반복하지 않음 |
@@ -54,7 +55,7 @@
 
 **완료 확인:** 첫 미완료 저장 상태가 실패한 단계 하나와 맞는 복구 섹션 하나를 가리킵니다.
 
-**다르면:** 현재 폴더와 오류 출력을 보존하고 단계, label, 상태 파일을 강사에게 전달합니다.
+**다르면:** 현재 폴더와 오류 출력을 보존합니다. 오류 메시지로 [증상별 확인](#symptoms)을 찾고, 수업 중이면 단계·label·상태 파일을 강사에게 보여 줍니다.
 
 **다음:** 위의 맞는 섹션을 열거나, 아직 단계가 불명확하면 [증상별 확인](#symptoms)을 사용합니다.
 
@@ -71,7 +72,7 @@
 | 환경 | `.env`가 없거나 필수 값 누락 | 비공개 배포 이름은 추측할 수 없습니다. | 전체 파일을 둔 뒤 [1-1 `.env` 확인](../README.ko.md#workspace-settings)으로 돌아갑니다. |
 | 환경 | `read: -p: no coprocess` 또는 경로/activate 파일 오류 | 지금 연 셸이나 폴더가 실습 때 쓰던 위치가 아닐 수 있습니다. | Bash를 열고 터미널 A에서 확인한 절대 `pwd` 위치로 이동한 뒤 [1-1 코드 준비](../README.ko.md#source-setup)로 돌아갑니다. |
 | 환경 | 언어가 다르거나 language mismatch | 영어는 `LAB_LANGUAGE=en`, 한국어는 `LAB_LANGUAGE=ko`이며 설정이 없으면 한국어입니다. | 원래 언어와 작업 폴더를 유지하고 [1-1 `.env` 확인](../README.ko.md#workspace-settings)으로 돌아갑니다. |
-| 환경 | `preflight`의 `missing_models`가 비어 있지 않음 | 세 후보 배포 중 이름·버전·접근 권한·할당량 중 하나가 맞지 않습니다. | 강사에게 정확한 값을 확인한 뒤 [preflight](../README.ko.md#project-binding)로 돌아갑니다. |
+| 환경 | `preflight`의 `missing_models`가 비어 있지 않음 | 세 후보 배포 중 이름·버전·접근 권한·할당량 중 하나가 맞지 않습니다. | `.env`의 `MODEL_*_DEPLOYMENT`가 받은 값 그대로인지 확인한 뒤 환경 소유자에게 배포를 요청합니다(직접 만든 환경이면 [환경 준비 6-1](environment.ko.md#setup-candidates)). 그다음 [preflight](../README.ko.md#project-binding)로 돌아갑니다. |
 | 환경 | `The fixed auxiliary planner/judge deployment is missing` | `.env`의 실제 `LAB_AUX_DEPLOYMENT`가 준비되지 않았습니다. | 환경 소유자가 [보조 모델 준비](instructor.ko.md#auxiliary-model) 후 [preflight](../README.ko.md#project-binding)로 돌아갑니다. |
 | 환경 | `bind` 또는 `set-prompt`에서 환경/프로젝트 오류 | 이 폴더가 예상 프로젝트·언어에 바인딩되지 않았을 수 있습니다. | 이 폴더의 `bind`를 확인한 뒤 [프로젝트 연결](../README.ko.md#bind-project)로 돌아갑니다. |
 | 로그인 | 로그인 안 됨 / tenant 오류 / 다른 계정 | CLI 중 하나가 다른 계정·tenant·subscription을 사용합니다. | 두 로그인을 확인한 뒤 [로그인 확인](../README.ko.md#login-check)으로 돌아갑니다. |
@@ -106,7 +107,7 @@
 | 검색 | IQ 400 / schema 오류 | 고정 API 버전, KB schema, 보조 planner 지원이 맞지 않을 수 있습니다. | 세 가지를 확인한 뒤 [정책 검색](../README.ko.md#policy-retrieval)으로 돌아갑니다. |
 | 환경 | JSON 뒤의 azd 업데이트 안내 | 제공 실행기는 UTF-8 HTTP 본문과 확인된 안내만 분리합니다. | 수업 중 업그레이드하지 말고 [preflight](../README.ko.md#project-binding)로 돌아갑니다. |
 | 로그인 | CLI credential 시간 초과 | 토큰 갱신 지연이 로그인 실패처럼 보일 수 있습니다. | 실제 로그인 실패와 구분한 뒤 [로그인 확인](../README.ko.md#login-check)으로 돌아갑니다. |
-| trace | App Insights `ResourceId` 메타데이터 누락 | 실습 전용 App Insights 연결 메타데이터가 불완전할 수 있습니다. | 강사에게 확인한 뒤 [trace 복구](#telemetry)로 돌아갑니다. |
+| trace | App Insights `ResourceId` 메타데이터 누락 | 실습 전용 App Insights 연결 메타데이터가 불완전할 수 있습니다. | 환경 소유자가 [소유자 전용 관측 복구](instructor.ko.md#observability-repair)를 따른 뒤 [trace 복구](#telemetry)로 돌아갑니다. |
 
 </details>
 
@@ -223,10 +224,10 @@ python scripts/workshop.py monitor --label baseline --hours 24
 
 다음 조건에서만 사용합니다:
 
-- 원래 수집기가 종료됐을 때만 사용합니다. 종료란 원래 터미널이 프롬프트로 돌아왔거나 강사가 프로세스 종료를 확인한 상태입니다. 확실하지 않으면 기다리며, 두 번째 수집 명령을 시작하지 않습니다.
+- 원래 수집기가 종료됐을 때만 사용합니다. 종료란 원래 터미널이 프롬프트로 돌아왔거나, 터미널을 닫았다면 그 프로세스가 끝난 것을 확인한 상태입니다. 확실하지 않으면 기다리며, 두 번째 수집 명령을 시작하지 않습니다.
 - 실패한 label의 상태와 원문은 보존합니다.
 - 같은 단계만 미사용 retry label 하나로 한 번 다시 수집합니다.
-- 모델·split·질문·지침·에이전트 버전·완료된 label·검토 출처는 바꾸지 않습니다.
+- 모델·split·질문·지침·에이전트 버전·완료된 label·검토 출처는 바꾸지 않습니다. [7-2 뒤 V2가 바뀐 경우](#v2-changed)만 현재 V2 버전으로 수집합니다.
 - 첫 retry도 실패하면 멈추고 오류를 보존합니다.
 
 | 실패한 경우 | 이동할 곳 |
@@ -269,6 +270,8 @@ python scripts/workshop.py collect --split dev --label baseline-retry --concurre
 <a id="collection-retry-improved"></a>
 
 ### V2 dev 수집 실패
+
+README 7-4에서 검토 기록이 연결되지 않았거나(`source trace carried: no`) [7-2 뒤 V2가 바뀐](#v2-changed) 경우에도 이 명령으로 새 label을 수집합니다.
 
 ```bash
 python scripts/workshop.py collect --split dev --label improved-retry --concurrency 4
@@ -335,8 +338,8 @@ python scripts/workshop.py evaluate --label baseline --retry-failed
 
 실패가 없다는 것도 결과입니다. 실패를 만들거나 답변·정답을 수정하지 않습니다.
 
-1. `src/agent/.foundry/results/baseline/responses.jsonl`에서 검토할 **한국어 dev 응답 하나**를 고릅니다. `row_id`와 `trace_id`를 메모합니다.
-2. [README 6-2의 세 대조](../README.ko.md#review-case)를 따라 같은 응답 → 고정 dev 정답 → trace를 확인합니다.
+1. [README 6-2](../README.ko.md#review-case)의 `show` 블록에 `baseline-sol-D01`(또는 다른 baseline 행)을 넣어 저장된 응답과 고정 정답을 봅니다. `row_id`와 `trace_id`를 메모합니다.
+2. 6-2처럼 응답을 고정 dev 정답과 비교하고, 포털에서 그 trace를 확인합니다.
 3. “업무 검사는 전부 통과했고 무엇을 확인했는지”와 **제공 V2에서도 유지할 동작**을 한 줄로 설명합니다. 실패나 품질 개선을 미리 주장하지 않습니다.
 4. [6-3 검토 기록 저장](../README.ko.md#save-review)으로 돌아갑니다. `feedback`은 통과한 dev 응답도 기록할 수 있습니다. 저장 후 7단계에서 V2의 타당성을 검토합니다.
 
@@ -348,6 +351,36 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 **다르면:** 선택한 baseline 응답과 고정 dev 정답으로 돌아갑니다. holdout을 쓰거나 실패를 만들지 않습니다.
 
 **다음:** [V2 배포와 후보 평가](../README.ko.md#lab-e)를 계속합니다.
+
+<a id="v2-changed"></a>
+
+## 7-2 뒤 V2가 바뀌었다면
+
+holdout은 7-3에서 평가한 **그 V2 버전**으로만 수집합니다. 8-1 수집이 `Hosted prompt does not match`로 멈췄거나, 8-2에서 improved와 holdout의 `agent_version`·`prompt_hash`가 다르면 여기서 고릅니다. 결과 파일은 지우거나 고치지 않습니다.
+
+| 7-2 뒤에 한 일 | 할 일 |
+|---|---|
+| `set-prompt` 실행, `.env`·prompt 파일 수정만 함(`azd deploy`는 안 함) | 아래 **A**로 선택을 되돌린 뒤 8-1로 돌아갑니다. |
+| `azd deploy`를 다시 함 | 에이전트 버전이 바뀌어 기존 `improved`와 짝이 맞지 않습니다. 아래 **B**를 따릅니다. |
+
+**A — V2 선택 되돌리기(재배포 없음):** prompt 파일을 고쳤다면 먼저 `git checkout -- src/agent/prompts`로 되돌리고(ZIP 폴더면 원본 파일로 교체), `.env`의 다른 값도 7-2 때로 되돌립니다. 그다음 V2를 다시 선택하고 확인합니다.
+
+```bash
+python scripts/workshop.py set-prompt v2 &&
+python scripts/workshop.py smoke
+```
+
+**완료 확인:** `prompt_version: v2`이고 `agent_version`이 메모한 **V2 버전**(7-2)과 같습니다. [8-1 수집](../README.ko.md#lab-f)부터 진행합니다.
+
+**다르면:** `agent_version`이 다르거나 `Hosted prompt does not match`가 계속되면 7-2 뒤에 배포가 있었던 것입니다. **B**를 따릅니다.
+
+**B — 현재 V2 버전으로 dev부터 다시:** 위 **A**의 블록이 `prompt_version: v2`를 보여 줄 때까지 진행합니다. `Hosted prompt does not match`이면 `azd deploy --no-prompt`를 **한 번만** 실행한 뒤 **A**의 블록을 다시 실행하고, 새 `agent_version`을 메모합니다. 그다음 [V2 dev 수집 복구](#collection-retry-improved)로 `improved-retry`를 수집하고, README 7-3의 평가·비교와 7-4 요약을 `improved-retry`로 다시 한 뒤 8단계를 진행합니다. holdout을 이미 수집했다면 [holdout 수집 복구](#collection-retry-holdout)의 `holdout-retry`를 씁니다. 이후 명령과 `verify`에서 바뀐 label을 씁니다.
+
+**완료 확인:** 8-2 확인에서 새 improved label과 holdout label의 `agent_version`·`prompt_hash`가 같습니다.
+
+**다르면:** 멈추고 오류와 label 이름을 기록합니다. 기존 결과를 지우거나 버전을 맞추려고 반복 배포하지 않습니다.
+
+**다음:** [8-1 수집](../README.ko.md#lab-f) 또는 [8-2 확인](../README.ko.md#holdout-evaluation)으로 돌아갑니다.
 
 <a id="portal-differs"></a>
 
@@ -496,7 +529,7 @@ rm -- "$STATE_FILE"
 | 어디까지 끝났나 | 다음 행동 |
 |---|---|
 | `cleanup --confirm` 성공, `cleanup.json`에 `completed: true`가 있지만 `check-cleanup` 실패 | 그 파일과 `plan`을 보존. 보고된 접근·반영 지연 문제를 해결하고 **아래 확인 명령만** 반복 |
-| 삭제 자체가 중단되었거나 소유권·대상이 다름 | 자동 삭제 중단. 오류, 있다면 `cleanup-plan.json`, 소유권 상태를 보존. 추가 삭제 전 소유자가 원래 계획과 Azure 상태를 대조하며 부분 삭제 건수를 전체 정리 완료로 표시하지 않음 |
+| 삭제 자체가 중단되었거나 소유권·대상이 다름 | 자동 삭제 중단. 오류, 있다면 `cleanup-plan.json`, 소유권 상태를 보존. 추가 삭제 전 소유자(혼자라면 본인)가 계획의 이름이 이 폴더 `.env`의 `LAB_AGENT_NAME`·`LAB_PREFIX`와 같은지, 원래 계획과 Azure 상태가 맞는지 대조하며 부분 삭제 건수를 전체 정리 완료로 표시하지 않음 |
 
 **삭제 명령이 성공한 경우에만:**
 
@@ -561,6 +594,6 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 
 **완료 확인:** 원래 실행 폴더, `RUN_DIR`, 가상환경, `AZURE_CONFIG_DIR`가 복원됐고 중단한 단계만 선택했습니다.
 
-**다르면:** `config.json`, `RUN_DIR`, 마지막 오류를 보존하고 환경 소유자에게 확인합니다. 새 `RUN_ID`를 만들거나 스냅샷을 덮어쓰지 않습니다.
+**다르면:** `config.json`, `RUN_DIR`, 마지막 오류를 보존합니다. 혼자라면 본인이 환경 소유자이므로 `config.json`의 `subscription`·`run_id`가 이번 실행과 같은지 대조한 뒤 같은 `RUN_DIR`로만 재개합니다. 새 `RUN_ID`를 만들거나 스냅샷을 덮어쓰지 않습니다.
 
 **다음:** 위 표의 해당 환경 준비 단계로 돌아가거나, 전달까지 끝났다면 [README bind](../README.ko.md#bind-project)로 진행합니다.

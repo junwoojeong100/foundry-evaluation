@@ -13,7 +13,9 @@ from cloud_setup import (
 )
 from common import RESULTS_DIR, utc_stamp, write_json
 from contracts import MODEL_SPECS
-from experiments import calibrate, collect, compare, evaluate, feedback, smoke, summary_table, verify_evidence
+from experiments import (
+    calibrate, collect, compare, evaluate, feedback, show_row, smoke, summary_table, verify_evidence,
+)
 from foundry_eval import (
     WAIVABLE_SIGNALS, continuous_eval, evaluate_agent, evaluate_suite, evaluate_traces, gate, generate_rubric, insights,
     judge_agreement, red_team, register_evaluators, stress_test,
@@ -54,6 +56,9 @@ def main() -> None:
     evaluation.add_argument("--retry-failed", action="store_true")
     sub.add_parser("compare").add_argument("--labels", nargs="+", required=True)
     sub.add_parser("summary").add_argument("--labels", nargs="+", required=True)
+    row_view = sub.add_parser("show", help="Print one saved response beside its fixed reference (no new calls).")
+    row_view.add_argument("--label", required=True)
+    row_view.add_argument("--row-id", required=True)
     sub.add_parser("register-evaluators")
     suite = sub.add_parser("evaluate-suite")
     suite.add_argument("--labels", nargs="+", required=True)
@@ -135,6 +140,8 @@ def main() -> None:
         compare(args.labels)
     elif args.command == "summary":
         summary_table(args.labels)
+    elif args.command == "show":
+        show_row(args.label, args.row_id)
     elif args.command == "register-evaluators":
         register_evaluators()
     elif args.command == "evaluate-suite":

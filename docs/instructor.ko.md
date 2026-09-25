@@ -115,7 +115,7 @@ azd ai agent --help
 
 **다르면:** azd와 `microsoft.foundry` 확장 버전을 맞춘 뒤 다시 확인한다. 업데이트 안내 자체를 실패로 보지 않으며, 실험 중 “모두 업데이트”나 임의 다운그레이드를 하지 않는다.
 
-Azure를 직접 준비하지 않는다면 여기서 멈추고 [README 1단계](../README.ko.md#start)나 [Copilot CLI 안내](copilot.ko.md)로 돌아간다. 직접 준비한다면 [권한](#access)으로 계속 진행한다. Python 패키지는 선택한 경로의 가상환경 설치 단계에서 설치하며, 지금 전역으로 설치하지 않는다.
+Azure를 직접 준비하지 않는다면 여기서 멈추고 [README 1단계](../README.ko.md#start)나 [Copilot CLI 안내](copilot.ko.md)로 돌아간다. 직접 준비한다면 [권한](#access)으로 계속 진행한다. **혼자 실습한다면** 권한을 확인한 뒤 [새 전용 환경 만들기](environment.ko.md)로 간다. Python 패키지는 선택한 경로의 가상환경 설치 단계에서 설치하며, 지금 전역으로 설치하지 않는다.
 
 <details>
 <summary>참고: 준비할 Azure 서비스와 조건</summary>
@@ -142,7 +142,7 @@ Agent hosting과 SDK 패키지의 GA/preview 상태는 서로 다를 수 있으�
 
 ## 권한
 
-환경 소유자는 필요한 리소스 그룹과 리소스를 만들거나 사용할 수 있고, 아래 역할을 해당 범위에 부여할 수 있어야 한다. **Contributor만으로는 역할 부여 권한**(`Microsoft.Authorization/roleAssignments/write`)이 없다.
+환경 소유자는 필요한 리소스 그룹과 리소스를 만들거나 사용할 수 있고, 아래 역할을 해당 범위에 부여할 수 있어야 한다. **Contributor만으로는 역할 부여 권한**(`Microsoft.Authorization/roleAssignments/write`)이 없다. 혼자 실습하며 본인이 **구독 Owner**라면 이 조건을 만족하므로, 아래 표는 참고만 하고 [새 전용 환경 만들기](environment.ko.md)로 간다. 역할은 그 문서의 명령과 README 2-1·4-2가 새 자원 범위에만 부여한다.
 
 승인된 접근 관리자가 권한을 준비하거나 해당 작업을 수행해야 한다. 관리자·Owner 권한을 에이전트에 우회로로 주지 않는다. 역할 부여 권한이 없는 참가자는 `prepare-iq`와 `grant-agent-access`에서 환경 소유자의 지원이 필요하다.
 
@@ -408,6 +408,7 @@ python scripts/workshop.py calibrate
 **다르면:** [calibration만 복구](troubleshooting.ko.md#calibration)한다. 끝난 모델 준비부터 반복하지 않는다.
 
 <a id="azd-초기화"></a>
+<a id="observability-repair"></a>
 
 평가가 Application Insights `ResourceId` metadata 누락을 보고하면 재시도 전에 아래 소유자 전용 복구를 연다.
 

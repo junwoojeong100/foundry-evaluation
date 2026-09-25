@@ -115,7 +115,7 @@ azd ai agent --help
 
 **If not:** repair the azd/`microsoft.foundry` extension version before starting. An update notice is not itself a failure; do not run “update all” or downgrade tools mid-experiment.
 
-If you are not preparing Azure yourself, stop here and return to [README step 1](../README.md#start) or the [Copilot CLI guide](copilot.en.md); otherwise continue to [access](#access). Install Python packages in that path's virtual-environment step, not globally here.
+If you are not preparing Azure yourself, stop here and return to [README step 1](../README.md#start) or the [Copilot CLI guide](copilot.en.md); otherwise continue to [access](#access). **For self-study,** check access, then go to [Create a dedicated environment](environment.en.md). Install Python packages in that path's virtual-environment step, not globally here.
 
 <details>
 <summary>Reference: Azure services and conditions to prepare</summary>
@@ -140,7 +140,7 @@ Agent hosting and the SDK packages can have different GA/preview status; do not 
 
 ## Access boundaries
 
-The environment owner needs permission to create or use the workshop resources and to assign the listed roles at their target scopes. **Contributor alone does not grant role-assignment permission** (`Microsoft.Authorization/roleAssignments/write`).
+The environment owner needs permission to create or use the workshop resources and to assign the listed roles at their target scopes. **Contributor alone does not grant role-assignment permission** (`Microsoft.Authorization/roleAssignments/write`). In self-study, a **subscription Owner** meets this requirement: read the table below for reference and go to [Create a dedicated environment](environment.en.md). That guide's commands and README 2-1 and 4-2 assign roles only at the new resources' scopes.
 
 An authorized access administrator must provide that permission or perform the assignments. Do not give administrator/Owner permissions to the agent as a shortcut. Participants without assignment permission need the owner for `prepare-iq` and `grant-agent-access`.
 
@@ -403,6 +403,8 @@ python scripts/workshop.py calibrate
 **Checkpoint:** **`Judge calibration passed`**. README step 5 repeats this check in each participant workspace; matching completed calibration is reused. The two fixed examples are not part of the 48 candidate responses.
 
 **If not:** [recover only calibration](troubleshooting.en.md#calibration), not completed model preparation.
+
+<a id="observability-repair"></a>
 
 If evaluation reports missing Application Insights `ResourceId` metadata, open the owner-only recovery below before retrying.
 

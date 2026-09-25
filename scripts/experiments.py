@@ -604,6 +604,31 @@ def summary_table(labels: list[str]) -> str:
     return text
 
 
+def show_row(label: str, row_id: str) -> dict[str, Any]:
+    """Print one saved answer beside its fixed reference; reads local files only and calls no model."""
+    manifest, rows = completed_rows(label)
+    selected = [row for row in rows if row["row_id"] == row_id]
+    if len(selected) != 1:
+        raise ValueError(f"Unknown row ID for {label}: {row_id!r}. Copy a row ID from the summary or collect output.")
+    row = selected[0]
+    case = next(item for item in dataset(manifest["split"]) if item["case_id"] == row["case_id"])
+    view = {
+        "row_id": row_id, "case_id": row["case_id"], "model_key": row["model_key"], "trace_id": row["trace_id"],
+        "query": row["query"],
+        "saved_response": {key: row[key] for key in ("answer", "decision", "citations", "source_ids")},
+        "business_checks": row["business_grade"]["checks"],
+        "fixed_reference": {key: case[key] for key in (
+            "category", "ground_truth", "expected_decision", "required_numbers", "allowed_citations", "citation_required",
+        )},
+        "files": {
+            "saved_response": (label_dir(label) / "responses.jsonl").relative_to(REPO_ROOT).as_posix(),
+            "fixed_reference": (data_directory() / f"{manifest['split']}.jsonl").relative_to(REPO_ROOT).as_posix(),
+        },
+    }
+    print(json.dumps(view, ensure_ascii=False, indent=2))
+    return view
+
+
 def feedback(label: str, row_id: str, reason: str, reviewer: str = "human") -> None:
     manifest, rows = completed_rows(label)
     if manifest["split"] != "dev":

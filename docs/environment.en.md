@@ -8,19 +8,15 @@
 
 If you create the environment here, class, rehearsal, and self-study owners all follow steps 1–6, then choose one [handoff](#handoff) after calibration.
 
+**Self-study:** in this guide, “instructor” and “environment owner” mean you. After steps 1–6, follow the first [handoff](#handoff) row to README 1-4 `bind`. The services you create keep costing money until you [delete the resource group](#final-cleanup) after README step 10.
+
 **Before starting:** Use one Bash/WSL terminal and run one block at a time. If you close it, follow the resume steps below.
 
-- Tools: `git`, `python3.13`, `az`, `azd`, Bash/WSL, curl, an editor, and a browser.
-- Access: the signed-in owner can create the listed resources and scoped RBAC role assignments.
+- Tools: `git`, `python3.13`, `az`, `azd`, Bash/WSL, curl, an editor, and a browser. If you have not checked them yet, finish [tool installation and checks](instructor.en.md#tools) first.
+- Access: the signed-in owner can create the listed resources and scoped RBAC role assignments; a subscription Owner is enough ([access checks](instructor.en.md#access)).
+- Waiting: while a creation command prints lines such as `search: actual provisioning state ...; waiting` every 10 seconds, it is working. Each resource waits up to 15 minutes; Search waits up to 30.
 
 Start at step 1 in an unused Git clone.
-
-<details>
-<summary>Prerequisite details</summary>
-
-Use the instructor [tools](instructor.en.md#tools) and [access](instructor.en.md#access) checks if anything above is uncertain.
-
-</details>
 
 <a id="setup-route"></a>
 
@@ -28,7 +24,7 @@ Use the instructor [tools](instructor.en.md#tools) and [access](instructor.en.md
 
 > New services incur costs. Use synthetic data only.
 >
-> Preserve shared and Korean-workshop resources. Do not change another workflow's default Azure CLI subscription. Sweden Central is the resource-group location; GlobalStandard model inference is not a Sweden-only residency guarantee.
+> Preserve shared and Korean-workshop resources. Do not change another workflow's default Azure CLI subscription. The resource group is created in Sweden Central, but GlobalStandard model requests may be processed in other regions.
 
 <details>
 <summary>Optional: delegate this setup to Copilot CLI</summary>
@@ -81,10 +77,10 @@ cd foundry-evaluation-setup-en
 
 | Initial field | Value |
 |---|---|
-| `AZURE_SUBSCRIPTION_ID` | Authorized workshop subscription |
+| `AZURE_SUBSCRIPTION_ID` | Authorized workshop subscription; in self-study, a subscription where you are Owner |
 | `AZURE_TENANT_ID` | Its tenant |
 | `AZURE_EXPECTED_USERNAME` | Account that will sign in |
-| `AZURE_RESOURCE_GROUP` | Previous group to inspect; if none, keep **`AZURE_RESOURCE_GROUP=`** |
+| `AZURE_RESOURCE_GROUP` | On a first run, leave it empty: **`AZURE_RESOURCE_GROUP=`**. Use a group name only to confirm a previous run's group as preserved |
 | `LAB_LANGUAGE` | `en` |
 
 The tools generate service names, endpoints, and deployment names in the isolated folder.
@@ -117,11 +113,11 @@ Choose a fresh run ID once. Do not reuse an example ID or an existing `RUN_DIR`;
 REPO_ROOT="$(pwd)" &&
 RUN_ID="en-$(date -u +%Y%m%d-%H%M%S)" &&
 RUN_DIR="$REPO_ROOT/.workshop/$RUN_ID" &&
-printf 'RUN_DIR=%s\n' "$RUN_DIR" &&
+printf 'REPO_ROOT=%s\nRUN_DIR=%s\n' "$REPO_ROOT" "$RUN_DIR" &&
 python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language en
 ```
 
-Save the printed absolute `RUN_DIR` path now.
+Copy the printed `REPO_ROOT=` and `RUN_DIR=` lines into your notes now; you resume with these two paths after reopening a terminal.
 
 **Checkpoint:** `init` finishes and creates **`$RUN_DIR/config.json`**. It records the chosen names; it has not copied the source or created Azure resources.
 
@@ -238,7 +234,7 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 - From the `ownership` output: `existing_groups_explicitly_preserved: true`;
 - From the `model-capacity` output: GlobalStandard records for `gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`, and the auxiliary `gpt-5.4-mini`.
 
-**If not:** do not create resources. Use the sign-in checkpoint above for an identity mismatch; resolve access/capacity errors with the owner, then [resume only the failed setup command](troubleshooting.en.md#setup-resume). Do not substitute a subscription, model, or region.
+**If not:** do not create resources. For an identity mismatch, return to the sign-in checkpoint above. For an access error, the environment owner (you, in self-study) uses [access checks](instructor.en.md#access) to confirm role-assignment rights such as subscription Owner. A missing capacity record means the subscription cannot use that model or lacks quota; request quota as in [Manage model quota](https://learn.microsoft.com/azure/foundry/openai/how-to/quota), or start over with another authorized subscription. After fixing it, [resume only the failed setup command](troubleshooting.en.md#setup-resume). Do not substitute a subscription, model, or region.
 
 <a id="setup-foundation"></a>
 
@@ -321,7 +317,7 @@ python scripts/provision_environment.py search-connection --run-dir "$RUN_DIR"
 
 **Checkpoint:** the commands finish without errors. Every role line shows `created: true` or `already_assigned: true`, with `scope_resource` values `project`, `foundry`, and `search` for your user and `insights` and `logs` for the project identity. The connection outputs show `resource: insights-connection` and `resource: search-connection`.
 
-**If not:** have the owner check the principal and scope in the error, then [resume only the failed role/connection command](troubleshooting.en.md#setup-resume). Do not work around it with broad Owner access or changes to shared connections.
+**If not:** have the environment owner (you, in self-study) check the principal and scope in the error, then [resume only the failed role/connection command](troubleshooting.en.md#setup-resume). For `AuthorizationFailed`, first confirm that the signed-in account can assign roles at that scope (for example, subscription Owner). Do not work around it with broad Owner access or changes to shared connections.
 
 <a id="setup-auxiliary"></a>
 
@@ -352,7 +348,8 @@ Prepare the candidate deployments in the runtime folder, then calibrate the judg
 
 ```bash
 cd "$RUN_DIR/workshop" &&
-source src/agent/.venv/bin/activate
+source src/agent/.venv/bin/activate &&
+export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 ```
 
 **Terminal — runtime folder (`$RUN_DIR/workshop`):** prepare candidate models. This checks readiness, creates only missing paid candidate deployments, and checks again. Do not run a separate `preflight` around it.
@@ -403,9 +400,23 @@ python scripts/workshop.py calibrate
 
 | Who continues | Folder and next action |
 |---|---|
-| You, for one-off self-study | Stay in **`$RUN_DIR/workshop`** and run [the README `bind` command](../README.md#bind-project). Step 6 `prepare-models` already verified readiness; do not repeat cloning, installation, sign-in, or a separate README `preflight`. |
+| You, for one-off self-study | Run the **open the workshop folder** block below, then continue from [the README `bind` command](../README.md#bind-project). Step 6 `prepare-models` already verified readiness; do not repeat cloning, installation, sign-in, or a separate README `preflight`. |
 | Instructor rehearsing for a class | Keep this folder for model ownership. Use a [separate rehearsal clone](instructor.en.md#rehearsal-workspace) with new runtime names so rehearsal cleanup cannot delete the shared models. |
 | A new participant | Give them a complete English `.env` with **unused** team names and the **actual prepared model deployment names**. Do not send `.azure`, `.foundry`, ownership files, auth caches, or results. Before sending, run the [team handoff checklist](instructor.en.md#handoff). They save that `.env` in a fresh folder and start at [README step 1](../README.md#start). |
+
+**Terminal — only when you continue yourself, open the workshop folder:** paste the `RUN_DIR` path you noted; in a new terminal, run `bash` first.
+
+```bash
+read -r -p "RUN_DIR path from your notes: " RUN_DIR &&
+cd "$RUN_DIR/workshop" &&
+source src/agent/.venv/bin/activate &&
+export AZURE_CONFIG_DIR="$PWD/.azure-cli" &&
+pwd
+```
+
+**Checkpoint:** the printed path ends with `/workshop`. That path is "this folder" (the workshop folder) in the README, and you also use it later for README step 3's Terminal B. In this terminal, go to [README 1-4 `bind`](../README.md#bind-project).
+
+**If not:** for `No such file or directory`, paste the `RUN_DIR` you noted again, without quotes.
 
 **Checkpoint:** you chose exactly one row, and its recipient has the folder or complete `.env` that row describes.
 
@@ -423,16 +434,13 @@ python scripts/workshop.py calibrate
 
 </details>
 
-Stop here unless you own a personal foundation and have finished README cleanup.
-
-<details>
-<summary>Optional after README step 10: delete a personal foundation</summary>
+Stop here. **If you created this environment for self-study,** return to this guide after README step 10 and delete the resource group with the [final cleanup](#final-cleanup) below; only that stops the costs.
 
 <a id="final-cleanup"></a>
 
-**Final cleanup of a personal foundation — a separate choice**
+## Final cleanup: delete your exclusive resource group after README step 10
 
-**Only the environment owner proceeds, after completing `cleanup` and `check-cleanup` in README step 10.** Deleting the foundation is a separate decision; participant cleanup or a Copilot CLI execution request does not approve deleting an entire group.
+**Only the environment owner proceeds, after completing `cleanup` and `check-cleanup` in README step 10.** For an environment you created for self-study, this deletion stops the Search, logging, and model-deployment costs once you no longer need it. Deletion cannot be undone, so do it only after the checks below; participant cleanup or a Copilot CLI execution request does not approve deleting an entire group.
 
 | Environment | Choose this path |
 |---|---|
@@ -441,9 +449,6 @@ Stop here unless you own a personal foundation and have finished README cleanup.
 | Missing creation records or uncertain ownership/users | Stop and consult the owner. A name or tag alone does not authorize deletion. |
 
 <a id="final-cleanup-check"></a>
-
-<details>
-<summary>Owner-only deletion procedure: verify, delete, and confirm</summary>
 
 **1. Preserve evidence and verify the deletion scope**
 
@@ -463,7 +468,7 @@ Keep the required local responses, evaluations, regression records, `verified-ev
 - **Resource ID** matches the recorded `group_id`.
 - **Location** is Sweden Central (`swedencentral`).
 - **Tags** match `workshop=foundry-evaluation`, `cleanup-scope=exclusive`, `purpose=synthetic-data-only`, and `run=your run_id`.
-- **Resources** show only services recorded for this run: Foundry account/project, Search, App Insights, Log Analytics, and the auxiliary deployment.
+- **Resources** show only services recorded for this run: Foundry account/project, Search, App Insights, and Log Analytics. Model deployments are not listed separately; they live inside the Foundry account and are deleted with the group.
 - **Current usage** shows no other users or future class dependency.
 
 Stop if there is an unrecorded resource, an unclear cross-group dependency, or a future class using this group. Do not edit tags or ownership files to make the checks pass.
@@ -481,7 +486,3 @@ Stop if there is an unrecorded resource, an unclear cross-group dependency, or a
 **Do not rerun `check-cleanup` afterward.** It checks README step 10, where the foundation remains; use the portal outcome above to verify full-group deletion. Previously incurred usage and delayed charges may still appear. Review the subscription's **Cost Management → Cost analysis**; successful deletion does not mean a zero bill.
 
 Sources: [Foundry basic infrastructure example](https://github.com/Azure-Samples/azd-ai-starter-basic/tree/main/infra) and [Search knowledge-retrieval billing settings](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-enable-disable).
-
-
-</details>
-</details>

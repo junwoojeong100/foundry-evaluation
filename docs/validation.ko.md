@@ -69,7 +69,7 @@ python scripts/workshop.py summary --labels holdout
 |---|---|---|
 | 모델별로 무엇이 바뀌었나? | `comparison.json` | `labels → <label> → models → sol/luna/astra`에서 `business_passed/total`, `required_citation_passed/required_citation_total`을 비교한다. `foundry_evaluators`는 평균과 통과 건수를 함께 읽는다. |
 | 더 빠르거나 적은 토큰을 쓰게 됐나? | `comparison.json` | 같은 모델 위치에서 `input_tokens`·`output_tokens`, `latency_p50_seconds`·`latency_p95_seconds`를 비교한다. [측정 범위](#tradeoffs)를 유지하고 전체 비용으로 해석하지 않는다. |
-| 어떤 업무 검사가 실패했나? | `<label>/responses.jsonl` | 1) 해당 `row_id`의 `business_grade → checks`에서 `false` 항목을 본다. 2) 같은 `case_id`를 저장소 루트의 `data/dev.jsonl`(holdout은 8단계 이후 `data/holdout.jsonl`)에서 찾아 `expected_decision`, `required_numbers`, `allowed_citations`와 비교한다. 3) `trace_id`를 확인한다. |
+| 어떤 업무 검사가 실패했나? | `python scripts/workshop.py show --label <label> --row-id <row_id>`의 출력(원본은 `<label>/responses.jsonl`과 `data/dev.jsonl`) | `business_checks`의 `false` 항목을 `fixed_reference`의 `expected_decision`, `required_numbers`, `allowed_citations`와 비교하고 `trace_id`를 확인한다. holdout 행은 8단계 이후에만 본다. |
 | 어떤 Foundry 평가기에서 미통과했나? | `<label>/evaluation-results.json` | **한 label 안의 같은 `row_id`**를 찾는다. 그 행의 `results` 배열에서 `name: groundedness` 또는 `name: relevance`를 골라 `score`·`passed`를 확인한다. |
 
 <a id="other-lookups"></a>
@@ -96,7 +96,7 @@ python scripts/workshop.py summary --labels holdout
 
 | 질문 | 열 곳 | 읽을 값 | 해석 |
 |---|---|---|---|
-| Foundry 평가기에서 왜 미통과했나? | 같은 label의 `evaluation-results.json`, 그다음 `responses.jsonl`. | `results`에서 **`passed: false`**인 행의 `row_id`·`name`·`score`. 이어서 responses의 **같은 `row_id`**에서 `query`·`answer`·`business_grade → checks`, groundedness면 `context`도 확인. | 업무 검사와 Foundry 평가를 따로 기록한다. 올바른 정책 보류도 relevance가 낮을 수 있고, 근거 있는 설명에도 잘못된 [`decision` 판단값](reference.ko.md#decision-values)이 붙을 수 있다. |
+| Foundry 평가기에서 왜 미통과했나? | 같은 label의 `evaluation-results.json`, 그다음 `responses.jsonl`. | `results`에서 **`passed: false`**인 행의 `row_id`·`name`·`score`. 이어서 **같은 `row_id`**의 `query`·`answer`·업무 검사를 `show`로 보고, groundedness면 responses의 `context`도 확인. | 업무 검사와 Foundry 평가를 따로 기록한다. 올바른 정책 보류도 relevance가 낮을 수 있고, 근거 있는 설명에도 잘못된 [`decision` 판단값](reference.ko.md#decision-values)이 붙을 수 있다. |
 
 Holdout 미통과는 남은 한계로 보고하며 지침 개선에 쓰지 않는다. 유효한 점수가 낮다는 이유로 평가를 다시 실행하지 않는다.
 

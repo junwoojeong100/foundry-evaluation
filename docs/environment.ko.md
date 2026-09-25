@@ -8,19 +8,15 @@
 
 여기서 새 환경을 만들면 수업 준비, 리허설, 개인 실습 모두 1–6단계를 끝낸 뒤 calibration 후 [전달 경로](#handoff)를 하나 고릅니다.
 
+**혼자 실습한다면:** 이 문서의 “강사”·“환경 소유자”는 본인입니다. 1–6단계를 마치면 [전달 경로](#handoff)의 첫 행대로 README 1-4의 `bind`로 갑니다. 만든 서비스는 README 10단계 뒤 [리소스 그룹 삭제](#final-cleanup)까지 해야 비용이 멈춥니다.
+
 **시작 전:** Bash/WSL 터미널 하나에서 한 블록씩 실행합니다. 터미널을 닫았다면 아래 재개 지시를 따릅니다.
 
-- 도구: `git`, `python3.13`, `az`, `azd`, Bash/WSL, curl, 편집기, 브라우저.
-- 권한: 로그인할 소유자가 나열된 자원과 범위 지정 RBAC 역할을 만들 수 있어야 합니다.
+- 도구: `git`, `python3.13`, `az`, `azd`, Bash/WSL, curl, 편집기, 브라우저. 아직 확인하지 않았다면 [도구 설치·확인](instructor.ko.md#tools)을 먼저 끝냅니다.
+- 권한: 로그인할 소유자가 나열된 자원과 범위 지정 RBAC 역할을 만들 수 있어야 합니다. 구독 Owner라면 충분합니다([권한 확인](instructor.ko.md#access)).
+- 대기: 생성 명령이 `search: actual provisioning state ...; waiting` 같은 줄을 10초마다 출력하는 동안은 정상입니다. 한 자원의 대기는 최대 15분, Search는 최대 30분입니다.
 
 1단계에서 미사용 Git clone을 만들거나 그 루트로 들어갑니다.
-
-<details>
-<summary>시작 조건 상세 확인</summary>
-
-확실하지 않으면 강사용 [도구](instructor.ko.md#tools)와 [권한](instructor.ko.md#access) 확인을 봅니다.
-
-</details>
 
 <a id="setup-route"></a>
 
@@ -28,7 +24,7 @@
 
 > 새 서비스에는 비용이 발생합니다. 합성 데이터만 사용합니다.
 >
-> 공유/영어 자원을 보존합니다. 다른 흐름의 기본 Azure CLI 구독을 바꾸지 않습니다. Sweden Central은 리소스 그룹 위치일 뿐이며, GlobalStandard 모델 추론이 Sweden에만 머문다는 보장은 아닙니다.
+> 공유/영어 자원을 보존합니다. 다른 흐름의 기본 Azure CLI 구독을 바꾸지 않습니다. 리소스 그룹은 Sweden Central에 만들지만, GlobalStandard 모델 요청은 다른 지역에서 처리될 수 있습니다.
 
 <details>
 <summary>선택: Copilot CLI에 이 준비 맡기기</summary>
@@ -81,10 +77,10 @@ cd foundry-evaluation-setup-ko
 
 | 필드 | 값 |
 |---|---|
-| `AZURE_SUBSCRIPTION_ID` | 강사가 승인한 실습 구독 |
+| `AZURE_SUBSCRIPTION_ID` | 강사가 승인한 실습 구독. 혼자라면 본인이 Owner인 구독 |
 | `AZURE_TENANT_ID` | 그 구독의 tenant |
 | `AZURE_EXPECTED_USERNAME` | 직접 로그인할 계정 |
-| `AZURE_RESOURCE_GROUP` | 조사할 이전 그룹 이름. 없으면 **`AZURE_RESOURCE_GROUP=`**로 둠 |
+| `AZURE_RESOURCE_GROUP` | 처음이면 빈 값 **`AZURE_RESOURCE_GROUP=`**. 이전 실행 그룹을 보존 대상으로 확인할 때만 그 이름 |
 | `LAB_LANGUAGE` | `ko` |
 
 새 서비스 이름·엔드포인트·모델 배포 이름은 도구가 별도 폴더의 `.env`에 생성합니다.
@@ -117,11 +113,11 @@ python -m pip install -r requirements.lock.txt
 REPO_ROOT="$(pwd)" &&
 RUN_ID="ko-$(date -u +%Y%m%d-%H%M%S)" &&
 RUN_DIR="$REPO_ROOT/.workshop/$RUN_ID" &&
-printf 'RUN_DIR=%s\n' "$RUN_DIR" &&
+printf 'REPO_ROOT=%s\nRUN_DIR=%s\n' "$REPO_ROOT" "$RUN_DIR" &&
 python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language ko
 ```
 
-출력된 `RUN_DIR`의 절대 경로를 지금 보관합니다.
+출력된 `REPO_ROOT=`와 `RUN_DIR=` 두 줄을 지금 메모에 복사합니다. 터미널을 다시 열면 이 두 경로로 재개합니다.
 
 **완료 확인:** `init`이 끝나고 **`$RUN_DIR/config.json`**이 생깁니다. 새 이름을 기록한 것이며, 아직 소스 복사나 Azure 자원 생성은 하지 않았습니다.
 
@@ -238,7 +234,7 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 - `ownership` 출력: `existing_groups_explicitly_preserved: true`
 - `model-capacity` 출력: `gpt-6-sol`·`gpt-6-luna`·`gpt-6-astra`와 보조 모델 `gpt-5.4-mini`의 GlobalStandard 레코드
 
-**다르면:** 자원을 생성하지 않습니다. 계정 불일치는 위 로그인 확인, 권한·용량 오류는 환경 소유자와 확인한 뒤 [실패한 준비 명령만 복구](troubleshooting.ko.md#setup-resume)합니다. 구독·모델·리전을 임의로 바꾸지 않습니다.
+**다르면:** 자원을 생성하지 않습니다. 계정 불일치는 위 로그인 확인으로 돌아갑니다. 권한 오류이면 환경 소유자(혼자라면 본인)가 그 구독에서 Owner 같은 역할 부여 권한이 있는지 [권한 확인](instructor.ko.md#access)으로 확인합니다. 용량 레코드가 없으면 그 구독에서 해당 모델을 쓸 수 없거나 할당량이 부족한 것이므로, [모델 할당량 관리](https://learn.microsoft.com/azure/foundry/openai/how-to/quota)대로 할당량을 요청하거나 다른 승인된 구독으로 처음부터 시작합니다. 해결한 뒤 [실패한 준비 명령만 복구](troubleshooting.ko.md#setup-resume)합니다. 구독·모델·리전을 임의로 바꾸지 않습니다.
 
 <a id="setup-foundation"></a>
 
@@ -321,7 +317,7 @@ python scripts/provision_environment.py search-connection --run-dir "$RUN_DIR"
 
 **완료 확인:** 명령이 오류 없이 끝납니다. 모든 역할 출력에 `created: true` 또는 `already_assigned: true`가 있고, `scope_resource`는 내 사용자에 대해 `project`·`foundry`·`search`, 프로젝트 ID에 대해 `insights`·`logs`입니다. 연결 출력에는 `resource: insights-connection`과 `resource: search-connection`이 있습니다.
 
-**다르면:** 환경 소유자가 오류에 나온 주체와 범위를 확인한 뒤 [실패한 권한·연결 명령만 복구](troubleshooting.ko.md#setup-resume)합니다. 넓은 Owner 권한이나 공유 연결 변경으로 우회하지 않습니다.
+**다르면:** 환경 소유자(혼자라면 본인)가 오류에 나온 주체와 범위를 확인한 뒤 [실패한 권한·연결 명령만 복구](troubleshooting.ko.md#setup-resume)합니다. `AuthorizationFailed`이면 로그인한 계정에 그 범위의 역할 부여 권한(구독 Owner 등)이 있는지 먼저 확인합니다. 넓은 Owner 권한이나 공유 연결 변경으로 우회하지 않습니다.
 
 <a id="setup-auxiliary"></a>
 
@@ -354,7 +350,8 @@ python scripts/provision_environment.py ready --run-dir "$RUN_DIR"
 
 ```bash
 cd "$RUN_DIR/workshop" &&
-source src/agent/.venv/bin/activate
+source src/agent/.venv/bin/activate &&
+export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 ```
 
 **터미널 — 실행 폴더 (`$RUN_DIR/workshop`):** 후보 모델을 준비합니다. 아래 명령은 **사전 검사 → 없는 후보만 유료 배포 → 최종 검사**까지 합니다. 별도 `preflight`를 앞뒤로 반복하지 않습니다.
@@ -405,9 +402,23 @@ python scripts/workshop.py calibrate
 
 | 이어서 실행할 사람 | 사용할 폴더와 다음 행동 |
 |---|---|
-| 본인이 개인 실습을 이어서 할 때 | **`$RUN_DIR/workshop`**에서 [README의 `bind` 명령](../README.ko.md#bind-project)을 실행합니다. 6단계 `prepare-models`에서 준비 상태를 이미 확인했습니다. 별도 README `preflight`, clone, 설치, 로그인은 반복하지 않습니다. |
+| 본인이 개인 실습을 이어서 할 때 | 아래 **실습 폴더 열기** 블록을 실행한 뒤 [README의 `bind` 명령](../README.ko.md#bind-project)부터 진행합니다. 6단계 `prepare-models`에서 준비 상태를 이미 확인했습니다. 별도 README `preflight`, clone, 설치, 로그인은 반복하지 않습니다. |
 | 강사가 수업 리허설을 할 때 | 이 폴더에는 모델 소유권을 남깁니다. 새 실행 이름을 쓰는 [별도 리허설 clone](instructor.ko.md#rehearsal-workspace)에서 실습해, 리허설 cleanup이 공유 모델을 지우지 않게 합니다. |
 | 새 참가자에게 전달할 때 | **미사용 조별 이름**과 **실제 준비된 모델 배포 이름**이 들어 있는 완성된 `.env`를 전달합니다. `.azure`, `.foundry`, 소유권 파일, 인증 캐시, 결과는 보내지 않습니다. 전달 전 [강사 체크리스트](instructor.ko.md#handoff)를 확인합니다. 참가자는 새 폴더에 `.env`를 저장하고 [README 1단계](../README.ko.md#start)부터 진행합니다. |
+
+**터미널 — 본인이 이어서 할 때만, 실습 폴더 열기:** 메모한 `RUN_DIR` 경로를 붙여넣습니다. 새 터미널이면 먼저 `bash`를 실행합니다.
+
+```bash
+read -r -p "메모한 RUN_DIR 경로: " RUN_DIR &&
+cd "$RUN_DIR/workshop" &&
+source src/agent/.venv/bin/activate &&
+export AZURE_CONFIG_DIR="$PWD/.azure-cli" &&
+pwd
+```
+
+**완료 확인:** 출력된 경로가 `/workshop`으로 끝납니다. 이 경로가 README의 “이 폴더”(실습 폴더)이며, 나중에 README 3단계 터미널 B에서도 이 경로를 씁니다. 이 터미널에서 [README 1-4의 `bind`](../README.ko.md#bind-project)로 갑니다.
+
+**다르면:** `No such file or directory`이면 메모한 `RUN_DIR`을 따옴표 없이 다시 붙여넣습니다.
 
 **완료 확인:** 전달 경로를 하나만 골랐고, 그 행에 적힌 폴더 또는 완성된 `.env`가 준비되었습니다.
 
@@ -425,16 +436,13 @@ python scripts/workshop.py calibrate
 
 </details>
 
-여기서 멈춥니다. 개인 전용 기반을 소유하고 README 정리까지 끝낸 경우에만 아래 선택 절차를 엽니다.
-
-<details>
-<summary>선택: README 10단계 후 개인 전용 기반 그룹 삭제</summary>
+여기서 멈춥니다. **혼자 만든 환경이라면** README 10단계를 마친 뒤 이 문서로 돌아와 아래 [최종 정리](#final-cleanup)로 리소스 그룹을 삭제해야 비용이 멈춥니다.
 
 <a id="final-cleanup"></a>
 
-**개인 전용 기반 환경까지 최종 정리하기 — 별도 선택**
+## 최종 정리: README 10단계 뒤 본인 전용 리소스 그룹 삭제
 
-**README 10단계의 `cleanup`·`check-cleanup`을 끝낸 환경 소유자만 진행합니다.** 개인 실습의 기반 서비스 삭제는 별도 선택이며, 참가자 정리나 Copilot CLI 실행 요청이 그룹 전체 삭제의 승인은 아닙니다.
+**README 10단계의 `cleanup`·`check-cleanup`을 끝낸 환경 소유자만 진행합니다.** 혼자 만든 환경은 더 쓰지 않을 때 이 삭제로 Search·로그·모델 배포 비용을 멈춥니다. 삭제는 되돌릴 수 없으므로 아래 확인을 마친 뒤에만 하며, 참가자 정리나 Copilot CLI 실행 요청이 그룹 전체 삭제의 승인은 아닙니다.
 
 | 환경 | 선택할 경로 |
 |---|---|
@@ -443,9 +451,6 @@ python scripts/workshop.py calibrate
 | 생성 기록이 없거나 소유권·사용자가 불명확함 | 중단하고 환경 소유자에게 확인합니다. 이름·태그만으로 삭제하지 않습니다. |
 
 <a id="final-cleanup-check"></a>
-
-<details>
-<summary>소유자 전용 삭제 절차: 확인, 삭제, 완료 확인</summary>
 
 **1. 증거를 보관하고 삭제 범위 확인**
 
@@ -465,7 +470,7 @@ python scripts/workshop.py calibrate
 - **Resource ID**가 기록된 `group_id`와 같습니다.
 - **위치**가 Sweden Central(`swedencentral`)입니다.
 - **Tags**가 `workshop=foundry-evaluation`, `cleanup-scope=exclusive`, `purpose=synthetic-data-only`, `run=내 실행 ID`와 일치합니다.
-- **Resources**에는 이번 실행의 생성 기록에 있는 Foundry 계정·프로젝트·Search·App Insights·Log Analytics·보조 배포만 있어야 합니다.
+- **Resources**에는 이번 실행의 생성 기록에 있는 Foundry 계정·프로젝트·Search·App Insights·Log Analytics만 있어야 합니다. 모델 배포는 이 목록에 따로 보이지 않고 Foundry 계정 안에 있으며, 그룹과 함께 삭제됩니다.
 - 현재 사용 현황에는 다른 사용자나 후속 수업 의존성이 없어야 합니다.
 
 기록에 없는 자원, 다른 그룹과의 불명확한 종속성, 후속 수업 계획이 있으면 삭제하지 않습니다. 태그나 소유권 파일을 고쳐 조건을 맞추지 않습니다.
@@ -483,7 +488,3 @@ python scripts/workshop.py calibrate
 **이후 `check-cleanup`을 다시 실행하지 않습니다.** 그 명령은 기반 서비스가 보존된 README 10단계를 검사하므로, 전체 그룹 삭제 확인은 위 포털 결과로 합니다. 이미 발생한 사용료와 지연 반영 비용은 남을 수 있습니다. 구독의 **Cost Management → Cost analysis**에서 확인하며, 삭제 성공을 청구액 0으로 해석하지 않습니다.
 
 참고 자료: [공식 Foundry 기본 인프라 예제](https://github.com/Azure-Samples/azd-ai-starter-basic/tree/main/infra) · [Search knowledge retrieval 과금 설정](https://learn.microsoft.com/azure/search/agentic-retrieval-how-to-enable-disable).
-
-
-</details>
-</details>

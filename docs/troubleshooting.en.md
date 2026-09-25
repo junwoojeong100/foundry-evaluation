@@ -3,7 +3,7 @@
 [Return to the English guide](../README.md) · [한국어](troubleshooting.ko.md)
 
 **Keep the current folder and error output. Do not restart the whole workshop.**
-- **Failed stage:** [sign-in](#login) · [retrieval](#retrieval) · [local run](#symptom-local) · [hosted run](#symptom-hosted) · [calibration](#calibration) · [collection](#collection-retry) · [evaluation](#evaluation-retry) · [cleanup](#cleanup-recovery).
+- **Failed stage:** [sign-in](#login) · [retrieval](#retrieval) · [local run](#symptom-local) · [hosted run](#symptom-hosted) · [calibration](#calibration) · [collection](#collection-retry) · [evaluation](#evaluation-retry) · [V2 changed](#v2-changed) · [cleanup](#cleanup-recovery).
 - **Evidence or optional work:** [no baseline failures](#no-failures) · [traces](#telemetry) · [portal](#portal-differs) · [completion](#symptom-completion) · [Levels 2-3](#levels).
 - **Not sure?** [common symptoms](#symptoms) · [saved-state resume](#resume) if a label or state file exists · [environment-owner resume](#setup-resume) if setup failed (environment owners only).
 - Run participant recovery commands from the existing workshop folder's repository root; environment-owner recovery names its own folders.
@@ -19,7 +19,7 @@
 | Missing or incomplete traces | Check ingestion, access, and the [query window](#telemetry); do not claim complete evidence |
 | Only a recording of a successful run | Treat it as observation, not your own completed execution |
 
-Share only the failed command, error, step, and result label. Never share passwords, tokens, the full `.env`, or personal-information screenshots.
+In this guide, “instructor” and “environment owner” mean the instructor in a class and **you in self-study**. If that is you, perform the row's check yourself; if it does not resolve, stop and record the state and error. When you ask for help, share only the failed command, error, step, and result label. Never share passwords, tokens, the full `.env`, or personal-information screenshots.
 
 <a id="resume"></a>
 
@@ -34,6 +34,7 @@ If `collect` finished but `evaluate` stopped, do not paste the block again from 
 | `Evaluation is still running` | Repeat only `evaluate` with the same label |
 | Evaluation failed, or result validation/download stopped | Use the [saved-status decision table](#evaluation-retry). Not every local error permits `--retry-failed`. |
 | `Telemetry is incomplete` | Check ingestion/access and the [two-hour query window](#telemetry); repeat only `monitor` for that label |
+| `Hosted prompt does not match` (holdout collection), or 8-2 shows different improved and holdout versions | [If V2 changed after 7-2](#v2-changed); do not delete or edit results |
 | `Label ... already exists` | Read the status files below. If collection is `completed`, find the next unfinished evaluation/trace step. If `failed`, recover collection. If `running`, check the original process: wait while active; [recover collection](#collection-retry) only after confirming it stopped. |
 | Reviewed regression already exists | Verify its row, reason, language, and source trace. Continue only if they match the intended review; do not overwrite it. |
 | Cleanup or its verification stopped | Use [cleanup recovery](#cleanup-recovery); do not repeat successful deletion to fix a failed check. |
@@ -54,7 +55,7 @@ Choose the recovery section for the first incomplete file; a completed manifest 
 
 **Checkpoint:** the first incomplete saved state identifies one failed stage and one matching recovery section.
 
-**If not:** preserve the current folder and error output, then share the stage, label, and status files with the instructor.
+**If not:** preserve the current folder and error output. Look up the error message in [common symptoms](#symptoms); in a class, show the stage, label, and status files to the instructor.
 
 **Next:** open the matching section above, or use [common symptoms](#symptoms) when the stage is still unclear.
 
@@ -71,7 +72,7 @@ Use the matching row, then return to the failed checkpoint. If it persists, pres
 | Setup | Missing `.env` or required setting | The workshop cannot infer private deployment names. | Add the complete file; return to [step 1-1 `.env` check](../README.md#workspace-settings). |
 | Setup | `read: -p: no coprocess` or activation path missing | The shell or folder is not the recorded workshop shell/path. | Start Bash and use Terminal A's absolute `pwd`; return to [step 1-1 source setup](../README.md#source-setup). |
 | Setup | Language mismatch | `LAB_LANGUAGE=en` selects English; `LAB_LANGUAGE=ko` or a missing setting selects Korean. | Use the original language/workspace; return to [step 1-1 `.env` check](../README.md#workspace-settings). |
-| Setup | Nonempty `missing_models` | One of the three exact deployments, versions, access paths, or quotas is unavailable. | Ask the instructor to confirm them; return to [preflight](../README.md#project-binding). |
+| Setup | Nonempty `missing_models` | One of the three exact deployments, versions, access paths, or quotas is unavailable. | Check that the `MODEL_*_DEPLOYMENT` values in `.env` are exactly as received, then ask the environment owner to deploy them (for your own environment, [environment step 6-1](environment.en.md#setup-candidates)); return to [preflight](../README.md#project-binding). |
 | Setup | `The fixed auxiliary planner/judge deployment is missing` | The actual `LAB_AUX_DEPLOYMENT` in `.env` is not ready. | Owner completes [auxiliary model preparation](instructor.en.md#auxiliary-model); return to [preflight](../README.md#project-binding). |
 | Setup | `bind` or `set-prompt` environment error | This folder may not be bound to the expected project/language. | Confirm `bind` ran in this folder; return to [bind project](../README.md#bind-project). |
 | Sign-in | Wrong account or tenant | A CLI is signed into the wrong identity or subscription. | Repeat the two sign-ins/checks; return to [login check](../README.md#login-check). |
@@ -106,7 +107,7 @@ Use the matching row, then return to the failed checkpoint. If it persists, pres
 | Retrieval | IQ 400 | The pinned API/schema or planner deployment may not match. | Inspect those three items; return to [policy retrieval](../README.md#policy-retrieval). |
 | Setup | CLI extension notice after JSON | The supplied parser separates recognized notices only. | Do not upgrade mid-experiment; return to [preflight](../README.md#project-binding). |
 | Sign-in | CLI credential timeout | Token refresh delay can look like login failure. | Distinguish timeout from failed login; return to [login check](../README.md#login-check). |
-| Trace | Missing App Insights `ResourceId` metadata | The dedicated connection metadata may be incomplete. | Ask an authorized instructor to inspect it; return to [trace recovery](#telemetry). |
+| Trace | Missing App Insights `ResourceId` metadata | The dedicated connection metadata may be incomplete. | The environment owner follows the [owner-only observability repair](instructor.en.md#observability-repair); return to [trace recovery](#telemetry). |
 
 </details>
 
@@ -223,10 +224,10 @@ The query still filters the exact agent and run, and missing, duplicate, foreign
 
 Use this only when:
 
-- The original collector has stopped. Stopped means the original terminal is back at a prompt, or the instructor confirms the process ended; if unsure, wait — never start a second command.
+- The original collector has stopped. Stopped means the original terminal is back at a prompt or, if you closed it, you confirmed that the process ended; if unsure, wait — never start a second command.
 - You keep the failed label and original files.
 - You retry the same stage once with one unused retry label.
-- You do not change models, split, questions, prompt version, agent version, completed labels, reviewed source, or holdout meaning.
+- You do not change models, split, questions, prompt version, agent version, completed labels, reviewed source, or holdout meaning. Only [when V2 changed after 7-2](#v2-changed) do you collect with the current V2 version.
 - If the retry fails, stop and keep the error.
 
 | If this failed | Go to |
@@ -269,6 +270,8 @@ python scripts/workshop.py collect --split dev --label baseline-retry --concurre
 <a id="collection-retry-improved"></a>
 
 ### V2 dev collection failed
+
+Also use this command to collect a new label when README 7-4 shows the review was not carried (`source trace carried: no`) or [V2 changed after 7-2](#v2-changed).
 
 ```bash
 python scripts/workshop.py collect --split dev --label improved-retry --concurrency 4
@@ -335,8 +338,8 @@ Never repeat `collect` for an evaluation failure.
 
 That is a legitimate result. Do not fabricate a failure or alter an answer/reference.
 
-1. Select **one English dev response** from `src/agent/.foundry/results/baseline/responses.jsonl`. Note its `row_id` and `trace_id`.
-2. Follow [the three checks in README 6-2](../README.md#review-case): the same response, its fixed dev reference, then its trace.
+1. Put `baseline-sol-D01` (or another baseline row) into the `show` block of [README 6-2](../README.md#review-case) to see the saved response and fixed reference. Note its `row_id` and `trace_id`.
+2. As in 6-2, compare the response with its fixed dev reference, then check its trace in the portal.
 3. Write one line explaining that all business checks passed, what you inspected, and **behavior the provided V2 should preserve**. Do not claim a failure or improvement in advance.
 4. Return to [6-3 to save the review](../README.md#save-review). `feedback` accepts passing dev responses too. Then review V2's suitability in step 7.
 
@@ -347,6 +350,36 @@ Final verification only checks that candidate results store the saved baseline t
 **If not:** return to the selected baseline response and fixed dev reference; do not use holdout or invent a failure.
 
 **Next:** continue with [V2 deployment and candidate evaluation](../README.md#lab-e).
+
+<a id="v2-changed"></a>
+
+## If V2 changed after 7-2
+
+Collect the holdout only with **the same V2 version** you evaluated in 7-3. Use this section if 8-1 collection stopped with `Hosted prompt does not match`, or if 8-2 showed different `agent_version` or `prompt_hash` values for improved and holdout. Do not delete or edit result files.
+
+| What you did after 7-2 | What to do |
+|---|---|
+| Ran `set-prompt` or edited `.env` or a prompt file, without `azd deploy` | Restore the selection with **A** below, then return to 8-1. |
+| Ran `azd deploy` again | The agent version changed, so the existing `improved` no longer pairs with the holdout. Follow **B** below. |
+
+**A — restore the V2 selection (no redeployment):** if you edited a prompt file, restore it first with `git checkout -- src/agent/prompts` (for a ZIP folder, replace it with the original file), and return any other `.env` values to their 7-2 state. Then select V2 again and check it:
+
+```bash
+python scripts/workshop.py set-prompt v2 &&
+python scripts/workshop.py smoke
+```
+
+**Checkpoint:** `prompt_version: v2`, and `agent_version` equals the **V2 version** you noted in 7-2. Continue from [8-1 collection](../README.md#lab-f).
+
+**If not:** if `agent_version` differs or `Hosted prompt does not match` persists, a deployment happened after 7-2; follow **B**.
+
+**B — start again from dev with the current V2 version:** continue until **A**'s block shows `prompt_version: v2`. For `Hosted prompt does not match`, run `azd deploy --no-prompt` **once**, rerun **A**'s block, and note the new `agent_version`. Then collect `improved-retry` with [V2 dev collection recovery](#collection-retry-improved), redo README 7-3's evaluation and comparison and the 7-4 summary with `improved-retry`, and continue with step 8. If you already collected a holdout, use `holdout-retry` from [holdout collection recovery](#collection-retry-holdout). Use the changed labels in later commands and in `verify`.
+
+**Checkpoint:** in 8-2's check, the new improved label and the holdout label have the same `agent_version` and `prompt_hash`.
+
+**If not:** stop and record the error and label names. Do not delete earlier results or redeploy repeatedly to match versions.
+
+**Next:** return to [8-1 collection](../README.md#lab-f) or [8-2's check](../README.md#holdout-evaluation).
 
 <a id="portal-differs"></a>
 
@@ -495,7 +528,7 @@ Keep the same workspace, account, and ownership records. Files below are under *
 | What finished | Next action |
 |---|---|
 | `cleanup --confirm` succeeded; `cleanup.json` records `completed: true`, but `check-cleanup` failed | Preserve that file and its `plan`. Resolve the reported access/propagation problem, then repeat **only the check below**. |
-| Deletion itself stopped, or ownership/targets do not match | Stop automated deletion. Preserve the error, `cleanup-plan.json` if present, and ownership state. The owner must reconcile the original plan with Azure before any further deletion; partial counts are not complete cleanup. |
+| Deletion itself stopped, or ownership/targets do not match | Stop automated deletion. Preserve the error, `cleanup-plan.json` if present, and ownership state. Before any further deletion, the owner (you, in self-study) checks that the plan's names match `LAB_AGENT_NAME` and `LAB_PREFIX` in this folder's `.env` and reconciles the original plan with Azure; partial counts are not complete cleanup. |
 
 **Only after the deletion command succeeded:**
 
@@ -560,6 +593,6 @@ If login expired, use the configured account; do not bypass errors with another 
 
 **Checkpoint:** the original workspace, `RUN_DIR`, virtual environment, and `AZURE_CONFIG_DIR` are restored, and only the interrupted environment step is selected.
 
-**If not:** stop with `config.json`, `RUN_DIR`, and the last error for owner review; do not generate a new `RUN_ID` or overwrite the snapshot.
+**If not:** preserve `config.json`, `RUN_DIR`, and the last error. In self-study you are the environment owner: check that `subscription` and `run_id` in `config.json` match this run, then resume only with the same `RUN_DIR`. Do not generate a new `RUN_ID` or overwrite the snapshot.
 
 **Next:** return to the matching environment step above, or to [README bind](../README.md#bind-project) after handoff is complete.

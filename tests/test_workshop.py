@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from common import digest, label_dir, read_jsonl
 from cloud_setup import agent_principal, cleanup_plan, pin_deployment_version
 from contracts import Invocation, MODEL_SPECS, PolicyAnswer
-from experiments import normalize_eval_items, parse_invocation_output, reviewed_cases, summary_table
+from experiments import normalize_eval_items, parse_invocation_output, reviewed_cases, show_row, summary_table
 from grading import grade, numeric_values, percentile, validate_matrix
 from knowledge import RETRIEVAL_INSTRUCTIONS, canonical_context, retrieve
 from main import invocation_payload, telemetry_connection
@@ -384,6 +384,45 @@ class EvaluationTests(unittest.TestCase):
 
 
 class SummaryTableTests(unittest.TestCase):
+    def test_show_prints_one_saved_row_beside_its_fixed_reference_without_new_calls(self):
+        case = next(item for item in read_jsonl(ROOT / "data" / "dev.jsonl") if item["case_id"] == "D01")
+        checks = {"decision": True, "required_numbers": True, "citations_retrieved": False,
+                  "citations_relevant": False, "citation_present": True}
+        row = {
+            "row_id": "baseline-sol-D01", "case_id": "D01", "model_key": "sol", "trace_id": "a" * 32,
+            "query": case["query"], "answer": "한도 이내입니다.", "decision": "allowed",
+            "citations": ["현행 국내 출장비 규정"], "source_ids": ["TRAVEL-2025", "TRAVEL-2026"],
+            "business_grade": {"passed": False, "checks": checks},
+            "response": "raw text the learner does not need", "context": "long retrieved context",
+        }
+        manifest = {"split": "dev", "status": "completed", "language": "ko"}
+        with patch.dict("os.environ", {"LAB_LANGUAGE": "ko"}), \
+                patch("experiments.completed_rows", return_value=(manifest, [row])) as saved, \
+                patch("experiments.write_json", side_effect=AssertionError("Read only")), \
+                patch("experiments.invoke", side_effect=AssertionError("Do not call the agent")), \
+                patch("builtins.print") as printed:
+            view = show_row("baseline", "baseline-sol-D01")
+            with self.assertRaisesRegex(ValueError, "Unknown row ID"):
+                show_row("baseline", "baseline-sol-D01 (citations_retrieved)")
+        saved.assert_called_with("baseline")
+        self.assertEqual(json.loads(printed.call_args_list[0].args[0]), view)
+        self.assertEqual((view["row_id"], view["case_id"], view["trace_id"]), ("baseline-sol-D01", "D01", "a" * 32))
+        self.assertEqual(view["saved_response"], {key: row[key] for key in ("answer", "decision", "citations", "source_ids")})
+        self.assertEqual(view["business_checks"], checks)
+        self.assertEqual(view["fixed_reference"]["ground_truth"], case["ground_truth"])
+        self.assertEqual(view["fixed_reference"]["allowed_citations"], case["allowed_citations"])
+        self.assertEqual(view["files"], {
+            "saved_response": "src/agent/.foundry/results/baseline/responses.jsonl",
+            "fixed_reference": "data/dev.jsonl",
+        })
+        self.assertNotIn("response", view)
+        self.assertNotIn("long retrieved context", json.dumps(view, ensure_ascii=False))
+        with patch("workshop.load_settings_env"), patch("workshop.show_row") as show, patch.object(
+            sys, "argv", ["workshop.py", "show", "--label", "baseline", "--row-id", "baseline-sol-D01"],
+        ):
+            workshop_main()
+        show.assert_called_once_with("baseline", "baseline-sol-D01")
+
     def test_single_label_summary_command_dispatches_to_saved_results(self):
         for label in ("baseline", "baseline-retry", "holdout", "holdout-retry"):
             with self.subTest(label=label), patch("workshop.load_settings_env"), \
