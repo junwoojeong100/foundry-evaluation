@@ -43,7 +43,7 @@ Start with [the Copilot CLI installation and startup guide](copilot.en.md). If t
 
 Use a **Git clone**, not an extracted ZIP: the preparation tool records the actual source commit and file hashes.
 
-**Commands run in two folders; `RUN_DIR` only stores records:**
+**You type commands only in `REPO_ROOT` and `RUN_DIR/workshop`; `RUN_DIR` is only a record path:**
 
 | Path | Purpose | Where commands run |
 |---|---|---|
@@ -236,7 +236,7 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 
 - From the `identity` output: `requested_account_matches: true`, `configured_subscription_matches: true`, `configured_tenant_matches: true`, `subscription_state: Enabled`, and `default_subscription_changed: false`;
 - From the `ownership` output: `existing_groups_explicitly_preserved: true`;
-- From the `model-capacity` output: GlobalStandard records for all three candidates and the auxiliary model.
+- From the `model-capacity` output: GlobalStandard records for `gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`, and the auxiliary `gpt-5.4-mini`.
 
 **If not:** do not create resources. Use the sign-in checkpoint above for an identity mismatch; resolve access/capacity errors with the owner, then [resume only the failed setup command](troubleshooting.en.md#setup-resume). Do not substitute a subscription, model, or region.
 
@@ -272,7 +272,8 @@ Subscription
 
 **Resources** lists only this run's generated names; nothing from an old or shared group appears. **Tags** include `workshop=foundry-evaluation`, `cleanup-scope=exclusive`, `purpose=synthetic-data-only`, and `run=$RUN_ID`.
 
-Search uses Basic with one replica/partition. Its `semanticSearch` and `knowledgeRetrieval` free settings do **not** make Search uptime or model calls free. The portal's ARM **Deployments** list is not the Foundry model-deployment list.
+- Search uses Basic with one replica/partition; its `semanticSearch` and `knowledgeRetrieval` free settings do **not** make Search uptime or model calls free.
+- The portal's ARM **Deployments** list is not the Foundry model-deployment list.
 
 **If not:** identify the failed command in the output and [inspect the existing creation record](troubleshooting.en.md#setup-resume). Do not repeat successful creation commands or create another group. If only the Search wait expired, use the recovery immediately below.
 
@@ -299,7 +300,12 @@ python scripts/provision_environment.py search-status --run-dir "$RUN_DIR"
 
 ## 4. Grant scoped access and create connections
 
-Roles and connections are created only on this run's new resources. The four `user-*` commands grant scoped Foundry, model, and Search roles only to **the user verified in step 2**; prepare other participants with the [instructor access checklist](instructor.en.md#access). `project-monitor` gives the project identity telemetry access, and the two connection commands create a keyless Microsoft Entra (`AAD`) Search connection and an App Insights connection whose metadata records the actual `ResourceId`. The agent instance identity is created later; grant it Search/model access with `grant-agent-access` in [README step 4](../README.md#deploy), not broad Owner.
+This step grants only scoped access and connections on this run's new resources:
+
+- The four `user-*` commands grant Foundry, model, and Search roles only to **the user verified in step 2**; prepare other participants with the [instructor access checklist](instructor.en.md#access).
+- `project-monitor` gives the project identity telemetry access.
+- The two connection commands create a keyless Microsoft Entra (`AAD`) Search connection and an App Insights connection whose metadata records the actual `ResourceId`.
+- The agent instance identity is created later; grant it Search/model access with `grant-agent-access` in [README step 4](../README.md#deploy), not broad Owner.
 
 **Terminal — original clone (`$REPO_ROOT`):**
 

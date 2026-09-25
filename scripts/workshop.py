@@ -15,8 +15,8 @@ from common import RESULTS_DIR, utc_stamp, write_json
 from contracts import MODEL_SPECS
 from experiments import calibrate, collect, compare, evaluate, feedback, smoke, summary_table, verify_evidence
 from foundry_eval import (
-    continuous_eval, evaluate_agent, evaluate_suite, evaluate_traces, gate, generate_rubric, insights, red_team,
-    register_evaluators, stress_test,
+    WAIVABLE_SIGNALS, continuous_eval, evaluate_agent, evaluate_suite, evaluate_traces, gate, generate_rubric, insights,
+    judge_agreement, red_team, register_evaluators, stress_test,
 )
 from knowledge import retrieve
 from observability import monitor
@@ -59,6 +59,7 @@ def main() -> None:
     suite.add_argument("--labels", nargs="+", required=True)
     suite.add_argument("--timeout", type=int, default=1800)
     suite.add_argument("--retry-failed", action="store_true")
+    sub.add_parser("judge-agreement").add_argument("--labels", nargs="+", required=True)
     insight = sub.add_parser("insights")
     insight.add_argument("--baseline", required=True)
     insight.add_argument("--candidate", required=True)
@@ -74,7 +75,10 @@ def main() -> None:
     live.add_argument("--retry-failed", action="store_true")
     sub.add_parser("evaluate-traces").add_argument("--label", default="improved")
     sub.add_parser("continuous-eval").add_argument("--hours", type=int, default=8)
-    sub.add_parser("gate")
+    release = sub.add_parser("gate")
+    release.add_argument("--composite", action="store_true", help="Also require the saved Level 3 results (no new calls).")
+    release.add_argument("--waive", action="append", default=[], choices=WAIVABLE_SIGNALS,
+                         help="With --composite, record a reviewed exception for one Level 3 signal.")
     review = sub.add_parser("feedback")
     review.add_argument("--label", required=True)
     review.add_argument("--row-id", required=True)
@@ -135,6 +139,8 @@ def main() -> None:
         register_evaluators()
     elif args.command == "evaluate-suite":
         evaluate_suite(args.labels, args.timeout, args.retry_failed)
+    elif args.command == "judge-agreement":
+        judge_agreement(args.labels)
     elif args.command == "insights":
         insights(args.baseline, args.candidate)
     elif args.command == "generate-rubric":
@@ -150,7 +156,9 @@ def main() -> None:
     elif args.command == "continuous-eval":
         continuous_eval(args.hours)
     elif args.command == "gate":
-        sys.exit(gate())
+        if args.waive and not args.composite:
+            parser.error("--waive requires --composite")
+        sys.exit(gate(args.composite, args.waive))
     elif args.command == "feedback":
         feedback(args.label, args.row_id, args.reason, args.reviewer)
     elif args.command == "monitor":

@@ -4,7 +4,7 @@
 
 **약 40분 뒤에는:** 저장된 같은 V1·V2 응답 36개를 비교한 표와, **업무 검사와 LLM 점수를 구분한 해석**이 남습니다.
 
-**순서:** [1. 평가기 두 개 등록](#register-evaluators) → [2. 저장된 응답 채점](#evaluate-suite) → [3. 실행 결과와 실패 원인 비교](#insights) → [보고](#finish-level-2).
+**순서:** [1. 평가기 두 개 등록](#register-evaluators) → [2. 저장된 응답 채점](#evaluate-suite) → [3. judge 확인](#judge-agreement) → [4. 실행 결과와 실패 원인 비교](#insights) → [보고](#finish-level-2).
 
 | 시작 전 확인 | 필요한 상태 |
 |---|---|
@@ -15,7 +15,7 @@
 
 **실행 위치:** 기존 **터미널 A**에서 **저장소 루트**로 실행합니다. 새 터미널이면 [환경만 복원](../README.ko.md#resume-shell)합니다. `.env`의 이름과 V2 지침은 바꾸지 않습니다. 복구 때 다른 label을 썼다면 아래 `baseline`·`improved`를 실제 label로 바꿉니다.
 
-**2절에서는 통과 건수, 3절에서는 평균 점수와 실패 원인을 읽습니다.** 둘 다 보고에 넣습니다. 예시 점수와 선택 포털 화면은 필수 단계가 아닙니다.
+**2절에서는 통과 건수, 3절에서는 judge 일치도, 4절에서는 평균 점수와 실패 원인을 읽습니다.** 셋 다 보고에 넣습니다. 예시 점수와 선택 포털 화면은 필수 단계가 아닙니다.
 
 <a id="register-evaluators"></a>
 
@@ -80,7 +80,7 @@ python scripts/workshop.py evaluate-suite --labels baseline improved --retry-fai
 **내 표에서 읽을 순서:**
 
 1. **`business_contract`부터 봅니다.** V1 → V2 통과 건수를 적고 7-4의 로컬 업무 검사와 같은지 확인합니다.
-2. **`policy_rubric`과 `policy_rubric_no_evidence`를 비교합니다.** 앞은 질문과 검색된 정책 본문, 뒤는 질문만 받습니다. 같은 rubric이라도 judge에게 근거를 주었을 때와 안 주었을 때 통과 건수가 달랐는지 적습니다.
+2. **`policy_rubric`과 `policy_rubric_no_evidence`를 비교합니다.** `policy_rubric`은 질문과 검색된 정책 본문을 받고, `policy_rubric_no_evidence`는 질문만 받습니다. 같은 rubric이라도 judge에게 근거를 주었을 때와 안 주었을 때 통과 건수가 달랐는지 적습니다.
 3. **기본 제공 품질·에이전트·RAG·안전 평가기의 변화 하나를 적습니다**(없으면 `none`). 이 점수들은 판단·금액·인용을 보는 업무 검사를 대신하지 않습니다.
 
 <details>
@@ -122,11 +122,57 @@ indirect_attack            safety   18/18     18/18
 
 </details>
 
-**다음:** [3. 실행 결과와 실패 클러스터 비교](#insights)
+**다음:** [3. judge와 업무 검사 결과 비교](#judge-agreement)
+
+<a id="judge-agreement"></a>
+
+## 3. judge와 업무 검사 결과 비교
+
+**터미널 A:** 2절의 모든 LLM judge를 정확한 업무 검사인 `business_contract`와 같은 실제 응답 36개에서 비교합니다. 5-1에서는 직접 작성한 예제 2개로만 judge를 확인했습니다. 이 명령은 저장된 결과만 읽고 새 호출은 하지 않습니다.
+
+```bash
+python scripts/workshop.py judge-agreement --labels baseline improved
+```
+
+**완료 확인:** `Judge agreement with business_contract on 36 saved rows (baseline, improved); no new calls.`, judge 일곱 행의 표가 나오고, 이어서 row ID 또는 `none`이 붙은 `Business passes that a judge failed`가 나옵니다.
+
+**다르면:** `Run evaluate-suite ... first`, `No saved suite output`, `has no valid ... result`이면 먼저 2절을 끝냅니다([레벨 2·3 복구](troubleshooting.ko.md#levels)).
+
+**읽는 법:**
+
+- **`judge pass + business fail`:** 업무 검사에서 실패한 답변을 judge가 통과시켰습니다. 이 수가 많은 judge는 업무 검사를 대신할 수 없습니다.
+- **`judge fail + business pass`:** 올바른 답변을 judge가 떨어뜨렸습니다. 그 judge로 릴리스를 막기 전에, 2절 포털 run에서 목록의 행마다 답변과 judge의 이유를 읽습니다. 올바른 보류가 relevance에서 낮게 나온 것은 judge의 한계이지 에이전트 실패가 아닙니다.
+- **judge를 결과에 맞추지 않습니다.** 기준값, rubric, 기준 정답은 그대로 두고, 릴리스를 막을 judge와 진단용으로만 쓸 judge를 메모합니다.
+
+<details>
+<summary>기록된 예시 실행의 결과 — 예시</summary>
+
+```text
+Judge agreement with business_contract on 36 saved rows (baseline, improved); no new calls.
+criterion                  kind     agree  judge pass + business fail  judge fail + business pass
+policy_rubric              rubric   26/36  10                          0
+policy_rubric_no_evidence  rubric   27/36  0                           9
+groundedness               RAG      18/36  18                          0
+relevance                  RAG      17/36  16                          3
+response_completeness      quality  18/36  18                          0
+task_adherence             agent    18/36  16                          2
+intent_resolution          agent    18/36  16                          2
+Business passes that a judge failed (review each):
+  policy_rubric_no_evidence: improved-sol-D01, improved-sol-D02, improved-luna-D02, improved-sol-D03, improved-luna-D03, improved-astra-D03, improved-astra-D04, improved-luna-D05, improved-astra-D05
+  relevance: improved-luna-D04, improved-sol-D04, improved-astra-D04
+  task_adherence: improved-luna-D05, improved-sol-D05
+  intent_resolution: improved-sol-D06, improved-astra-D06
+```
+
+업무 실패 18건은 모두 V1 행입니다. 기본 제공 judge 다섯 개는 그중 16–18건을 통과시켰으므로 어느 것도 업무 검사를 대신할 수 없습니다. `policy_rubric`은 올바른 답변을 하나도 떨어뜨리지 않았지만 업무 실패 10건을 통과시켰습니다. 근거가 없으면 같은 rubric이 올바른 V2 답변 9건을 떨어뜨렸고, relevance는 올바르게 보류한 V2 D04 세 행을 모두 떨어뜨렸습니다.
+
+</details>
+
+**다음:** [4. 실행 결과와 실패 클러스터 비교](#insights)
 
 <a id="insights"></a>
 
-## 3. 실행 결과와 실패 클러스터 비교
+## 4. 실행 결과와 실패 클러스터 비교
 
 **터미널 A:** Foundry가 2절의 `baseline`·`improved` run을 비교하고, `improved` run의 실패를 클러스터로 묶습니다.
 
@@ -143,7 +189,7 @@ python scripts/workshop.py insights --baseline baseline --candidate improved
 
 **읽는 법:**
 
-- **2절은 통과 건수, 3절은 평균 점수입니다.** `delta`는 candidate − baseline입니다. `business_contract` 평균 `0.60`은 일부 검사가 맞았다는 뜻이지, 응답의 60%가 통과했다는 뜻이 아닙니다.
+- **2절은 통과 건수, 이 절은 평균 점수입니다.** `delta`는 candidate − baseline입니다. `business_contract` 평균 `0.60`은 일부 검사가 맞았다는 뜻이지, 응답의 60%가 통과했다는 뜻이 아닙니다.
 - **`Changed`는 차이이지 개선 판정이 아닙니다.** `delta`, 평가기의 좋은 방향, 18행이라는 작은 표본을 함께 봅니다([통계 비교 범례](https://learn.microsoft.com/azure/foundry/how-to/evaluate-results#compare-the-evaluation-results)).
 - **클러스터는 실패한 평가기부터 봅니다.** `policy_rubric_no_evidence` 실패가 많으면 judge가 근거를 못 봤을 수 있습니다. `business_contract` 실패는 어떤 업무 검사가 틀렸는지 확인합니다.
 
@@ -163,7 +209,7 @@ V2에서 클러스터로 묶인 16개 샘플 중 9개가 `policy_rubric_no_evide
 
 </details>
 
-**다음:** [레벨 2 마무리](#finish-level-2). [선택 포털 비교](#선택-포털에서-run-비교)는 이 문서 끝에 있으며, 정리 전에만 할 수 있습니다.
+**다음:** [레벨 2 마무리](#finish-level-2). 선택 사항으로, 정리 전에 [포털에서 run 비교](#선택-포털에서-run-비교)로 한 번 더 확인할 수 있습니다.
 
 <a id="finish-level-2"></a>
 
@@ -173,11 +219,12 @@ V2에서 클러스터로 묶인 16개 샘플 중 9개가 `policy_rubric_no_evide
 
 ```text
 업무 검사: .../18 → .../18; 근거 있는 rubric: .../18 → .../18
+릴리스를 막을 judge: ...; 진단용 judge: ... (judge 일치도)
 범용·안전 평가기로 알게 된 점: ...
 비교/클러스터: 평가기=...; delta/effect=...; 확인한 실패 원인 또는 실패 없음=...
 ```
 
-**완료 확인:** 1–3절이 끝났고, 메모에는 통과 건수와 평균 점수를 구분한 내 결과·해석이 있습니다. 낮은 점수는 미완료가 아니지만 명령 오류로 빠진 결과는 미완료로 기록합니다.
+**완료 확인:** 1–4절이 끝났고, 메모에는 통과 건수와 평균 점수를 구분한 내 결과·해석이 있습니다. 낮은 점수는 미완료가 아니지만 명령 오류로 빠진 결과는 미완료로 기록합니다.
 
 **다르면:** 끝나지 않은 첫 절로 돌아가 그 명령만 이어갑니다. 끝난 명령은 반복하지 않습니다([레벨 2·3 복구](troubleshooting.ko.md#levels)).
 

@@ -22,12 +22,12 @@
 
 첫 작업: 위에서 방식을 고른 뒤 [1단계](#install)에서 `copilot --version`을 실행합니다. 3단계 전에는 아래만 확인합니다.
 
-- 도구: [기본 실습 도구](instructor.ko.md#tools). [Node.js·npm](https://nodejs.org/en/download)은 npm이나 MCP 서버를 쓸 때만 추가합니다.
+- 도구: [기본 실습 도구](instructor.ko.md#tools). [Node.js·npm](https://nodejs.org/en/download)은 npm이나 MCP 서버를 쓸 때만 추가합니다. Azure MCP, Docker, [Azure Skills](#azure-skills)는 필수가 아닙니다.
 - `.env`: [준비된 환경](../README.ko.md#workspace-settings), [기존 기반 서비스](instructor.ko.md#existing-settings), [새 환경 생성](environment.ko.md#initial-settings) 중 하나만 고릅니다.
 - 로그인: GitHub, Azure CLI, azd, 포털은 각각 별도입니다. 도구가 Azure 권한을 주지는 않습니다.
-- 비용: 3-1 계획에 과금 대상 Azure 리소스, 범위, 예상 비용이 나온 뒤에만 3-2 실행 요청을 보냅니다. Copilot CLI 사용량은 GitHub Copilot 플랜의 과금·한도를 따릅니다. Azure MCP, Docker, [Azure Skills](#azure-skills)는 필수가 아닙니다.
+- 비용: 3-1 계획에 과금 대상 Azure 리소스, 범위, 예상 비용이 나온 뒤에만 3-2 실행 요청을 보냅니다. Copilot CLI 사용량은 GitHub Copilot 플랜의 과금·한도를 따릅니다.
 
-`bash` 블록은 **일반 터미널**, `/login`과 요청문은 **Copilot 입력창**에 넣습니다. Windows에서는 **WSL 안에서 CLI 도구를 실행**합니다.
+`bash` 블록은 **일반 터미널**, `/login` 같은 슬래시 명령과 요청문은 **Copilot 입력창**에 넣습니다. Windows에서는 **WSL 안에서 CLI 도구를 실행**합니다.
 
 <a id="install"></a>
 
@@ -280,8 +280,10 @@ README.ko.md, docs/instructor.ko.md, docs/environment.ko.md, docs/troubleshootin
 
 6. 주의:
    - LAB_LANGUAGE=ko를 유지하고, 제공 스크립트만 설정·상태·결과 파일을 만들게 해.
-   - 중복 생성이나 모델·정책·정답·평가기·데이터·평가 규칙·코드·스캐폴드·label 변경, 낮은 점수를 통과시키려는 재실행은 하지 마.
-   - 8단계 전에는 holdout을 열지 말고(그 뒤에는 국문만 평가), 포털 확인 전 진행·정리, 녹화, 다른 저장소 작업은 하지 마.
+   - 중복 생성이나 모델·정책·정답·평가기·데이터·평가 규칙·코드·스캐폴드·label 변경은 하지 마.
+   - 낮은 점수를 통과시키려고 재실행하지 마.
+   - 8단계 전에는 holdout을 열지 마(그 뒤에는 국문만 평가).
+   - 포털 확인 전 진행·정리, 녹화, 다른 저장소 작업은 하지 마.
 ```
 
 **Copilot 입력 — Playwright가 연결된 경우에만:** 위 요청문 직후, 도구 실행을 승인하기 전에 별도 메시지로 보냅니다.

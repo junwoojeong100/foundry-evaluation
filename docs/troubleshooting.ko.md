@@ -5,7 +5,7 @@
 **현재 폴더와 오류 출력을 유지하고, 실습 전체를 처음부터 반복하지 않습니다.**
 - **실패 단계:** [로그인](#login) · [검색](#retrieval) · [로컬 실행](#symptom-local) · [Hosted Agent](#symptom-hosted) · [calibration](#calibration) · [수집](#collection-retry) · [평가](#evaluation-retry) · [정리](#cleanup-recovery).
 - **증거·선택 단계:** [baseline 전부 통과](#no-failures) · [trace](#telemetry) · [포털](#portal-differs) · [완료 판단](#symptom-completion) · [레벨 2·3](#levels).
-- **확실하지 않으면:** [증상별 확인](#symptoms)을 먼저 봅니다. label이나 상태 파일이 있으면 [저장 상태로 이어가기](#resume), 환경 준비 실패라면 [환경 소유자 이어가기](#setup-resume)를 봅니다.
+- **확실하지 않으면:** [증상별 확인](#symptoms)을 먼저 봅니다. label이나 상태 파일이 있으면 [저장 상태로 이어가기](#resume), 환경 준비 실패라면 [환경 소유자 이어가기](#setup-resume)를 봅니다(환경 소유자만).
 - 참가자 복구 명령은 기존 실습 폴더의 저장소 루트에서 실행합니다. 환경 소유자 복구는 실행 폴더를 따로 안내합니다.
 - 가상환경을 활성화하고 [README 터미널 복원](../README.ko.md#resume-shell)으로 `AZURE_CONFIG_DIR`를 복원합니다.
 
@@ -16,8 +16,8 @@
 | 명령이 예외·오류로 끝남, 응답 누락·중복, 또는 평가기 오류 | 다음 단계를 중단하고 [실패한 명령부터 복구](#resume) |
 | `collect`가 `business=False`를 출력함 | 업무 검사 실패이지 명령 실패가 아닙니다. 수집이 오류 없이 끝났다면 해당 평가로 진행합니다. |
 | 평가 run은 완료됐고 행 오류는 없지만 유효 점수가 낮음 | 유효한 낮은 점수는 결과입니다. 기록하고 돌아갑니다: `baseline` [6단계](../README.ko.md#lab-d), `improved` [7-4](../README.ko.md#compare-results), `holdout` [8-3](../README.ko.md#holdout-results). |
-| trace가 아직 0건이거나 일부만 보임 | [수집 지연·조회 기간·권한 확인](#telemetry). 전체 증거가 확인됐다고 판정하지 않음 |
-| 녹화 화면만 봄 | 직접 실행 완료가 아니라 관찰로 기록 |
+| trace가 아직 0건이거나 일부만 보임 | [수집 지연·조회 기간·권한 확인](#telemetry). 전체 증거가 확인됐다고 판정하지 않습니다. |
+| 녹화 화면만 봄 | 직접 실행 완료가 아니라 관찰로 기록합니다. |
 
 강사에게는 실패한 명령, 오류, 단계, 결과 폴더 이름만 전달합니다. 암호·토큰·`.env` 전체·개인 정보 화면은 공유하지 않습니다.
 
@@ -25,8 +25,7 @@
 
 ## 실패한 명령부터 이어가기
 
-**코드 블록 전체를 반복하지 않습니다.** 예를 들어 `collect`는 성공했고 `evaluate`만 멈췄다면 `collect`부터 다시 실행하면 안 됩니다.
-아래에서 멈춘 위치를 고릅니다. 수집을 새로 해야 할 때만 새 label을 쓰며, 평가·trace 복구는 기존 label을 유지합니다.
+**코드 블록 전체를 반복하지 말고, 아래 표에서 멈춘 위치만 고릅니다.** 예를 들어 `collect`는 성공했고 `evaluate`만 멈췄다면 `collect`부터 다시 실행하지 않습니다. 수집을 새로 해야 할 때만 새 label을 쓰며, 평가·trace 복구는 기존 label을 유지합니다.
 
 | 멈춘 위치 / 메시지 | 이어갈 곳 |
 |---|---|
@@ -51,9 +50,7 @@
 | `evaluation-results.json` | 모든 응답에 대응하는 행과 각 행의 두 evaluator 결과 | 행별 평가. Trace 확인과는 별개 |
 | `telemetry.json` | `complete: true`, 일치하는 `expected_trace_count` / `observed_trace_count` | 해당 label의 trace |
 
-처음 미완료인 단계의 복구 안내를 따릅니다. Manifest 하나의 완료를 전체 실습 완료로 해석하지 않습니다.
-
-다른 실습이나 언어를 시작할 때만 미사용 이름을 받아 새 폴더를 사용합니다. 소유권·응답·trace를 지워 오류를 우회하지 않습니다. 응답 수집이 아니라 Azure 환경을 만들다가 중단했다면 [환경 준비 복구](#setup-resume)를 따릅니다.
+처음 미완료인 파일의 복구 안내를 따릅니다. manifest 하나의 완료는 전체 실습 완료가 아닙니다. 다른 실습이나 언어는 미사용 이름으로 새 폴더에서 시작하며, 소유권·응답·trace를 지워 복구하지 않습니다. Azure 환경 준비가 실패했다면 [환경 준비 복구](#setup-resume)를 따릅니다.
 
 **완료 확인:** 첫 미완료 저장 상태가 실패한 단계 하나와 맞는 복구 섹션 하나를 가리킵니다.
 
@@ -384,7 +381,7 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 평가 run 상태는 **`src/agent/.foundry/results/suite/`** 또는 **`src/agent/.foundry/results/level3/`**에 있습니다.
 아래에서 정확한 메시지를 고릅니다.
 이 복구는 5–9단계 증거와 소유권 기록을 바꾸지 않습니다. 별도 실험은 새 폴더에서 시작합니다.
-낮은 유효 점수·공격 성공·`Quality gate FAILED`는 재시도 사유가 아닙니다. 같은 오류가 재발하면 강사에게 전달합니다.
+낮은 유효 점수·공격 성공·`Quality gate FAILED`·`Composite gate FAILED`는 재시도 사유가 아닙니다. 같은 오류가 재발하면 강사에게 전달합니다.
 
 가장 흔한 실패는 아래 표에서 바로 고릅니다.
 
@@ -410,7 +407,7 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 | `Evaluator ... already exists and is not owned by this folder` | 내 소유로 기록되지 않은 평가기입니다. 강사와 충돌을 확인하며 지금 폴더의 `LAB_PREFIX` 변경·다른 평가기 삭제로 우회하지 않습니다. |
 | `... was registered with a different definition` 또는 `The suite's evaluators changed ...` | 강사와 등록 당시 정의·현재 코드를 비교합니다. 확인된 원본에서만 복구하고, 등록된 평가기를 고쳐 맞추지 않습니다. |
 | `Saved ... responses changed after their suite run was created` | 변경 파일과 검증된 원본을 강사와 대조합니다. 원본이 없으면 중단하며, 재수집·hash 편집으로 맞추지 않습니다. |
-| `... rubric results failed`, `... stress-test results failed`, `... red-team results failed` | 원인을 해결한 뒤 [상태 파일 복구](#level-state-recovery)를 따릅니다. 낮은 점수와 실행 오류를 구분합니다. |
+| `... rubric results failed`, `... stress-test results failed`, `... red-team results failed`, `The red-team scan returned incomplete results ...` | 원인을 해결한 뒤 [상태 파일 복구](#level-state-recovery)를 따릅니다. 낮은 점수와 실행 오류를 구분합니다. |
 | `Comparison insight failed` 또는 `Cluster insight failed` | 1분 기다린 뒤 같은 명령을 실행합니다. 실패한 인사이트만 다시 만들고, 실패한 인사이트는 `insights.json`의 `failed_attempts`에 남습니다. |
 
 **레벨 3 실행과 trace 평가**
@@ -421,8 +418,8 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 | `... already compares the rubrics on ...` 또는 `... already holds a ...-question run` | 저장된 run과 인자가 다릅니다. 메시지에 나온 기존 값으로 재개합니다. 다른 조건의 새 실험은 별도로 계획하며 기존 기록을 지우지 않습니다. |
 | HTTP `429`(Too Many Requests) 오류 | `Retry-After`가 있으면 그만큼, 없으면 1분 기다립니다. 저장된 run 상태에 맞게 재개/실패 재시도를 고릅니다. `--count`는 늘리지 않습니다. |
 | `This folder has no deployed hosted agent` | 강사와 원인을 확인합니다. 이미 정리했다면 4·6절은 **미실행**으로 기록하고 재배포하지 않습니다. 실행하지 않은 절을 레벨 3 완료로 표시하지 않습니다. |
-| `... agent calls or evaluator results failed` | 저장된 실제 오류를 해결한 뒤 `evaluate-agent --split dev --retry-failed`를 실행합니다. 실패한 모델 run만 교체되고, 이전 run은 `attempts`에 남습니다. |
-| `The <model> run ended as failed: ... Error code: 500` | 서비스 내부 오류입니다. 1분 기다린 뒤 `evaluate-agent --retry-failed`를 실행합니다. |
+| `... agent calls or evaluator results failed` | 저장된 실제 오류가 있으면 해결한 뒤(오류 없이 한 평가기의 결과만 빠진 run도 있음) `python scripts/workshop.py evaluate-agent --split dev --retry-failed`를 실행합니다. 실패한 모델 run만 교체되고, 이전 run은 `attempts`에 남습니다. |
+| `The <model> run ended as failed: ... Error code: 500` | 서비스 내부 오류입니다. 1분 기다린 뒤 `python scripts/workshop.py evaluate-agent --retry-failed`를 실행합니다. |
 | `evaluate-traces`가 `ApplicationInsightsAccessDenied` 같은 접근 오류로 끝남 | 강사가 [trace 접근 준비](instructor.ko.md#levels)를 마친 뒤 [상태 파일 복구](#level-state-recovery)를 따릅니다. |
 | `... traces were not found ... evaluator results failed` | 누락 trace 수가 0보다 크면 반영·권한을 확인합니다. 누락 0건인데 평가 오류가 있으면 judge 오류를 확인합니다. 원인 해결 뒤 [상태 파일 복구](#level-state-recovery)를 따릅니다. |
 

@@ -22,10 +22,10 @@ Path: 1 install → 2 start/sign in → 3 plan and execute (Playwright first, on
 
 First action: choose a mode above, then run `copilot --version` in [step 1](#install). Before step 3, confirm only this:
 
-- Tools: [basic workshop tools](instructor.en.md#tools). Add [Node.js/npm](https://nodejs.org/en/download) only for npm or MCP servers.
+- Tools: [basic workshop tools](instructor.en.md#tools). Add [Node.js/npm](https://nodejs.org/en/download) only for npm or MCP servers; Azure MCP, Docker, and [Azure Skills](#azure-skills) are not required.
 - `.env`: choose exactly one source: [prepared environment](../README.md#workspace-settings), [existing foundation](instructor.en.md#existing-settings), or [new environment](environment.en.md#initial-settings).
 - Sign-ins: GitHub, Azure CLI, azd, and the portal are separate; tools grant no Azure permissions.
-- Costs: send the 3-2 execution prompt only after the 3-1 plan shows the billable Azure resources, their scope, and expected charges. Copilot CLI usage follows your GitHub Copilot plan. Azure MCP, Docker, and [Azure Skills](#azure-skills) are not required.
+- Costs: send the 3-2 execution prompt only after the 3-1 plan shows the billable Azure resources, their scope, and expected charges. Copilot CLI usage follows your GitHub Copilot plan.
 
 Run `bash` blocks in a **regular terminal**. Enter slash commands and prompts in the **Copilot input**. On Windows, install and run CLI tools **inside WSL**.
 
@@ -281,8 +281,10 @@ Execute the English workshop within the reviewed scope.
 
 6. Guardrails:
    - Keep LAB_LANGUAGE=en; only the supplied scripts create configuration, state, and result files.
-   - Do not create duplicates, change models, policies, references, evaluators, data, evaluation rules, code, scaffolding, or labels, or rerun valid low scores to force a pass.
-   - Do not open holdout before step 8 (then evaluate only English), continue or clean up before portal confirmation, record video, or work in other repositories.
+   - Do not create duplicates or change models, policies, references, evaluators, data, evaluation rules, code, scaffolding, or labels.
+   - Do not rerun valid low scores to force a pass.
+   - Do not open holdout before step 8 (then evaluate only English).
+   - Do not continue or clean up before portal confirmation, record video, or work in other repositories.
 ```
 
 **Copilot input — only if Playwright is connected:** send this as a separate message right after the prompt above, before approving any tool call.

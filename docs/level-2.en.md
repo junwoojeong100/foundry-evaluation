@@ -4,7 +4,7 @@
 
 **What you finish with in about 40 minutes:** a comparison of the same 36 saved V1 and V2 responses, with an explanation that **distinguishes business checks from LLM scores**.
 
-**Route:** [1. Register two evaluators](#register-evaluators) → [2. Score the saved responses](#evaluate-suite) → [3. Compare runs and failures](#insights) → [report](#finish-level-2).
+**Route:** [1. Register two evaluators](#register-evaluators) → [2. Score the saved responses](#evaluate-suite) → [3. Check the judges](#judge-agreement) → [4. Compare runs and failures](#insights) → [report](#finish-level-2).
 
 | Before you start | Required state |
 |---|---|
@@ -15,7 +15,7 @@
 
 **Where to run:** your existing **Terminal A, at the repository root**. In a new terminal, [restore the environment only](../README.md#resume-shell). Do not change `.env` names or the V2 instructions. If you used recovery labels, replace `baseline` and `improved` below with those labels.
 
-**Read pass counts in section 2; read mean scores and failure causes in section 3.** Add both to your report. Example scores and the optional portal view are not required steps.
+**Read pass counts in section 2, judge agreement in section 3, and mean scores and failure causes in section 4.** Add all three to your report. Example scores and the optional portal view are not required steps.
 
 <a id="register-evaluators"></a>
 
@@ -80,7 +80,7 @@ This replaces only failed runs. Do not use it for low valid scores. If the same 
 **Read your table in this order:**
 
 1. **Start with `business_contract`.** Record V1 → V2 pass counts and check that they match your local business checks from 7-4.
-2. **Compare `policy_rubric` with `policy_rubric_no_evidence`.** The former receives the question plus retrieved policy text; the latter receives only the question. Note whether the same rubric's pass counts changed when the judge had evidence.
+2. **Compare `policy_rubric` with `policy_rubric_no_evidence`.** `policy_rubric` receives the question plus retrieved policy text; `policy_rubric_no_evidence` receives only the question. Note whether the same rubric's pass counts changed when the judge had evidence.
 3. **Record one change in the built-in quality, agent, RAG, or safety rows** (or `none`). These scores do not replace the business checks for decisions, amounts, and citations.
 
 <details>
@@ -122,11 +122,56 @@ Details: [built-in evaluators](https://learn.microsoft.com/azure/foundry/concept
 
 </details>
 
-**Next:** [3. Compare runs and cluster failures](#insights)
+**Next:** [3. Check each judge against the business checks](#judge-agreement)
+
+<a id="judge-agreement"></a>
+
+## 3. Check each judge against the business checks
+
+**Terminal A:** compare every LLM judge from section 2 with `business_contract`, the exact business check, on the same 36 real responses. Step 5-1 checked the judge on only two written examples; this command reads saved results and makes no calls:
+
+```bash
+python scripts/workshop.py judge-agreement --labels baseline improved
+```
+
+**Checkpoint:** `Judge agreement with business_contract on 36 saved rows (baseline, improved); no new calls.`, a table with seven judge rows, then `Business passes that a judge failed` with row IDs or `none`.
+
+**If not:** for `Run evaluate-suite ... first`, `No saved suite output`, or `has no valid ... result`, finish section 2 first ([Level 2 and 3 recovery](troubleshooting.en.md#levels)).
+
+**Read it:**
+
+- **`judge pass + business fail`:** the judge passed an answer that failed the business checks. A judge with many of these cannot replace the business checks.
+- **`judge fail + business pass`:** the judge failed a correct answer. Before letting that judge block a release, read each listed row's answer and the judge's reason in section 2's portal run. A correct deferral with low relevance is a judge limit, not an agent failure.
+- **Do not tune a judge to agree.** Keep thresholds, rubrics, and reference answers unchanged, and note which judges may block a release and which stay diagnostic.
+
+<details>
+<summary>Recorded English result — an example</summary>
+
+```text
+Judge agreement with business_contract on 36 saved rows (baseline, improved); no new calls.
+criterion                  kind     agree  judge pass + business fail  judge fail + business pass
+policy_rubric              rubric   28/36  8                           0
+policy_rubric_no_evidence  rubric   26/36  1                           9
+groundedness               RAG      17/36  19                          0
+relevance                  RAG      18/36  17                          1
+response_completeness      quality  17/36  19                          0
+task_adherence             agent    17/36  18                          1
+intent_resolution          agent    18/36  18                          0
+Business passes that a judge failed (review each):
+  policy_rubric_no_evidence: improved-luna-D01, improved-luna-D02, improved-luna-D03, improved-sol-D03, improved-astra-D03, improved-luna-D04, improved-sol-D04, improved-luna-D05, improved-sol-D05
+  relevance: improved-sol-D04
+  task_adherence: improved-luna-D03
+```
+
+The 19 business failures are V1's 18 rows and Sol's V2 D02. The five built-in judges passed 17–19 of them, so none can replace the business checks. `policy_rubric` failed no correct answer but passed 8 failures. Without evidence, the same rubric failed 9 correct V2 answers; relevance failed Sol's D04, a correct deferral.
+
+</details>
+
+**Next:** [4. Compare runs and cluster failures](#insights)
 
 <a id="insights"></a>
 
-## 3. Compare the runs and cluster the failures
+## 4. Compare the runs and cluster the failures
 
 **Terminal A:** Foundry compares section 2's `baseline` and `improved` runs and groups the `improved` run's failures into clusters:
 
@@ -143,7 +188,7 @@ python scripts/workshop.py insights --baseline baseline --candidate improved
 
 **Read it:**
 
-- **Section 2 is pass counts; section 3 is mean scores.** `delta` is candidate minus baseline. A `business_contract` mean of `0.60` means some checks passed, not that 60% of responses passed.
+- **Section 2 is pass counts; this section is mean scores.** `delta` is candidate minus baseline. A `business_contract` mean of `0.60` means some checks passed, not that 60% of responses passed.
 - **`Changed` means different, not automatically better.** Use `delta`, the evaluator's desired direction, and the small 18-row sample size ([statistical comparison legend](https://learn.microsoft.com/azure/foundry/how-to/evaluate-results#compare-the-evaluation-results)).
 - **For clusters, read the failing evaluator first.** `policy_rubric_no_evidence` often means the judge lacked evidence; `business_contract` means a specific contract check failed.
 
@@ -163,7 +208,7 @@ Ten of the twelve clustered V2 samples came from `policy_rubric_no_evidence`, fo
 
 </details>
 
-**Next:** [Finish Level 2](#finish-level-2). The [optional portal comparison](#optional-compare-the-runs-in-the-portal) is at the end of this page; do it before cleanup.
+**Next:** [Finish Level 2](#finish-level-2). Optional: before cleanup, you can [compare the runs in the portal](#optional-compare-the-runs-in-the-portal) as a second check.
 
 <a id="finish-level-2"></a>
 
@@ -173,11 +218,12 @@ Ten of the twelve clustered V2 samples came from `policy_rubric_no_evidence`, fo
 
 ```text
 Business contract: .../18 -> .../18; rubric with evidence: .../18 -> .../18
+Judges that may block a release: ...; diagnostic only: ... (judge agreement)
 What the generic and safety evaluators told me: ...
 Comparison/cluster: evaluator=...; delta/effect=...; verified failure cause, or no failures=...
 ```
 
-**Checkpoint:** sections 1–3 finished, and your notes distinguish pass counts from mean scores when interpreting your results. Low valid scores are not incomplete execution; missing results due to errors are.
+**Checkpoint:** sections 1–4 finished, and your notes distinguish pass counts from mean scores when interpreting your results. Low valid scores are not incomplete execution; missing results due to errors are.
 
 **If not:** return to the first unfinished section and resume only its command; do not repeat finished commands ([Level 2–3 recovery](troubleshooting.en.md#levels)).
 

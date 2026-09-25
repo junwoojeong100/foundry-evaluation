@@ -198,6 +198,45 @@ class DocumentationTests(unittest.TestCase):
                     checked += 1
         self.assertGreater(checked, 0, "No CLI examples were checked.")
 
+    def test_ci_files_are_inactive_valid_and_use_real_commands(self):
+        import yaml
+        workshop = importlib.import_module("workshop")
+        with patch.object(workshop, "load_settings_env"), patch.object(
+            argparse.ArgumentParser, "parse_args", autospec=True, side_effect=SystemExit(0),
+        ) as parse:
+            with self.assertRaises(SystemExit):
+                workshop.main()
+        parser = parse.call_args.args[0]
+        templates = sorted((ROOT / "ci").glob("*.yml"))
+        scripts = sorted((ROOT / "ci").glob("*.sh"))
+        self.assertTrue(templates and scripts, "The Level 3 guide links to the CI template and its stage script.")
+        found = []
+        for path in [*templates, *scripts]:
+            text = path.read_text(encoding="utf-8")
+            with self.subTest(file=path.name):
+                if path.suffix == ".yml":
+                    workflow = yaml.safe_load(text)
+                    # PyYAML reads the bare key `on` as True.
+                    self.assertIn("workflow_dispatch", workflow.get("on", workflow.get(True)))
+                    self.assertTrue(workflow["jobs"])
+                    for stage in re.findall(r"bash (ci/[\w-]+\.sh) ([\w-]+)", text):
+                        self.assertTrue((ROOT / stage[0]).is_file(), stage)
+                        self.assertIn(f"  {stage[1]})", (ROOT / stage[0]).read_text(encoding="utf-8"))
+                else:
+                    result = subprocess.run(["bash", "-n", str(path)], text=True, capture_output=True, check=False)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                for match in COMMANDS.finditer(text):
+                    script, arguments = match[1], shlex.split(match[2] or "")
+                    found.append(arguments)
+                    self.assertEqual(script, "workshop")
+                    with contextlib.redirect_stderr(io.StringIO()), contextlib.redirect_stdout(io.StringIO()):
+                        try:
+                            parser.parse_args(arguments)
+                        except SystemExit as error:
+                            self.assertEqual(error.code, 0, arguments)
+        self.assertTrue(any(arguments[:2] == ["gate", "--composite"] for arguments in found))
+        self.assertIn(["verify", "--baseline", "baseline", "--candidate", "improved", "--holdout", "holdout"], found)
+
     def test_english_and_korean_guides_use_the_same_commands(self):
         self.assertEqual(
             {path.name.removesuffix(".en.md") for path in self.documents if path.name.endswith(".en.md")},

@@ -8,15 +8,18 @@
 |---|---|---|
 | 용어 또는 결과 label | [용어](#terms), [판단값](#decision-values) | [시작](../README.ko.md#start) 또는 [6단계 review](../README.ko.md#lab-d) |
 | 모델 또는 배포 이름 | [모델과 배포 이름](#model-names) | [5단계](../README.ko.md#lab-c) 또는 [8단계](../README.ko.md#lab-f) |
-| 근거 필드, 평가 게이트, trace, Monitor | [검색 결과 읽기](#retrieval-evidence), [평가 범위](#evaluation-scope), [Trace와 Monitor](#trace-monitor) | [6단계 review](../README.ko.md#lab-d), [8단계 holdout](../README.ko.md#lab-f), [9단계 evidence](../README.ko.md#lab-g) |
-| 배경만 확인 | [시나리오](#scenario), [실행 경로](#execution-path), [엔드포인트](#endpoints), [언어별 실행 분리](#language), [선택 배경](#background) | [시작](../README.ko.md#start) |
+| 근거 필드 | [검색 결과 읽기](#retrieval-evidence) | [6단계 review](../README.ko.md#lab-d) |
+| 평가 게이트 | [평가 범위](#evaluation-scope) | [8단계 holdout](../README.ko.md#lab-f) |
+| trace 또는 Monitor | [Trace와 Monitor](#trace-monitor) | [9단계 evidence](../README.ko.md#lab-g) |
+| 배경 가정 | [시나리오](#scenario), [선택 배경](#background) | [시작](../README.ko.md#start) |
+| 실행·언어 경계 | [실행 경로](#execution-path), [엔드포인트](#endpoints), [언어별 실행 분리](#language) | [시작](../README.ko.md#start) |
 | 준비·복구 | [강사 준비](instructor.ko.md), [문제 해결](troubleshooting.ko.md) | [시작](../README.ko.md#start) |
 
 <a id="terms"></a>
 
 ## 먼저 알아둘 용어
 
-**짧은 답:** 도구, 에이전트, 모델, 데이터, 결과 label 구분입니다.
+**짧은 답:** 이 이름들은 도구, 배포된 에이전트, 모델, 데이터, 결과 label을 구분합니다.
 
 **도구와 실행 환경**
 
@@ -27,7 +30,7 @@
 | 요청별 에이전트 | 요청마다 Sol, Luna, Astra 중 하나를 호출하는 Python Agent Framework 객체. 투표하지 않습니다. |
 | Foundry | 실습용 Azure 서비스와 포털. |
 | Agent Framework | Python 에이전트 라이브러리. |
-| knowledge base / KB | 회사 문서 검색 지식 계층. |
+| knowledge base / KB | 검색 가능한 정책 근거. |
 | Hosted Agent | Azure 관리형 환경의 Python 코드. |
 
 **모델과 label**
@@ -48,7 +51,7 @@
 | judge | 답변 텍스트 채점 모델. |
 | calibration | judge 확인 예제 2개. |
 | native 평가 | Foundry 기본 평가입니다. 답변 텍스트를 채점합니다. |
-| 업무 검사 | Python이 판단값, 금액, 인용 계약을 확인합니다. native 평가 점수를 대신하지 않음. |
+| 업무 검사 | Python이 판단값, 금액, 인용 계약을 확인합니다. native 평가 점수가 이를 대신하지 않습니다. |
 | rubric | 채점 기준 |
 | 품질 게이트 | 모델별 집계 기준. 운영 승인 아님. |
 
@@ -94,7 +97,7 @@
 
 에이전트는 안내만 하며 예약, 승인, 지급, 예외 승인을 실행하지 않습니다. 정책, 기준 정답, calibration 예제는 합성 교육 자료이며 승인된 회사 규정이 아닙니다.
 
-이 루프는 지침과 검증 체계를 개선합니다. trace는 모델 가중치를 학습시키지 않습니다. [레벨 3](level-3.ko.md#continuous-eval)은 trace를 일정 평가하지만 fine-tuning, RL, 자동 재학습, 자동 운영 배포는 범위 밖입니다.
+이 루프는 지침과 검증 체계를 개선합니다. trace는 모델 가중치를 학습시키지 않습니다. [레벨 3](level-3.ko.md#continuous-eval)은 trace를 정기적으로 평가하지만 fine-tuning, RL, 자동 재학습, 자동 운영 배포는 범위 밖입니다.
 
 ↩ [시작](../README.ko.md#start).
 
@@ -106,8 +109,8 @@
 
 | 이름 | 확인할 곳 | 사용하는 위치 |
 |---|---|---|
-| 모델 키 | `sol` | 에이전트 요청의 `model_key`, 결과 집계 |
-| 모델 ID와 버전 | `gpt-6-sol` / `2026-09-22` | `preflight`가 대조하는 고정 모델 |
+| 모델 키 | `sol`, `luna`, `astra` | 에이전트 요청의 `model_key`, 결과 집계 |
+| 모델 ID와 버전 | 아래 표 | `preflight`가 대조하는 고정 모델 |
 | Azure 배포 이름 | 강사가 전달한 `.env` 또는 Foundry **Build → Models** | `.env`의 `MODEL_SOL_DEPLOYMENT`, `MODEL_LUNA_DEPLOYMENT`, `MODEL_ASTRA_DEPLOYMENT`, 보조 배포 `LAB_AUX_DEPLOYMENT`. 모델 키·ID와 같을 필요 없음 |
 
 새 조의 `LAB_PREFIX`를 바꾸어도 공유 모델의 배포 이름은 바뀌지 않습니다.
@@ -168,7 +171,9 @@
 
 `LAB_LANGUAGE=ko`가 기본값입니다. `LAB_LANGUAGE=en`은 영어 정책, 질문, 지침, 모델 요청 label, calibration 예제, Hosted 응답 메타데이터를 선택합니다.
 
-언어마다 작업 폴더와 리소스 접두사를 분리합니다. 한국어 데이터는 `data/`, 영어 데이터는 `data/en/`에 있고 영어 지침은 `src/agent/prompts/en/`에 있습니다. 소유권, 응답, 평가, 원격 분석 요약, 회귀 출처 이력에는 언어가 기록됩니다. 언어 필드가 없는 기록은 **한국어**입니다. 번역해도 문서 ID·날짜·금액·판단값·인용 규칙은 유지하지만, 텍스트가 달라지면 데이터·지침·검색 근거의 hash는 달라집니다. 언어별 결과를 합치거나 한국어 측정값을 영어 실측 결과로 제시하지 마세요.
+언어마다 작업 폴더와 리소스 접두사를 분리합니다. 한국어 데이터는 `data/`에 있고 한국어 지침은 현재 위치를 유지합니다. 영어 데이터는 `data/en/`, 영어 지침은 `src/agent/prompts/en/`에 있습니다.
+
+소유권, 응답, 평가, 원격 분석 요약, 회귀 출처 이력에는 언어가 기록됩니다. 언어 필드가 없는 기록은 **한국어**입니다. 번역해도 문서 ID·날짜·금액·판단값·인용 규칙은 유지하지만, 텍스트가 달라지면 데이터·지침·검색 근거의 hash는 달라집니다. 언어별 결과를 합치거나 한국어 측정값을 영어 실측 결과로 제시하지 마세요.
 
 ↩ [시작](../README.ko.md#start).
 
@@ -204,9 +209,9 @@ Foundry Indexes 목록, knowledge source 고급 설정, 실제 Azure Search inde
 
 ## 평가와 채택 기준
 
-**짧은 답:** 레벨 1은 48개 응답과 trace, 고정 평가기, 여섯 개의 `true` 업무 게이트, 별도 native 평가 점수가 필요합니다. 운영 승인이 아닙니다.
+**짧은 답:** 레벨 1에서는 저장된 응답 48개와 trace 48개, 고정 평가기, 모델별 dev·holdout 업무 게이트 6개 통과를 확인하고, native 평가 점수는 따로 읽습니다. 운영 승인이 아닙니다.
 
-**아래 기준은 기본 10단계 실습(레벨 1)용입니다.** [레벨 2](level-2.ko.md)는 저장된 응답에 사용자 지정 기준을 추가하고, [레벨 3](level-3.ko.md)은 모델 배포, 새 에이전트 호출, trace도 평가합니다. 입력과 기준값이 다르므로 본평가 48개 응답과 점수를 합치지 않습니다.
+**아래 기준은 기본 10단계 실습(레벨 1)용입니다.** [레벨 2](level-2.ko.md)와 [레벨 3](level-3.ko.md)은 입력과 기준값이 다르므로 본평가 48개 응답과 점수를 합치지 않습니다.
 
 | 평가 | 확인하는 것 | 대신하지 못하는 것 |
 |---|---|---|
@@ -238,17 +243,17 @@ Foundry Indexes 목록, knowledge source 고급 설정, 실제 Azure Search inde
 
 ## Trace와 Monitor
 
-**짧은 답:** trace 확인은 본평가 응답마다 성공한 unsampled trace가 있음을 증명하고, 포털 대시보드는 더 넓은 운영 집계입니다.
+**짧은 답:** trace 확인은 본평가 응답마다 sampling 없이 수집된 성공 trace가 있음을 증명하고, 포털 대시보드는 더 넓은 운영 집계입니다.
 
 `queries/monitor.kql`은 실습 에이전트의 `requests`를 고르고 `operation_Id`로 `dependencies`를 연결합니다. framework span과 custom span을 중복 모델 호출로 세지 않습니다.
 
-리포지토리 루트에서 실행:
+baseline 예시는 리포지토리 루트에서 실행합니다(9단계에서 돌아왔다면 가이드가 지정한 label을 씁니다).
 
 ```bash
 python scripts/workshop.py monitor --label baseline
 ```
 
-**완료 확인:** JSON 출력에 run의 `expected_trace_count`, 같은 `observed_trace_count`, `complete: true`가 나옵니다. **다르면:** 중단한 실행에만 `--hours 24`를 붙이고 [9단계](../README.ko.md#lab-g)로 돌아갑니다.
+**완료 확인:** JSON 출력에 run의 `expected_trace_count`, 그와 일치하는 `observed_trace_count`, `complete: true`가 나옵니다. **다르면:** 중단한 실행에만 `--hours 24`를 붙이고 [9단계](../README.ko.md#lab-g)로 돌아갑니다.
 
 `monitor`는 기본으로 최근 2시간을 조회합니다. `--hours`는 같은 trace coverage 조회의 KQL 필터와 API 시간 범위를 함께 늘리며, agent/run 필터와 정확한 trace 수·sampling 검사는 유지됩니다. 포털의 날짜 선택이나 `azd ai agent monitor` 로그 스트리밍과는 다른 기능입니다.
 

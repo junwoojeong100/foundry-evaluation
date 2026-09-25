@@ -43,7 +43,7 @@
 
 이 도구는 Git commit으로 소스 버전을 확인하므로 ZIP이 아니라 **아직 실습하지 않은 Git clone**에서 실행합니다.
 
-**명령은 두 폴더에서 실행하고, `RUN_DIR`는 기록만 저장합니다.**
+**명령을 직접 실행하는 위치는 `REPO_ROOT`와 `RUN_DIR/workshop` 두 곳뿐이며, `RUN_DIR`는 기록 경로로만 씁니다.**
 
 | 경로 | 역할 | 명령을 실행하는 단계 |
 |---|---|---|
@@ -185,7 +185,7 @@ python -m unittest discover -s tests -v
 
 ### 2-1. Azure CLI와 azd 로그인
 
-**`$RUN_DIR/workshop`**에서 로그인합니다. 그래야 이후 한국어 에이전트가 이 폴더의 격리된 CLI 프로필을 씁니다. 아직 기반 서비스가 없으므로 README의 `preflight`·`bind`는 실행하지 않습니다.
+**`$RUN_DIR/workshop`**에서 로그인합니다. 그래야 이후 한국어 실습 명령이 이 폴더의 격리된 CLI 프로필을 씁니다. 아직 기반 서비스가 없으므로 README의 `preflight`·`bind`는 실행하지 않습니다.
 
 **터미널 — 실행 폴더 (`$RUN_DIR/workshop`):** ID를 입력합니다. 이 로그인은 이 폴더의 `.azure-cli/`에만 보관합니다(공유·커밋 금지).
 
@@ -236,7 +236,7 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 
 - `identity` 출력: `requested_account_matches: true`, `configured_subscription_matches: true`, `configured_tenant_matches: true`, `subscription_state: Enabled`, `default_subscription_changed: false`
 - `ownership` 출력: `existing_groups_explicitly_preserved: true`
-- `model-capacity` 출력: 세 후보와 보조 모델의 GlobalStandard 레코드
+- `model-capacity` 출력: `gpt-6-sol`·`gpt-6-luna`·`gpt-6-astra`와 보조 모델 `gpt-5.4-mini`의 GlobalStandard 레코드
 
 **다르면:** 자원을 생성하지 않습니다. 계정 불일치는 위 로그인 확인, 권한·용량 오류는 환경 소유자와 확인한 뒤 [실패한 준비 명령만 복구](troubleshooting.ko.md#setup-resume)합니다. 구독·모델·리전을 임의로 바꾸지 않습니다.
 
@@ -272,7 +272,8 @@ Subscription
 
 **Resources**에는 이번 실행이 만든 이름만 있고, 이전·공유 그룹의 자원은 없습니다. **Tags**에는 `workshop=foundry-evaluation`, `cleanup-scope=exclusive`, `purpose=synthetic-data-only`, `run=$RUN_ID`가 있습니다.
 
-Search는 Basic 1 replica / 1 partition입니다. `semanticSearch`와 `knowledgeRetrieval`의 `free` 설정이 **Search 가동·모델 호출까지 무료라는 뜻은 아닙니다.** Portal의 ARM **Deployments** 목록은 Foundry 모델 배포 목록과 다릅니다.
+- Search는 Basic 1 replica / 1 partition입니다. `semanticSearch`와 `knowledgeRetrieval`의 `free` 설정이 **Search 가동·모델 호출까지 무료라는 뜻은 아닙니다.**
+- Portal의 ARM **Deployments** 목록은 Foundry 모델 배포 목록과 다릅니다.
 
 **다르면:** 출력의 실패한 명령과 [기존 생성 기록을 확인](troubleshooting.ko.md#setup-resume)합니다. 성공한 생성 명령부터 반복하거나 새 그룹을 만들지 않습니다. Search의 대기 시간 초과만 발생했다면 바로 아래 복구를 사용합니다.
 
@@ -299,7 +300,12 @@ python scripts/provision_environment.py search-status --run-dir "$RUN_DIR"
 
 ## 4. 필요한 권한과 연결 준비
 
-역할과 연결은 이번 실행의 새 자원에만 만듭니다. `user-*` 명령 4개는 **2단계에서 검증한 사용자 한 명**에게만 새 프로젝트·계정·Search 범위의 역할을 부여합니다. 다른 참가자는 [강사의 권한 체크리스트](instructor.ko.md#access)에 따라 별도로 준비합니다. `project-monitor`는 프로젝트 ID에 원격 분석 조회 권한을 주고, 두 연결 명령은 keyless Microsoft Entra(`AAD`) Search 연결과 metadata에 실제 `ResourceId`를 기록한 App Insights 연결을 만듭니다. 에이전트 인스턴스 ID는 나중에 생기며, [README 4단계](../README.ko.md#deploy)의 `grant-agent-access`에서 Search/model 권한을 부여합니다. 넓은 Owner 권한은 주지 않습니다.
+이 단계는 이번 실행의 새 자원에만 필요한 권한과 연결을 만듭니다.
+
+- `user-*` 명령 4개는 **2단계에서 검증한 사용자 한 명**에게만 새 프로젝트·계정·Search 범위의 역할을 부여합니다. 다른 참가자는 [강사의 권한 체크리스트](instructor.ko.md#access)에 따라 별도로 준비합니다.
+- `project-monitor`는 프로젝트 ID에 원격 분석 조회 권한을 줍니다.
+- 두 연결 명령은 keyless Microsoft Entra(`AAD`) Search 연결과, metadata에 실제 `ResourceId`를 기록한 App Insights 연결을 만듭니다.
+- 에이전트 인스턴스 ID는 나중에 생깁니다. [README 4단계](../README.ko.md#deploy)의 `grant-agent-access`로 Search/model 권한을 부여하며, 넓은 Owner 권한은 주지 않습니다.
 
 **터미널 — 원래 clone (`$REPO_ROOT`):**
 
@@ -408,7 +414,7 @@ python scripts/workshop.py calibrate
 **다르면:** README 1단계를 시작하지 말고 선택한 전달 행을 먼저 완료합니다.
 
 - `LAB_LANGUAGE`를 바꾸거나 기존 지식 객체를 덮어쓰지 않습니다. 참가자 `cleanup`은 그 폴더의 소유 객체만 정리합니다.
-- 환경 소유자는 남은 비용과 결과 범위를 관리합니다. 결과 해석은 [평가 방법과 개선 결과](validation.ko.md)를 봅니다.
+- 환경 소유자는 기반 서비스·Search·로그·보조 모델 비용과 [한국어 결과 범위 질문](validation.ko.md)을 관리합니다.
 
 <details>
 <summary>참고: 준비 확인이 필요한 이유</summary>
@@ -432,7 +438,7 @@ python scripts/workshop.py calibrate
 
 | 환경 | 선택할 경로 |
 |---|---|
-| 기존·공유 환경 또는 다음 참가자/수업이 사용할 그룹 | **기반 서비스와 보조 배포를 보존.** 담당자가 잔여 비용·보존 기간·최종 종료일을 관리합니다. 아래 그룹 삭제는 하지 않습니다. |
+| 기존·공유 환경 또는 다음 참가자/수업이 사용할 그룹 | **기반 서비스와 보조 배포를 보존합니다.** 담당자가 잔여 비용·보존 기간·최종 종료일을 관리합니다. 아래 그룹 삭제는 하지 않습니다. |
 | 이 문서의 도구로 새로 만든 **본인 전용 그룹**, 다른 사용자·후속 실습 없음 | 아래 소유권 확인 후 **그 그룹만** 최종 삭제할 수 있습니다. |
 | 생성 기록이 없거나 소유권·사용자가 불명확함 | 중단하고 환경 소유자에게 확인합니다. 이름·태그만으로 삭제하지 않습니다. |
 

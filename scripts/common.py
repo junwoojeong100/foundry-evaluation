@@ -181,6 +181,11 @@ def runtime_env() -> dict[str, str]:
 
 def binding() -> dict[str, str]:
     config = RuntimeConfig.from_env()
+    pinned = os.environ.get("LAB_AGENT_VERSION", "").strip()
+    if pinned:
+        # A CI runner has no azd environment; it evaluates a version that the workshop folder already deployed.
+        endpoint = f"{config.project_endpoint}/agents/{config.agent_name}/endpoint/protocols/invocations?api-version=v1"
+        return {"name": config.agent_name, "version": pinned, "endpoint": endpoint}
     values = azd("env", "get-values")
     if values.get("AZURE_SUBSCRIPTION_ID") != required("AZURE_SUBSCRIPTION_ID"):
         raise ValueError("azd is bound to a different subscription.")

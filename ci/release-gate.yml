@@ -1,0 +1,156 @@
+# GitHub Actions release pipeline for the workshop (docs/level-3.en.md#release-gate).
+# GitHub runs workflows only from .github/workflows/, so this file does nothing until you copy it there.
+# The evaluate job signs in with OpenID Connect and runs ci/evaluate-candidate.sh against agent versions that
+# a workshop folder already deployed. The gate job reads the saved results only and makes no Azure calls.
+# Setup (identity, roles, repository variables): docs/level-3.en.md#ci-setup
+name: release-gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseline_version:
+        description: Hosted agent version deployed with V1
+        required: true
+        default: "1"
+      candidate_version:
+        description: Hosted agent version deployed with V2, the release candidate
+        required: true
+        default: "2"
+      review_row_id:
+        description: Row ID you reviewed in step 6, for example baseline-sol-D01
+        required: true
+      review_reason:
+        description: The review reason you recorded in step 6
+        required: true
+      red_team:
+        description: Run Level 3 section 3 (only if your organization approved red teaming)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      # A federated identity signs in as its client ID, which the workshop checks in place of a user name.
+      AZURE_EXPECTED_USERNAME: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      AZURE_AI_ACCOUNT_NAME: ${{ vars.AZURE_AI_ACCOUNT_NAME }}
+      AZURE_AI_PROJECT_NAME: ${{ vars.AZURE_AI_PROJECT_NAME }}
+      FOUNDRY_PROJECT_ENDPOINT: ${{ vars.FOUNDRY_PROJECT_ENDPOINT }}
+      AZURE_SEARCH_NAME: ${{ vars.AZURE_SEARCH_NAME }}
+      AZURE_SEARCH_ENDPOINT: ${{ vars.AZURE_SEARCH_ENDPOINT }}
+      AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+      AZURE_APPLICATION_INSIGHTS_NAME: ${{ vars.AZURE_APPLICATION_INSIGHTS_NAME }}
+      LAB_AGENT_NAME: ${{ vars.LAB_AGENT_NAME }}
+      # A per-run prefix keeps this run's custom evaluators apart from the workshop folder's.
+      LAB_PREFIX: ${{ vars.LAB_PREFIX }}-ci${{ github.run_number }}
+      MODEL_SOL_DEPLOYMENT: ${{ vars.MODEL_SOL_DEPLOYMENT }}
+      MODEL_LUNA_DEPLOYMENT: ${{ vars.MODEL_LUNA_DEPLOYMENT }}
+      MODEL_ASTRA_DEPLOYMENT: ${{ vars.MODEL_ASTRA_DEPLOYMENT }}
+      LAB_AUX_DEPLOYMENT: ${{ vars.LAB_AUX_DEPLOYMENT }}
+      LAB_LANGUAGE: ${{ vars.LAB_LANGUAGE }}
+      BASELINE_VERSION: ${{ inputs.baseline_version }}
+      CANDIDATE_VERSION: ${{ inputs.candidate_version }}
+      REVIEW_ROW_ID: ${{ inputs.review_row_id }}
+      REVIEW_REASON: ${{ inputs.review_reason }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install the pinned dependencies and run the offline tests
+        run: |
+          python -m pip install -r requirements.lock.txt
+          python -m unittest discover -s tests
+          cp .env.example .env
+      # Sign in before each stage: the federated token behind azure/login expires within minutes.
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Steps 5-6 - baseline and the reviewed case
+        run: bash ci/evaluate-candidate.sh baseline
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Step 7 - candidate on the same dev set
+        run: bash ci/evaluate-candidate.sh candidate
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Steps 8-9 - holdout and verification
+        run: bash ci/evaluate-candidate.sh holdout
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Level 3 section 4 - Foundry calls the candidate
+        run: bash ci/evaluate-candidate.sh agent
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Level 3 section 5 - trace evaluation
+        run: bash ci/evaluate-candidate.sh traces
+      - uses: azure/login@v2
+        if: inputs.red_team
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Level 3 section 3 - red team
+        if: inputs.red_team
+        run: bash ci/evaluate-candidate.sh red-team
+      - uses: azure/login@v2
+        if: always()
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Delete only this run's custom evaluators
+        if: always()
+        run: python scripts/workshop.py cleanup --confirm
+      - name: Save the results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workshop-results
+          path: src/agent/.foundry/results
+
+  gate:
+    needs: evaluate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install the pinned dependencies
+        run: python -m pip install -r requirements.lock.txt
+      - uses: actions/download-artifact@v4
+        with:
+          name: workshop-results
+          path: src/agent/.foundry/results
+      - name: Stop the release if a required signal fails or is missing
+        # A pipeline run cannot wait for the hourly continuous-evaluation schedule, so that signal is waived here.
+        run: |
+          if [ "${{ inputs.red_team }}" = "true" ]; then
+            python scripts/workshop.py gate --composite --waive continuous
+          else
+            python scripts/workshop.py gate --composite --waive continuous --waive red-team
+          fi

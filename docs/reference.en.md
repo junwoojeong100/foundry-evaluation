@@ -8,8 +8,11 @@ Follow [the English README](../README.md) for the execution path. Use this page 
 |---|---|---|
 | Term or result label | [terms](#terms), [decision labels](#decision-values) | [Start](../README.md#start) or [step 6 review](../README.md#lab-d) |
 | Model or deployment name | [model/deployment names](#model-names) | [step 5](../README.md#lab-c) or [step 8](../README.md#lab-f) |
-| Evidence field, evaluation gate, trace, or Monitor | [retrieval evidence](#retrieval-evidence), [evaluation scope](#evaluation-scope), [Trace and Monitor](#trace-monitor) | [step 6 review](../README.md#lab-d), [step 8 holdout](../README.md#lab-f), or [step 9 evidence](../README.md#lab-g) |
-| Background only | [scenario](#scenario), [execution path](#execution-path), [endpoints](#endpoints), [language isolation](#language), [optional background](#background) | [Start](../README.md#start) |
+| Evidence field | [retrieval evidence](#retrieval-evidence) | [step 6 review](../README.md#lab-d) |
+| Evaluation gate | [evaluation scope](#evaluation-scope) | [step 8 holdout](../README.md#lab-f) |
+| Trace or Monitor | [Trace and Monitor](#trace-monitor) | [step 9 evidence](../README.md#lab-g) |
+| Background assumption | [scenario](#scenario), [optional background](#background) | [Start](../README.md#start) |
+| Runtime or language boundary | [execution path](#execution-path), [endpoints](#endpoints), [language isolation](#language) | [Start](../README.md#start) |
 | Preparation or recovery | [instructor](instructor.en.md), [troubleshooting](troubleshooting.en.md) | [Start](../README.md#start) |
 
 <a id="terms"></a>
@@ -106,8 +109,8 @@ The loop improves instructions and validation; traces do not train model weights
 
 | Name | Where to read it | Where used |
 |---|---|---|
-| Model key | `sol` | Agent request `model_key` and result grouping |
-| Model ID and version | `gpt-6-sol` / `2026-09-22` | The fixed model identity checked by `preflight` |
+| Model key | `sol`, `luna`, or `astra` | Agent request `model_key` and result grouping |
+| Model ID and version | Table below | The fixed model identity checked by `preflight` |
 | Azure deployment names | Instructor-provided `.env` or Foundry **Build → Models** | `.env` values: `MODEL_SOL_DEPLOYMENT`, `MODEL_LUNA_DEPLOYMENT`, `MODEL_ASTRA_DEPLOYMENT`, and auxiliary `LAB_AUX_DEPLOYMENT`; they need not equal model keys or IDs |
 
 Changing `LAB_PREFIX` for a new team does not rename shared model deployments.
@@ -168,7 +171,9 @@ A GA hosting service does not make every SDK or API used with it GA.
 
 `LAB_LANGUAGE=ko` is the default; `LAB_LANGUAGE=en` selects English policies, questions, prompts, model request labels, calibration examples, and hosted response metadata.
 
-Use separate folders and prefixes. Korean data remains at `data/` and Korean prompts keep their current location; English data is at `data/en/` and English prompts are under `src/agent/prompts/en/`. Ownership state, responses, evaluations, telemetry summaries, and regression provenance identify the language; records without a language field are **Korean**. Translations preserve policy IDs, dates, amounts, decision labels, and citation rules, but text changes create new dataset, prompt, and context hashes. Do not mix language cohorts or present translated Korean results as English execution.
+Use separate folders and prefixes. Korean data remains at `data/` and Korean prompts keep their current location; English data is at `data/en/` and English prompts are under `src/agent/prompts/en/`.
+
+Ownership state, responses, evaluations, telemetry summaries, and regression provenance identify the language; records without a language field are **Korean**. Translations preserve policy IDs, dates, amounts, decision labels, and citation rules, but text changes create new dataset, prompt, and context hashes. Do not mix language cohorts or present translated Korean results as English execution.
 
 ↩ [Start](../README.md#start).
 
@@ -204,9 +209,9 @@ The Foundry Indexes list, a knowledge source's advanced settings, and the actual
 
 ## Evaluation and adoption criteria
 
-**Short answer:** Level 1 needs complete 48 saved responses and traces, fixed evaluators, six true business gates, and native scores read separately; it is not production approval.
+**Short answer:** Level 1 needs all 48 saved responses and traces, fixed evaluators, six true business gates (dev and holdout for each model), and native scores read separately; it is not production approval.
 
-**The criteria below describe the main 10-step workshop (Level 1).** [Level 2](level-2.en.md) adds custom criteria to the saved responses. [Level 3](level-3.en.md) also evaluates model deployments, live agent calls, and traces. Their inputs and thresholds differ; do not combine their scores with the primary 48 responses.
+**The criteria below describe the main 10-step workshop (Level 1).** [Level 2](level-2.en.md) and [Level 3](level-3.en.md) use other inputs and thresholds, so do not combine their scores with the primary 48 responses.
 
 | Layer | What it checks | What it does not establish |
 |---|---|---|
@@ -242,7 +247,7 @@ Method, measurements, and interpretation are in [the English evaluation explanat
 
 `queries/monitor.kql` selects this agent's requests and connects dependencies through `operation_Id`. It avoids counting both framework and custom spans as duplicate model calls.
 
-From the repository root:
+For the baseline example, from the repository root (when returning from step 9, use the label the main guide names):
 
 ```bash
 python scripts/workshop.py monitor --label baseline

@@ -604,6 +604,11 @@ class Level2Tests(unittest.TestCase):
         rate_limited = [{"results": [{"name": "relevance", "passed": None, "status": "completed"},
                                      {"name": "relevance", "passed": None, "status": "error"}]}]
         self.assertEqual(tally(rate_limited), ({}, 1))
+        # A criterion missing from every row of a completed run counts as one failed result per row.
+        self.assertEqual(tally(items, ["business_contract", "groundedness", "relevance"])[1], 2)
+        # A criterion that errored on every row is counted once, not again as missing.
+        judge_down = [{"results": [{"name": "business_contract", "passed": True}, {"name": "relevance", "status": "error"}]}] * 3
+        self.assertEqual(tally(judge_down, ["business_contract", "relevance"])[1], 3)
 
     def test_insight_summary_lists_effects_and_clusters(self):
         from foundry_eval import insight_summary
@@ -758,6 +763,34 @@ class Level2Tests(unittest.TestCase):
         self.assertEqual(list(counts["attack_strategy"]), ["baseline", "base64", "flip"])
         self.assertEqual(counts["attack_strategy"]["baseline"], {"succeeded": 1, "total": 2})
 
+    def test_incomplete_saved_red_team_scan_is_not_reused_or_counted_as_a_pass(self):
+        from foundry_eval import red_team, red_team_signal
+        with tempfile.TemporaryDirectory() as directory:
+            level3 = Path(directory)
+            (level3 / "red-team-sol.json").write_text(json.dumps({"eval_id": "eval-1", "run_id": "run-1", "status": "completed",
+                "counts": {"risk_category": {"Violence": {"succeeded": 0, "total": 3}}}}), encoding="utf-8")
+            with patch("foundry_eval.LEVEL3_DIR", level3), patch("foundry_eval.RuntimeConfig.from_env"):
+                self.assertEqual(red_team_signal(), ("not run", "level3/red-team-sol.json", "sol scan incomplete for HateUnfairness"))
+                with self.assertRaisesRegex(ValueError, "incomplete results for HateUnfairness; delete it and re-run red-team"):
+                    red_team("sol")
+
+    def test_red_team_rejects_a_scan_missing_a_risk_category(self):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from foundry_eval import red_team
+        violence_only = [item for item in self.red_team_items() if item["results"][0]["name"] == "violence"]
+        runs = SimpleNamespace(
+            create=lambda **_: SimpleNamespace(id="run-1", status="completed"),
+            output_items=SimpleNamespace(list=lambda **_: [SimpleNamespace(model_dump=lambda item=item, **__: item) for item in violence_only]))
+        client = SimpleNamespace(evals=SimpleNamespace(create=lambda **_: SimpleNamespace(id="eval-1"), runs=runs))
+        project = SimpleNamespace(get_openai_client=lambda: nullcontext(client))
+        config = SimpleNamespace(prefix="ll-test", language="en", deployments={"sol": "ll-sol"})
+        with tempfile.TemporaryDirectory() as directory, patch("foundry_eval.LEVEL3_DIR", Path(directory)), \
+                patch("foundry_eval.RuntimeConfig.from_env", return_value=config), patch("foundry_eval.pinned_builtin", return_value="3"), \
+                patch("foundry_eval.project_client", side_effect=lambda _: nullcontext(project)), patch("builtins.print"):
+            with self.assertRaisesRegex(ValueError, "incomplete results for HateUnfairness; delete .* and re-run red-team"):
+                red_team("sol")
+
     def test_red_team_scans_the_model_as_an_evaluation_and_prints_the_attack_success_rate(self):
         from contextlib import nullcontext
         from types import SimpleNamespace
@@ -851,7 +884,8 @@ class Level2Tests(unittest.TestCase):
             key = next(model for created_id, model, _ in created if created_id == run_id)
             return [SimpleNamespace(model_dump=lambda item=item, **__: item) for item in (
                 {"datasource_item": {"model_key": key, "trace_id": f"{run_id}-{n}", "sample.output_text": json.dumps({"prompt_version": "v2"})},
-                 "results": [{"name": "business_contract", "passed": True}, {"name": "relevance", "passed": n != 0}]} for n in range(6))]
+                 "results": [{"name": "business_contract", "passed": True}, {"name": "task_adherence", "passed": True},
+                             {"name": "intent_resolution", "passed": True}, {"name": "relevance", "passed": n != 0}]} for n in range(6))]
 
         runs = SimpleNamespace(create=create_run, output_items=SimpleNamespace(list=output),
                                retrieve=lambda run_id, **_: SimpleNamespace(status=statuses[run_id], report_url=None, model_dump=lambda **__: {}))
@@ -875,7 +909,7 @@ class Level2Tests(unittest.TestCase):
         self.assertEqual([attempt["run_id"] for attempt in record["attempts"]["luna"]], ["run-2"])
         lines = [call.args[0] for call in printed.call_args_list]
         self.assertIn("Foundry called frontier-loop-test version 2 for 18 dev rows in 3 runs, one per model (prompt v2).", lines)
-        self.assertIn("  business_contract  18/18\n  relevance          15/18", lines)
+        self.assertIn("  business_contract  18/18\n  task_adherence     18/18\n  intent_resolution  18/18\n  relevance          15/18", lines)
         self.assertIn("business_contract by model: sol 6/6, luna 6/6, astra 6/6", lines)
         self.assertIn("Traces recorded: 18", lines)
 
@@ -989,6 +1023,28 @@ class Level2Tests(unittest.TestCase):
         self.assertEqual(created[0][created[0].index("--scope") + 1], found["app_insights"]["id"])
         saved.assert_not_called()
 
+    def test_pinned_agent_version_skips_azd_and_folder_ownership(self):
+        from types import SimpleNamespace
+        from common import binding
+        from foundry_eval import deployed_agent_version
+        config = SimpleNamespace(project_endpoint="https://account.services.ai.azure.com/api/projects/lab",
+                                 agent_name="frontier-loop-test")
+        with patch("common.RuntimeConfig.from_env", return_value=config), patch("common.azd") as azd, \
+                patch.dict("os.environ", {"LAB_AGENT_VERSION": "2"}):
+            pinned = binding()
+        azd.assert_not_called()
+        self.assertEqual(pinned, {"name": "frontier-loop-test", "version": "2", "endpoint":
+                                  "https://account.services.ai.azure.com/api/projects/lab/agents/frontier-loop-test"
+                                  "/endpoint/protocols/invocations?api-version=v1"})
+        looked_up = []
+        project = SimpleNamespace(agents=SimpleNamespace(get_version=lambda name, version: looked_up.append((name, version))))
+        with patch.dict("os.environ", {"LAB_AGENT_VERSION": "2"}):
+            self.assertEqual(deployed_agent_version(project, config, {}), "2")
+        self.assertEqual(looked_up, [("frontier-loop-test", "2")])
+        with patch.dict("os.environ", {"LAB_AGENT_VERSION": ""}):
+            with self.assertRaisesRegex(ValueError, "no deployed hosted agent"):
+                deployed_agent_version(project, config, {})
+
     def test_gate_exit_codes(self):
         from foundry_eval import gate
         gates = {key: {"dev": True, "holdout": True} for key in MODEL_SPECS}
@@ -1001,6 +1057,194 @@ class Level2Tests(unittest.TestCase):
                 gates["sol"]["dev"] = False
                 evidence.write_text(json.dumps({"component_execution_verified": True, "candidate_quality_gates": gates}), encoding="utf-8")
                 self.assertEqual(gate(), 1)
+
+    def test_judge_agreement_compares_each_judge_with_the_business_contract(self):
+        from foundry_eval import judge_agreement
+
+        def item(row_id, business, **judges):
+            results = [{"name": "business_contract", "passed": business}, {"name": "indirect_attack", "passed": True}]
+            results += [{"name": name, "passed": passed} for name, passed in judges.items()]
+            return {"datasource_item": {"row_id": row_id}, "results": results}
+
+        with tempfile.TemporaryDirectory() as directory:
+            suite_dir = Path(directory)
+            (suite_dir / "suite.json").write_text(json.dumps({
+                "kinds": {"business_contract": "code", "policy_rubric": "rubric", "relevance": "RAG", "indirect_attack": "safety"},
+                "runs": {"baseline": {}, "improved": {}}}), encoding="utf-8")
+            (suite_dir / "baseline-output.json").write_text(json.dumps([
+                item("baseline-sol-D01", False, policy_rubric=False, relevance=True),
+                item("baseline-sol-D02", False, policy_rubric=True, relevance=True)]), encoding="utf-8")
+            (suite_dir / "improved-output.json").write_text(json.dumps([
+                item("improved-sol-D01", True, policy_rubric=True, relevance=True),
+                item("improved-sol-D04", True, policy_rubric=True, relevance=False)]), encoding="utf-8")
+            with patch("foundry_eval.SUITE_DIR", suite_dir), patch("builtins.print") as printed:
+                table = judge_agreement(["baseline", "improved"])
+                with self.assertRaisesRegex(ValueError, "No saved suite output for holdout"):
+                    judge_agreement(["holdout"])
+            saved = json.loads((suite_dir / "judge-agreement.json").read_text(encoding="utf-8"))
+            (suite_dir / "improved-output.json").write_text(json.dumps([
+                {"datasource_item": {"row_id": "improved-sol-D01"}, "results": [{"name": "business_contract", "passed": True}]}]),
+                encoding="utf-8")
+            with patch("foundry_eval.SUITE_DIR", suite_dir), patch("builtins.print"):
+                with self.assertRaisesRegex(ValueError, "improved-sol-D01 has no valid policy_rubric result"):
+                    judge_agreement(["improved"])
+        self.assertEqual(list(table), ["policy_rubric", "relevance"])
+        self.assertEqual(table["policy_rubric"], {"agree": 3, "total": 4, "judge_pass_business_fail": ["baseline-sol-D02"],
+                                                  "judge_fail_business_pass": []})
+        self.assertEqual(table["relevance"], {"agree": 1, "total": 4,
+                                              "judge_pass_business_fail": ["baseline-sol-D01", "baseline-sol-D02"],
+                                              "judge_fail_business_pass": ["improved-sol-D04"]})
+        self.assertEqual((saved["rows"], saved["reference"]), (4, "business_contract"))
+        lines = [call.args[0] for call in printed.call_args_list]
+        self.assertEqual(lines[0], "Judge agreement with business_contract on 4 saved rows (baseline, improved); no new calls.")
+        self.assertRegex(lines[1].splitlines()[1], r"^policy_rubric\s+rubric\s+3/4\s+1\s+0$")
+        self.assertEqual(lines[2:], ["Business passes that a judge failed (review each):", "  relevance: improved-sol-D04"])
+
+    def test_composite_gate_blocks_on_failed_or_missing_level3_evidence_unless_waived(self):
+        from foundry_eval import gate
+        gates = {key: {"dev": True, "holdout": True} for key in MODEL_SPECS}
+
+        def counts(passed, total):
+            return {"passed": passed, "total": total}
+
+        with tempfile.TemporaryDirectory() as directory:
+            results = Path(directory)
+            level3 = results / "level3"
+            level3.mkdir()
+            evidence = results / "verified-evidence.json"
+            evidence.write_text(json.dumps({"component_execution_verified": True, "candidate_quality_gates": gates}), encoding="utf-8")
+            agent = {"runs": {key: {"counts": {"business_contract": counts(6, 6)}} for key in MODEL_SPECS}}
+            (level3 / "agent-dev.json").write_text(json.dumps(agent), encoding="utf-8")
+            (level3 / "agent-dev-sol-output.json").write_text("[]", encoding="utf-8")
+            (level3 / "traces-improved.json").write_text(json.dumps({"counts": {"indirect_attack": counts(18, 18)}}), encoding="utf-8")
+            (level3 / "red-team-sol.json").write_text(json.dumps({"counts": {"risk_category": {
+                "Violence": {"succeeded": 0, "total": 3}, "HateUnfairness": {"succeeded": 0, "total": 3}}}}), encoding="utf-8")
+            continuous = level3 / "continuous.json"
+            continuous.write_text(json.dumps({"schedule_id": "ll-test-continuous"}), encoding="utf-8")
+
+            def run(**kwargs):
+                with patch("foundry_eval.RESULTS_DIR", results), patch("foundry_eval.LEVEL3_DIR", level3), \
+                        patch("builtins.print") as printed:
+                    code = gate(**kwargs)
+                return code, [call.args[0] for call in printed.call_args_list]
+
+            code, lines = run(composite=True)
+            self.assertEqual(code, 1)
+            self.assertRegex(lines[1], r"continuous\s+not run\s+level3/continuous.json\s+no saved completed run")
+            self.assertTrue(lines[-1].startswith("Composite gate FAILED: continuous (no saved completed run"))
+            code, lines = run(composite=True, waive=["continuous"])
+            self.assertEqual(code, 0)
+            self.assertEqual(lines[-1], "Composite gate passed with waivers: continuous; record who approved each waiver and why. "
+                                        "production_release_approved remains false.")
+
+            continuous.write_text(json.dumps({"schedule_id": "ll-test-continuous", "runs": [
+                {"created": "2026-09-23T11:31:33+00:00", "status": "completed", "traces": 20,
+                 "results": {"relevance": counts(19, 20), "indirect_attack": counts(20, 20)}},
+                {"created": "2026-09-23T12:31:33+00:00", "status": "failed", "traces": 0, "results": {}}]}), encoding="utf-8")
+            code, lines = run(composite=True)
+            self.assertEqual((code, lines[-1]), (0, "Composite gate passed. production_release_approved remains false."))
+            self.assertRegex(lines[1], r"continuous\s+pass\s+level3/continuous.json\s+11:31 UTC run: indirect_attack 20/20, 20 traces")
+
+            (level3 / "red-team-sol.json").write_text(json.dumps({"counts": {"risk_category": {
+                "Violence": {"succeeded": 1, "total": 3}, "HateUnfairness": {"succeeded": 0, "total": 3}}}}), encoding="utf-8")
+            agent["runs"]["luna"]["counts"]["business_contract"] = counts(4, 6)
+            (level3 / "agent-dev.json").write_text(json.dumps(agent), encoding="utf-8")
+            code, lines = run(composite=True)
+            self.assertEqual(code, 1)
+            self.assertIn("agent (business_contract dev sol 6/6, dev luna 4/6, dev astra 6/6)", lines[-1])
+            self.assertIn("red-team (sol 1/6 attacks succeeded)", lines[-1])
+
+            gates["sol"]["holdout"] = False
+            evidence.write_text(json.dumps({"component_execution_verified": True, "candidate_quality_gates": gates}), encoding="utf-8")
+            code, lines = run(composite=True, waive=["agent", "traces", "continuous", "red-team"])
+            self.assertEqual(code, 1)
+            self.assertEqual(lines[-1], "Composite gate FAILED: business (sol.holdout gate is not true). "
+                                        "production_release_approved remains false.")
+            code, lines = run()
+            self.assertEqual((code, lines), (1, ["Quality gate FAILED: sol.holdout gate is not true"]))
+
+    def test_composite_gate_reads_every_saved_file_so_a_waiver_never_hides_a_failure(self):
+        from foundry_eval import agent_signal, gate, red_team_signal
+        gates = {key: {"dev": True, "holdout": True} for key in MODEL_SPECS}
+        with tempfile.TemporaryDirectory() as directory:
+            results = Path(directory)
+            level3 = results / "level3"
+            level3.mkdir()
+            (results / "verified-evidence.json").write_text(json.dumps({"component_execution_verified": True,
+                                                                        "candidate_quality_gates": gates}), encoding="utf-8")
+            dev = {key: {"counts": {"business_contract": {"passed": 2 if key == "luna" else 6, "total": 6}}} for key in MODEL_SPECS}
+            (level3 / "agent-dev.json").write_text(json.dumps({"runs": dev}), encoding="utf-8")
+            (level3 / "agent-holdout.json").write_text(json.dumps({"runs": {}}), encoding="utf-8")
+            (level3 / "red-team-luna.json").write_text(json.dumps({"eval_id": "eval-1"}), encoding="utf-8")
+            (level3 / "red-team-sol.json").write_text(json.dumps({"counts": {"risk_category": {
+                "Violence": {"succeeded": 1, "total": 3}, "HateUnfairness": {"succeeded": 0, "total": 3}}}}), encoding="utf-8")
+            with patch("foundry_eval.RESULTS_DIR", results), patch("foundry_eval.LEVEL3_DIR", level3), patch("builtins.print") as printed:
+                code = gate(composite=True, waive=["agent", "traces", "continuous", "red-team"])
+                statuses = [read()[0] for read in (agent_signal, red_team_signal)]
+            lines = [call.args[0] for call in printed.call_args_list]
+        self.assertEqual(statuses, ["FAIL", "FAIL"])
+        table = lines[1].splitlines()
+        agent = next(line for line in table if line.startswith("agent"))
+        red_team = next(line for line in table if line.startswith("red-team"))
+        self.assertIn("dev luna 2/6", agent)
+        self.assertIn("holdout sol not saved", agent)
+        self.assertIn("luna attack counts not saved; sol 1/6 attacks succeeded", red_team)
+        self.assertEqual([agent.split()[1], red_team.split()[1]], ["waived", "waived"])
+        self.assertEqual((code, lines[-1].split(";")[0]), (0, "Composite gate passed with waivers: agent, traces, continuous, red-team"))
+
+    def test_composite_gate_treats_empty_level3_counts_as_not_run(self):
+        from foundry_eval import agent_signal, red_team_signal, traces_signal
+        with tempfile.TemporaryDirectory() as directory:
+            level3 = Path(directory)
+            (level3 / "agent-dev.json").write_text(json.dumps({"runs": {key: {"counts": {"business_contract": {"passed": 0, "total": 0}}}
+                                                                      for key in MODEL_SPECS}}), encoding="utf-8")
+            (level3 / "traces-improved.json").write_text(json.dumps({"counts": {"indirect_attack": {"passed": 0, "total": 0}}}), encoding="utf-8")
+            (level3 / "red-team-sol.json").write_text(json.dumps({"counts": {"risk_category": {"Violence": {"succeeded": 0, "total": 0}}}}),
+                                                      encoding="utf-8")
+            with patch("foundry_eval.LEVEL3_DIR", level3):
+                self.assertEqual([read()[0] for read in (agent_signal, traces_signal, red_team_signal)], ["not run"] * 3)
+
+    def test_gate_waivers_require_composite_mode(self):
+        with patch("workshop.load_settings_env"), patch("workshop.gate") as release, \
+                patch.object(sys, "argv", ["workshop.py", "gate", "--composite", "--waive", "red-team"]):
+            with self.assertRaises(SystemExit) as stopped:
+                workshop_main()
+        self.assertEqual(stopped.exception.code, release.return_value)
+        release.assert_called_once_with(True, ["red-team"])
+        with patch("workshop.load_settings_env"), patch("workshop.gate") as release, patch("sys.stderr"), \
+                patch.object(sys, "argv", ["workshop.py", "gate", "--waive", "red-team"]):
+            with self.assertRaises(SystemExit) as stopped:
+                workshop_main()
+        self.assertEqual(stopped.exception.code, 2)
+        release.assert_not_called()
+
+    def test_continuous_eval_saves_each_listed_run_for_the_gate(self):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from foundry_eval import continuous_eval
+        dumped = {"id": "evalrun-1", "result_counts": {"total": 20}, "per_testing_criteria_results": [
+            {"testing_criteria": "relevance", "passed": 19, "failed": 1},
+            {"testing_criteria": "indirect_attack", "passed": 20, "failed": 0, "errored": 0}]}
+        listed = [SimpleNamespace(created_at=1790163093, status="completed", report_url="https://ai.azure.com/nextgen/run-1",
+                                  model_dump=lambda **_: dumped)]
+        client = SimpleNamespace(evals=SimpleNamespace(runs=SimpleNamespace(list=lambda **_: listed)))
+        project = SimpleNamespace(get_openai_client=lambda: nullcontext(client))
+        config = SimpleNamespace(prefix="ll-test", agent_name="frontier-loop-test")
+        record = {"eval_id": "eval-1", "schedule_id": "ll-test-continuous", "agent_version": "2",
+                  "first_run": "2026-09-23T11:31:32+00:00", "ends": "2026-09-23T19:29:32+00:00"}
+        with tempfile.TemporaryDirectory() as directory:
+            level3 = Path(directory)
+            (level3 / "continuous.json").write_text(json.dumps(record), encoding="utf-8")
+            with patch("foundry_eval.LEVEL3_DIR", level3), patch("foundry_eval.RuntimeConfig.from_env", return_value=config), \
+                    patch("foundry_eval.load_state", return_value={}), patch("foundry_eval.required", return_value="judge"), \
+                    patch("foundry_eval.project_client", side_effect=lambda _: nullcontext(project)), patch("builtins.print") as printed:
+                continuous_eval()
+            saved = json.loads((level3 / "continuous.json").read_text(encoding="utf-8"))
+        self.assertEqual(saved["runs"], [{"run_id": "evalrun-1", "created": "2026-09-23T11:31:33+00:00", "status": "completed",
+                                          "traces": 20, "results": {"relevance": {"passed": 19, "total": 20},
+                                                                    "indirect_attack": {"passed": 20, "total": 20}}}])
+        self.assertEqual(printed.call_args_list[1].args[0],
+                         "  11:31 UTC  completed  20 traces: relevance 19/20, indirect_attack 20/20")
 
     def test_cleanup_plan_includes_owned_evaluators(self):
         state = {"owned_models": [], "owned_search_paths": [], "owned_roles": [],

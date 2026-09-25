@@ -5,7 +5,7 @@
 **Keep the current folder and error output. Do not restart the whole workshop.**
 - **Failed stage:** [sign-in](#login) · [retrieval](#retrieval) · [local run](#symptom-local) · [hosted run](#symptom-hosted) · [calibration](#calibration) · [collection](#collection-retry) · [evaluation](#evaluation-retry) · [cleanup](#cleanup-recovery).
 - **Evidence or optional work:** [no baseline failures](#no-failures) · [traces](#telemetry) · [portal](#portal-differs) · [completion](#symptom-completion) · [Levels 2-3](#levels).
-- **Not sure?** [common symptoms](#symptoms) · [saved-state resume](#resume) if a label or state file exists · [environment-owner resume](#setup-resume) if setup failed.
+- **Not sure?** [common symptoms](#symptoms) · [saved-state resume](#resume) if a label or state file exists · [environment-owner resume](#setup-resume) if setup failed (environment owners only).
 - Run participant recovery commands from the existing workshop folder's repository root; environment-owner recovery names its own folders.
 - Keep the workshop virtual environment active and restore `AZURE_CONFIG_DIR` from [README resume-shell](../README.md#resume-shell).
 
@@ -50,9 +50,7 @@ Read these files under **`src/agent/.foundry/results/<label>/`** without editing
 | `evaluation-results.json` | One row per response, with both evaluator results | Row-level evaluation, not trace coverage |
 | `telemetry.json` | `complete: true` and matching `expected_trace_count` / `observed_trace_count` | Trace coverage for this label |
 
-Use the first incomplete stage to choose the recovery section. A completed manifest does not mean the whole workshop completed.
-
-For a new experiment or another language, obtain unused names and use a separate folder. Deleting previous ownership or results is not a valid recovery strategy. If you were creating the Azure environment rather than collecting responses, use [setup recovery](#setup-resume).
+Choose the recovery section for the first incomplete file; a completed manifest is not whole-workshop completion. For a new experiment or language, use unused names in a separate folder, and never delete ownership or results to recover. If Azure environment setup failed, use [setup recovery](#setup-resume).
 
 **Checkpoint:** the first incomplete saved state identifies one failed stage and one matching recovery section.
 
@@ -382,7 +380,7 @@ Confirm the original command has exited.
 Level 2–3 state lives under **`src/agent/.foundry/results/suite/`** or **`src/agent/.foundry/results/level3/`**.
 Choose the exact message below.
 Recovery keeps step 5–9 evidence and ownership records; a separate experiment needs a new folder.
-Valid low scores, successful attacks, and `Quality gate FAILED` are not retry reasons; if the same error recurs, tell the instructor.
+Valid low scores, successful attacks, `Quality gate FAILED`, and `Composite gate FAILED` are not retry reasons; if the same error recurs, tell the instructor.
 
 Most failures match these visible rows:
 
@@ -408,7 +406,7 @@ When a row says to run a command named by the failed output, copy that exact `py
 | `Evaluator ... already exists and is not owned by this folder` | The evaluator is not recorded as yours. Check the conflict with the instructor; do not change this folder's `LAB_PREFIX` or delete another evaluator to bypass it. |
 | `... was registered with a different definition` or `The suite's evaluators changed ...` | Compare the registered definition and current code with the instructor. Restore only from a verified original; do not edit a registered evaluator to make it match. |
 | `Saved ... responses changed after their suite run was created` | Compare the changed file with a verified original. Without an original, stop; do not recollect or edit hashes to force a match. |
-| `... rubric results failed`, `... stress-test results failed`, or `... red-team results failed` | Resolve the cause, then follow [state-file recovery](#level-state-recovery). Distinguish execution errors from low scores. |
+| `... rubric results failed`, `... stress-test results failed`, `... red-team results failed`, or `The red-team scan returned incomplete results ...` | Resolve the cause, then follow [state-file recovery](#level-state-recovery). Distinguish execution errors from low scores. |
 | `Comparison insight failed` or `Cluster insight failed` | Wait a minute, then repeat the same command. Only the failed insight is generated again; the failed one stays under `failed_attempts` in `insights.json`. |
 
 **Level 3 runs and trace evaluation**
@@ -419,8 +417,8 @@ When a row says to run a command named by the failed output, copy that exact `py
 | `... already compares the rubrics on ...` or `... already holds a ...-question run` | Arguments differ from the saved Foundry evaluation run. Resume with the recorded values. Plan a separate experiment for new conditions; do not erase the existing record. |
 | An HTTP `429` (Too Many Requests) error | Wait for `Retry-After`, or one minute if absent. Choose resume or failed-run retry based on the saved status. Do not increase `--count`. |
 | `This folder has no deployed hosted agent` | Check the cause with the instructor. If already cleaned up, record sections 4 and 6 as **not run** and do not redeploy. Do not claim Level 3 completion for unrun sections. |
-| `... agent calls or evaluator results failed` | Resolve the recorded error, then run `evaluate-agent --split dev --retry-failed`. Only the failed model's run is replaced; the old run remains under `attempts`. |
-| `The <model> run ended as failed: ... Error code: 500` | An internal service error. Wait a minute, then run `evaluate-agent --retry-failed`. |
+| `... agent calls or evaluator results failed` | Resolve the recorded error, if any (a run can also finish without one evaluator's results), then run `python scripts/workshop.py evaluate-agent --split dev --retry-failed`. Only the failed model's run is replaced; the old run remains under `attempts`. |
+| `The <model> run ended as failed: ... Error code: 500` | An internal service error. Wait a minute, then run `python scripts/workshop.py evaluate-agent --retry-failed`. |
 | `evaluate-traces` ends with an access error, such as `ApplicationInsightsAccessDenied` | The instructor completes [trace access preparation](instructor.en.md#levels); then follow [state-file recovery](#level-state-recovery). |
 | `... traces were not found ... evaluator results failed` | For missing traces above zero, check ingestion and access. With zero missing traces but evaluator errors, inspect the judge error instead. Resolve the cause, then follow [state-file recovery](#level-state-recovery). |
 
