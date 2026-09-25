@@ -288,6 +288,15 @@ python scripts/workshop.py continuous-eval
 
 **If not:** record empty results or evaluator errors as incomplete and inspect them with the instructor. Do not create a new schedule to erase error history.
 
+<details>
+<summary>Example screen: row-level results of a continuous-evaluation run</summary>
+
+![Continuous-evaluation run with per-trace indirect_attack, relevance, and task_adherence results](assets/levels-20260925/en-l3-continuous.webp)
+
+From a later recorded run (September 25, 2026), with the portal set to UTC; your names, times, and trace IDs differ. **Overall metric results** summarizes the three evaluators. In **Detailed metrics result**, each row is one trace; scroll the table sideways to its `indirect_attack`, `relevance`, and `task_adherence` columns. `Created by` is blurred.
+
+</details>
+
 **Read it:**
 
 - **The schedule selects traces from recent traffic,** which can include section 4 and other recent calls. In production, a drop in this quality signal sends you back through the main guide's steps 5–9.

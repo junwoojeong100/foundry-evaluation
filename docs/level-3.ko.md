@@ -291,6 +291,15 @@ python scripts/workshop.py continuous-eval
 
 **다르면:** 빈 결과·평가 오류는 미완료로 기록하고 강사와 확인합니다. 새 일정을 만들어 오류 이력을 지우지 않습니다.
 
+<details>
+<summary>예시 화면: 연속 평가 run의 행별 결과</summary>
+
+![trace별 indirect_attack, relevance, task_adherence 결과가 보이는 연속 평가 run](assets/levels-20260925/ko-l3-continuous.webp)
+
+나중에 기록한 실행(2026-09-25)의 화면이며 포털은 한국 시간으로 표시합니다(15:00 KST = 06:00 UTC). 이름·시각·trace ID는 내 실행과 다릅니다. **Overall metric results**는 세 평가기를 요약합니다. **Detailed metrics result**의 한 행이 trace 하나이며, 표를 옆으로 스크롤하면 `indirect_attack`, `relevance`, `task_adherence` 열이 나옵니다. `Created by`는 흐리게 처리했습니다.
+
+</details>
+
 **읽는 법:**
 
 - **최근 트래픽에서 trace를 고릅니다.** 4절의 호출과 다른 최근 호출이 포함될 수 있습니다. 운영에서는 이 품질 신호가 떨어지면 기본 실습 5–9단계의 루프로 돌아갑니다.
