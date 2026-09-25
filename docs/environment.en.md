@@ -44,9 +44,9 @@ Use a **Git clone**, not an extracted ZIP: the preparation tool records the actu
 
 | Path | Purpose | Where commands run |
 |---|---|---|
-| `REPO_ROOT` | Original clone, guides, and preparation tools | Initial setup and provisioning in steps 2–5 |
+| `REPO_ROOT` | Original clone, guides, and preparation tools; its `.env` holds only initial settings | Initial setup and provisioning in steps 2–5 |
 | `RUN_DIR` | This run's configuration and creation records | Pass as `--run-dir` only; **do not run commands here** |
-| `RUN_DIR/workshop` | Isolated source and its generated `.env` | Python tests, sign-in, step 6, and the participant exercise |
+| `RUN_DIR/workshop` | Isolated source and a **separate `.env` filled by the tools** | Python tests, sign-in, step 6, and the participant exercise |
 
 ### 1-1. Create or enter the clone
 
@@ -82,7 +82,7 @@ pwd
 **Editor — current clone root (later saved as `$REPO_ROOT`):**
 
 1. Open this clone with VS Code **File → Open Folder**. In the Explorer, copy and paste `.env.example` in the same location, then rename the copy to `.env`.
-2. Fill exactly the rows below; leave every other template value unchanged.
+2. Fill only the five rows below and save with **Ctrl+S (macOS: Cmd+S)**. Leave every other template value unchanged.
 
 - Do not create `.env.txt` or overwrite an existing `.env`.
 - Never add passwords, API keys, or tokens.
@@ -96,11 +96,11 @@ pwd
 | `AZURE_RESOURCE_GROUP` | On a first run, leave it empty: **`AZURE_RESOURCE_GROUP=`**. Use a group name only to confirm a previous run's group as preserved |
 | `LAB_LANGUAGE` | `en` |
 
-The tools generate service names, endpoints, and deployment names in the isolated folder.
+**Fill only those five fields now.** Leave other `<...>` placeholders and example deployment names unchanged. The tools generate service names, endpoints, and deployment names in a separate `.env` in the isolated folder. This initial file is not the **complete `.env`** given to class participants.
 
 **Checkpoint:** `.env` is saved in the current clone root; `AZURE_SUBSCRIPTION_ID`, `AZURE_TENANT_ID`, `AZURE_EXPECTED_USERNAME`, and `LAB_LANGUAGE=en` are filled, and `AZURE_RESOURCE_GROUP` is a previous group name or intentionally left as `AZURE_RESOURCE_GROUP=`.
 
-**If not:** fix `.env` before installing tools; do not continue with placeholders or secrets.
+**If not:** correct any wrong value or remaining `<...>` placeholder in those five fields (`AZURE_RESOURCE_GROUP=` may intentionally be empty). Do not guess the other fields or add secrets.
 
 ### 1-3. Install the setup tools
 
@@ -132,7 +132,7 @@ python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language en
 
 Copy the printed `REPO_ROOT=` and `RUN_DIR=` lines into your notes now; you resume with these two paths after reopening a terminal.
 
-**Checkpoint:** the output JSON shows `language: en` and **`$RUN_DIR/config.json`** is created. It records the chosen names; it has not copied the source or created Azure resources.
+**Checkpoint:** the output JSON shows `language: en` and **`$RUN_DIR/config.json`** is created. Find it in the VS Code Explorer under **`.workshop → this run's ID → config.json`**. It records the chosen names; it has not copied the source or created Azure resources.
 
 **If not:** keep the output and the same `RUN_DIR`, then use [setup recovery](troubleshooting.en.md#setup-resume). Do not restart with a new run ID.
 

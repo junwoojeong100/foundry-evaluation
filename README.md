@@ -2,7 +2,9 @@
 
 [한국어 가이드](README.ko.md)
 
-**In 120 minutes, collect 48 real responses and explain what changed when you switched instructions.** The agent and both instruction versions (V1, V2) are provided; you write no code. You finish with a three-point report: **one reviewed case, the V1 → V2 comparison, and a holdout decision**. Perfect scores and production approval are not the goal.
+**Run an AI agent that finds travel policies and answers expense questions, then check whether changing its instructions improves its answers.** The agent code and both instruction versions (V1, V2) are provided; you write no code.
+
+**The main workshop takes 120 minutes.** Collect 48 real responses, then **review one case, compare V1 → V2, and report whether V2 also works on new questions**. Low scores are valid workshop results. Perfect scores and production approval are not the goal.
 
 <a id="start-here"></a>
 
@@ -47,16 +49,25 @@ Optional Levels 2–3 go after step 9 and before step 10; references and the vid
 
 ## The 10-step path
 
-The agent answers travel-policy questions with an **answer, a decision, and source-document IDs**. Each question is answered by three candidate models: Sol, Luna, and Astra.
+**Microsoft Foundry** is an Azure platform for deploying, evaluating, and observing AI agents. This agent uses **Foundry IQ** to retrieve policy documents and returns an **answer, a decision (`decision`), and source-document IDs (`citations`)**. Three candidate models—Sol, Luna, and Astra—**each produce one answer per question**.
 
 ```text
 Question → Python agent → Foundry IQ policy retrieval → candidate model → answer
-baseline (V1, 6 dev) → review one trace → improved (V2, same 6) → holdout (frozen V2, 4 new)
 ```
 
 <a id="evaluation-runs"></a>
 
-**Terms:** `dev` is the 6-question set used for improvement; `holdout` is 4 new questions used only at the end. `baseline`, `improved`, and `holdout` are result-folder names (**labels**); each label holds 6 or 4 questions × 3 models. **`improved` only names the V2 results; it does not mean they improved.** A **trace** is one request's retrieval and model-call record, and the **judge** is the model that scores answers ([glossary](docs/reference.en.md#terms)).
+**V1 and V2 are two versions of the model's instructions (prompt), not model names.** `dev` is the question set used for improvement; `holdout` is a new question set checked only at the end, with the instructions unchanged. A **label is a result-folder name**.
+
+| Result name (label) | Instructions | Question set (split) | Responses | What to check |
+|---|---|---|---|---|
+| `baseline` | V1 | 6 `dev` questions | 18 | Answers before the change |
+| `improved` | V2 | The same 6 `dev` questions | 18 | The before-and-after difference |
+| `holdout` | Unchanged V2 | 4 new `holdout` questions | 12 | Whether V2 also works on new questions |
+
+**18 + 18 + 12 = 48 responses.** Setup checks and judge scores are not added to this count. **`improved` is a result name, not a verdict that answers improved.** Compare V1 → V2 on the same `dev` questions, not holdout scores against dev scores.
+
+A **trace** is one request's retrieval and model-call record; the **judge** is a separate model that scores answers. Other terms are explained where you need them ([full glossary](docs/reference.en.md#terms)).
 
 | Step | Continue when |
 |---|---|
@@ -76,13 +87,30 @@ baseline (V1, 6 dev) → review one trace → improved (V2, same 6) → holdout 
 **How to follow the steps**
 
 - **Where:** follow the bold label before each block: **Terminal A**, **Terminal B** (step 3 only), **Editor**, or **Portal**. "Your agent" means `LAB_AGENT_NAME`.
-- **Commands:** after the 1-1 clone, paste and run **one block at a time, exactly as shown**, from the repository root. Do not add a leading prompt symbol `$`. Wait for the prompt to return (except step 3's server). `&&` runs the next command only if the previous one succeeds. At an input prompt, paste just the requested value and press Enter.
-- **Long output:** long JSON or queries are normal. **Checkpoint** values are usually at the **bottom** of the output, and a value written as `language: en` appears in JSON as `"language": "en"`. Do not run the `Next:` suggestions or the `Update available` notice at the end of an output.
-- **Hidden files:** `.env` and `src/agent/.foundry/` start with a dot, so ordinary file dialogs hide them. Open this workshop folder with VS Code **File → Open Folder** to see them in the Explorer.
+- **One block at a time:** follow **location → run the command → checkpoint → next block**. Wait for the input prompt—the line where you can type another command—to return, except for step 3's server. When asked for input, paste only the requested value and press Enter.
+- **When to stop:** for an error or a missing required **Checkpoint** value, follow the **If not** below it to [recover only that command](docs/troubleshooting.en.md#resume). In contrast, once collection or evaluation finishes, **record and continue** for `business=False` or low valid scores. Never rerun for a better score.
 - **New terminal later:** start Bash and run the [restore block](#resume-shell) with the path you noted; step 3's Terminal B block already includes it.
-- **Checks:** if the output differs from the **Checkpoint**, keep it and follow the **If not** below it to [recover only that command](docs/troubleshooting.en.md#resume). Never rerun a finished step for a better score.
-- **If you are stuck:** follow the **If not** links first. “Instructor” and “environment owner” mean the instructor in a class and you in self-study. When you ask for help, show only the failed command, error, and step; never share passwords or tokens.
-- **Notes:** open one new text file in your editor. Steps 4-3, 6-2, 7-1, 7-2, 7-4, 8-3, and 9-2 say what to copy, and 9-3 saves it as your report. **Do not open `data/en/holdout.jsonl` before step 8.**
+- **Notes:** open one new text file in your editor and record values only where a step asks you to. Transfer them into the [report template](#finish) and save it in 9-3. **Do not open `data/en/holdout.jsonl` before step 8.**
+
+<details>
+<summary>If terminals, files, or structured output are new to you</summary>
+
+| What you see | How to read it |
+|---|---|
+| Repository root / "this folder" | The top of the code folder from 1-1; run subsequent commands here |
+| Code block | Copy the commands inside it exactly. Do not add a leading prompt symbol `$` |
+| `&&` | Run the next command only if the previous one succeeds |
+| `$PWD`, `"$ROW_ID"`, and similar code | The terminal substitutes the value. Do not remove `$` or quotes, or replace the variables yourself |
+| `<your agent>` in an output description | Your actual `LAB_AGENT_NAME` value appears in the output. Do not type this placeholder |
+| `language: en` | JSON displays it as `"language": "en"`. `true` means true, `false` means false, and `[]` is an empty list |
+
+Long JSON or queries are normal. **Checkpoint** values are usually at the **bottom** of the output. Follow **this guide's next block**, not the `Next:` suggestions or `Update available` notice printed by a tool.
+
+`.env` (settings) and `src/agent/.foundry/` (results) are hidden files or folders because their names start with a dot. Open the workshop folder with VS Code **File → Open Folder** to see them in the Explorer. After editing a file, save with **Ctrl+S (macOS: Cmd+S)**. Never run or `source` `.env`.
+
+For help, share only the failed command, error, and step—not passwords, tokens, or the whole `.env`. “Instructor” and “environment owner” mean the instructor in a class and you in self-study.
+
+</details>
 
 <a id="background-learning-loops-and-frontier-ecosystems"></a>
 
@@ -488,7 +516,14 @@ python scripts/workshop.py smoke
 
 **Goal:** collect and evaluate 18 V1 responses (6 dev questions × 3 models) as `baseline`.
 
-`collect` saves 18 answers and runs the Python **business checks** on each decision, amount, and citation. `evaluate` has the Foundry judge score **those saved answers**; it creates no new answers ([what each receives](#what-is-being-evaluated)).
+**Generating answers and scoring answers are separate commands.** The two kinds of checks do not replace each other.
+
+| Command | What it does | What it checks |
+|---|---|---|
+| `collect` | Saves **18 new agent responses** and runs Python business checks | Whether decisions, amounts, and citations match the fixed rules |
+| `evaluate` | Scores **the 18 saved responses** with the judge; generates no new agent answers | Whether answers match their evidence (`groundedness`) and address the question (`relevance`) |
+
+See [evaluator inputs](#what-is-being-evaluated) for details.
 
 ### 5-1. Check the judge
 
@@ -617,13 +652,22 @@ python scripts/workshop.py show --label baseline --row-id "$ROW_ID"
 
 **If not:** for `Unknown row ID`, paste only the ID that starts with `baseline-`, without parentheses or commas.
 
-**Check the same case in two places.**
+**First read the question (`query`) in Terminal A, then compare in this order.** `saved_response` is the agent's answer; `fixed_reference` is the reference answer set in advance.
 
-1. **Terminal A's output:** compare `answer` and `decision` in `saved_response` with `ground_truth`, `expected_decision`, and `required_numbers` in `fixed_reference`. Then check whether each of the `citations` (cited IDs) appears in `source_ids` (retrieved documents) and in `allowed_citations` (allowed IDs). Any `false` in `business_checks` is a failed check.
-2. **Portal:** open **Agents** on the left → your agent → **Traces → Trace view**. Paste the full `trace_id` into the search box above the table on the left, then click the matching row's **Trace ID** link. If it is missing, widen **Date range → 7D**.
-3. **Portal:** in the opened window's **Graph view**, select the `foundry_iq.retrieve` (retrieval) box and the box starting with `chat` (model call). Each box is a **span**, the record of one operation. **Success** means the operation ran successfully, not that its answer passed the business checks.
+| Order | Agent value (`saved_response`) | Compare with |
+|---|---|---|
+| 1. Explanation and amounts | `answer` | `ground_truth` and `required_numbers` in `fixed_reference` |
+| 2. Decision | `decision` | Does it equal `expected_decision` in `fixed_reference`? |
+| 3. Citations | `citations` | Is each ID in the retrieved `source_ids` and the reference's `allowed_citations`? |
 
-**Then record one line:** `row_id=...; trace_id=...; Observation: ...; Evidence: ...; Change: ...`. For a passing case, write the **behavior V2 should preserve** instead of `Change` ([passing cases](docs/troubleshooting.en.md#no-failures)).
+Then check that any `false` in `business_checks` matches what you observed. If all are `true`, explain why the case passed. You do not need to interpret every JSON field.
+
+**Next, inspect the same request in the portal.** `row_id` names the response; `trace_id` identifies the execution record you search for in the portal.
+
+1. Open **Agents** on the left → your agent → **Traces → Trace view**. Paste the full `trace_id` into the search box above the table on the left, then click the matching row's **Trace ID** link. If it is missing, widen **Date range → 7D**.
+2. In the opened window's **Graph view**, select the `foundry_iq.retrieve` (retrieval) box and the box starting with `chat` (model call). Each box is a **span**, the record of one operation. **Success** means the operation ran successfully, not that its answer passed the business checks.
+
+**Then record one line:** `row_id=...; trace_id=...; Observation: ...; Evidence: ...; Change: ...`. In `Observation`, say what was right or wrong; in `Evidence`, name the fields or document IDs you compared; in `Change`, state the instruction needed. For a passing case, write the **behavior V2 should preserve** ([passing cases](docs/troubleshooting.en.md#no-failures), [cause-analysis example](#how-to-distinguish-retrieval-and-instruction-problems)).
 
 **Checkpoint:** the `ID:` at the top of the portal window equals your `trace_id`, and your note holds one complete line: `row_id=...; trace_id=...; Observation: ...; Evidence: ...; Change (or behavior to preserve): ...`.
 
@@ -781,20 +825,26 @@ python scripts/workshop.py summary --labels baseline improved
 
 <a id="metric-fields"></a>
 
+**Reading order:** the left side of `->` is V1; the right side is V2. Read **business passes**, then **judge passes**, then **any increase in tokens or time**. One better column does not establish an overall improvement.
+
+| Column | How to read it |
+|---|---|
+| `business` | Responses passing **all five** business checks / total. `5/6` means five of six passed |
+| `required citations` | Citation-required responses with valid citations / responses requiring a citation |
+| `groundedness`, `relevance` | Responses scoring **at least 4 out of 5** / total responses for evidence grounding and question relevance, respectively. `5/6` is a pass count, not a score |
+| `tokens in/out` | How much text the model read / produced, measured in tokens. Totals for that model's **six dev responses**, not an Azure bill |
+| `p50/p95 s` | Retrieval plus model processing time, in **seconds**. Of six responses ordered fastest to slowest, p50 is the third and p95 is the last. Lower is faster |
+
+**Interpretation to note:** use your values to write `Business passes increased/stayed the same/decreased; judge failures were ...; tokens and time were ...`. Preserve unchanged or worse results too.
+
 <details>
-<summary>Reference: summary columns</summary>
+<summary>Reference: source files and comparison limits</summary>
 
-The summary reads `src/agent/.foundry/results/comparison.json` (`labels → baseline / improved → models`) and each label's `evaluation-results.json`.
+The summary reads `src/agent/.foundry/results/comparison.json` (`labels → baseline / improved → models`) and each label's `evaluation-results.json`. See [reading results](docs/validation.en.md#read-your-results) for the aggregate fields.
 
-| Column | Field | Meaning |
-|---|---|---|
-| `business` | `business_passed` / `total` | Responses passing all five business checks |
-| `required citations` | `required_citation_passed` / `required_citation_total` | Citation-required responses with valid citations |
-| `groundedness`, `relevance` | `foundry_evaluators → native_passed` / `total` | Rows scoring **at least 4 out of 5**; an average of 4 does not mean every row passed |
-| `tokens in/out` | `input_tokens`, `output_tokens` | Totals for that model's **same six dev responses**; planner, judge, and other costs are excluded, so this is not the Azure bill |
-| `p50/p95 s` | `latency_p50_seconds`, `latency_p95_seconds` | Retrieval plus model processing, in **seconds**; with six responses per model, p95 is the slowest one, not a production guarantee ([measurement scope](docs/validation.en.md#tradeoffs)) |
+Tokens exclude the planner, judge, and other calls; timing six responses does not establish production performance ([measurement scope](docs/validation.en.md#tradeoffs)). Retrieval can also differ between runs (`comparison_notes`), so this compares **the whole agent, including retrieval**, not models in isolation.
 
-Retrieval can differ between runs (`comparison_notes`), so this is an end-to-end comparison, not a model ranking. To inspect a failed row, see [failed rows](docs/validation.en.md#native-failures). For a recorded example, not your target, see the [September 23, 2026 English results](docs/validation.en.md#measured-results).
+To inspect a failed row, see [failed rows](docs/validation.en.md#native-failures). For a recorded example, not your target, see the [September 23, 2026 English results](docs/validation.en.md#measured-results).
 
 </details>
 
@@ -1010,7 +1060,12 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
 
 ```text
 1. Review (6-2 line): ...
-2. Change (7-4): paste the V1 -> V2 table here; improved business failures=...; improved Foundry failures=...
+   Linked V2 instruction (7-1): ...
+2. Change (7-4):
+   V1 version (4-3)=...; V2 version (7-2)=...
+   V1 -> V2 table: paste the table here
+   Interpretation (business passes, judge failures, tokens, time): ...
+   improved failures: business=...; Foundry=...
 3. Decision (gates from verified-evidence.json):
    sol: dev=..., holdout=...
    luna: dev=..., holdout=...

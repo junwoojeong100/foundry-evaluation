@@ -15,7 +15,7 @@ from unittest.mock import patch
 from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
+sys.path[:0] = [str(ROOT / "src" / "agent"), str(ROOT / "scripts")]
 
 FENCES = re.compile(r"^```([^\n]*)\n(.*?)^```[ \t]*$", re.MULTILINE | re.DOTALL)
 LINKS = re.compile(r"!?\[[^\]\n]*\]\(([^)\s]+)\)")
@@ -273,6 +273,49 @@ class DocumentationTests(unittest.TestCase):
             for command, arguments in expected.items():
                 with self.subTest(document=name, command=command):
                     self.assertEqual([args for args in documented if args[0] == command], arguments)
+
+    def test_experiment_map_matches_the_question_sets_and_model_count(self):
+        from contracts import MODEL_SPECS
+
+        expected = [("baseline", "V1", "dev"), ("improved", "V2", "dev"), ("holdout", "V2", "holdout")]
+        for name, directory in (("README.md", ROOT / "data" / "en"), ("README.ko.md", ROOT / "data")):
+            text = self.documents[ROOT / name].split('<a id="evaluation-runs"></a>', 1)[1]
+            overview = text.split("```bash", 1)[0]
+            rows = re.findall(
+                r"^\| `(baseline|improved|holdout)` \| ([^|\n]+) \| ([^|\n]+) \| (\d+) \|",
+                overview, re.MULTILINE,
+            )
+            with self.subTest(document=name):
+                self.assertEqual([row[0] for row in rows], [label for label, _, _ in expected])
+                for (_, instructions, questions, responses), (_, version, split) in zip(rows, expected):
+                    question_count = sum(
+                        bool(line.strip())
+                        for line in (directory / f"{split}.jsonl").read_text(encoding="utf-8").splitlines()
+                    )
+                    self.assertEqual(re.findall(r"\bV\d+\b", instructions), [version])
+                    self.assertIn(f"`{split}`", questions)
+                    self.assertEqual(re.findall(r"\d+", questions), [str(question_count)])
+                    self.assertEqual(int(responses), question_count * len(MODEL_SPECS))
+                self.assertEqual(sum(int(row[3]) for row in rows), 48)
+
+    def test_required_result_reading_is_not_hidden_in_optional_details(self):
+        sections = (
+            ("lab-c", "lab-d", ("collect", "evaluate", "groundedness", "relevance")),
+            ("review-case", "save-review", (
+                "query", "saved_response", "fixed_reference", "business_checks", "row_id", "trace_id",
+            )),
+            ("metric-fields", "portal-comparison", (
+                "business", "required citations", "groundedness", "relevance", "tokens in/out", "p50/p95 s",
+            )),
+        )
+        for name in ("README.md", "README.ko.md"):
+            visible = re.sub(r"<details>.*?</details>", "", self.documents[ROOT / name], flags=re.DOTALL)
+            for start, end, terms in sections:
+                with self.subTest(document=name, section=start):
+                    section = visible.split(f'<a id="{start}"></a>', 1)[1]
+                    section = section.split(f'<a id="{end}"></a>', 1)[0]
+                    for term in terms:
+                        self.assertIn(f"`{term}`", section)
 
     def test_main_workshop_reads_holdout_scores_before_reporting(self):
         for name, language in (("README.md", "en"), ("README.ko.md", "ko")):

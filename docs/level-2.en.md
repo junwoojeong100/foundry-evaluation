@@ -21,6 +21,8 @@
 
 ## 1. Register two custom evaluators
 
+The **code evaluator** applies the five business rules exactly; the **rubric evaluator** has an LLM judge read a scoring guide and rate quality. Both are provided; you do not write them.
+
 **Terminal A:**
 
 ```bash
@@ -31,7 +33,7 @@ python scripts/workshop.py register-evaluators
 
 **If not:** for `already exists and is not owned by this folder`, stop and check the ownership conflict with the instructor. Do not change `LAB_PREFIX` in this folder's `.env` or delete another team's evaluator. See [Level 2 and 3 recovery](troubleshooting.en.md#levels).
 
-**Read it:** your project now has two reusable evaluators: a code evaluator that runs the five business checks exactly, and a rubric evaluator whose LLM judge scores policy quality.
+**Read it:** both evaluators are now registered in your project, ready to reuse in the next section.
 
 <details>
 <summary>What the two evaluators contain</summary>
@@ -52,7 +54,7 @@ Both are objects in your project's evaluator catalog, prefixed with your `LAB_PR
 
 ## 2. Score V1 and V2 on nine criteria
 
-**You already registered everything needed.** This suite scores **nine criteria**: the two custom evaluators, six built-ins, and `policy_rubric_no_evidence`, the same rubric run without retrieved evidence.
+**You already registered everything needed.** A **suite—a group of evaluators run together—** scores **nine criteria**: the two custom evaluators, six built-ins, and `policy_rubric_no_evidence`, the same rubric run without retrieved evidence.
 
 **Terminal A:** run the saved `baseline` and `improved` responses in one eval group; this takes several minutes:
 
@@ -141,7 +143,7 @@ python scripts/workshop.py judge-agreement --labels baseline improved
 **Read it:**
 
 - **`judge pass + business fail`:** the judge passed an answer that failed the business checks. A judge with many of these cannot replace the business checks.
-- **`judge fail + business pass`:** the judge failed a correct answer. Before letting that judge block a release, read each listed row's answer and the judge's reason in section 2's portal run. A correct deferral with low relevance is a judge limit, not an agent failure.
+- **`judge fail + business pass`:** the judge failed an answer that passed the business checks. Before letting that judge block a release, read each listed row's answer and the judge's reason in section 2's portal run. Distinguish an actual quality problem from a correct deferral marked down for relevance.
 - **Do not tune a judge to agree.** Keep thresholds, rubrics, and reference answers unchanged, and note which judges may block a release and which stay diagnostic.
 
 <details>
@@ -173,7 +175,7 @@ The 19 business failures are V1's 18 rows and Sol's V2 D02. The five built-in ju
 
 ## 4. Compare the runs and cluster the failures
 
-**Terminal A:** Foundry compares section 2's `baseline` and `improved` runs and groups the `improved` run's failures into clusters:
+**Terminal A:** Foundry compares section 2's `baseline` and `improved` runs and groups the `improved` run's failures by similar causes into **clusters**:
 
 ```bash
 python scripts/workshop.py insights --baseline baseline --candidate improved

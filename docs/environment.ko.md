@@ -44,9 +44,9 @@
 
 | 경로 | 역할 | 명령을 실행하는 단계 |
 |---|---|---|
-| `REPO_ROOT` | 원래 clone·가이드·준비 도구 | 초기 준비와 2–5단계 서비스 생성 |
+| `REPO_ROOT` | 원래 clone·가이드·준비 도구. 여기의 `.env`에는 초기 설정만 입력 | 초기 준비와 2–5단계 서비스 생성 |
 | `RUN_DIR` | 이번 실행의 설정·생성 기록 | `--run-dir` 인자로만 전달. **여기서 명령을 실행하지 않음** |
-| `RUN_DIR/workshop` | 독립 소스와 생성된 `.env` | Python 테스트·로그인·6단계·이후 참가자 실습 |
+| `RUN_DIR/workshop` | 독립 소스와 **도구가 채워 주는 별도의 `.env`** | Python 테스트·로그인·6단계·이후 참가자 실습 |
 
 ### 1-1. Git clone 준비
 
@@ -82,7 +82,7 @@ pwd
 **편집기 — 현재 clone 루트(곧 `$REPO_ROOT`로 저장할 폴더):**
 
 1. VS Code의 **File → Open Folder**로 이 clone을 엽니다. 탐색기에서 `.env.example`을 복사해 같은 위치에 붙여넣고 복사본 이름을 `.env`로 바꿉니다.
-2. 아래 행만 채우고 나머지 템플릿 값은 그대로 둡니다.
+2. 아래 다섯 행만 채우고 **Ctrl+S(macOS: Cmd+S)**로 저장합니다. 나머지 템플릿 값은 그대로 둡니다.
 
 - 기존 `.env`를 덮어쓰거나 `.env.txt`를 만들지 않습니다.
 - 암호, API key, 토큰은 넣지 않습니다.
@@ -96,11 +96,11 @@ pwd
 | `AZURE_RESOURCE_GROUP` | 처음이면 빈 값 **`AZURE_RESOURCE_GROUP=`**. 이전 실행 그룹을 보존 대상으로 확인할 때만 그 이름 |
 | `LAB_LANGUAGE` | `ko` |
 
-새 서비스 이름·엔드포인트·모델 배포 이름은 도구가 별도 폴더의 `.env`에 생성합니다.
+**지금 채울 것은 위 다섯 항목뿐입니다.** 그 밖의 `<...>` 표시와 예시 배포 이름은 지금 바꾸지 않습니다. 새 서비스 이름·엔드포인트·모델 배포 이름은 도구가 별도 폴더의 `.env`에 생성합니다. 수업 참가자가 받는 **완성된 `.env`**와 이 초기 파일을 혼동하지 않습니다.
 
 **완료 확인:** `.env`가 현재 clone 루트에 저장되어 있고, `AZURE_SUBSCRIPTION_ID`, `AZURE_TENANT_ID`, `AZURE_EXPECTED_USERNAME`, `LAB_LANGUAGE=ko`를 채웠으며 `AZURE_RESOURCE_GROUP`은 이전 그룹 이름이거나 의도적으로 `AZURE_RESOURCE_GROUP=`로 비워 두었습니다.
 
-**다르면:** 도구를 설치하기 전에 `.env`를 고칩니다. placeholder나 비밀 값을 넣은 채 계속하지 않습니다.
+**다르면:** 위 다섯 항목에 잘못된 값이나 `<...>` 표시가 남았으면 고칩니다(`AZURE_RESOURCE_GROUP=`는 의도적으로 비워도 됨). 다른 항목을 추측해 채우거나 비밀 값을 추가하지 않습니다.
 
 ### 1-3. 준비 도구 설치
 
@@ -132,7 +132,7 @@ python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language ko
 
 출력된 `REPO_ROOT=`와 `RUN_DIR=` 두 줄을 지금 메모에 복사합니다. 터미널을 다시 열면 이 두 경로로 재개합니다.
 
-**완료 확인:** 출력 JSON에 `language: ko`가 있고 **`$RUN_DIR/config.json`**이 생깁니다. 새 이름을 기록한 것이며, 아직 소스 복사나 Azure 자원 생성은 하지 않았습니다.
+**완료 확인:** 출력 JSON에 `language: ko`가 있고 **`$RUN_DIR/config.json`**이 생깁니다. VS Code 탐색기의 **`.workshop → 이번 실행 ID → config.json`**에서 확인합니다. 새 이름을 기록한 것이며, 아직 소스 복사나 Azure 자원 생성은 하지 않았습니다.
 
 **다르면:** 출력과 같은 `RUN_DIR`를 보존하고 [환경 준비 복구](troubleshooting.ko.md#setup-resume)를 따릅니다. 새 실행 ID로 처음부터 반복하지 않습니다.
 

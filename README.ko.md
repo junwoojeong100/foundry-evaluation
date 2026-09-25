@@ -2,7 +2,9 @@
 
 [English guide](README.md)
 
-**120분 동안 실제 응답 48개를 모아, 지침을 바꾼 전후의 차이를 설명합니다.** 에이전트와 두 지침 버전(V1·V2)이 모두 제공되므로 코드를 작성하지 않습니다. 마지막에는 **검토한 사례, V1 → V2 비교, holdout 판단** 세 항목을 보고합니다. 목표는 만점이나 운영 승인이 아닙니다.
+**출장비 질문에 규정을 찾아 답하는 AI 에이전트를 실행하고, 지침을 바꾸면 답변이 나아지는지 확인합니다.** 에이전트 코드와 두 지침 버전(V1·V2)이 모두 제공되므로 코드를 작성하지 않습니다.
+
+**기본 실습은 120분입니다.** 실제 응답 48개를 모아 **한 사례를 검토하고, V1 → V2를 비교하고, 새 질문에서도 V2가 통하는지 보고**합니다. 낮은 점수도 실습 결과입니다. 목표는 만점이나 운영 승인이 아닙니다.
 
 <a id="start-here"></a>
 
@@ -47,16 +49,25 @@
 
 ## 10단계 실습 경로
 
-에이전트는 출장 규정 질문에 **답변·판단(decision)·근거 문서 ID**로 답합니다. 질문마다 후보 모델 세 개(Sol·Luna·Astra)가 각각 답합니다.
+**Microsoft Foundry**는 AI 에이전트를 배포·평가·관찰하는 Azure 플랫폼입니다. 이 실습의 에이전트는 **Foundry IQ**로 규정 문서를 검색하고, **답변·판단(`decision`)·근거 문서 ID(`citations`)**를 반환합니다. 질문 하나에 후보 모델 세 개(Sol·Luna·Astra)가 **각자 답변 하나씩** 만듭니다.
 
 ```text
 질문 → Python 에이전트 → Foundry IQ로 정책 검색 → 후보 모델 → 답변
-baseline(V1, dev 6문항) → trace 하나 검토 → improved(V2, 같은 6문항) → holdout(고정한 V2, 새 4문항)
 ```
 
 <a id="evaluation-runs"></a>
 
-**용어:** `dev`는 개선에 쓰는 6문항, `holdout`은 마지막에만 쓰는 새 4문항입니다. `baseline`·`improved`·`holdout`은 결과 폴더 이름(**label**)이며, label마다 6문항 또는 4문항 × 3모델입니다. **`improved`는 V2 결과의 이름일 뿐 개선 판정이 아닙니다.** **trace**는 요청 하나의 검색·모델 호출 기록, **judge**는 답을 채점하는 모델입니다([용어 설명](docs/reference.ko.md#terms)).
+**V1·V2는 모델 이름이 아니라 모델에게 주는 지침(prompt)의 두 버전입니다.** `dev`는 개선에 쓰는 질문 묶음, `holdout`은 지침을 고정한 뒤 마지막에만 확인하는 새 질문 묶음입니다. **label은 결과 폴더 이름**입니다.
+
+| 결과 이름(label) | 지침 | 질문 묶음(split) | 응답 수 | 확인할 것 |
+|---|---|---|---|---|
+| `baseline` | V1 | `dev` 6문항 | 18 | 바꾸기 전 답변 |
+| `improved` | V2 | 같은 `dev` 6문항 | 18 | 지침을 바꾼 전후 차이 |
+| `holdout` | 고정한 V2 | 새 `holdout` 4문항 | 12 | 새 질문에서도 통하는지 |
+
+**18 + 18 + 12 = 48응답**입니다. 준비 확인용 호출과 judge 점수는 이 수에 더하지 않습니다. **`improved`는 결과 이름일 뿐, 개선됐다는 판정이 아닙니다.** V1 → V2 비교에는 같은 `dev` 질문을 쓰고, holdout 점수를 dev 점수와 전후 비교하지 않습니다.
+
+**trace**는 요청 하나의 검색·모델 호출 기록, **judge**는 답을 채점하는 별도 모델입니다. 다른 용어는 필요한 단계에서 설명합니다([전체 용어](docs/reference.ko.md#terms)).
 
 | 단계 | 다음으로 넘어가는 기준 |
 |---|---|
@@ -76,13 +87,30 @@ baseline(V1, dev 6문항) → trace 하나 검토 → improved(V2, 같은 6문�
 **진행 방법**
 
 - **작업 위치:** 블록 앞의 굵은 라벨(**터미널 A**, **터미널 B**(3단계만), **편집기**, **포털**)을 따릅니다. “내 에이전트”는 `LAB_AGENT_NAME`입니다.
-- **명령:** 1-1 clone 뒤에는 저장소 루트에서 **한 블록씩 그대로** 붙여넣어 실행합니다. 명령 앞에 프롬프트 기호 `$`를 덧붙이지 않습니다. 프롬프트가 돌아올 때까지 기다립니다(3단계 로컬 서버만 예외). `&&`는 앞 명령이 성공해야 다음 명령을 실행한다는 뜻입니다. 입력 요청에는 값만 붙여넣고 Enter를 누릅니다.
-- **긴 출력:** JSON이나 쿼리가 길게 나와도 정상입니다. **완료 확인**의 값은 대개 출력 **맨 아래**에 있고, `language: ko`처럼 적은 값은 JSON에서 `"language": "ko"`로 보입니다. 출력 끝의 `Next:` 제안 명령과 `Update available` 안내는 실행하지 않습니다.
-- **숨김 파일:** `.env`와 `src/agent/.foundry/`는 이름이 점(.)으로 시작해 일반 파일 창에서 보이지 않습니다. VS Code의 **File → Open Folder**로 이 실습 폴더를 열면 탐색기에 보입니다.
+- **한 블록씩:** **작업 위치 → 명령 실행 → 완료 확인 → 다음 블록** 순서입니다. 입력 프롬프트(다음 명령을 입력할 수 있는 줄)가 돌아올 때까지 기다립니다. 3단계 서버만 예외입니다. 입력 요청이 나오면 값만 붙여넣고 Enter를 누릅니다.
+- **멈출 때:** 오류가 나거나 **완료 확인**의 필수 값이 없으면 바로 아래 **다르면**을 따라 [그 명령만 복구](docs/troubleshooting.ko.md#resume)합니다. 반대로 수집·평가가 끝난 뒤의 `business=False`나 낮은 유효 점수는 **기록하고 계속**합니다. 좋은 점수를 얻으려고 다시 실행하지 않습니다.
 - **새 터미널:** Bash를 열고 메모한 경로로 [복원 블록](#resume-shell)을 실행합니다(3단계 터미널 B 블록에는 포함됨).
-- **확인:** 출력이 **완료 확인**과 다르면 출력을 남기고 바로 아래 **다르면**대로 [그 명령만 복구](docs/troubleshooting.ko.md#resume)합니다. 점수를 높이려고 끝난 단계를 다시 실행하지 않습니다.
-- **막히면:** **다르면**의 링크부터 따릅니다. “강사”·“환경 소유자”는 수업에서는 강사, 혼자 실습하면 본인입니다. 도움을 요청할 때는 실패한 명령·오류·단계만 보여 주고 암호·토큰은 공유하지 않습니다.
-- **메모:** 편집기에서 새 텍스트 파일 하나를 열어 둡니다. 4-3·6-2·7-1·7-2·7-4·8-3·9-2에서 안내하는 값을 적고, 9-3에서 보고서로 저장합니다. **`data/holdout.jsonl`은 8단계 전까지 열지 않습니다.**
+- **메모:** 편집기에 새 텍스트 파일 하나를 열고, 각 단계에서 “메모합니다”라고 안내한 값만 적습니다. 9-3에서 [보고서 양식](#finish)에 옮겨 저장합니다. **`data/holdout.jsonl`은 8단계 전까지 열지 않습니다.**
+
+<details>
+<summary>터미널·파일·출력 읽기가 익숙하지 않다면</summary>
+
+| 보이는 표현 | 이렇게 읽으세요 |
+|---|---|
+| 저장소 루트 / “이 폴더” | 1-1에서 받은 코드의 맨 위 폴더. 이후 명령은 여기서 실행합니다 |
+| 코드 블록 | 블록 안의 명령만 그대로 복사합니다. 앞에 프롬프트 기호 `$`를 덧붙이지 않습니다 |
+| `&&` | 앞 명령이 성공해야 다음 명령을 실행합니다 |
+| `$PWD`, `"$ROW_ID"` 같은 코드 | 터미널이 값으로 바꿉니다. `$`나 따옴표를 지우거나 직접 치환하지 않습니다 |
+| 출력 설명의 `<내 에이전트>` | 실제 출력에는 내 `LAB_AGENT_NAME` 값이 나옵니다. 이 문구를 입력하지 않습니다 |
+| `language: ko` | JSON에서는 `"language": "ko"`로 보입니다. `true`는 참, `false`는 거짓, `[]`는 빈 목록입니다 |
+
+JSON이나 쿼리가 길게 나와도 정상입니다. **완료 확인**의 값은 대개 출력 **맨 아래**에 있습니다. 출력 끝의 `Next:` 제안 명령과 `Update available` 안내 대신 **이 가이드의 다음 블록**을 따릅니다.
+
+`.env`(설정 파일)와 `src/agent/.foundry/`(결과 폴더)는 점(.)으로 시작하는 숨김 파일·폴더입니다. VS Code의 **File → Open Folder**로 실습 폴더를 열면 탐색기에서 볼 수 있습니다. 파일을 수정한 뒤에는 **Ctrl+S(macOS: Cmd+S)**로 저장합니다. `.env`는 실행하거나 `source`하지 않습니다.
+
+도움이 필요하면 실패한 명령·오류·단계만 전달하고, 암호·토큰·`.env` 전체는 공유하지 않습니다. “강사”·“환경 소유자”는 수업에서는 강사, 혼자 실습하면 본인입니다.
+
+</details>
 
 <a id="배경-learning-loop와-frontier-ecosystems"></a>
 <a id="이-실습에서는-무엇으로-연결하나요"></a>
@@ -501,7 +529,14 @@ Playground에서 호출한 V1 답변입니다. 금액·판단은 맞지만 `cita
 
 **목표:** V1 응답 18개(dev 6문항 × 3모델)를 `baseline`으로 모아 평가합니다.
 
-`collect`는 18개 응답을 저장하고 판단·금액·인용을 Python **업무 검사**로 확인합니다. `evaluate`는 **저장된 응답**만 Foundry judge로 채점하며 새 응답을 만들지 않습니다([평가기별 입력](#무엇을-평가하나요)).
+**응답을 만드는 명령과 채점하는 명령은 다릅니다.** 아래 두 종류의 검사는 서로 대신할 수 없습니다.
+
+| 명령 | 하는 일 | 확인하는 것 |
+|---|---|---|
+| `collect` | 에이전트의 **새 응답 18개**를 저장하고 Python 업무 검사를 실행 | 판단값·금액·인용이 정해진 규칙과 맞는가 |
+| `evaluate` | **저장된 18개 응답**을 judge로 채점. 에이전트 응답을 새로 만들지 않음 | 근거에 맞는가(`groundedness`), 질문에 관련 있는가(`relevance`) |
+
+세부 입력은 [평가기별 설명](#무엇을-평가하나요)에서 볼 수 있습니다.
 
 ### 5-1. Judge 확인
 
@@ -631,13 +666,22 @@ python scripts/workshop.py show --label baseline --row-id "$ROW_ID"
 
 **다르면:** `Unknown row ID`이면 괄호·쉼표 없이 `baseline-`으로 시작하는 ID만 다시 붙여넣습니다.
 
-**같은 사례를 두 곳에서 확인합니다.**
+**먼저 터미널 A에서 질문(`query`)을 읽고, 아래 순서로 비교합니다.** `saved_response`는 에이전트가 한 답, `fixed_reference`는 미리 정해 둔 정답입니다.
 
-1. **터미널 A의 출력:** `saved_response`의 `answer`·`decision`을 `fixed_reference`의 `ground_truth`·`expected_decision`·`required_numbers`와 비교합니다. 이어서 `citations`(인용한 ID)가 `source_ids`(검색된 문서)와 `allowed_citations`(허용 ID)에 있는지 봅니다. `business_checks`에서 `false`인 항목이 실패한 검사입니다.
-2. **포털:** 왼쪽 **Agents** → 내 에이전트 → **Traces → Trace view**를 엽니다. 표 위 왼쪽 검색창에 전체 `trace_id`를 붙여넣고, 검색된 행의 **Trace ID** 링크를 누릅니다. 보이지 않으면 **Date range → 7D**로 넓힙니다.
-3. **포털:** 열린 창의 **Graph view**에서 `foundry_iq.retrieve`(검색)와 `chat`으로 시작하는 상자(모델 호출)를 눌러 봅니다. 각 상자가 작업 하나의 기록인 **span**입니다. **Success**는 작업 실행 성공이며, 답변의 업무 검사 통과와는 다릅니다.
+| 순서 | 에이전트의 값(`saved_response`) | 비교할 기준 |
+|---|---|---|
+| 1. 설명·금액 | `answer` | `fixed_reference`의 `ground_truth`와 `required_numbers` |
+| 2. 판단 | `decision` | `fixed_reference`의 `expected_decision`과 같은가 |
+| 3. 인용 | `citations` | 각 ID가 검색된 `source_ids`와 정답의 `allowed_citations`에 있는가 |
 
-**그다음 한 줄로 메모합니다:** `row_id=...; trace_id=...; 관찰: ...; 근거: ...; 바꿀 점: ...`. 통과한 사례라면 `바꿀 점` 대신 **V2에서도 유지할 동작**을 적습니다([통과 사례](docs/troubleshooting.ko.md#no-failures)).
+그다음 `business_checks`에서 `false`인 검사가 위 관찰과 맞는지 봅니다. 모두 `true`라면 통과한 이유를 설명합니다. JSON 전체를 해석할 필요는 없습니다.
+
+**이어서 포털에서 같은 요청의 기록을 확인합니다.** `row_id`는 응답 이름이고, `trace_id`는 포털에서 찾을 실행 기록 ID입니다.
+
+1. 왼쪽 **Agents** → 내 에이전트 → **Traces → Trace view**를 엽니다. 표 위 왼쪽 검색창에 전체 `trace_id`를 붙여넣고, 검색된 행의 **Trace ID** 링크를 누릅니다. 보이지 않으면 **Date range → 7D**로 넓힙니다.
+2. 열린 창의 **Graph view**에서 `foundry_iq.retrieve`(검색)와 `chat`으로 시작하는 상자(모델 호출)를 눌러 봅니다. 각 상자가 작업 하나의 기록인 **span**입니다. **Success**는 작업 실행 성공이며, 답변의 업무 검사 통과와는 다릅니다.
+
+**그다음 한 줄로 메모합니다:** `row_id=...; trace_id=...; 관찰: ...; 근거: ...; 바꿀 점: ...`. `관찰`에는 무엇이 맞거나 틀렸는지, `근거`에는 위에서 대조한 필드·문서 ID, `바꿀 점`에는 필요한 지침을 적습니다. 통과한 사례라면 **V2에서도 유지할 동작**을 적습니다([통과 사례](docs/troubleshooting.ko.md#no-failures), [원인 구분 예시](#실제-예시-금액은-맞는데-왜-실패했나요)).
 
 **완료 확인:** 포털 창 위쪽 `ID:`가 내 `trace_id`와 같고, 메모에 `row_id=...; trace_id=...; 관찰: ...; 근거: ...; 바꿀 점(또는 유지할 동작): ...` 한 줄이 완성되어 있습니다.
 
@@ -808,20 +852,26 @@ python scripts/workshop.py summary --labels baseline improved
 <a id="metric-fields"></a>
 <a id="실제-실행에서는-무엇이-좋아졌나요"></a>
 
+**표 읽는 순서:** `->` 왼쪽이 V1, 오른쪽이 V2입니다. 먼저 **업무 통과**, 다음 **judge 통과**, 마지막 **토큰·시간의 증가 여부**를 봅니다. 한 열만 좋아졌다고 전체가 개선됐다고 결론 내리지 않습니다.
+
+| 열 | 읽는 법 |
+|---|---|
+| `business` | 다섯 업무 검사를 **모두** 통과한 응답 수 / 전체 수. `5/6`이면 6개 중 5개 통과 |
+| `required citations` | 인용이 필요한 응답 중 유효하게 인용한 수 / 인용이 필요한 수 |
+| `groundedness`, `relevance` | 각각 근거성·관련성에서 **5점 중 4점 이상을 받은 응답 수 / 전체 수**. `5/6`은 점수가 아니라 통과 건수 |
+| `tokens in/out` | 모델이 읽은 입력 / 만든 출력의 양(토큰). 해당 모델의 **dev 6응답 합계**이며, Azure 청구액이 아님 |
+| `p50/p95 s` | 검색 + 모델 처리 시간(**초**). 6응답을 빠른 순으로 놓으면 p50은 세 번째, p95는 마지막 시간. 작을수록 빠름 |
+
+**메모의 해석:** `업무 통과는 늘어남/같음/줄어듦; judge 미통과는 ...; 토큰·시간은 ...`처럼 내 값으로 적습니다. 변화가 없거나 나빠졌어도 그대로 씁니다.
+
 <details>
-<summary>참고: 요약 표의 열</summary>
+<summary>참고: 집계 원본과 비교의 한계</summary>
 
-요약은 `src/agent/.foundry/results/comparison.json`(`labels → baseline / improved → models`)과 label별 `evaluation-results.json`을 읽습니다.
+요약은 `src/agent/.foundry/results/comparison.json`(`labels → baseline / improved → models`)과 label별 `evaluation-results.json`을 읽습니다. 집계 필드는 [결과 읽기](docs/validation.ko.md#read-your-results)를 참고합니다.
 
-| 열 | 필드 | 뜻 |
-|---|---|---|
-| `business` | `business_passed` / `total` | 다섯 업무 검사를 모두 통과한 응답 수 |
-| `required citations` | `required_citation_passed` / `required_citation_total` | 인용이 필요한 응답 중 유효하게 인용한 응답 수 |
-| `groundedness`, `relevance` | `foundry_evaluators → native_passed` / `total` | **4점 이상**을 받은 행 수. 평균 4점이 전부 통과를 뜻하지 않음 |
-| `tokens in/out` | `input_tokens`, `output_tokens` | 해당 모델의 **같은 dev 6응답 합계**. planner·judge 등은 빠지므로 Azure 청구액이 아님 |
-| `p50/p95 s` | `latency_p50_seconds`, `latency_p95_seconds` | 검색 + 모델 처리 시간(**초**). 모델당 6응답이라 p95는 가장 느린 한 응답이며 운영 보장이 아님([측정 범위](docs/validation.ko.md#tradeoffs)) |
+토큰에는 planner·judge 등이 빠지고, 응답 6개의 지연 통계는 운영 성능을 보장하지 않습니다([측정 범위](docs/validation.ko.md#tradeoffs)). 검색 근거도 실행마다 달라질 수 있으므로(`comparison_notes`) 이 표는 모델만의 순위가 아니라 **검색을 포함한 에이전트 전체** 비교입니다.
 
-실행마다 검색 근거가 달라질 수 있으므로(`comparison_notes`) 이 표는 모델 순위가 아니라 end-to-end 비교입니다. 미통과 행은 [미통과 행 확인](docs/validation.ko.md#native-failures)에서 봅니다. 기록된 예시 실행은 [모델별 실제 결과](docs/validation.ko.md#measured-results)에 있으며 내 목표 점수가 아닙니다.
+미통과 행은 [미통과 행 확인](docs/validation.ko.md#native-failures)에서 봅니다. 기록된 예시 실행은 [모델별 실제 결과](docs/validation.ko.md#measured-results)에 있으며 내 목표 점수가 아닙니다.
 
 </details>
 
@@ -1041,7 +1091,12 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
 
 ```text
 1. 검토(6-2의 한 줄): ...
-2. 변화(7-4): 여기에 V1 -> V2 표 붙여넣기; improved 업무 미통과=...; improved Foundry 미통과=...
+   연결한 V2 지침(7-1): ...
+2. 변화(7-4):
+   V1 버전(4-3)=...; V2 버전(7-2)=...
+   V1 -> V2 표: 여기에 표 붙여넣기
+   해석(업무 통과·judge 미통과·토큰·시간): ...
+   improved 미통과: 업무=...; Foundry=...
 3. 판단(verified-evidence.json의 게이트):
    sol: dev=..., holdout=...
    luna: dev=..., holdout=...

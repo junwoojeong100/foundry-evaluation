@@ -47,7 +47,7 @@ python scripts/workshop.py generate-rubric --label improved
 
 **Read it:**
 
-- **Review the generated dimensions like code.** Generation uses an LLM, so your dimensions and weights can differ from another team's, and between runs.
+- **Do not accept generated criteria without review.** Read whether each criterion checks policies, decisions, amounts, and citations appropriately. Generation uses an LLM, so criteria and weights can differ between teams and runs.
 - **Compare the failed rows with Level 2's `business_contract`.** `policy_rubric` and `generated_rubric` judge answer quality; `business_contract` deterministically checks the required decision, amounts, and citations, and no rubric replaces it.
 
 <details>
@@ -90,7 +90,7 @@ python scripts/workshop.py stress-test --model sol --count 15
 
 - **This is a model-level test.** Foundry gives Sol all seven policies directly; your agent and its retrieval are not used, so these numbers are not comparable with the main guide's steps 5–8.
 - **Reuse the saved run.** Rerunning the command reuses its saved questions and run; do not delete result files for a better score. A separate new experiment can have different questions and counts, so do not compare it as the same run.
-- **Classify before promoting.** Mark each failure as a policy gap (such as an uncovered overseas trip), a judge issue (such as a correct deferral marked down), or a safety flag. Add only fixed-reference questions to `dev`; never tune on `holdout`.
+- **Only note candidates for a future experiment.** Mark each failure as a policy gap (such as an uncovered overseas trip), a judge issue (such as a correct deferral marked down), or a safety flag. **Do not edit this workshop's `dev` or `holdout` files.** Add new questions with reviewed, fixed references to `dev` only in a separate experiment after this report and cleanup. Never tune instructions on `holdout`.
 
 <details>
 <summary>Recorded English result — an example</summary>

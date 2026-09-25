@@ -21,6 +21,8 @@
 
 ## 1. 사용자 지정 평가기 두 개 등록
 
+**코드 평가기**는 다섯 업무 규칙을 그대로 검사하고, **rubric(채점 기준표) 평가기**는 LLM judge가 기준표를 읽고 품질을 채점합니다. 둘 다 제공되므로 직접 작성하지 않습니다.
+
 **터미널 A:**
 
 ```bash
@@ -31,7 +33,7 @@ python scripts/workshop.py register-evaluators
 
 **다르면:** `already exists and is not owned by this folder`이면 멈추고 강사와 소유권 충돌을 확인합니다. 지금 `.env`의 `LAB_PREFIX`를 바꾸거나 다른 조의 평가기를 삭제하지 않습니다. [레벨 2·3 복구](troubleshooting.ko.md#levels)
 
-**읽는 법:** 이제 프로젝트에 재사용 가능한 평가기 두 개가 있습니다. 다섯 업무 검사를 그대로 실행하는 코드 평가기와, LLM judge가 정책 품질을 채점하는 rubric 평가기입니다.
+**읽는 법:** 이제 프로젝트에 두 평가기가 등록되어 다음 절에서 재사용할 수 있습니다.
 
 <details>
 <summary>두 평가기의 내용</summary>
@@ -52,7 +54,7 @@ python scripts/workshop.py register-evaluators
 
 ## 2. 평가 항목 9개로 V1·V2 채점
 
-**필요한 등록은 이미 끝났습니다.** 이 suite는 **평가 항목 9개**를 채점합니다. 1절의 사용자 지정 평가기 2개, 기본 제공 평가기 6개, 같은 rubric을 검색 근거 없이 실행하는 `policy_rubric_no_evidence`입니다.
+**필요한 등록은 이미 끝났습니다.** 여러 평가기를 함께 실행하는 **suite(평가 묶음)**로 **평가 항목 9개**를 채점합니다. 1절의 사용자 지정 평가기 2개, 기본 제공 평가기 6개, 같은 rubric을 검색 근거 없이 실행하는 `policy_rubric_no_evidence`입니다.
 
 **터미널 A:** 저장된 `baseline`·`improved` 응답을 한 eval group으로 평가합니다. 몇 분 걸립니다.
 
@@ -141,7 +143,7 @@ python scripts/workshop.py judge-agreement --labels baseline improved
 **읽는 법:**
 
 - **`judge pass + business fail`:** 업무 검사에서 실패한 답변을 judge가 통과시켰습니다. 이 수가 많은 judge는 업무 검사를 대신할 수 없습니다.
-- **`judge fail + business pass`:** 올바른 답변을 judge가 떨어뜨렸습니다. 그 judge로 릴리스를 막기 전에, 2절 포털 run에서 목록의 행마다 답변과 judge의 이유를 읽습니다. 올바른 보류가 relevance에서 낮게 나온 것은 judge의 한계이지 에이전트 실패가 아닙니다.
+- **`judge fail + business pass`:** 업무 검사를 통과한 답변을 judge가 떨어뜨렸습니다. 그 judge로 릴리스를 막기 전에, 2절 포털 run에서 목록의 행마다 답변과 judge의 이유를 읽습니다. 실제 품질 문제인지, 올바른 보류를 relevance가 낮게 평가한 것인지 구분합니다.
 - **judge를 결과에 맞추지 않습니다.** 기준값, rubric, 기준 정답은 그대로 두고, 릴리스를 막을 judge와 진단용으로만 쓸 judge를 메모합니다.
 
 <details>
@@ -174,7 +176,7 @@ Business passes that a judge failed (review each):
 
 ## 4. 실행 결과와 실패 클러스터 비교
 
-**터미널 A:** Foundry가 2절의 `baseline`·`improved` run을 비교하고, `improved` run의 실패를 클러스터로 묶습니다.
+**터미널 A:** Foundry가 2절의 `baseline`·`improved` run을 비교하고, `improved` run의 실패를 비슷한 원인끼리 **클러스터(묶음)**로 정리합니다.
 
 ```bash
 python scripts/workshop.py insights --baseline baseline --candidate improved
