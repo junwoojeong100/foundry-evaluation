@@ -8,7 +8,7 @@
 |---|---|
 | Previous work | [Level 2](level-2.en.md) finished in this folder; **step 10 cleanup not yet run** |
 | Live resources | The same deployed V2 agent for sections 4 and 6; prepared [model capacity and trace access](instructor.en.md#levels) |
-| Red-team permission | Section 3 only if your organization permits the scan; otherwise record it as skipped |
+| Red-team permission | Section 3 only if your organization permits the scan; otherwise record it as **skipped, not completed** |
 | After this level | Append your results to the main report, then [step 10 cleanup](../README.md#cleanup) |
 
 **Run order and scope:** In existing **Terminal A at the repository root**, complete sections 1–7 in order. If Terminal A is gone, open a new terminal and [restore the environment only](../README.md#resume-shell). Keep names, V2 instructions, and the deployed version unchanged; if you used a recovery label, replace `--label improved` with that label.
@@ -371,7 +371,7 @@ A passing gate still does not approve production; human review and the holdout r
 
 Append the [results table](#level-3-results) you filled in during the sections to your main [report](../README.md#finish). You do not need to rerun finished commands.
 
-**Checkpoint:** sections 1–7 meet their completion checkpoints and the table is filled in. Record skipped sections, errors, or zero traces as **incomplete**. Low valid scores, `Quality gate FAILED`, or `Composite gate FAILED` are results of a completed exercise.
+**Checkpoint:** sections 1–7 meet their completion checkpoints and the table is filled in. Record skipped sections as **skipped, not completed**, and errors or zero traces as **incomplete**. Low valid scores, `Quality gate FAILED`, or `Composite gate FAILED` are results of a completed exercise.
 
 **If not:** return to the first unfinished section and resume only its command, or record it as incomplete if time runs out; do not repeat finished commands ([Level 2–3 recovery](troubleshooting.en.md#levels)).
 
@@ -390,32 +390,31 @@ Append the [results table](#level-3-results) you filled in during the sections t
 
 **Before you start:** your workshop folder has finished the main guide through step 7-2, so V1 and V2 are versions of your deployed agent. Keep your 6-3 row ID and reason.
 
-1. **Identity:** create a user-assigned managed identity with a GitHub federated credential for your repository ([connect GitHub Actions to Azure](https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect)).
-2. **Roles:** give it **Azure AI User** on the Foundry project and **Reader** on the subscription; each `collect` runs the `preflight` check, which reads model quotas, and `monitor` reads Application Insights. It needs no Search roles, and never Owner.
+1. **Identity:** create a user-assigned managed identity and add a GitHub federated credential for your repository ([connect GitHub Actions to Azure](https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect)). Copy its subject from GitHub instead of typing it: append `:ref:refs/heads/main` to the output of `gh api repos/<owner>/<repo>/actions/oidc/customization/sub --jq .sub_claim_prefix`. The prefix can include owner and repository IDs, as in `repo:<owner>@<owner-id>/<repo>@<repo-id>`.
+2. **Roles:** give it **Foundry User** (formerly Azure AI User) on the Foundry account and **Reader** on the subscription. The evaluations call the account's models and evaluation API as this identity, so a project-scope assignment is not enough; each `collect` runs the `preflight` check, which reads model quotas, and `monitor` reads Application Insights. It needs no Search roles, and never Owner. A new role assignment can take up to an hour to apply to every call.
 3. **Variables:** in the repository's **Settings → Secrets and variables → Actions → Variables**, set `AZURE_CLIENT_ID` to the identity's client ID, then add each other `vars.*` name that the workflow's `env` block reads, with its value from your `.env`. None is a secret.
 4. **Run:** copy `ci/release-gate.yml` to `.github/workflows/`, then run **release-gate** with your V1 and V2 version numbers and your 6-3 row ID and reason.
 
 **Checkpoint:** the `evaluate` job passes `verify` and uploads the `workshop-results` artifact, and the `gate` job prints the composite table ending in `Composite gate passed ...` or `Composite gate FAILED: ...`.
 
-**If not:** open the failed step's log. Its messages are the workshop commands' own, so follow that command's recovery ([Level 2 and 3 recovery](troubleshooting.en.md#levels) or the main guide's), then run the workflow again. A sign-in or permission error means an item 1–2 setting is missing.
+**If not:** open the failed step's log. Its messages are the workshop commands' own, so follow that command's recovery ([Level 2 and 3 recovery](troubleshooting.en.md#levels) or the main guide's), then run the workflow again. `AADSTS700213` at sign-in means the federated credential's subject does not match item 1. `PermissionDenied` or `errored rows` in an evaluation means an item 2 role is missing or not applied yet; wait, then run the workflow again.
 
 **Read it:** the pipeline collects the baseline again and records your 6-3 review on the same row ID. Each run registers custom evaluators under its own `LAB_PREFIX` and deletes them at the end. `continuous` is waived because a run cannot wait for the hourly schedule. Foundry also offers its own evaluation action ([Run evaluations in GitHub Actions](https://learn.microsoft.com/azure/foundry/how-to/evaluation-github-action)).
 
-Recorded English run (September 25, 2026): all six stages ran from a folder with no azd environment or ownership record, signed in as the workshop user in place of a federated identity. Dev business passes went from V1 0/18 to V2 18/18, holdout was 12/12, and `verify` confirmed 48 responses and 48 traces. The gate step then read only the copied results:
+Recorded English run (September 25, 2026): the workflow ran on GitHub-hosted runners in a private copy of this repository and signed in through OpenID Connect as a user-assigned managed identity that had only the two roles in item 2. The `evaluate` job took 27 minutes: dev business passes went from V1 0/18 to V2 17/18, holdout was 12/12, and `verify` confirmed 48 responses and 48 traces. The `gate` job then read only the downloaded artifact and failed with exit code 1:
 
 ```text
 Composite release gate: saved results only; no new calls.
 signal      status  evidence                     result
 business    pass    verified-evidence.json       six business gates true
-agent       pass    level3/agent-dev.json        business_contract dev sol 6/6, dev luna 6/6, dev astra 6/6
+agent       pass    level3/agent-dev.json        business_contract dev sol 5/6, dev luna 6/6, dev astra 6/6
 traces      pass    level3/traces-improved.json  improved indirect_attack 18/18
 continuous  waived  level3/continuous.json       Level 3 section 6 has no saved result
-red-team    FAIL    level3/red-team-sol.json     sol 1/6 attacks succeeded
-Composite gate FAILED: red-team (sol 1/6 attacks succeeded). production_release_approved remains false.
-exit code: 1
+red-team    FAIL    level3/red-team-sol.json     sol 2/6 attacks succeeded
+Composite gate FAILED: red-team (sol 2/6 attacks succeeded). production_release_approved remains false.
 ```
 
-Sol's one successful red-team attack stops the release even though every business gate passes.
+Sol's two successful red-team attacks stop the release even though every business gate passes.
 
 </details>
 

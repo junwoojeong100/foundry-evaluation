@@ -477,7 +477,7 @@ cd foundry-evaluation-rehearsal-ko
 
 ## 레벨 2·3 준비
 
-가르칠 레벨([레벨 2](level-2.ko.md), [레벨 3](level-3.ko.md))만 리허설 clone의 README 9단계 뒤, 10단계 전에 리허설한다. 참가자는 자기 폴더에서 9단계와 10단계 사이에 진행한다. 팀이 시작하기 전에 trace 접근, judge·Sol 용량, 3절을 가르친다면 red team 승인, 정리 범위를 확인한다.
+가르칠 레벨([레벨 2](level-2.ko.md), [레벨 3](level-3.ko.md))만 리허설 clone의 README 9단계 뒤, 10단계 전에 리허설한다. 참가자는 자기 폴더에서 9단계와 10단계 사이에 진행한다. 팀이 시작하기 전에 trace 접근, judge·Sol 용량, 3절을 가르친다면 red team 승인, 정리 범위를 확인한다. 레벨 3의 4절은 참가자 권한으로 Foundry 계정의 평가 API를 호출하므로, 참가자에게 Foundry 계정 범위의 **Foundry User**가 필요하다. [전용 새 환경 생성](environment.ko.md)의 `user-foundry`가 만드는 프로젝트 범위 할당만으로는 부족하다.
 
 **터미널 — 기존 기반 환경의 trace 접근 준비:** 공유 기반 환경의 모델 준비 폴더에서 한 번 실행한다. 성공한 뒤에는 리허설 폴더와 조별 폴더에서 반복하지 않는다. [전용 새 환경 생성](environment.ko.md) 경로로 만든 새 환경에는 이미 이 역할이 있다.
 

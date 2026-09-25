@@ -417,9 +417,10 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 | `Rubric generation ended as ...`, `The run ended as ...` | 실패 상태·오류를 강사와 확인합니다. 원인이 해결되고 메시지가 파일 삭제를 명시한 경우에만 [상태 파일 복구](#level-state-recovery)를 따릅니다. |
 | `... already compares the rubrics on ...` 또는 `... already holds a ...-question run` | 저장된 run과 인자가 다릅니다. 메시지에 나온 기존 값으로 재개합니다. 다른 조건의 새 실험은 별도로 계획하며 기존 기록을 지우지 않습니다. |
 | HTTP `429`(Too Many Requests) 오류 | `Retry-After`가 있으면 그만큼, 없으면 1분 기다립니다. 저장된 run 상태에 맞게 재개/실패 재시도를 고릅니다. `--count`는 늘리지 않습니다. |
-| `This folder has no deployed hosted agent` | 강사와 원인을 확인합니다. 이미 정리했다면 4·6절은 **미실행**으로 기록하고 재배포하지 않습니다. 실행하지 않은 절을 레벨 3 완료로 표시하지 않습니다. |
+| `This folder has no deployed hosted agent` | 강사와 원인을 확인합니다. 이미 정리했다면 4·6절은 **완료가 아닌 생략**으로 기록하고 재배포하지 않습니다. 실행하지 않은 절을 레벨 3 완료로 표시하지 않습니다. |
 | `... agent calls or evaluator results failed` | 저장된 실제 오류가 있으면 해결한 뒤(오류 없이 한 평가기의 결과만 빠진 run도 있음) `python scripts/workshop.py evaluate-agent --split dev --retry-failed`를 실행합니다. 실패한 모델 run만 교체되고, 이전 run은 `attempts`에 남습니다. |
 | `The <model> run ended as failed: ... Error code: 500` | 서비스 내부 오류입니다. 1분 기다린 뒤 `python scripts/workshop.py evaluate-agent --retry-failed`를 실행합니다. |
+| `The <model> run ended as failed: ... Error code: 401 ... PermissionDenied` | 4절은 내 권한으로 Foundry 계정의 평가 API를 호출하므로 Foundry 계정 범위의 **Foundry User**가 필요합니다. 프로젝트 범위 할당만으로는 부족합니다([레벨 2·3 준비](instructor.ko.md#levels)). 환경 소유자가 역할을 부여하고 적용되면(최대 1시간) `python scripts/workshop.py evaluate-agent --split dev --retry-failed`를 실행합니다. |
 | `evaluate-traces`가 `ApplicationInsightsAccessDenied` 같은 접근 오류로 끝남 | 강사가 [trace 접근 준비](instructor.ko.md#levels)를 마친 뒤 [상태 파일 복구](#level-state-recovery)를 따릅니다. |
 | `... traces were not found ... evaluator results failed` | 누락 trace 수가 0보다 크면 반영·권한을 확인합니다. 누락 0건인데 평가 오류가 있으면 judge 오류를 확인합니다. 원인 해결 뒤 [상태 파일 복구](#level-state-recovery)를 따릅니다. |
 

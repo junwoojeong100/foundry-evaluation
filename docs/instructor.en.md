@@ -472,7 +472,7 @@ Keep the local server in a trusted development environment, never expose it publ
 
 ## Prepare Levels 2 and 3
 
-Rehearse only the levels you will teach ([Level 2](level-2.en.md), [Level 3](level-3.en.md)), after README step 9 in the rehearsal clone and before its step 10. Teams do them between steps 9 and 10 in their own folders. Before teams start, confirm trace access, judge and Sol capacity, red-team approval if you teach section 3, and cleanup boundaries.
+Rehearse only the levels you will teach ([Level 2](level-2.en.md), [Level 3](level-3.en.md)), after README step 9 in the rehearsal clone and before its step 10. Teams do them between steps 9 and 10 in their own folders. Before teams start, confirm trace access, judge and Sol capacity, red-team approval if you teach section 3, and cleanup boundaries. Level 3 section 4 calls the Foundry account's evaluation API as each participant, so participants need **Foundry User** on the Foundry account; a project-scope assignment, such as the one `user-foundry` creates in the [new-environment guide](environment.en.md), is not enough.
 
 **Terminal — prepare trace access for existing foundations:** run once in the model-preparation folder for the shared foundation. Rehearsal and team folders do not need this command after it succeeds. New environments created with [the new-environment guide](environment.en.md) already have these roles.
 

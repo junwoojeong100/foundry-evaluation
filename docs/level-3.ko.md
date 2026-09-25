@@ -8,7 +8,7 @@
 |---|---|
 | 이전 작업 | 같은 폴더에서 [레벨 2](level-2.ko.md) 완료. **10단계 정리는 아직 실행하지 않음** |
 | 실행 자원 | 4·6절에서 쓸 동일한 V2 에이전트. [모델 용량·trace 접근 권한](instructor.ko.md#levels) 준비 완료 |
-| Red team 허용 여부 | 조직이 허용할 때만 3절 실행. 아니면 생략으로 기록 |
+| Red team 허용 여부 | 조직이 허용할 때만 3절 실행. 아니면 **완료가 아닌 생략**으로 기록 |
 | 마친 뒤 | 기본 보고서에 결과를 붙인 뒤 [10단계 정리](../README.ko.md#cleanup) |
 
 **실행 순서와 범위:** 저장소 루트의 기존 **터미널 A**에서 1–7절을 순서대로 합니다. 기존 터미널 A가 없다면 새 터미널을 열고 [환경만 복원](../README.ko.md#resume-shell)합니다. 이름·V2 지침·배포 버전은 유지합니다. 복구 때 다른 `label`을 썼다면 `--label improved` 대신 그 `label`을 씁니다.
@@ -374,7 +374,7 @@ exit code: 0
 
 각 절에서 채운 [결과표](#level-3-results)를 기본 실습의 [보고](../README.ko.md#finish)에 붙입니다. 끝난 명령을 다시 실행할 필요는 없습니다.
 
-**완료 확인:** 1–7절의 완료 기준을 충족하고 표를 채웠습니다. 생략·오류·0 trace는 **미완료**로 기록합니다. 낮은 유효 점수, `Quality gate FAILED`, `Composite gate FAILED`는 완료된 실습의 결과입니다.
+**완료 확인:** 1–7절의 완료 기준을 충족하고 표를 채웠습니다. 생략한 절은 **완료가 아닌 생략**으로, 오류·0 trace는 **미완료**로 기록합니다. 낮은 유효 점수, `Quality gate FAILED`, `Composite gate FAILED`는 완료된 실습의 결과입니다.
 
 **다르면:** 끝나지 않은 첫 절로 돌아가 그 명령만 이어가거나, 시간이 없으면 미완료로 기록합니다. 끝난 명령은 반복하지 않습니다([레벨 2·3 복구](troubleshooting.ko.md#levels)).
 
@@ -393,18 +393,18 @@ exit code: 0
 
 **시작 전:** 작업 폴더에서 기본 실습 7-2단계까지 마쳐, V1과 V2가 배포된 에이전트의 버전으로 있어야 합니다. 6-3의 row ID와 이유를 준비합니다.
 
-1. **식별자:** 저장소용 GitHub federated credential을 붙인 user-assigned managed identity를 만듭니다([GitHub Actions를 Azure에 연결](https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect)).
-2. **역할:** Foundry 프로젝트의 **Azure AI User**와 구독의 **Reader**를 부여합니다. `collect`가 실행하는 `preflight` 검사는 모델 할당량을, `monitor`는 Application Insights를 읽습니다. Search 역할은 필요 없고 Owner는 주지 않습니다.
+1. **식별자:** user-assigned managed identity를 만들고 저장소용 GitHub federated credential을 추가합니다([GitHub Actions를 Azure에 연결](https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect)). subject는 직접 입력하지 말고 GitHub에서 복사합니다. `gh api repos/<owner>/<repo>/actions/oidc/customization/sub --jq .sub_claim_prefix`의 출력 뒤에 `:ref:refs/heads/main`을 붙입니다. 이 접두사에는 `repo:<owner>@<owner-id>/<repo>@<repo-id>`처럼 소유자와 저장소 ID가 들어갈 수 있습니다.
+2. **역할:** Foundry 계정에 **Foundry User**(이전 이름 Azure AI User)를, 구독에 **Reader**를 부여합니다. 평가는 이 식별자로 계정의 모델과 평가 API를 호출하므로 프로젝트 범위 할당으로는 부족합니다. `collect`가 실행하는 `preflight` 검사는 모델 할당량을, `monitor`는 Application Insights를 읽습니다. Search 역할은 필요 없고 Owner는 주지 않습니다. 새 역할 할당이 모든 호출에 적용되기까지 최대 1시간 정도 걸릴 수 있습니다.
 3. **변수:** 저장소의 **Settings → Secrets and variables → Actions → Variables**에서 `AZURE_CLIENT_ID`에 식별자의 client ID를 넣고, 워크플로 `env` 블록이 읽는 나머지 `vars.*` 이름을 `.env`의 값으로 추가합니다. 비밀값은 없습니다.
 4. **실행:** `ci/release-gate.yml`을 `.github/workflows/`에 복사한 뒤, V1·V2 버전 번호와 6-3의 row ID·이유를 넣어 **release-gate**를 실행합니다.
 
 **완료 확인:** `evaluate` 작업이 `verify`를 통과하고 `workshop-results` artifact를 올리며, `gate` 작업이 복합 게이트 표와 `Composite gate passed ...` 또는 `Composite gate FAILED: ...`를 출력합니다.
 
-**다르면:** 실패한 단계의 로그를 엽니다. 메시지는 워크숍 명령의 메시지와 같으므로 그 명령의 복구 방법([레벨 2·3 복구](troubleshooting.ko.md#levels) 또는 기본 실습의 복구)을 따른 뒤 워크플로를 다시 실행합니다. 로그인·권한 오류이면 1–2번 설정이 빠진 것입니다.
+**다르면:** 실패한 단계의 로그를 엽니다. 메시지는 워크숍 명령의 메시지와 같으므로 그 명령의 복구 방법([레벨 2·3 복구](troubleshooting.ko.md#levels) 또는 기본 실습의 복구)을 따른 뒤 워크플로를 다시 실행합니다. 로그인 단계의 `AADSTS700213`은 federated credential의 subject가 1번과 다르다는 뜻입니다. 평가 중 `PermissionDenied`나 `errored rows`는 2번 역할이 없거나 아직 적용되지 않았다는 뜻이므로, 기다린 뒤 워크플로를 다시 실행합니다.
 
 **읽는 법:** 파이프라인은 baseline을 다시 수집하고 6-3의 검토를 같은 row ID에 기록합니다. 실행마다 자기 `LAB_PREFIX`로 사용자 지정 평가기를 등록하고 끝나면 삭제합니다. 한 번의 실행은 매시간 일정을 기다릴 수 없어 `continuous`를 waiver합니다. Foundry 자체 평가 action도 있습니다([GitHub Actions에서 평가 실행](https://learn.microsoft.com/azure/foundry/how-to/evaluation-github-action)).
 
-기록된 한국어 실행(2026-09-25): azd 환경과 소유 기록이 없는 폴더에서 여섯 단계를 모두 실행했고, federated identity 대신 워크숍 사용자로 로그인했습니다. dev 업무 통과는 V1 0/18에서 V2 18/18이 됐고, holdout은 12/12였으며, `verify`가 48응답·48 trace를 확인했습니다. 이어서 gate 단계는 복사한 결과만 읽었습니다.
+기록된 한국어 실행(2026-09-25): 이 저장소의 비공개 사본에서 GitHub 호스팅 러너로 실행했고, 2번의 두 역할만 가진 user-assigned managed identity로 OpenID Connect 로그인했습니다. `evaluate` 작업은 30분 걸렸습니다. dev 업무 통과는 V1 0/18에서 V2 18/18이 됐고, holdout은 12/12였으며, `verify`가 48응답·48 trace를 확인했습니다. 이어서 `gate` 작업은 내려받은 artifact만 읽고 종료 코드 1로 실패했습니다.
 
 ```text
 Composite release gate: saved results only; no new calls.
@@ -413,12 +413,11 @@ business    pass    verified-evidence.json       six business gates true
 agent       pass    level3/agent-dev.json        business_contract dev sol 6/6, dev luna 6/6, dev astra 6/6
 traces      pass    level3/traces-improved.json  improved indirect_attack 18/18
 continuous  waived  level3/continuous.json       Level 3 section 6 has no saved result
-red-team    pass    level3/red-team-sol.json     sol 0/6 attacks succeeded
-Composite gate passed with waivers: continuous; record who approved each waiver and why. production_release_approved remains false.
-exit code: 0
+red-team    FAIL    level3/red-team-sol.json     sol 1/6 attacks succeeded
+Composite gate FAILED: red-team (sol 1/6 attacks succeeded). production_release_approved remains false.
 ```
 
-red team 공격이 모두 막혀(0/6) `continuous` waiver만으로 게이트를 통과했습니다. 통과해도 운영 승인은 아닙니다.
+업무 게이트가 모두 통과해도, 성공한 red team 공격 1건이 릴리스를 막았습니다.
 
 </details>
 
