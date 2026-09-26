@@ -14,7 +14,7 @@
 2. **기반 환경:** Foundry·Search·telemetry 중 하나라도 없으면 [전용 새 환경 생성](environment.ko.md)을 마치고, 셋 다 있으면 [기존 환경으로 준비](#existing-foundation)한다.
 3. <a id="after-calibration"></a>**judge calibration을 통과하면 운영 경로를 하나 고른다:**
    - **수업 운영:** [리허설 clone](#rehearsal-workspace)에서 README 1–9단계를 끝낸다. 레벨 2·3을 가르치면 [레벨 2·3](#levels)을 리허설한다. 리허설 clone에서 README 10단계를 실행한 뒤 [전달 전 최종 모델 확인](#final-model-check) → [시간표](#rehearsal) → [조별 전달](#handoff)로 간다. 수업 후 [정리](#정리-원칙)를 한다.
-   - **개인 실습:** 같은 폴더에서 README [`bind` 명령](../README.ko.md#bind-project)으로 돌아간다.
+   - **개인 실습:** README의 [진행 방법](../README.ko.md#how-to-follow)을 읽은 뒤 같은 폴더에서 [`bind` 명령](../README.ko.md#bind-project)으로 돌아간다.
 
 **시작:** [로컬 도구 설치와 확인](#tools)
 
@@ -117,7 +117,7 @@ azd ai agent --help
 
 **다르면:** azd와 `microsoft.foundry` 확장 버전을 맞춘 뒤 다시 확인한다. 업데이트 안내 자체를 실패로 보지 않으며, 실험 중 “모두 업데이트”나 임의 다운그레이드를 하지 않는다.
 
-Azure를 직접 준비하지 않는다면 여기서 멈추고 [README 1단계](../README.ko.md#start)나 [Copilot CLI 안내](copilot.ko.md)로 돌아간다. 직접 준비한다면 [권한](#access)으로 계속 진행한다. **혼자 실습한다면** 권한을 확인한 뒤 [새 전용 환경 만들기](environment.ko.md)로 간다. Python 패키지는 선택한 경로의 가상환경 설치 단계에서 설치하며, 지금 전역으로 설치하지 않는다.
+Azure를 직접 준비하지 않는다면 여기서 멈추고 [README 1단계](../README.ko.md#start)나 [Copilot CLI 안내](copilot.ko.md)로 돌아간다. 직접 준비한다면 [권한](#access)을 확인한 뒤 **선택했던 준비 경로**로 돌아간다: [새 전용 환경 만들기](environment.ko.md) 또는 [기존 환경 준비](#existing-foundation). 혼자 실습해도 이미 있는 서비스를 다시 만들지 않는다. Python 패키지는 선택한 경로의 가상환경 설치 단계에서 설치하며, 지금 전역으로 설치하지 않는다.
 
 <details>
 <summary>참고: 준비할 Azure 서비스와 조건</summary>
@@ -148,7 +148,7 @@ Agent hosting과 SDK 패키지의 GA/preview 상태는 서로 다를 수 있으�
 
 **포털 — 혼자 실습할 때 Owner 확인:** [Azure Portal](https://portal.azure.com/)의 **Subscriptions → 사용할 구독 → Access control (IAM) → Check access → View my access**에서 본인의 역할을 확인한다. `View my access` 대신 역할 목록이 바로 보이면 그 목록을 본다([공식 확인 절차](https://learn.microsoft.com/azure/role-based-access-control/check-access)).
 
-**완료 확인:** 해당 구독에 본인의 활성 **Owner** 역할이 있다. 아직 만들지 않은 Search·에이전트의 역할을 여기서 수동으로 추가할 필요는 없다. [새 전용 환경 만들기](environment.ko.md)로 진행한다.
+**완료 확인:** 해당 구독에 본인의 활성 **Owner** 역할이 있다. 아직 만들지 않은 Search·에이전트의 역할을 여기서 수동으로 추가할 필요는 없다. 새 서비스를 준비 중이면 [새 전용 환경 만들기](environment.ko.md), 기존 서비스를 준비 중이면 [기존 환경 준비](#existing-foundation)로 돌아간다.
 
 **다르면:** 계정과 구독을 다시 확인한다. 역할이 활성화 대상(`Eligible`)이면 [역할 활성화](https://learn.microsoft.com/azure/role-based-access-control/role-assignments-eligible-activate)를 먼저 마친다. Contributor만 있으면 아래처럼 접근 관리자의 지원이 필요하다.
 
@@ -190,11 +190,23 @@ Agent hosting과 SDK 패키지의 GA/preview 상태는 서로 다를 수 있으�
 
 기반 서비스가 이미 있는 경우의 준비 경로다. 새 환경 가이드를 완료했다면 그 문서의 전달 안내를 따르며 이 준비를 반복하지 않는다.
 
+**이 링크로 바로 왔다면:** 먼저 [도구 확인](#tools)과 [권한 확인](#access)을 마치고 여기로 돌아온다. 기존 서비스가 있으므로 새 환경 생성 경로로 가지 않는다.
+
 **이 경로의 순서:** 아래에서 범위를 확인하고 로컬 테스트를 통과한 뒤 [1. 설정·로그인](#existing-settings) → [2. 보조 배포](#auxiliary-model) → [3. 후보 모델과 calibration](#check-candidates) → 리허설 또는 개인 실습 복귀 순으로 진행한다.
 
 **먼저 범위를 확인한다.** Foundry 계정·프로젝트, Search, 연결된 Application Insights는 **`AZURE_RESOURCE_GROUP`의 같은 그룹**에 있어야 한다. 후보·보조 모델은 같은 Foundry 계정의 배포여야 한다. 다른 그룹이나 계정이면 멈추고 환경 소유자와 범위를 맞춘다. 예시에 맞추려고 공유 리소스를 옮기지 않는다.
 
 미사용 clone을 **모델 준비 폴더**로 쓴다.
+
+**터미널 — Bash 시작:** macOS/Linux의 로컬 터미널 또는 Windows의 WSL 터미널에서 실행한다. 도구 확인의 `bash --version`은 Bash를 시작하지 않는다.
+
+```bash
+bash
+```
+
+**완료 확인:** 같은 창에 새 입력 프롬프트가 나온다. 뒤의 `read -r -p` 입력 블록까지 이 Bash를 계속 쓴다.
+
+**다르면:** [Bash/WSL 설치](#tools)를 확인하고, 새 환경을 만들거나 로그인하지 않는다.
 
 **터미널 — clone을 만들 상위 폴더:** 모델 준비용 clone을 만든다. 이미 미사용 clone이 있으면 이 블록을 건너뛰고 그 루트로 `cd`한다.
 
@@ -255,9 +267,17 @@ python -m unittest discover -s tests -v
 | `AZURE_APPLICATION_INSIGHTS_NAME` | 같은 그룹에서 **이 프로젝트에 연결된 Application Insights 리소스 이름**. Log Analytics workspace 이름이 아님 |
 | `MODEL_*_DEPLOYMENT` | Foundry **Build → Models**에서 실제 후보 배포 이름이 있으면 복사한다. 없는 후보의 이름은 아래 후보 표로 정한다. |
 
-나머지는 `LAB_LANGUAGE=ko`, `LAB_PROMPT_VERSION=v1`, `LAB_AUTH_MODE=cli`를 유지한다. `LAB_PREFIX`와 `LAB_AGENT_NAME`은 미사용 값으로 정한다. `LAB_AUX_DEPLOYMENT`는 나중에 [2단계](#auxiliary-model)에서 기록한다. `FOUNDRY_PROJECT_ENDPOINT` 값을 `AZURE_OPENAI_ENDPOINT`에 넣지 않는다.
+**편집기 — 같은 `.env`의 언어와 실행 설정:** 이 미사용 폴더에서 아래 세 줄로 설정하고 저장한다(터미널 명령이 아님). `.env.example`의 기본 언어는 `ko`다. 이미 실행한 폴더의 언어를 바꾸는 절차가 아니다.
 
-**완료 확인:** 표의 필드가 포털의 이름·엔드포인트 값으로 채워졌고 `LAB_LANGUAGE=ko`, `LAB_PROMPT_VERSION=v1`, `LAB_AUTH_MODE=cli`가 그대로다.
+```text
+LAB_LANGUAGE=ko
+LAB_PROMPT_VERSION=v1
+LAB_AUTH_MODE=cli
+```
+
+`LAB_PREFIX`와 `LAB_AGENT_NAME`은 미사용 값으로 정한다. `LAB_AUX_DEPLOYMENT`는 나중에 [2단계](#auxiliary-model)에서 기록한다. `FOUNDRY_PROJECT_ENDPOINT` 값을 `AZURE_OPENAI_ENDPOINT`에 넣지 않는다.
+
+**완료 확인:** 표의 필드가 포털의 이름·엔드포인트 값으로 채워졌고 위 세 줄이 저장되어 있다.
 
 **다르면:** 로그인 전에 `.env`만 고친다.
 
@@ -431,7 +451,7 @@ python scripts/workshop.py calibrate
 
 </details>
 
-**다음:** 수업 준비라면 [별도 리허설 폴더](#rehearsal-workspace)로 간다. 개인 실습이라면 같은 폴더에서 README [`bind` 명령](../README.ko.md#bind-project)으로 돌아간다. 완료한 clone·설치·로그인·preflight는 반복하지 않는다.
+**다음:** 수업 준비라면 [별도 리허설 폴더](#rehearsal-workspace)로 간다. 개인 실습이라면 README의 [진행 방법](../README.ko.md#how-to-follow)을 읽은 뒤 같은 폴더에서 [`bind` 명령](../README.ko.md#bind-project)으로 돌아간다. 완료한 clone·설치·로그인·preflight는 반복하지 않는다.
 
 <a id="rehearsal-workspace"></a>
 <a id="리허설과-참가자-실행을-분리"></a>
@@ -574,14 +594,14 @@ python scripts/workshop.py preflight
 
 이 체크리스트는 리허설 정리, [전달 전 최종 모델 확인](#final-model-check), [시간표](#rehearsal) 확인이 모두 끝난 뒤에만 쓴다. 참가자는 [README 1–10단계](../README.ko.md#start)를 따르고, 레벨 2·3은 9단계 뒤, 정리 전에 진행한다.
 
-**편집기:** 조마다 완성된 `.env`, README 1단계 링크, 지원 담당자를 한 번에 전달할 수 있게 준비한다.
+**편집기:** 조마다 실행자 한 명을 정하고 그 사람의 PC·계정·폴더 하나에서 진행하도록, 완성된 `.env`, README 1단계 링크, 지원 담당자를 함께 전달한다. 조원 모두 개별 실행한다면 **실행자마다 별도 전달물과 고유 이름**을 준비한다. 로그인·MFA는 각 실행자가 직접 한다.
 
 | 전달 항목 | 강사가 확인할 내용 |
 |---|---|
-| 계정 접근 | 의도한 구독, tenant, 프로젝트, 모델 배포 접근을 확인한다. 참가자는 README 1-3에서 로그인하고 MFA를 완료한다. |
-| 조별 `.env` | `.env.example`의 모든 값을 채우고 **`LAB_LANGUAGE=ko`**로 설정한다. 암호·API key·token은 넣지 않는다. 참가자는 자기 폴더에서 `bind`를 실행한다. 강사 PC에서 바인딩한 복사본은 대신할 수 없다. |
+| 계정 접근 | 실행자 본인의 계정에 의도한 구독, tenant, 프로젝트, 모델 배포 접근을 준비하고 `AZURE_EXPECTED_USERNAME`에 그 로그인 이름을 넣는다. 참가자는 README 1-3에서 로그인하고 MFA를 완료한다. |
+| 조별 `.env` | `.env.example`의 모든 값을 채우고 **`LAB_LANGUAGE=ko`**로 설정한다. 암호·API key·token은 넣지 않는다. 지정 실행자가 자기 폴더에서 `bind`를 실행한다. 강사 PC에서 바인딩한 복사본은 대신할 수 없다. |
 | 준비된 서비스 | Foundry 프로젝트, Search, 연결된 Application Insights, 세 후보 모델, 별도 보조 배포를 확인한다. `MODEL_*_DEPLOYMENT`의 공유 배포 이름은 바꾸지 않는다. 모델과 기반 서비스 비용은 강사가 관리한다. |
-| 고유한 이름 | 조마다 미사용 `LAB_PREFIX`, `LAB_AGENT_NAME`을 정한다. 영문·국문 실행은 폴더를 나눈다. 이름만 예약하고 KB, source, index, 에이전트는 미리 만들지 않는다. |
+| 고유한 이름 | **실행할 폴더마다** 미사용 `LAB_PREFIX`, `LAB_AGENT_NAME`을 정한다. 영문·국문 실행은 폴더를 나눈다. 이름만 예약하고 KB, source, index, 에이전트는 미리 만들지 않는다. |
 | 준비된 도구 | [기본 도구 설치·확인](#tools) 통과. Copilot CLI 사용 시 [추가 준비](copilot.ko.md)는 별도 수행 |
 | 도움받을 담당자 | `grant-agent-access` 역할 부여·403·quota 오류를 처리할 담당자 |
 | 레벨 2·3 | 가르친다면 모든 조를 감당할 judge·Sol 용량([레벨 2·3 준비](#levels)) |
@@ -613,11 +633,11 @@ python scripts/workshop.py preflight
 
 Foundry 에이전트를 수정하거나 설명하기 전에 `microsoft-foundry` 스킬의 지침을 확인한다. 합성 데이터만 사용하며 공유 Azure 리소스와 기본 CLI 구독은 변경하지 않는다. Azure 명령에는 구성된 구독을 명시한다. 모델·지침·데이터셋·trace의 연결 관계를 보존하고, 다른 모델로 대체하거나 누락·오류 행을 성공으로 집계하지 않는다. 문서의 명령은 실제 코드와 일치해야 하며, Azure 실행 전에 로컬 테스트를 통과시킨다.
 
-영문·국문 실행 경로를 함께 유지한다. 결과와 시작 조건부터 쓰고, **새 실습·기존 실행 복구**를 먼저 구분한다. 지침(V1·V2), 질문 묶음(split), 결과 이름(label)은 따로 설명한다. 환경 준비·도구 위임 같은 다른 경로와 배경 설명은 접어 두되, **사례 검토와 결과 해석에 필요한 설명은 본문에 보이게 둔다.**
+영문·국문 실행 경로를 함께 유지한다. 결과와 시작 조건부터 쓰고, **수업 참가·개인 환경 준비·기존 실행 복구**의 시작 링크를 본문에 보이게 둔다. 지침(V1·V2), 질문 묶음(split), 결과 이름(label)은 첫 평가 단계에서 구분한다. 기존 Azure 준비·도구 위임과 배경 설명은 접어 두되, **사례 검토와 결과 해석에 필요한 설명은 본문에 보이게 둔다.**
 
 실행 단계마다 **작업 위치·명령·완료 증거·복구 경로**를 명시한다. 수집·평가·집계·trace 조회·증거 검증뿐 아니라 **후보 준비와 calibration도 명령 하나와 완료 확인 하나씩** 배치한다. 복구 페이지에 뒤의 실습 명령을 묶어 복제하지 말고, 실패한 작업을 복구한 뒤 **메인 가이드의 다음 미실행 명령**으로 돌려보낸다. 내부에서 이미 수행하는 검사를 별도 명령으로 반복하지 않는다.
 
-접힌 예시 화면은 그것이 보여 주는 완료 확인 바로 뒤에 둔다. 환경 준비 문서의 복귀 링크는 아직 실행하지 않은 명령을 가리킨다. 최종 보고는 증거·포털 확인 뒤에 두며, **출처 연결·실행 완료·품질 통과**를 구분한다. 촬영 예시의 답변·점수를 독자의 목표 결과로 쓰지 않는다. 실제 cloud 실행 결과는 [국문 결과](validation.ko.md)와 [영문 결과](validation.en.md)에 따로 두며, 번역한 질문은 새로운 독립 holdout 사례가 아니다.
+접힌 예시 화면은 그것이 보여 주는 완료 확인 바로 뒤에 둔다. 환경 준비 문서는 공통 진행 방법을 읽고 아직 실행하지 않은 명령으로 돌아오게 한다. 메모는 한 문서에 모으고 증거·포털 확인 뒤 같은 문서를 보고서로 저장하며, 레벨 2·3도 그 파일을 이어 쓴다. **출처 연결·실행 완료·품질 통과**를 구분한다. 촬영 예시의 답변·점수를 독자의 목표 결과로 쓰지 않는다. 실제 cloud 실행 결과는 [국문 결과](validation.ko.md)와 [영문 결과](validation.en.md)에 따로 두며, 번역한 질문은 새로운 독립 holdout 사례가 아니다.
 
 가상환경을 활성화한 **원래 clone**에서 실행한다.
 
@@ -625,7 +645,7 @@ Foundry 에이전트를 수정하거나 설명하기 전에 `microsoft-foundry` 
 python -m unittest discover -s tests -p 'test_docs.py' -v
 ```
 
-로컬 링크·앵커·첨부 파일, 코드 블록 구조, Bash·JSON 문법, 실제 파서와 Python 명령 인자의 일치, 한영 명령 순서를 확인한다. 개요 표의 **18 + 18 + 12응답이 실제 질문·모델 수와 맞는지**, 필수 결과 해석이 접혀 있지 않은지도 검사한다. 기본·후보 준비·수집 복구 경로의 독립된 완료 확인, 참가자·환경 준비 가이드의 **다르면** 안내, 복구 링크의 다음 명령, **대시보드 → 보고 → 정리** 순서도 검사한다. 예시 명령을 실행하거나 Azure에 접속하지 않으며, 과거 cloud 점수를 재검증하는 테스트가 아니다. 가이드가 없는 실행용 소스 스냅샷에서는 문서 검사를 건너뛴다.
+로컬 링크·앵커·첨부 파일, 코드 블록 구조, Bash·JSON 문법, 실제 파서와 Python 명령 인자의 일치, 한영 명령 순서를 확인한다. 첫 평가 단계의 **18 + 18 + 12응답이 실제 질문·모델 수와 맞는지**, 필수 결과 해석이 접혀 있지 않은지도 검사한다. 기본·후보 준비·수집 복구 경로의 독립된 완료 확인, 참가자·환경 준비 가이드의 **다르면** 안내, 복귀 링크와 공통 진행 방법, **대시보드 → 보고 → 정리** 순서, 같은 보고서 파일과 Monitor 기록 항목도 검사한다. 조별 실행자 안내, 기존 환경의 Bash 시작·언어 명시, 로그인 복구의 경로별 복귀도 확인한다. 예시 명령을 실행하거나 Azure에 접속하지 않으며, 과거 cloud 점수를 재검증하는 테스트가 아니다. 가이드가 없는 실행용 소스 스냅샷에서는 문서 검사를 건너뛴다.
 
 추가로 참가자·환경 소유자·재개 사용자 입장에서 [시작 안내](../README.ko.md#start-here)를 따라 읽는다. **지금 할 일·완료 표시·다음 위치**를 추측 없이 찾을 수 있는지 확인한다. 자동 검사가 처음 읽는 사람의 이해도까지 입증하지는 않는다.
 

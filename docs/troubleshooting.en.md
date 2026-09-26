@@ -142,9 +142,19 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 
 **If not:** preserve the error. If organizational policy blocks sign-in, use an approved environment rather than bypassing it.
 
-After all required sign-ins finish, return to the README's [two-account verification block](../README.md#login-check). Do not repeat successful sign-ins.
+<a id="login-return"></a>
 
-**Checkpoint:** [the two-account verification block](../README.md#login-check) shows the configured Azure CLI and azd account, tenant, and subscription.
+After the required sign-ins finish, return to **the path you were following before opening this troubleshooting page** and run only its verification block. Keep the same folder; do not repeat successful sign-ins.
+
+| Where you were signing in | Return to this verification block | Continue afterward |
+|---|---|---|
+| Participant README 1-3 | [README sign-in check](../README.md#login-check) | README 1-4 project check |
+| New environment 2-1 | [Environment sign-in check](environment.en.md#login-check) | That guide's 2-2 identity, preservation, and capacity check |
+| Existing-environment preparation 1 | [Existing-environment sign-in check](instructor.en.md#login-check) | Choose candidate deployment names there → 2 auxiliary deployment |
+
+**During new-environment preparation, services do not exist yet: do not continue to README `preflight` or `bind`.**
+
+**Checkpoint:** the chosen verification block shows the Azure CLI and azd account, tenant, and subscription matching that folder's `.env`.
 
 **If not:** preserve the exact sign-in error and ask for an approved login path; do not switch accounts or tenants.
 
@@ -155,7 +165,7 @@ After all required sign-ins finish, return to the README's [two-account verifica
 
 </details>
 
-**Next:** resume [README step 1-3](../README.md#login-check) at the verification block.
+**Next:** continue below the verification block in the page selected above; do not switch preparation paths.
 
 <a id="retrieval"></a>
 
@@ -205,7 +215,15 @@ Malformed/missing results without a recorded failed/errored run require owner re
 
 **If not:** preserve the calibration folder and raw output for owner review; do not edit examples, thresholds, or rerun a valid low score.
 
-**Next:** resume [environment judge calibration](environment.en.md#setup-calibration) if preparing the environment, or [README judge check](../README.md#5-1-check-the-judge) if running the workshop.
+<a id="calibration-return"></a>
+
+**Next:** after `Judge calibration passed`, return to the path you came from. Calibration is already complete; do not run it again or switch preparation paths.
+
+| Where calibration stopped | Next unexecuted step |
+|---|---|
+| Participant README 5-1 | [5-2 baseline collection](../README.md#baseline-collection) |
+| New-environment preparation 6-2 | [6-3 handoff](environment.en.md#handoff) |
+| Existing-environment preparation 3 | [Choose rehearsal or self-study](instructor.en.md#after-calibration) |
 
 <a id="telemetry"></a>
 
@@ -517,44 +535,42 @@ When a row says to run a command named by the failed output, copy that exact `py
 
 ### Level 3 only: when an error explicitly requires deleting a state file
 
-**Not for waiting or low scores.** Some Level 3 commands require removing one state file to replace a failed run. Follow this order:
+**Not for waiting, low scores, or changing labels/counts.** Use this only when the execution-error message explicitly names a state file to delete after resolving the cause. Instead of deleting evidence, archive that file so the command can create a retry.
 
-1. From the repository root, confirm the original command exited and resolve the error's cause.
-2. **Back up before deleting:** Only the one state file named by the error is eligible; this block backs it up and rejects every other path. It creates `../workshop-backup/` and copies the named state file plus its sibling `<same-stem>-output.json` if present.
+**Terminal — existing workshop root:** confirm the original command exited. Paste the **file path from the error**, without the words `Delete` / `and re-run` or surrounding quotes. Both the printed absolute path and a `src/agent/...` relative path work. The block accepts only rubric, stress, red-team, or trace state files in **this folder's** `level3/`; it does not accept agent or continuous-evaluation state, raw output, or another workshop's files.
 
 ```bash
 read -r -p "State file named in the error: " STATE_FILE &&
-case "$STATE_FILE" in
-  src/agent/.foundry/results/level3/*)
-    if [ ! -f "$STATE_FILE" ]; then
-      echo "Stop: state file not found"
-      exit 1
-    fi
-    mkdir -p ../workshop-backup &&
-    cp "$STATE_FILE" ../workshop-backup/ &&
-    file_stem="${STATE_FILE%.*}" &&
-    if [ -f "${file_stem}-output.json" ]; then
-      cp "${file_stem}-output.json" ../workshop-backup/
-    fi
-    ;;
-  *)
-    echo "Stop: not a level3 state file"
-    exit 1
-    ;;
-esac
+python - "$STATE_FILE" <<'PY'
+from pathlib import Path
+import re
+import shutil
+import sys
+import tempfile
+
+root = Path("src/agent/.foundry/results/level3").resolve()
+entered = Path(sys.argv[1])
+state = entered.resolve()
+allowed = r"(rubric-compare|(?:stress|red-team)-(?:sol|luna|astra)|traces-[a-z][a-z0-9-]{0,39})\.json"
+if (entered.is_symlink() or state.parent != root or not state.is_file()
+        or not re.fullmatch(allowed, state.name) or state.name.endswith("-output.json")):
+    raise SystemExit("Stop: not an eligible state file in this workshop's level3 folder.")
+raw = state.with_name(state.stem + "-output.json")
+if raw.is_symlink() or (raw.exists() and not raw.is_file()):
+    raise SystemExit("Stop: unexpected raw-output path; state was not moved.")
+archive = Path(tempfile.mkdtemp(prefix="failed-attempt-", dir=root))
+if raw.is_file():
+    shutil.copy2(raw, archive / raw.name)
+state.rename(archive / state.name)
+print("Archived failed state:", archive / state.name)
+PY
 ```
 
-3. Before deleting, confirm the copy is in `../workshop-backup/` and keep the terminal output. **Delete only that file, in the same shell, after the backup holds its IDs.** Never use wildcards.
+**Checkpoint:** `Archived failed state:` prints the new path. In your editor, open it and confirm that the failed run/job IDs are preserved. Its sibling raw output was copied too, if present. Only the original state file moved; ownership and step 5–9 evidence remain unchanged. Each archive stays inside this workshop and has a unique name, so it cannot overwrite another attempt or language's backup.
 
-```bash
-rm -- "$STATE_FILE"
-```
+**If not:** for `Stop:`, check the path against the exact error and your workshop folder. For a copy/move error, inspect the printed error and existing files with the owner. Do not delete files or proceed until the failed state is safely archived.
 
-**Checkpoint:** the named file is gone and its copy remains in `../workshop-backup/`.
-
-**If not:** stop; do not delete anything else.
-
-**Next:** retry the failed stage once with the same command and arguments; new calls may cost money. If the error repeats, stop and share the original records with the instructor. Then finish with [step 10 cleanup](../README.md#cleanup); existing ownership records remain available for it, and cleanup that already succeeded is not repeated.
+**Next:** retry once with the same command and arguments; new calls may cost money. On success, return to that Level 3 checkpoint and continue with its next section. If the error repeats or you stop the optional work, keep the archive, record the incomplete section, and go to [step 10 cleanup](../README.md#cleanup). Existing ownership records remain available; do not repeat cleanup that already succeeded.
 
 <a id="cleanup-recovery"></a>
 

@@ -2,7 +2,7 @@
 
 [English workshop](../README.md) · [한국어](copilot.ko.md) · [Basic tool setup](instructor.en.md#tools) · [Create an Azure environment](environment.en.md)
 
-**Optional page:** GitHub Copilot CLI (`copilot`) runs the 120-minute workshop commands while you handle sign-in, approvals, and portal checks. Copilot finishes through evidence verification and approved cleanup without changing models, data, or evaluation rules. Installing Copilot CLI, Node.js, MCP servers, or plugins is outside the 120 minutes.
+**Optional page:** GitHub Copilot CLI (`copilot`) runs the 120-minute workshop commands while you handle sign-in, approvals, portal checks, and report review. Copilot finishes through evidence verification, a saved report, and approved cleanup without changing models, data, or evaluation rules. Installing Copilot CLI, Node.js, MCP servers, or plugins is outside the 120 minutes.
 
 **Skip this page** if you will run the [README steps](../README.md#start) yourself or your organization does not permit Copilot CLI. Otherwise, choose an assisted mode below, then start at [step 1](#install) for a new run.
 
@@ -15,8 +15,8 @@ To resume a run or add Copilot CLI after starting manually, use [existing-run re
 | Mode | You do | Copilot does |
 |---|---|---|
 | Manual | All [README steps](../README.md#start) | Nothing; skip this page |
-| **Recommended: assisted commands** | Sign-in, approvals, portal checks | Prompts in [step 2](#start) and [step 3](#handoff); resume in [step 4](#finish) |
-| Assisted commands and portal checks | Sign-in, MFA, approvals | Commands and browser checks; add [Playwright](#playwright) in step 3 |
+| **Recommended: assisted commands** | Sign-in, approvals, portal checks, report review | Prompts in [step 2](#start) and [step 3](#handoff); resume in [step 4](#finish) |
+| Assisted commands and portal checks | Sign-in, MFA, approvals, report review | Commands and browser checks; add [Playwright](#playwright) in step 3 |
 
 Path: 1 install → 2 start/sign in → 3 plan and execute (Playwright first, only if Copilot checks the portal) → 4 verify/resume.
 
@@ -277,11 +277,12 @@ Execute the English workshop within the reviewed scope.
 3. In each independent terminal, verify the working folder, virtual environment, and AZURE_CONFIG_DIR; if Python setup is missing, follow README installation first.
 
 4. Run baseline collection/evaluation -> real trace review -> V2 -> holdout; record automated reviews with --reviewer assistant; preserve failed attempts and labels; recover only the failed stage; report blockers.
-5. For each portal check, show location and expected values, then wait for my confirmation. Verify 48 responses, 48 traces, evaluations, and reviewed baseline provenance. Report quality separately with production_release_approved=false, then clean up only after dry-run review and approval.
+5. For each portal check, show location and expected values, then wait for my confirmation. Verify 48 responses, 48 traces, evaluations, and reviewed baseline provenance. Save the README 9-3 report in src/agent/.foundry/results/workshop-report.txt, using our actual results and portal notes, with production_release_approved=false. Wait for me to review that saved report before cleanup dry-run review and approval.
 
 6. Guardrails:
-   - Keep LAB_LANGUAGE=en; only the supplied scripts create configuration, state, and result files.
-   - Do not create duplicates or change models, policies, references, evaluators, data, evaluation rules, code, scaffolding, or labels.
+   - Keep LAB_LANGUAGE=en; only the supplied scripts create or change configuration, state, and machine-generated evidence. Writing the narrative workshop-report.txt is allowed; never edit evidence to fill it.
+   - Do not create duplicates or change models, policies, references, evaluators, data, evaluation rules, code, or scaffolding.
+   - Never rename, overwrite, or delete existing result labels. For failed collection only, use the unused retry label prescribed by docs/troubleshooting.en.md#collection-retry; evaluation and trace recovery keep the existing label.
    - Do not rerun valid low scores to force a pass.
    - Do not open holdout before step 8 (then evaluate only English).
    - Do not continue or clean up before portal confirmation, record video, or work in other repositories.
@@ -308,6 +309,7 @@ During execution, leave Copilot open. Complete [README step 1-3](../README.md#lo
 **Checkpoint:** completion means all of these are true:
 
 - [README step 9](../README.md#completion-decision) shows 48 responses, 48 traces, evaluations, reviewed baseline provenance, and `production_release_approved=false`.
+- I reviewed the saved [9-3 report](../README.md#finish) at `src/agent/.foundry/results/workshop-report.txt`; its three sections use our actual results and portal notes, with no `...` placeholders. A chat summary alone is not the saved report.
 - [README step 10](../README.md#cleanup) dry-run review, approval, cleanup, and verification are complete.
 - A `false` quality gate is kept as a valid result; an automated review is not labeled as human review or production approval.
 
@@ -333,6 +335,7 @@ Resume this existing English workshop; do not start a new experiment.
 Read saved setup/results without changing files or Azure resources.
 Report the execution folder separately from the guide folder.
 Identify language, deployed version, result labels, and last verified checkpoint.
+Check whether the README 9-3 report was saved and reviewed; file existence alone does not prove my review.
 For incomplete setup, distinguish config.json, source snapshot, and Python readiness.
 Saved config alone is not a runnable environment.
 Before retrying, check whether the previous command is still running.
@@ -346,7 +349,7 @@ Preserve completed work, failed attempts, review lineage, names, and concurrency
 
 **If not:** stop and use [setup recovery](troubleshooting.en.md#setup-resume) for setup gaps, or return to the last README step whose checkpoint is not verified.
 
-Review that next action, then continue only that unfinished work using step 3-2's sign-in, approval, and portal-check rules. Confirm any outstanding portal review before cleanup; do not restart all ten steps.
+Review that next action, then continue only that unfinished work using step 3-2's sign-in, approval, and portal-check rules. Confirm any outstanding portal and saved-report review before cleanup; do not restart all ten steps.
 
 </details>
 

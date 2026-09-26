@@ -2,7 +2,7 @@
 
 [국문 실습](../README.ko.md) · [English](copilot.en.md) · [기본 도구 설치](instructor.ko.md#tools) · [새 Azure 환경 준비](environment.ko.md)
 
-**선택 페이지:** GitHub Copilot CLI(`copilot`)가 120분 실습 명령을 실행하고, 사람은 로그인·승인·포털 확인만 맡습니다. Copilot은 모델·데이터·평가 규칙을 바꾸지 않고 증거 확인과 승인된 정리까지 진행합니다. Copilot CLI, Node.js, MCP 서버, 플러그인 설치 시간은 120분에 포함하지 않습니다.
+**선택 페이지:** GitHub Copilot CLI(`copilot`)가 120분 실습 명령을 실행하고, 사람은 로그인·승인·포털 확인·보고서 검토를 맡습니다. Copilot은 모델·데이터·평가 규칙을 바꾸지 않고 증거 확인·보고서 저장·승인된 정리까지 진행합니다. Copilot CLI, Node.js, MCP 서버, 플러그인 설치 시간은 120분에 포함하지 않습니다.
 
 [README 단계](../README.ko.md#start)를 직접 실행하거나 조직에서 Copilot CLI를 허용하지 않으면 건너뜁니다. Copilot에 맡길 때만 방식을 고르고, 새 실습은 [1단계](#install)부터 시작합니다.
 
@@ -15,8 +15,8 @@
 | 방식 | 사람이 할 일 | Copilot이 할 일 |
 |---|---|---|
 | 수동 | [README 전체](../README.ko.md#start) 실행 | 없음. 이 페이지는 건너뜀 |
-| **추천: 명령 실행만 맡기기** | 로그인·승인·포털 확인 | 읽기 전용 확인은 [2단계](#start), 계획·실행 요청은 [3단계](#handoff), 재개는 [4단계](#finish) |
-| 명령과 포털 확인 맡기기 | 로그인·MFA·승인 | 명령·브라우저 확인. 3단계에서 [Playwright](#playwright) 추가 |
+| **추천: 명령 실행만 맡기기** | 로그인·승인·포털 확인·보고서 검토 | 읽기 전용 확인은 [2단계](#start), 계획·실행 요청은 [3단계](#handoff), 재개는 [4단계](#finish) |
+| 명령과 포털 확인 맡기기 | 로그인·MFA·승인·보고서 검토 | 명령·브라우저 확인. 3단계에서 [Playwright](#playwright) 추가 |
 
 경로: 1 설치 → 2 시작·로그인 → 3 계획·실행(Copilot이 포털을 확인할 때만 Playwright 먼저 설정) → 4 확인·재개.
 
@@ -276,11 +276,12 @@ README.ko.md, docs/instructor.ko.md, docs/environment.ko.md, docs/troubleshootin
 3. 독립된 터미널마다 현재 폴더, 가상환경, AZURE_CONFIG_DIR를 확인하고, Python 준비가 없으면 README 설치 단계부터 진행해.
 
 4. baseline 수집/평가 -> 실제 trace 검토 -> V2 -> holdout 순서로 실행해. 자동 검토는 --reviewer assistant로 남기고, 실패 기록과 label은 보존하며 실패 단계만 복구해. 해결되지 않는 오류는 보고해.
-5. 필수 포털 확인마다 위치와 확인값을 안내하고 내 확인을 기다려. 48개 응답, 48개 trace, 평가 결과, 검토된 baseline 원본 trace를 확인해. 품질 결과는 production_release_approved=false와 별도로 보고하고, 정리는 dry-run 검토와 승인 뒤에만 진행해.
+5. 필수 포털 확인마다 위치와 확인값을 안내하고 내 확인을 기다려. 48개 응답, 48개 trace, 평가 결과, 검토된 baseline 원본 trace를 확인해. 실제 결과와 포털 메모로 README 9-3의 보고서를 src/agent/.foundry/results/workshop-report.txt에 저장하고 production_release_approved=false를 유지해. 내가 저장된 보고서를 검토한 뒤에만 정리 dry-run 검토와 승인을 진행해.
 
 6. 주의:
-   - LAB_LANGUAGE=ko를 유지하고, 제공 스크립트만 설정·상태·결과 파일을 만들게 해.
-   - 중복 생성이나 모델·정책·정답·평가기·데이터·평가 규칙·코드·스캐폴드·label 변경은 하지 마.
+   - LAB_LANGUAGE=ko를 유지하고, 설정·상태·기계가 생성하는 증거는 제공 스크립트만 만들거나 바꾸게 해. 서술형 보고서 workshop-report.txt 작성은 허용하지만, 보고서를 채우려고 증거를 수정하지 마.
+   - 중복 생성이나 모델·정책·정답·평가기·데이터·평가 규칙·코드·스캐폴드 변경은 하지 마.
+   - 기존 결과 label의 이름 변경·덮어쓰기·삭제는 하지 마. 수집 실패일 때만 docs/troubleshooting.ko.md#collection-retry가 지정한 미사용 retry label을 쓰고, 평가·trace 복구는 기존 label을 유지해.
    - 낮은 점수를 통과시키려고 재실행하지 마.
    - 8단계 전에는 holdout을 열지 마(그 뒤에는 국문만 평가).
    - 포털 확인 전 진행·정리, 녹화, 다른 저장소 작업은 하지 마.
@@ -307,6 +308,7 @@ README.ko.md, docs/instructor.ko.md, docs/environment.ko.md, docs/troubleshootin
 **완료 확인:** 아래가 모두 참이면 끝났습니다.
 
 - [README 9단계](../README.ko.md#completion-decision)에서 48개 응답, 48개 trace, 평가 결과, 검토된 baseline 원본 trace, `production_release_approved=false`를 확인했습니다.
+- `src/agent/.foundry/results/workshop-report.txt`에 저장된 [9-3 보고서](../README.ko.md#finish)를 내가 검토했습니다. 세 항목이 실제 결과와 포털 메모로 채워졌고 `...`가 없습니다. 채팅 요약만으로는 보고서 저장을 대신하지 못합니다.
 - [README 10단계](../README.ko.md#cleanup)의 dry-run 검토, 승인, 정리, 정리 확인이 끝났습니다.
 - 품질 게이트가 `false`여도 유효한 실행 결과로 두며, 자동 검토를 사람의 검토나 운영 승인으로 표시하지 않습니다.
 
@@ -332,6 +334,7 @@ README.ko.md, docs/instructor.ko.md, docs/environment.ko.md, docs/troubleshootin
 파일·Azure 자원을 바꾸지 말고 저장된 준비·결과만 확인해.
 가이드 폴더와 실제 실행 폴더를 구분해.
 언어·배포 버전·결과 label·마지막 완료 확인을 정리해.
+README 9-3 보고서의 저장·검토 여부를 확인하되, 파일이 있다는 이유로 내 검토까지 끝났다고 판단하지 마.
 준비가 미완료라면 config.json, 소스 복사, Python 준비 상태를 구분해.
 설정 파일만으로 실행 환경이 준비됐다고 판단하지 마.
 재시도 전 이전 명령이 실행 중인지 확인해.
@@ -345,7 +348,7 @@ README.ko.md, docs/instructor.ko.md, docs/environment.ko.md, docs/troubleshootin
 
 **다르면:** 중단하고 준비 문제는 [준비 복구](troubleshooting.ko.md#setup-resume)를 사용하거나, 마지막으로 완료 확인이 되지 않은 README 단계로 돌아갑니다.
 
-제시된 다음 행동을 확인한 뒤, 3-2의 로그인·승인·포털 확인 규칙을 유지하며 그 미완료 작업만 이어갑니다. 남은 포털 검토를 확인한 뒤 정리하며, 10단계를 처음부터 다시 시작하지 않습니다.
+제시된 다음 행동을 확인한 뒤, 3-2의 로그인·승인·포털 확인 규칙을 유지하며 그 미완료 작업만 이어갑니다. 남은 포털·저장된 보고서 검토를 확인한 뒤 정리하며, 10단계를 처음부터 다시 시작하지 않습니다.
 
 </details>
 

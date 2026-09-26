@@ -142,9 +142,19 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 
 **다르면:** 오류를 보존합니다. 조직 정책으로 차단됐다면 우회하지 말고 승인된 로그인 환경을 사용합니다.
 
-필요한 로그인을 모두 마친 뒤 README 1-3의 [두 로그인 결과 확인](../README.ko.md#login-check) 블록으로 돌아갑니다. 성공한 로그인은 반복하지 않습니다.
+<a id="login-return"></a>
 
-**완료 확인:** [두 로그인 결과 확인](../README.ko.md#login-check)에서 Azure CLI와 azd의 계정, tenant, subscription이 `.env`와 일치합니다.
+필요한 로그인을 마쳤으면 **이 문제 해결 문서로 오기 직전의 경로**로 돌아가 두 로그인 확인 블록만 실행합니다. 폴더를 바꾸거나 성공한 로그인을 반복하지 않습니다.
+
+| 로그인하던 경로 | 돌아갈 확인 블록 | 확인 뒤 이어갈 곳 |
+|---|---|---|
+| 참가자 README 1-3 | [README 두 로그인 확인](../README.ko.md#login-check) | README 1-4 프로젝트 확인 |
+| 새 환경 준비 2-1 | [환경 준비 두 로그인 확인](environment.ko.md#login-check) | 같은 문서 2-2 계정·보존·용량 확인 |
+| 기존 환경 준비 1 | [기존 환경 두 로그인 확인](instructor.ko.md#login-check) | 같은 문서의 후보 배포 이름 지정 → 2 보조 배포 준비 |
+
+**새 환경 준비 중에는 아직 서비스가 없으므로 README의 `preflight`·`bind`로 넘어가지 않습니다.**
+
+**완료 확인:** 선택한 확인 블록에서 Azure CLI와 azd의 계정, tenant, subscription이 그 폴더의 `.env`와 일치합니다.
 
 **다르면:** 정확한 로그인 오류를 보존하고 승인된 로그인 경로를 강사에게 요청합니다. 계정이나 tenant를 바꾸지 않습니다.
 
@@ -155,7 +165,7 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 
 </details>
 
-**다음:** [README 1-3의 확인 블록](../README.ko.md#login-check)으로 돌아갑니다.
+**다음:** 위 표에서 선택한 문서의 확인 블록 아래부터 이어갑니다. 준비 경로를 바꾸지 않습니다.
 
 <a id="retrieval"></a>
 
@@ -205,7 +215,15 @@ python scripts/workshop.py calibrate --retry-failed
 
 **다르면:** calibration 폴더와 원문 출력을 보존하고 환경 소유자에게 확인합니다. 예제·threshold를 바꾸거나 유효한 낮은 점수를 반복 실행하지 않습니다.
 
-**다음:** 환경 준비 중이면 [judge 점검](environment.ko.md#setup-calibration)으로, 참가자 실행 중이면 [README judge 확인](../README.ko.md#5-1-judge-확인)으로 돌아갑니다.
+<a id="calibration-return"></a>
+
+**다음:** `Judge calibration passed`가 나오면 원래 진행하던 경로로 돌아갑니다. calibration은 이미 끝났으므로 다시 실행하거나 준비 경로를 바꾸지 않습니다.
+
+| calibration이 멈췄던 곳 | 다음 미실행 단계 |
+|---|---|
+| 참가자 README 5-1 | [5-2 baseline 수집](../README.ko.md#baseline-collection) |
+| 새 환경 준비 6-2 | [6-3 전달 경로](environment.ko.md#handoff) |
+| 기존 환경 준비 3 | [리허설 또는 개인 실습 선택](instructor.ko.md#after-calibration) |
 
 <a id="telemetry"></a>
 
@@ -518,44 +536,42 @@ python scripts/workshop.py smoke
 
 ### 레벨 3에서 오류가 상태 파일 삭제를 명시한 경우에만
 
-**대기·낮은 점수에는 사용하지 않습니다.** 일부 레벨 3 명령은 실패한 run을 교체하려면 상태 파일 하나를 제거해야 합니다. 아래 순서를 지킵니다.
+**대기·낮은 점수·label/질문 수 변경에는 사용하지 않습니다.** 실행 오류의 원인을 해결한 뒤, 오류 메시지가 삭제할 상태 파일을 명시했을 때만 사용합니다. 증거를 지우는 대신 그 파일을 보관 폴더로 옮겨 재시도를 가능하게 합니다.
 
-1. 저장소 루트에서 원래 명령이 끝났는지 확인하고 오류의 원인을 해결합니다.
-2. **삭제 전에 백업:** 오류가 이름으로 지정한 상태 파일 하나만 대상입니다. 아래 보호된 블록은 그 파일을 백업하고 다른 경로는 거부합니다. `../workshop-backup/`을 만들며, 같은 파일 이름 어간의 `<same-stem>-output.json`이 있으면 함께 복사합니다.
+**터미널 — 기존 실습 폴더의 저장소 루트:** 원래 명령이 끝났는지 확인합니다. 입력에는 **오류에 나온 파일 경로만** 붙여넣고, `Delete`·`and re-run` 같은 문구나 따옴표는 넣지 않습니다. 출력된 절대 경로와 `src/agent/...` 상대 경로 모두 됩니다. 블록은 **이 폴더의** `level3/` 안 rubric·stress·red-team·trace 상태 파일만 허용합니다. 에이전트·연속 평가 상태, 원문 출력, 다른 실습 폴더는 허용하지 않습니다.
 
 ```bash
 read -r -p "State file named in the error: " STATE_FILE &&
-case "$STATE_FILE" in
-  src/agent/.foundry/results/level3/*)
-    if [ ! -f "$STATE_FILE" ]; then
-      echo "Stop: state file not found"
-      exit 1
-    fi
-    mkdir -p ../workshop-backup &&
-    cp "$STATE_FILE" ../workshop-backup/ &&
-    file_stem="${STATE_FILE%.*}" &&
-    if [ -f "${file_stem}-output.json" ]; then
-      cp "${file_stem}-output.json" ../workshop-backup/
-    fi
-    ;;
-  *)
-    echo "Stop: not a level3 state file"
-    exit 1
-    ;;
-esac
+python - "$STATE_FILE" <<'PY'
+from pathlib import Path
+import re
+import shutil
+import sys
+import tempfile
+
+root = Path("src/agent/.foundry/results/level3").resolve()
+entered = Path(sys.argv[1])
+state = entered.resolve()
+allowed = r"(rubric-compare|(?:stress|red-team)-(?:sol|luna|astra)|traces-[a-z][a-z0-9-]{0,39})\.json"
+if (entered.is_symlink() or state.parent != root or not state.is_file()
+        or not re.fullmatch(allowed, state.name) or state.name.endswith("-output.json")):
+    raise SystemExit("Stop: not an eligible state file in this workshop's level3 folder.")
+raw = state.with_name(state.stem + "-output.json")
+if raw.is_symlink() or (raw.exists() and not raw.is_file()):
+    raise SystemExit("Stop: unexpected raw-output path; state was not moved.")
+archive = Path(tempfile.mkdtemp(prefix="failed-attempt-", dir=root))
+if raw.is_file():
+    shutil.copy2(raw, archive / raw.name)
+state.rename(archive / state.name)
+print("Archived failed state:", archive / state.name)
+PY
 ```
 
-3. 삭제 전에 `../workshop-backup/`에 복사본이 있는지 확인하고 터미널 출력을 보존합니다. **백업에 ID가 있는지 확인한 뒤, 같은 셸에서 그 파일 하나만 지웁니다.** 와일드카드는 쓰지 않습니다.
+**완료 확인:** `Archived failed state:` 뒤에 새 경로가 나옵니다. 편집기에서 열어 실패한 run/job ID가 보존됐는지 확인합니다. 짝이 되는 원문 출력도 있다면 함께 복사됐습니다. 원래 상태 파일 하나만 이동했고 소유권·5–9단계 증거는 그대로입니다. 보관 폴더는 실습 폴더 안에 고유 이름으로 만들어져 다른 시도나 언어의 백업을 덮어쓰지 않습니다.
 
-```bash
-rm -- "$STATE_FILE"
-```
+**다르면:** `Stop:`이면 정확한 오류의 경로와 지금 실습 폴더를 대조합니다. 복사·이동 오류이면 환경 소유자와 오류 및 남아 있는 파일을 확인합니다. 실패 상태가 안전하게 보관되기 전에는 파일을 지우거나 다음으로 진행하지 않습니다.
 
-**완료 확인:** 이름이 나온 파일은 없어졌고 복사본은 `../workshop-backup/`에 남아 있습니다.
-
-**다르면:** 멈추고 다른 것은 지우지 않습니다.
-
-**다음:** 같은 명령·인자로 한 번만 재시도합니다. 새 호출에는 비용이 들 수 있습니다. 같은 오류가 반복되면 멈추고 원래 기록과 함께 강사에게 전달합니다. 그다음 [10단계 정리](../README.ko.md#cleanup)를 실행합니다. 기존 소유권 기록은 정리에 그대로 쓰이며, 이미 성공한 정리는 반복하지 않습니다.
+**다음:** 같은 명령·인자로 한 번만 재시도합니다. 새 호출에는 비용이 들 수 있습니다. 성공하면 해당 레벨 3 완료 확인으로 돌아가 다음 절을 이어갑니다. 같은 오류가 반복되거나 선택 실습을 중단하면 보관 파일을 유지하고 미완료 절을 기록한 뒤 [10단계 정리](../README.ko.md#cleanup)로 갑니다. 기존 소유권 기록은 그대로 쓰며, 이미 성공한 정리는 반복하지 않습니다.
 
 <a id="cleanup-recovery"></a>
 

@@ -14,7 +14,7 @@
 2. **Foundation:** if Foundry, Search, or telemetry is missing, finish [Create a dedicated environment](environment.en.md); otherwise [prepare with the existing foundation](#existing-foundation).
 3. <a id="after-calibration"></a>**After judge calibration passes, choose one delivery path:**
    - **Class:** in a [rehearsal clone](#rehearsal-workspace), complete README steps 1–9. If you will teach Levels 2–3, [rehearse them](#levels). Run README step 10 in that clone, then go to the [final model check](#final-model-check) → [timing](#rehearsal) → [handoff](#handoff). After class, [clean up](#cleanup-and-maintenance).
-   - **Self-study:** return to [README `bind`](../README.md#bind-project) in the same folder.
+   - **Self-study:** read [how to follow the README](../README.md#how-to-follow), then return to [`bind`](../README.md#bind-project) in the same folder.
 
 **Start:** [install and check the local tools](#tools).
 
@@ -117,7 +117,7 @@ azd ai agent --help
 
 **If not:** repair the azd/`microsoft.foundry` extension version before starting. An update notice is not itself a failure; do not run “update all” or downgrade tools mid-experiment.
 
-If you are not preparing Azure yourself, stop here and return to [README step 1](../README.md#start) or the [Copilot CLI guide](copilot.en.md); otherwise continue to [access](#access). **For self-study,** check access, then go to [Create a dedicated environment](environment.en.md). Install Python packages in that path's virtual-environment step, not globally here.
+If you are not preparing Azure yourself, stop here and return to [README step 1](../README.md#start) or the [Copilot CLI guide](copilot.en.md). Otherwise check [access](#access), then return to **your chosen preparation path**: [new services](environment.en.md) or [existing services](#existing-foundation). Self-study does not require recreating services you already have. Install Python packages in that path's virtual-environment step, not globally here.
 
 <details>
 <summary>Reference: Azure services and conditions to prepare</summary>
@@ -146,7 +146,7 @@ The environment owner needs permission to create or use the workshop resources a
 
 **Portal — verify Owner for self-study:** in [Azure Portal](https://portal.azure.com/), open **Subscriptions → your subscription → Access control (IAM) → Check access → View my access**. If role assignments appear directly instead of a `View my access` button, read that list ([official access check](https://learn.microsoft.com/azure/role-based-access-control/check-access)).
 
-**Checkpoint:** you have an active **Owner** role on that subscription. You do not need to add roles manually to Search or agent resources that do not exist yet. Continue to [Create a dedicated environment](environment.en.md).
+**Checkpoint:** you have an active **Owner** role on that subscription. You do not need to add roles manually to Search or agent resources that do not exist yet. Return to [new-environment preparation](environment.en.md) for new services, or [existing-environment preparation](#existing-foundation) for services you already have.
 
 **If not:** recheck the account and subscription. For an `Eligible` role, finish [role activation](https://learn.microsoft.com/azure/role-based-access-control/role-assignments-eligible-activate) first. With Contributor alone, you need an access administrator's help as described below.
 
@@ -187,11 +187,23 @@ Supported hosted-agent environments are listed in the [Hosted Agent quickstart](
 
 Use this path only when the foundation services already exist. If you completed the new-environment guide, use its handoff instead; do not repeat this setup.
 
+**If you arrived directly at this link:** finish the [tool checks](#tools) and [access checks](#access), then return here. Do not create a new environment when these services already exist.
+
 **Order for this path:** check the scope and pass the local tests below, then [1. settings and sign-in](#existing-settings) → [2. auxiliary deployment](#auxiliary-model) → [3. candidates and calibration](#check-candidates) → rehearsal or self-study handoff.
 
 **Check the scope first:** the Foundry account/project, Search, and connected Application Insights must be in the configured **`AZURE_RESOURCE_GROUP`**, and the candidate and auxiliary models must be deployments of that Foundry account. If they are split across groups or accounts, stop and align the setup with the owner; do not move shared resources to fit the example.
 
 Use an unused clone as your **model-preparation folder**.
+
+**Terminal — start Bash:** run this in the local macOS/Linux terminal or the Windows WSL terminal. The tool check's `bash --version` does not start Bash.
+
+```bash
+bash
+```
+
+**Checkpoint:** a new input prompt appears in the same window. Keep using this Bash through the later `read -r -p` input blocks.
+
+**If not:** check [Bash/WSL installation](#tools); do not create a new environment or sign in yet.
 
 **Terminal — parent folder for clones:** create the model-preparation clone. If you already have an unused clone, skip this block and `cd` into its root.
 
@@ -252,9 +264,17 @@ Copy only the displayed names and endpoints: never API keys, browser URLs, `/ope
 | `AZURE_APPLICATION_INSIGHTS_NAME` | Name of the **Application Insights resource connected to this project**, in the same group; not the Log Analytics workspace name |
 | `MODEL_*_DEPLOYMENT` | Foundry **Build → Models**; copy actual candidate deployment names when they exist. Name missing candidates with the candidate table below. |
 
-Keep the template defaults `LAB_LANGUAGE=en`, `LAB_PROMPT_VERSION=v1`, and `LAB_AUTH_MODE=cli`. Choose unused `LAB_PREFIX` and `LAB_AGENT_NAME` values. Record `LAB_AUX_DEPLOYMENT` later, in [step 2](#auxiliary-model). Do not paste `FOUNDRY_PROJECT_ENDPOINT` into `AZURE_OPENAI_ENDPOINT`.
+**Editor — language and runtime settings in the same `.env`:** explicitly set and save these three lines in this unused folder (not terminal commands). **`.env.example` defaults to `ko`, so change it to `en` here.** This is not a procedure for changing an existing run's language.
 
-**Checkpoint:** the table's fields hold the names and endpoints shown in the portal, and `LAB_LANGUAGE=en`, `LAB_PROMPT_VERSION=v1`, and `LAB_AUTH_MODE=cli` are unchanged.
+```text
+LAB_LANGUAGE=en
+LAB_PROMPT_VERSION=v1
+LAB_AUTH_MODE=cli
+```
+
+Choose unused `LAB_PREFIX` and `LAB_AGENT_NAME` values. Record `LAB_AUX_DEPLOYMENT` later, in [step 2](#auxiliary-model). Do not paste `FOUNDRY_PROJECT_ENDPOINT` into `AZURE_OPENAI_ENDPOINT`.
+
+**Checkpoint:** the table's fields hold the names and endpoints shown in the portal, and the three lines above are saved.
 
 **If not:** fix only `.env` before signing in.
 
@@ -427,7 +447,7 @@ After resolving the cause, choose [calibration recovery](troubleshooting.en.md#c
 
 </details>
 
-**Next:** for a class, use the [separate rehearsal folder](#rehearsal-workspace). For self-study, return to [README `bind`](../README.md#bind-project) in this same folder. Do not repeat completed cloning, installation, sign-in, or preflight.
+**Next:** for a class, use the [separate rehearsal folder](#rehearsal-workspace). For self-study, read [how to follow the README](../README.md#how-to-follow), then return to [`bind`](../README.md#bind-project) in this same folder. Do not repeat completed cloning, installation, sign-in, or preflight.
 
 <a id="rehearsal-workspace"></a>
 <a id="separate-rehearsal-from-participant-execution"></a>
@@ -570,14 +590,14 @@ During class, if a team is delayed more than 10 minutes by an environment proble
 
 Use this checklist only after rehearsal cleanup, the [final model check](#final-model-check), and the [timing](#rehearsal) all pass. Participants then follow README steps 1–10; Levels 2–3 go after step 9, before cleanup.
 
-**Editor:** prepare one team packet with a complete `.env`, the README step-1 link, and the support contact.
+**Editor:** designate one runner per team to use their own PC, account, and one folder; provide that runner with a complete `.env`, the README step-1 link, and the support contact. If everyone will run individually, prepare **a separate packet and unique names per runner**. Each runner performs their own sign-in and MFA.
 
 | Item | Instructor responsibility |
 |---|---|
-| Account | Confirm access to the intended subscription, tenant, project, and model deployments. Participants sign in and complete MFA in README step 1-3. |
-| Complete `.env` | Use `.env.example`, fill the actual values, and set **`LAB_LANGUAGE=en`**. Do not include passwords, API keys, or tokens. Each participant runs `bind` in their own folder; an instructor-bound copy does not count. |
+| Account | Prepare access to the intended subscription, tenant, project, and model deployments for the runner's own account; put that sign-in name in `AZURE_EXPECTED_USERNAME`. Participants sign in and complete MFA in README step 1-3. |
+| Complete `.env` | Use `.env.example`, fill the actual values, and set **`LAB_LANGUAGE=en`**. Do not include passwords, API keys, or tokens. The designated runner runs `bind` in their own folder; an instructor-bound copy does not count. |
 | Ready services | Foundry project, Search, connected Application Insights, three fixed candidates, and the auxiliary deployment. Keep shared deployment names unchanged in `MODEL_*_DEPLOYMENT`; the instructor owns model and foundation costs. |
-| Unused names | A unique `LAB_PREFIX` and `LAB_AGENT_NAME` for each team, with English and Korean runs in separate folders. Reserve names only; do not pre-create participant-owned KB, source, index, or agent resources. |
+| Unused names | A unique `LAB_PREFIX` and `LAB_AGENT_NAME` **per executing folder**, with English and Korean runs in separate folders. Reserve names only; do not pre-create participant-owned KB, source, index, or agent resources. |
 | Tools | Pass the [basic tool checks](#tools). Complete [additional Copilot CLI setup](copilot.en.md) separately if using it. |
 | Access support | A person who can resolve narrowly scoped role assignment, 403, and capacity issues |
 | Levels 2–3 | If teaching them, the judge and Sol capacity for all teams ([Prepare Levels 2 and 3](#levels)) |
@@ -607,11 +627,11 @@ For an exclusively owned self-study group, use [final foundation cleanup](enviro
 
 Before changing Foundry agent code or instructions, read the `microsoft-foundry` skill guidance. Use synthetic data only, do not change shared Azure resources or the default CLI subscription, and name the configured subscription in Azure commands. Keep the links between models, instructions, datasets, and traces; do not substitute models or count missing or failed rows as successes. Keep documented commands matched to the code, and pass the offline tests before any Azure run.
 
-Keep English and Korean execution paths aligned. Lead with the outcome and starting conditions, distinguishing **a new workshop from an existing run** first. Explain instructions (V1/V2), question sets (splits), and result names (labels) separately. Collapse alternative paths such as environment preparation or tool delegation, along with background explanations, but **keep the guidance needed to review cases and interpret results visible in the main text**.
+Keep English and Korean execution paths aligned. Lead with the outcome and starting conditions, keeping direct links for **class participants, self-study setup, and resuming an existing run** visible. Distinguish instructions (V1/V2), question sets (splits), and result names (labels) at the first evaluation step. Collapse existing-Azure preparation, tool delegation, and background explanations, but **keep the guidance needed to review cases and interpret results visible in the main text**.
 
 Each execution step must name **where to act, the command, its completion evidence, and the recovery path**. Give collection, evaluation, aggregation, trace lookup, verification, **candidate preparation, and calibration one command and one checkpoint each**. Recovery pages should fix the failed task, then link to **the main guide's next unexecuted command**, not duplicate a bundle of later steps. Do not repeat checks that a command already performs internally.
 
-Place each collapsed example screen right after the checkpoint it illustrates. A setup guide's return link must target the next unexecuted command. Put the final report after evidence and portal checks; distinguish **provenance links, execution completion, and quality passes**. Recorded answers and scores are examples, not the reader's target results. Keep actual cloud results in the separate [English](validation.en.md) and [Korean](validation.ko.md) result pages; a translated question is not a newly independent holdout case.
+Place each collapsed example screen right after the checkpoint it illustrates. Setup handoffs should include the shared reading instructions and target the next unexecuted command. Keep notes in one document, save it as the report after evidence and portal checks, and continue in that file for Levels 2–3. Distinguish **provenance links, execution completion, and quality passes**. Recorded answers and scores are examples, not the reader's target results. Keep actual cloud results in the separate [English](validation.en.md) and [Korean](validation.ko.md) result pages; a translated question is not a newly independent holdout case.
 
 From the **original clone**, with its virtual environment active, run:
 
@@ -619,7 +639,7 @@ From the **original clone**, with its virtual environment active, run:
 python -m unittest discover -s tests -p 'test_docs.py' -v
 ```
 
-This checks local links/anchors/assets, code-block structure, Bash/JSON syntax, Python CLI arguments against the actual parsers, and matching English/Korean command sequences. It checks that the overview's **18 + 18 + 12 responses match the actual question and model counts**, and that required result-reading guidance is not collapsed. It also checks separate checkpoints in the main, candidate-preparation, and collection-recovery paths; **If not** guidance in participant and environment-preparation guides; recovery links to the next command; and the **dashboard → report → cleanup** order. It does **not** execute the example commands, contact Azure, or revalidate recorded cloud scores. Runnable source snapshots omit the guides and skip these documentation checks.
+This checks local links/anchors/assets, code-block structure, Bash/JSON syntax, Python CLI arguments against the actual parsers, and matching English/Korean command sequences. It checks that the first evaluation step's **18 + 18 + 12 responses match the actual question and model counts**, and that required result-reading guidance is not collapsed. It also checks separate checkpoints in the main, candidate-preparation, and collection-recovery paths; **If not** guidance in participant and environment-preparation guides; handoff links and shared reading instructions; the **dashboard → report → cleanup** order; the shared report file; and Monitor fields in the report. It also checks the designated class runner, explicit Bash and edition settings in existing-environment setup, and sign-in recovery returning to the original path. It does **not** execute the example commands, contact Azure, or revalidate recorded cloud scores. Runnable source snapshots omit the guides and skip these documentation checks.
 
 Also follow [the starting instructions](../README.md#start-here) as a participant, an environment owner, and a returning user. Check that **the next action, completion signal, and next destination** require no guesswork. Automated checks cannot establish that a first-time reader understands the instructions.
 

@@ -17,7 +17,7 @@
 
 <a id="level-3-results"></a>
 
-**Use this one table for your notes.** Copy it into your notes now and fill the last column with **your values and interpretation** as you finish each section. Do not copy attack prompts or harmful response text.
+**Use this one table for your results.** Append it to the existing `src/agent/.foundry/results/workshop-report.txt`, fill the last column with **your values and interpretation** as you finish each section, and save it. Do not create a separate notes file or copy attack prompts or harmful response text.
 
 | Section | Evaluation target | Your result to record |
 |---|---|---|
@@ -48,7 +48,7 @@ python scripts/workshop.py generate-rubric --label improved
 **Read it:**
 
 - **Do not accept generated criteria without review.** Read whether each criterion checks policies, decisions, amounts, and citations appropriately. Generation uses an LLM, so criteria and weights can differ between teams and runs.
-- **Compare the failed rows with Level 2's `business_contract`.** `policy_rubric` and `generated_rubric` judge answer quality; `business_contract` deterministically checks the required decision, amounts, and citations, and no rubric replaces it.
+- **Start with the business failures from your main-guide 7-4 notes, even if both rubrics say `failed rows: none`.** For each business-failed V2 row, check whether its ID appears in each rubric's failed-row list. If absent, that rubric passed a response that failed the business contract; record the missed check. With no business failures, record that fact rather than inventing one. A rubric does not replace the decision, amount, and citation checks.
 
 <details>
 <summary>Recorded English result — an example</summary>
@@ -86,11 +86,17 @@ python scripts/workshop.py stress-test --model sol --count 15
 
 **If not:** after the command exits with `The run is still in progress`, repeat it to resume. For other errors, see [Level 2 and 3 recovery](troubleshooting.en.md#levels). Keep the question count at 15.
 
+**Editor → Portal — inspect one failure if N is greater than 0:** open `src/agent/.foundry/results/level3/stress-sol.json`. In the first item of `failed_questions`, read the full `query` and the evaluator names in `failed`; the terminal shortens long questions. Open the printed `Portal:` link → the `<LAB_PREFIX>-stress-sol` run → that question's row in the results table. Read its actual response and the failed evaluator's explanation before assigning a cause. If N is 0, record `none` and skip this check.
+
+**Checkpoint:** your note links the inspected question to an observed policy gap, judge issue, or safety flag, based on the response and explanation—not the question alone.
+
+**If not:** if you cannot locate the row or establish its cause, keep the failure count and record `cause unconfirmed`. Do not copy the recorded example's explanation or rerun for another answer.
+
 **Read it:**
 
 - **This is a model-level test.** Foundry gives Sol all seven policies directly; your agent and its retrieval are not used, so these numbers are not comparable with the main guide's steps 5–8.
 - **Reuse the saved run.** Rerunning the command reuses its saved questions and run; do not delete result files for a better score. A separate new experiment can have different questions and counts, so do not compare it as the same run.
-- **Only note candidates for a future experiment.** Mark each failure as a policy gap (such as an uncovered overseas trip), a judge issue (such as a correct deferral marked down), or a safety flag. **Do not edit this workshop's `dev` or `holdout` files.** Add new questions with reviewed, fixed references to `dev` only in a separate experiment after this report and cleanup. Never tune instructions on `holdout`.
+- **Only note candidates for a future experiment.** Classify only the question you inspected; other failures remain unreviewed. **Do not edit this workshop's `dev` or `holdout` files.** Add new questions with reviewed, fixed references to `dev` only in a separate experiment after this report and cleanup. Never tune instructions on `holdout`.
 
 <details>
 <summary>Recorded English result — an example</summary>
@@ -177,11 +183,11 @@ python scripts/workshop.py evaluate-agent --split dev
 
 **Checkpoint:** the output shows, in order:
 
-1. `Foundry called <LAB_AGENT_NAME> version N for 18 dev rows in 3 runs, one per model (prompt v2).`
+1. `Foundry called <LAB_AGENT_NAME> version N for 18 dev rows in 3 runs, one per model (prompt v2).` The agent name and `N` must match your agent and the V2 version noted in main-guide 7-2.
 2. one line each for `business_contract`, `task_adherence`, `intent_resolution`, and `relevance`, then `business_contract by model: ...`
 3. `Traces recorded: 18` and a `Portal:` link. With the default label, you also see `Your saved improved responses: .../18 business passes.` With a recovery label, that line may be absent; compare with your own step 7-4 summary from the main guide instead.
 
-**If not:** after the command exits with `The agent evaluation is still running`, repeat it to resume. For other messages, see [Level 2 and 3 recovery](troubleshooting.en.md#levels). Keep `--split dev` during recovery too.
+**If not:** after the command exits with `The agent evaluation is still running`, repeat it to resume. If the agent/version differs, preserve the result and check the target with the owner; do not count it as the same-V2 comparison or redeploy to hide the mismatch. For other messages, see [Level 2 and 3 recovery](troubleshooting.en.md#levels). Keep `--split dev` during recovery too.
 
 **Read it:**
 
@@ -282,7 +288,7 @@ python scripts/workshop.py continuous-eval
 
 **If not:** for `in_progress` or `queued`, check again in a minute with the same command. For `failed`, an error, or zero traces, record the section as incomplete and check traffic and access with the instructor. Do not delete and recreate the schedule.
 
-**Portal — check row-level results:** open the printed `Portal:` link and select the run at the **same UTC time** you recorded above.
+**Portal — check row-level results:** open the printed `Portal:` link and select the completed run you recorded above. The portal may display local time: **06:00 UTC = 15:00 KST**, not 06:00 KST. If the time is unclear, open `src/agent/.foundry/results/level3/continuous.json` in your editor, find that entry in `runs` by its UTC `created` value, and match its `run_id` with the ID in the opened run's URL.
 
 **Checkpoint:** all N rows have valid results for all three evaluators, without errors or missing results. **Locator:** in the selected run, open the run details table and check the `relevance`, `task_adherence`, and `indirect_attack` result columns for each row. `completed` alone does not establish this. `passed: false` is a valid quality failure; report it unchanged.
 
@@ -378,7 +384,7 @@ A passing gate still does not approve production; human review and the holdout r
 
 ## Finish Level 3
 
-Append the [results table](#level-3-results) you filled in during the sections to your main [report](../README.md#finish). You do not need to rerun finished commands.
+Check and save the [results table](#level-3-results) you filled in within the existing `workshop-report.txt`. Do not recreate the [main report](../README.md#finish) or rerun finished commands.
 
 **Checkpoint:** sections 1–7 meet their completion checkpoints and the table is filled in. Record skipped sections as **skipped, not completed**, and errors or zero traces as **incomplete**. Low valid scores, `Quality gate FAILED`, or `Composite gate FAILED` are results of a completed exercise.
 
@@ -408,7 +414,11 @@ Append the [results table](#level-3-results) you filled in during the sections t
 
 **If not:** open the failed step's log. Its messages are the workshop commands' own, so follow that command's recovery ([Level 2 and 3 recovery](troubleshooting.en.md#levels) or the main guide's), then run the workflow again. `AADSTS700213` at sign-in means the federated credential's subject does not match item 1. `PermissionDenied` or `errored rows` in an evaluation means an item 2 role is missing or not applied yet; wait, then run the workflow again.
 
-**Read it:** the pipeline collects the baseline again and records your 6-3 review on the same row ID. Each run registers custom evaluators under its own `LAB_PREFIX` and deletes them at the end. `continuous` is waived because a run cannot wait for the hourly schedule. Foundry also offers its own evaluation action ([Run evaluations in GitHub Actions](https://learn.microsoft.com/azure/foundry/how-to/evaluation-github-action)).
+<a id="ci-review-provenance"></a>
+
+**Review boundary:** this is a **separate experiment**: the pipeline collects new baseline answers and copies your `review_reason` to the matching `row_id` using `feedback`'s default `human` marker. The same `row_id` does not mean the same answer or `trace_id`. That marker is **not proof of a fresh human review**, and `verify` checks this run's trace links, not whether the copied reason still describes its new answer. Keep your [original 6-3 review](../README.md#save-review) and [9-3 report](../README.md#finish); do not replace them with the CI artifact or claim it preserves the original reviewed response.
+
+Each run registers custom evaluators under its own `LAB_PREFIX` and deletes them at the end. `continuous` is waived because a run cannot wait for the hourly schedule. Foundry also offers its own evaluation action ([Run evaluations in GitHub Actions](https://learn.microsoft.com/azure/foundry/how-to/evaluation-github-action)).
 
 Recorded English run (September 25, 2026): the workflow ran on GitHub-hosted runners in a private copy of this repository and signed in through OpenID Connect as a user-assigned managed identity that had only the two roles in item 2. The `evaluate` job took 27 minutes: dev business passes went from V1 0/18 to V2 17/18, holdout was 12/12, and `verify` confirmed 48 responses and 48 traces. The `gate` job then read only the downloaded artifact and failed with exit code 1:
 

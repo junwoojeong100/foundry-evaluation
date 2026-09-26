@@ -6,22 +6,20 @@
 
 **Use this page only when you need new foundation services (Foundry account/project, Search, telemetry, and model deployments).** If you already received a complete `.env`, skip this page and start at [README step 1](../README.md#start). If services exist but preparation is incomplete, use [existing-environment preparation](instructor.en.md#existing-foundation). Do not run both paths.
 
-If you create the environment here, class, rehearsal, and self-study owners all follow steps 1–6, then choose one [handoff](#handoff) after calibration.
+**Self-study:** “instructor” and “environment owner” mean you. Follow the prerequisites below → steps 1–6 here → README 1-4 `bind`. Do not run the instructor rehearsal or team handoff.
 
-**Self-study:** in this guide, “instructor” and “environment owner” mean you. After steps 1–6, follow the first [handoff](#handoff) row to README 1-4 `bind`. The services you create keep costing money until you [delete the resource group](#final-cleanup) after README step 10.
+**Check two prerequisites.** Do not repeat checks you already finished.
 
-**Before starting:** Use one Bash/WSL terminal and run one block at a time. If you close it, follow the resume steps below.
+1. Finish [tool installation and checks](instructor.en.md#tools): Git, Python 3.13, Azure CLI, azd and its extension, Bash/WSL, curl, an editor, and a browser.
+2. Check [access](instructor.en.md#access). Use an active subscription Owner role, or have an approved access administrator support the required resource creation and scoped role assignments.
 
-- Tools: `git`, `python3.13`, `az`, `azd`, Bash/WSL, curl, an editor, and a browser. If you have not checked them yet, finish [tool installation and checks](instructor.en.md#tools) first.
-- Access: the signed-in owner can create the listed resources and scoped RBAC role assignments; a subscription Owner is enough ([access checks](instructor.en.md#access)).
-- Waiting: while a creation command prints lines such as `search: actual provisioning state ...; waiting` every 10 seconds, it is working. Each resource waits up to 15 minutes; Search waits up to 30.
-- Stopping: services already created keep costing money if you abandon setup. For a dedicated group you will not use again, inspect its creation records and follow [final cleanup](#final-cleanup).
-
-Start at step 1 in an unused Git clone.
+**Then return to [step 1 on this page](#setup-workspace).** Use one Bash/WSL terminal and run one block at a time. Do not continue through the rest of the instructor guide.
 
 <a id="setup-route"></a>
 
 **Route:** [1. Workspace](#setup-workspace) → [2. Identity/capacity](#setup-identity) → [3. Services](#setup-foundation) → [4. Access/connections](#setup-access) → [5. Auxiliary model](#setup-auxiliary) → [6. Candidates/calibration](#setup-candidates) → [handoff](#handoff).
+
+**Waiting or stopping:** `search: actual provisioning state ...; waiting` every 10 seconds is normal (up to 15 minutes per resource, 30 for Search). Created services keep costing money even if you stop. Check the [budget](instructor.en.md#budget); when you no longer need your dedicated group, verify its creation records and use [final cleanup](#final-cleanup). Even after a completed workshop, README step 10 alone does not stop foundation costs.
 
 > New services incur costs. Use synthetic data only.
 >
@@ -236,6 +234,8 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID"
 
 **If not:** [recover only azd sign-in](troubleshooting.en.md#login); do not repeat a successful Azure CLI sign-in.
 
+<a id="login-check"></a>
+
 **Terminal — runtime folder (`$RUN_DIR/workshop`):** verify both sign-ins.
 
 ```bash
@@ -441,7 +441,7 @@ python scripts/workshop.py calibrate
 
 | Who continues | Folder and next action |
 |---|---|
-| You, for one-off self-study | Run the **open the workshop folder** block below, then continue from [the README `bind` command](../README.md#bind-project). Step 6 `prepare-models` already verified readiness; do not repeat cloning, installation, sign-in, or a separate README `preflight`. |
+| You, for one-off self-study | Run the **open the workshop folder** block below, read [how to follow the README](../README.md#how-to-follow), then continue from [`bind`](../README.md#bind-project). Cloning, installation, sign-in, and preflight are already complete; do not repeat them. |
 | Instructor rehearsing for a class | Keep this folder for model ownership. Use a [separate rehearsal clone](instructor.en.md#rehearsal-workspace) with new runtime names so rehearsal cleanup cannot delete the shared models. |
 | A new participant | Give them a complete English `.env` with **unused** team names and the **actual prepared model deployment names**. Do not send `.azure`, `.foundry`, ownership files, auth caches, or results. Before sending, run the [team handoff checklist](instructor.en.md#handoff). They save that `.env` in a fresh folder and start at [README step 1](../README.md#start). |
 
@@ -459,7 +459,7 @@ pwd
 
 **If not:** for `No such file or directory`, paste the `RUN_DIR` you noted again, without quotes.
 
-**Editor — when you continue yourself:** open the printed `/workshop` folder with VS Code **File → Open Folder**. Read `.env` and results in **this copy** from now on. It omits the README, `docs/`, and `.git`, so keep reading the guide in your browser or original clone. Keep the terminal above open and go to [README 1-4 `bind`](../README.md#bind-project).
+**Editor — when you continue yourself:** open the printed `/workshop` folder with VS Code **File → Open Folder**. Read `.env` and results in **this copy**. It omits the README, `docs/`, and `.git`, so read the guide in your browser or original clone. **Only the reading location differs: keep running commands in the terminal's `/workshop` folder.** Read [how to follow the steps](../README.md#how-to-follow), then go to [README 1-4 `bind`](../README.md#bind-project).
 
 **Checkpoint:** you chose exactly one row, and its recipient has the folder or complete `.env` that row describes.
 

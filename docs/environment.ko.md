@@ -6,22 +6,20 @@
 
 **새 기반 서비스(Foundry 계정·프로젝트, Search, 관측 서비스, 모델 배포)가 필요할 때만 이 문서를 씁니다.** 완성된 `.env`를 이미 받았다면 이 문서를 건너뛰고 [README 1단계](../README.ko.md#start)에서 시작합니다. 서비스는 있지만 준비가 덜 됐다면 [기존 환경 준비](instructor.ko.md#existing-foundation)로 갑니다. 두 경로를 함께 실행하지 않습니다.
 
-여기서 새 환경을 만들면 수업 준비, 리허설, 개인 실습 모두 1–6단계를 끝낸 뒤 calibration 후 [전달 경로](#handoff)를 하나 고릅니다.
+**혼자 실습한다면:** “강사”·“환경 소유자”는 본인입니다. 아래 시작 전 확인 → 이 문서 1–6단계 → README 1-4 `bind` 순서입니다. 강사용 리허설·조별 전달은 하지 않습니다.
 
-**혼자 실습한다면:** 이 문서의 “강사”·“환경 소유자”는 본인입니다. 1–6단계를 마치면 [전달 경로](#handoff)의 첫 행대로 README 1-4의 `bind`로 갑니다. 만든 서비스는 README 10단계 뒤 [리소스 그룹 삭제](#final-cleanup)까지 해야 비용이 멈춥니다.
+**시작 전 확인은 두 가지입니다.** 이미 마친 확인은 반복하지 않습니다.
 
-**시작 전:** Bash/WSL 터미널 하나에서 한 블록씩 실행합니다. 터미널을 닫았다면 아래 재개 지시를 따릅니다.
+1. [도구 설치·확인](instructor.ko.md#tools)을 마칩니다. Git, Python 3.13, Azure CLI, azd와 확장, Bash/WSL, curl, 편집기, 브라우저가 필요합니다.
+2. [권한](instructor.ko.md#access)을 확인합니다. 사용할 구독의 활성 Owner이거나, 필요한 자원 생성과 범위 지정 역할 부여를 승인된 접근 관리자가 지원해야 합니다.
 
-- 도구: `git`, `python3.13`, `az`, `azd`, Bash/WSL, curl, 편집기, 브라우저. 아직 확인하지 않았다면 [도구 설치·확인](instructor.ko.md#tools)을 먼저 끝냅니다.
-- 권한: 로그인할 소유자가 나열된 자원과 범위 지정 RBAC 역할을 만들 수 있어야 합니다. 구독 Owner라면 충분합니다([권한 확인](instructor.ko.md#access)).
-- 대기: 생성 명령이 `search: actual provisioning state ...; waiting` 같은 줄을 10초마다 출력하는 동안은 정상입니다. 한 자원의 대기는 최대 15분, Search는 최대 30분입니다.
-- 중단: 준비를 그만두면 이미 만든 서비스의 비용은 계속 발생합니다. 더 쓰지 않을 본인 전용 그룹은 [최종 정리](#final-cleanup)에서 생성 기록을 확인한 뒤 삭제합니다.
-
-1단계에서 미사용 Git clone을 만들거나 그 루트로 들어갑니다.
+**확인이 끝나면 이 문서 [1단계](#setup-workspace)로 돌아옵니다.** Bash/WSL 터미널 하나에서 한 블록씩 실행합니다. 강사 문서의 나머지를 순서대로 진행하지 않습니다.
 
 <a id="setup-route"></a>
 
 **순서:** [1. 실행 폴더](#setup-workspace) → [2. 계정·용량](#setup-identity) → [3. 서비스](#setup-foundation) → [4. 권한·연결](#setup-access) → [5. 보조 모델](#setup-auxiliary) → [6. 후보·calibration 확인](#setup-candidates) → [전달](#handoff).
+
+**대기·중단:** 생성 명령이 `search: actual provisioning state ...; waiting`을 10초마다 출력하면 정상입니다(자원당 최대 15분, Search 최대 30분). 중단해도 이미 만든 서비스에는 비용이 발생합니다. [예산표](instructor.ko.md#budget)를 확인하고, 더 쓰지 않을 본인 전용 그룹은 생성 기록을 확인한 뒤 [최종 정리](#final-cleanup)로 삭제합니다. 실습을 마친 경우에도 README 10단계만으로는 기반 서비스 비용이 멈추지 않습니다.
 
 > 새 서비스에는 비용이 발생합니다. 합성 데이터만 사용합니다.
 >
@@ -236,6 +234,8 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID"
 
 **다르면:** [로그인 복구](troubleshooting.ko.md#login)에서 azd만 복구합니다. 성공한 Azure CLI 로그인은 반복하지 않습니다.
 
+<a id="login-check"></a>
+
 **터미널 — 실행 폴더 (`$RUN_DIR/workshop`):** 두 로그인을 확인합니다.
 
 ```bash
@@ -443,7 +443,7 @@ python scripts/workshop.py calibrate
 
 | 이어서 실행할 사람 | 사용할 폴더와 다음 행동 |
 |---|---|
-| 본인이 개인 실습을 이어서 할 때 | 아래 **실습 폴더 열기** 블록을 실행한 뒤 [README의 `bind` 명령](../README.ko.md#bind-project)부터 진행합니다. 6단계 `prepare-models`에서 준비 상태를 이미 확인했습니다. 별도 README `preflight`, clone, 설치, 로그인은 반복하지 않습니다. |
+| 본인이 개인 실습을 이어서 할 때 | 아래 **실습 폴더 열기** 블록을 실행한 뒤 README의 [진행 방법](../README.ko.md#how-to-follow)을 읽고 [`bind` 명령](../README.ko.md#bind-project)부터 진행합니다. clone·설치·로그인·preflight는 여기서 이미 마쳤으므로 반복하지 않습니다. |
 | 강사가 수업 리허설을 할 때 | 이 폴더에는 모델 소유권을 남깁니다. 새 실행 이름을 쓰는 [별도 리허설 clone](instructor.ko.md#rehearsal-workspace)에서 실습해, 리허설 cleanup이 공유 모델을 지우지 않게 합니다. |
 | 새 참가자에게 전달할 때 | **미사용 조별 이름**과 **실제 준비된 모델 배포 이름**이 들어 있는 완성된 `.env`를 전달합니다. `.azure`, `.foundry`, 소유권 파일, 인증 캐시, 결과는 보내지 않습니다. 전달 전 [강사 체크리스트](instructor.ko.md#handoff)를 확인합니다. 참가자는 새 폴더에 `.env`를 저장하고 [README 1단계](../README.ko.md#start)부터 진행합니다. |
 
@@ -461,7 +461,7 @@ pwd
 
 **다르면:** `No such file or directory`이면 메모한 `RUN_DIR`을 따옴표 없이 다시 붙여넣습니다.
 
-**편집기 — 본인이 이어서 할 때:** VS Code의 **File → Open Folder**로 방금 출력된 `/workshop` 폴더를 엽니다. 이제 `.env`와 결과는 **이 복사본**에서 봅니다. 복사본에는 README·`docs/`·`.git`이 없으므로 가이드는 브라우저나 원래 clone에서 계속 읽습니다. 위 터미널은 그대로 두고 [README 1-4의 `bind`](../README.ko.md#bind-project)로 갑니다.
+**편집기 — 본인이 이어서 할 때:** VS Code의 **File → Open Folder**로 방금 출력된 `/workshop` 폴더를 엽니다. `.env`와 결과는 **이 복사본**에서 봅니다. 복사본에는 README·`docs/`·`.git`이 없으므로 가이드는 브라우저나 원래 clone에서 읽습니다. **가이드를 읽는 위치만 다릅니다. 명령은 위 터미널의 `/workshop`에서 계속 실행합니다.** [진행 방법](../README.ko.md#how-to-follow)을 읽은 뒤 [README 1-4의 `bind`](../README.ko.md#bind-project)로 갑니다.
 
 **완료 확인:** 전달 경로를 하나만 골랐고, 그 행에 적힌 폴더 또는 완성된 `.env`가 준비되었습니다.
 

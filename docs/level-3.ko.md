@@ -17,7 +17,7 @@
 
 <a id="level-3-results"></a>
 
-**메모는 이 표 하나만 씁니다.** 아래를 내 메모에 복사하고, 각 절을 마칠 때 마지막 칸을 **내 값과 해석**으로 채웁니다. 공격 프롬프트·유해 응답 원문은 복사하지 않습니다.
+**기록은 이 표 하나만 씁니다.** 기존 `src/agent/.foundry/results/workshop-report.txt` 아래에 표를 붙이고, 각 절을 마칠 때 마지막 칸을 **내 값과 해석**으로 채워 저장합니다. 별도 메모 파일은 만들지 않습니다. 공격 프롬프트·유해 응답 원문은 복사하지 않습니다.
 
 | 절 | 평가 대상 | 메모할 내 결과 |
 |---|---|---|
@@ -48,7 +48,7 @@ python scripts/workshop.py generate-rubric --label improved
 **읽는 법:**
 
 - **생성된 기준을 그대로 믿지 않습니다.** 각 기준이 정책·판단·금액·인용을 제대로 확인하는지 읽습니다. LLM이 생성하므로 기준과 가중치는 조마다, 실행마다 다를 수 있습니다.
-- **실패 행을 레벨 2의 `business_contract`와 비교합니다.** `policy_rubric`과 `generated_rubric`은 답변 품질을 판단하고, `business_contract`는 필요한 판단값·금액·인용을 결정적으로 검사합니다. rubric은 이 검사를 대신하지 않습니다.
+- **두 rubric이 모두 `failed rows: none`이어도 기본 실습 7-4에 메모한 업무 미통과 행부터 봅니다.** 업무 미통과 V2 row ID가 각 rubric의 실패 목록에도 있는지 확인합니다. 없다면 그 rubric은 업무 검사를 실패한 응답을 통과시킨 것이므로 놓친 검사를 기록합니다. 업무 미통과가 없다면 없다고 적으며 실패를 만들지 않습니다. rubric은 판단값·금액·인용 검사를 대신하지 않습니다.
 
 <details>
 <summary>기록된 한국어 실행 결과 — 예시</summary>
@@ -87,11 +87,17 @@ python scripts/workshop.py stress-test --model sol --count 15
 
 **다르면:** `The run is still in progress`로 종료됐다면 같은 명령으로 재개합니다. 그 밖의 오류는 [레벨 2·3 복구](troubleshooting.ko.md#levels)를 봅니다. 질문 수는 15개로 유지합니다.
 
+**편집기 → 포털 — N이 0보다 크면 실패 한 건 확인:** `src/agent/.foundry/results/level3/stress-sol.json`을 엽니다. `failed_questions`의 첫 항목에서 전체 `query`와 `failed`의 평가기 이름을 읽습니다. 터미널에서는 긴 질문이 잘립니다. 출력의 `Portal:` 링크 → `<LAB_PREFIX>-stress-sol` run → 결과 표의 그 질문 행을 열고, 실제 응답과 미통과 평가기의 설명을 읽은 뒤 원인을 분류합니다. N이 0이면 `none`을 기록하고 이 확인은 건너뜁니다.
+
+**완료 확인:** 질문만 보고 추측한 것이 아니라 응답·평가 설명에 근거해, 확인한 질문과 정책 공백·judge 문제·안전 경고 중 관찰한 유형을 메모했습니다.
+
+**다르면:** 행을 찾지 못했거나 원인을 판단할 수 없으면 실패 수는 그대로 두고 `원인 미확인`으로 적습니다. 예시의 설명을 복사하거나 다른 답변을 얻으려고 다시 실행하지 않습니다.
+
 **읽는 법:**
 
 - **모델 단위 테스트입니다.** Foundry가 정책 7개를 Sol에 직접 넣습니다. 에이전트와 검색은 쓰지 않으므로 기본 실습 5–8단계 수치와 비교하지 않습니다.
 - **저장된 run을 재사용합니다.** 같은 명령을 다시 실행하면 저장된 질문과 run을 이어 씁니다. 결과 파일을 지워 점수를 다시 뽑지 않습니다. 별도의 새 실험은 질문과 수치가 달라질 수 있으므로 같은 run처럼 비교하지 않습니다.
-- **다음 실험의 후보로만 메모합니다.** 실패는 정책 공백(예: 규정이 없는 해외 출장), judge 문제(예: 올바른 보류를 감점), 안전 경고로 나눕니다. **이번 실습의 `dev`·`holdout` 파일은 수정하지 않습니다.** 고정 정답을 검토한 새 질문을 `dev`에 추가하는 일은 이번 보고·정리 후 별도 실험에서 합니다. `holdout`으로 지침을 튜닝하지 않습니다.
+- **다음 실험의 후보로만 메모합니다.** 직접 확인한 질문만 분류하며, 나머지 실패는 미검토로 남깁니다. **이번 실습의 `dev`·`holdout` 파일은 수정하지 않습니다.** 고정 정답을 검토한 새 질문을 `dev`에 추가하는 일은 이번 보고·정리 후 별도 실험에서 합니다. `holdout`으로 지침을 튜닝하지 않습니다.
 
 <details>
 <summary>기록된 한국어 실행 결과 — 예시</summary>
@@ -178,11 +184,11 @@ python scripts/workshop.py evaluate-agent --split dev
 
 **완료 확인:** 출력에 다음이 차례로 나옵니다.
 
-1. `Foundry called <LAB_AGENT_NAME> version N for 18 dev rows in 3 runs, one per model (prompt v2).`
+1. `Foundry called <LAB_AGENT_NAME> version N for 18 dev rows in 3 runs, one per model (prompt v2).` 이름과 `N`이 내 에이전트 및 기본 실습 7-2에 메모한 V2 버전과 같아야 합니다.
 2. `business_contract`·`task_adherence`·`intent_resolution`·`relevance`의 결과 한 줄씩, 이어서 `business_contract by model: ...`
 3. `Traces recorded: 18`과 `Portal:` 링크. 기본 label이면 `Your saved improved responses: .../18 business passes.`도 나옵니다. 복구 label이면 이 줄이 없을 수 있으므로 기본 실습 7-4의 내 요약과 직접 대조합니다.
 
-**다르면:** `The agent evaluation is still running`으로 종료됐다면 같은 명령으로 재개합니다. 그 밖의 메시지는 [레벨 2·3 복구](troubleshooting.ko.md#levels)를 봅니다. 실패 복구에도 `--split dev`를 유지합니다.
+**다르면:** `The agent evaluation is still running`으로 종료됐다면 같은 명령으로 재개합니다. 에이전트·버전이 다르면 결과를 보존하고 환경 소유자와 대상을 확인합니다. 같은 V2의 비교로 집계하거나 재배포로 불일치를 감추지 않습니다. 그 밖의 메시지는 [레벨 2·3 복구](troubleshooting.ko.md#levels)를 봅니다. 실패 복구에도 `--split dev`를 유지합니다.
 
 **읽는 법:**
 
@@ -285,7 +291,7 @@ python scripts/workshop.py continuous-eval
 
 **다르면:** `in_progress`·`queued`이면 1분 뒤 같은 명령으로 조회합니다. `failed`·오류·0 traces이면 미완료로 기록하고 강사와 트래픽·권한을 확인합니다. 일정을 지우고 새로 만들지 않습니다.
 
-**포털 — 행별 결과 확인:** 출력의 `Portal:` 링크를 열고 위에서 메모한 **같은 UTC 시각의 run**을 선택합니다.
+**포털 — 행별 결과 확인:** 출력의 `Portal:` 링크를 열고 위에서 메모한 완료 run을 선택합니다. 포털이 한국 시간을 표시하면 **06:00 UTC = 15:00 KST**이며 06:00 KST가 아닙니다. 시각이 헷갈리면 편집기에서 `src/agent/.foundry/results/level3/continuous.json`을 열어 `runs`의 UTC `created` 값으로 해당 항목을 찾고, 그 `run_id`를 열린 run URL의 ID와 대조합니다.
 
 **완료 확인:** N개 행에 세 평가기의 유효한 결과가 있고 오류·누락이 없습니다. **위치:** 선택한 run의 세부 정보 표에서 `relevance`, `task_adherence`, `indirect_attack` 결과 열이 행마다 채워졌는지 확인합니다. `completed`만으로 오류가 없다고 판단하지 않습니다. `passed: false`는 유효한 미통과 결과이므로 그대로 보고합니다.
 
@@ -381,7 +387,7 @@ exit code: 0
 
 ## 레벨 3 마무리
 
-각 절에서 채운 [결과표](#level-3-results)를 기본 실습의 [보고](../README.ko.md#finish)에 붙입니다. 끝난 명령을 다시 실행할 필요는 없습니다.
+기존 `workshop-report.txt`에 채운 [결과표](#level-3-results)를 확인하고 저장합니다. 기본 실습의 [보고](../README.ko.md#finish)를 다시 만들거나 끝난 명령을 반복하지 않습니다.
 
 **완료 확인:** 1–7절의 완료 기준을 충족하고 표를 채웠습니다. 생략한 절은 **완료가 아닌 생략**으로, 오류·0 trace는 **미완료**로 기록합니다. 낮은 유효 점수, `Quality gate FAILED`, `Composite gate FAILED`는 완료된 실습의 결과입니다.
 
@@ -411,7 +417,11 @@ exit code: 0
 
 **다르면:** 실패한 단계의 로그를 엽니다. 메시지는 워크숍 명령의 메시지와 같으므로 그 명령의 복구 방법([레벨 2·3 복구](troubleshooting.ko.md#levels) 또는 기본 실습의 복구)을 따른 뒤 워크플로를 다시 실행합니다. 로그인 단계의 `AADSTS700213`은 federated credential의 subject가 1번과 다르다는 뜻입니다. 평가 중 `PermissionDenied`나 `errored rows`는 2번 역할이 없거나 아직 적용되지 않았다는 뜻이므로, 기다린 뒤 워크플로를 다시 실행합니다.
 
-**읽는 법:** 파이프라인은 baseline을 다시 수집하고 6-3의 검토를 같은 row ID에 기록합니다. 실행마다 자기 `LAB_PREFIX`로 사용자 지정 평가기를 등록하고 끝나면 삭제합니다. 한 번의 실행은 매시간 일정을 기다릴 수 없어 `continuous`를 waiver합니다. Foundry 자체 평가 action도 있습니다([GitHub Actions에서 평가 실행](https://learn.microsoft.com/azure/foundry/how-to/evaluation-github-action)).
+<a id="ci-review-provenance"></a>
+
+**검토의 범위:** 이것은 **별도 실험**입니다. 파이프라인은 새 baseline 답변을 수집하고, 전달한 `review_reason`을 같은 `row_id`에 `feedback`의 기본 `human` 표시로 기록합니다. `row_id`가 같아도 답변과 `trace_id`는 다릅니다. 이 표시는 **새 응답을 사람이 다시 검토했다는 증거가 아니며**, `verify`도 이 실행 안의 trace 연결을 검사할 뿐 복사한 이유가 새 답변에 맞는지는 확인하지 않습니다. [원래 6-3 검토](../README.ko.md#save-review)와 [9-3 보고서](../README.ko.md#finish)를 보관하고, CI artifact로 대체하거나 원래 검토한 응답이 보존됐다고 보고하지 않습니다.
+
+실행마다 자기 `LAB_PREFIX`로 사용자 지정 평가기를 등록하고 끝나면 삭제합니다. 한 번의 실행은 매시간 일정을 기다릴 수 없어 `continuous`를 waiver합니다. Foundry 자체 평가 action도 있습니다([GitHub Actions에서 평가 실행](https://learn.microsoft.com/azure/foundry/how-to/evaluation-github-action)).
 
 기록된 한국어 실행(2026-09-25): 이 저장소의 비공개 사본에서 GitHub 호스팅 러너로 실행했고, 2번의 두 역할만 가진 user-assigned managed identity로 OpenID Connect 로그인했습니다. `evaluate` 작업은 30분 걸렸습니다. dev 업무 통과는 V1 0/18에서 V2 18/18이 됐고, holdout은 12/12였으며, `verify`가 48응답·48 trace를 확인했습니다. 이어서 `gate` 작업은 내려받은 artifact만 읽고 종료 코드 1로 실패했습니다.
 

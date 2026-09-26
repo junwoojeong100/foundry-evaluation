@@ -7,36 +7,28 @@
 **The main workshop takes 120 minutes.** Collect 48 real responses, then **review one case, compare V1 → V2, and report whether V2 also works on new questions**. Low scores are valid workshop results. Perfect scores and production approval are not the goal.
 
 <a id="start-here"></a>
-
-## Start the workshop
-
-**First, prepare your tools:** Git, Python 3.13, Bash, curl, Azure CLI, azd with the `microsoft.foundry` extension, an editor (VS Code recommended), and a browser; on Windows, use WSL ([install and check](docs/instructor.en.md#tools)).
-
-**Then pick the one starting point that matches you.**
-
-| Your situation | Start here |
-|---|---|
-| Your instructor gave you a complete team `.env` (class) | [Step 1](#start), then **steps 1–10 in order** |
-| **Self-study** with no `.env` (your own Azure subscription) | Open [self-study](#other-starts) right below, create the environment, then return at 1-4 |
-| Continuing an earlier attempt | [Resume in the same folder](docs/troubleshooting.en.md#resume); do not start again |
-
-Optional Levels 2–3 go after step 9 and before step 10; references and the video are optional too. Tool installation and Azure preparation are outside the 120 minutes. **Local execution still calls paid Azure models and Search.**
-
 <a id="other-starts"></a>
 <a id="other-situations"></a>
 <a id="choose-your-starting-point"></a>
 
+## Start the workshop
+
+**Follow only the starting point that matches you.** You do not need to read every linked guide.
+
+| Your situation | Start here |
+|---|---|
+| Your instructor gave you a complete team `.env` (class) | [Step 1](#start), then **steps 1–10 in order** |
+| **Self-study** with no `.env` (your own Azure subscription) | Finish the prerequisites and steps 1–6 in [Create a new environment](docs/environment.en.md) → follow its handoff to [1-4 binding](#bind-project) |
+| Continuing an earlier attempt | [Resume in the same folder](docs/troubleshooting.en.md#resume); do not start again |
+
+**Tools required:** Git, Python 3.13, Bash, curl, Azure CLI, azd with the `microsoft.foundry` extension, an editor (VS Code recommended), and a browser; on Windows, use WSL ([install and check](docs/instructor.en.md#tools)). Tool installation and Azure preparation are outside the 120 minutes.
+
+**Cost:** local execution still calls paid Azure models and Search. For an environment you create yourself, [delete your dedicated resource group](docs/environment.en.md#final-cleanup) after step 10 to stop foundation costs.
+
 <details>
-<summary>Self-study (no <code>.env</code>) · preparing existing Azure · delegating to Copilot</summary>
+<summary>Other paths: preparing existing Azure · delegating to Copilot</summary>
 
-**Self-study:** four stages in your own Azure subscription. In these guides, “instructor” and “environment owner” both mean you.
-
-1. Finish [tool installation and checks](docs/instructor.en.md#tools) and [access checks](docs/instructor.en.md#access); a subscription Owner meets the access requirement.
-2. Follow steps 1–6 of [Create a dedicated environment](docs/environment.en.md) to create the paid Azure services, models, and your `.env`.
-3. In the folder opened by that guide's 6-3 “open the workshop folder” block, read “How to follow the steps” in [The 10-step path](#workshop-overview) below, then continue from [1-4 binding (`bind`)](#bind-project). That guide already did 1-1 to 1-3 and the preflight.
-4. After step 10, [delete the resource group](docs/environment.en.md#final-cleanup); only that stops the Search, logging, and other foundation costs (Search Basic alone is about $74 a month; see the [budget](docs/instructor.en.md#budget)).
-
-| Other situation | Start here |
+| Your situation | Start here |
 |---|---|
 | Azure services exist, but you need settings, models, or access | As the environment owner, use [existing-environment preparation](docs/instructor.en.md#existing-foundation) |
 | You want Copilot CLI to execute the steps | Use the [optional Copilot guide](docs/copilot.en.md); do not also execute the steps manually. Manual execution needs neither Copilot nor Playwright. |
@@ -49,25 +41,11 @@ Optional Levels 2–3 go after step 9 and before step 10; references and the vid
 
 ## The 10-step path
 
-**Microsoft Foundry** is an Azure platform for deploying, evaluating, and observing AI agents. This agent uses **Foundry IQ** to retrieve policy documents and returns an **answer, a decision (`decision`), and source-document IDs (`citations`)**. Three candidate models—Sol, Luna, and Astra—**each produce one answer per question**.
+**Microsoft Foundry** is an Azure platform for deploying, evaluating, and observing AI agents. In this workshop, ask three models the same questions and compare results after changing only the provided instructions from V1 to V2.
 
 ```text
 Question → Python agent → Foundry IQ policy retrieval → candidate model → answer
 ```
-
-<a id="evaluation-runs"></a>
-
-**V1 and V2 are two versions of the model's instructions (prompt), not model names.** `dev` is the question set used for improvement; `holdout` is a new question set checked only at the end, with the instructions unchanged. A **label is a result-folder name**.
-
-| Result name (label) | Instructions | Question set (split) | Responses | What to check |
-|---|---|---|---|---|
-| `baseline` | V1 | 6 `dev` questions | 18 | Answers before the change |
-| `improved` | V2 | The same 6 `dev` questions | 18 | The before-and-after difference |
-| `holdout` | Unchanged V2 | 4 new `holdout` questions | 12 | Whether V2 also works on new questions |
-
-**18 + 18 + 12 = 48 responses.** Setup checks and judge scores are not added to this count. **`improved` is a result name, not a verdict that answers improved.** Compare V1 → V2 on the same `dev` questions, not holdout scores against dev scores.
-
-A **trace** is one request's retrieval and model-call record; the **judge** is a separate model that scores answers. Other terms are explained where you need them ([full glossary](docs/reference.en.md#terms)).
 
 | Step | Continue when |
 |---|---|
@@ -75,29 +53,34 @@ A **trace** is one request's retrieval and model-call record; the **judge** is a
 | [2. Retrieve policies](#lab-a) | Your knowledge base returns `TRAVEL-2026` |
 | [3. Run locally](#local) | Readiness is `HTTP 200` and the agent returns a real V1 answer |
 | [4. Deploy](#deploy) | The hosted answer has a numeric agent version |
-| [5. Evaluate V1](#lab-c) | `baseline`: `dev` 6 questions × 3 models = 18 evaluated V1 responses |
+| [5. Evaluate V1](#lab-c) | 6 questions × 3 models = 18 evaluated V1 responses |
 | [6. Review one case](#lab-d) | Your review is saved with the case's original trace |
-| [7. Evaluate V2](#lab-e) | `improved`: the **same `dev` 6 questions** × 3 models = 18 evaluated V2 responses |
-| [8. Evaluate holdout](#lab-f) | `holdout`: 4 held-out questions × 3 models = 12 evaluated responses from unchanged V2; failed results recorded |
+| [7. Evaluate V2](#lab-e) | The **same 6 questions** × 3 models = 18 evaluated V2 responses and a before/after comparison |
+| [8. Check new questions](#lab-f) | 4 new questions × 3 models = 12 evaluated responses from unchanged V2 |
 | [9. Verify and report](#lab-g) | 48 responses, 48 traces, and your review lineage are verified; your three-point report is filled in |
 | [10. Clean up](#cleanup) | Only your owned objects are removed |
 
 **Time:** 1–2: 25 min · 3–4: 15 min · 5–6: 30 min · 7–8: 30 min · 9–10: 15 min · buffer: 5 min. **Report in step 9, then clean up in step 10**; optional [Levels 2–3](#levels) go in between.
 
-**How to follow the steps**
+<a id="how-to-follow"></a>
 
+### How to follow the steps
+
+- **Class runner:** for each team `.env`, **one person runs commands with their own account, PC, and one workshop folder**; teammates review that screen together. Running the same `.env` on several PCs causes ownership conflicts over the same named resources. For individual execution, obtain a separate `.env` with distinct `LAB_PREFIX` and `LAB_AGENT_NAME` values for each runner before starting.
 - **Where:** follow the bold label before each block: **Terminal A**, **Terminal B** (step 3 only), **Editor**, or **Portal**. "Your agent" means `LAB_AGENT_NAME`.
 - **One block at a time:** follow **location → run the command → checkpoint → next block**. Wait for the input prompt—the line where you can type another command—to return, except for step 3's server. When asked for input, paste only the requested value and press Enter.
-- **When to stop:** for an error or a missing required **Checkpoint** value, follow the **If not** below it to [recover only that command](docs/troubleshooting.en.md#resume). In contrast, once collection or evaluation finishes, **record and continue** for `business=False` or low valid scores. Never rerun for a better score.
+- **When to stop:** for an error or a missing required **Checkpoint** value, follow the **If not** below it to [recover only that command](docs/troubleshooting.en.md#resume). Once execution finishes, **record and continue** for low valid scores. Never rerun for a better score.
 - **New terminal later:** start Bash and run the [restore block](#resume-shell) with the path you noted; step 3's Terminal B block already includes it.
-- **Notes:** open one new text file in your editor and record values only where a step asks you to. Transfer them into the [report template](#finish) and save it in 9-3. **Do not open `data/en/holdout.jsonl` before step 8.**
+- **Record:** open **one** text document in your editor and record values only where a step asks you to. In 9-3, organize **that same document** using the [report template](#finish) and save it; no separate notes file is needed.
+
+**Do not open `data/en/holdout.jsonl` before step 8.** Terms are explained where you use them ([full glossary](docs/reference.en.md#terms)). Open collapsed references, examples, or the video only when needed.
 
 <details>
 <summary>If terminals, files, or structured output are new to you</summary>
 
 | What you see | How to read it |
 |---|---|
-| Repository root / "this folder" | The top of the code folder from 1-1; run subsequent commands here |
+| Repository root / "this folder" | The top of the code folder where commands run: the 1-1 clone in a class, or the `/workshop` folder from setup step 6-3 for a new environment |
 | Code block | Copy the commands inside it exactly. Do not add a leading prompt symbol `$` |
 | `&&` | Run the next command only if the previous one succeeds |
 | `$PWD`, `"$ROW_ID"`, and similar code | The terminal substitutes the value. Do not remove `$` or quotes, or replace the variables yourself |
@@ -113,8 +96,6 @@ For help, share only the failed command, error, and step—not passwords, tokens
 </details>
 
 <a id="background-learning-loops-and-frontier-ecosystems"></a>
-
-**Class participants go to [step 1](#start) now.** In self-study, finish stage 2 of [self-study](#other-starts) first, then come to [1-4 binding](#bind-project).
 
 <a id="start"></a>
 
@@ -154,6 +135,7 @@ pwd
 **Editor — add `.env` (class participants):** open this folder with VS Code **File → Open Folder**. Put the instructor's `.env` next to `README.md` (the top of the folder) in the Explorer, open it, and confirm the items below. Do not overwrite an existing `.env`; ask the instructor.
 
 - **File:** `.env`, not `.env.txt`.
+- **Who signs in:** `AZURE_EXPECTED_USERNAME` must be the runner's **own Azure sign-in name/email**. `.env` supplies settings, not an account, password, or access permission. The instructor prepares access for that account; the runner completes their own sign-in and MFA.
 - **Your values:** `LAB_LANGUAGE=en`, `LAB_PROMPT_VERSION=v1`, and team names in `LAB_PREFIX` and `LAB_AGENT_NAME` that no one else uses.
 - **Instructor values:** `MODEL_*_DEPLOYMENT` and `LAB_AUX_DEPLOYMENT` hold the instructor's deployment names.
 - **Never:** empty values, `<...>` placeholders, passwords, keys, or tokens.
@@ -167,7 +149,7 @@ grep -E '^LAB_(LANGUAGE|PROMPT_VERSION)=' .env
 
 **Checkpoint:** `.env` prints, followed by the two lines `LAB_LANGUAGE=en` and `LAB_PROMPT_VERSION=v1`, and the editor check above passes. Never run or `source` `.env`; Python reads it.
 
-**If not:** for `No such file`, check whether the file was saved as `.env.txt` or `env` and rename it to exactly `.env`. Ask the instructor for missing values; never guess.
+**If not:** for `No such file`, check whether the file was saved as `.env.txt` or `env` and rename it to exactly `.env`. Ask the instructor about missing values or a different `AZURE_EXPECTED_USERNAME`; continue only with settings and access prepared for the runner's account. Never borrow someone else's account/password or guess settings.
 
 <details>
 <summary>Why these values matter</summary>
@@ -516,6 +498,20 @@ python scripts/workshop.py smoke
 
 **Goal:** collect and evaluate 18 V1 responses (6 dev questions × 3 models) as `baseline`.
 
+<a id="evaluation-runs"></a>
+
+**Keep these three result names throughout the evaluation.** The same agent (`LAB_AGENT_NAME`) routes each question to three candidate models, which each produce one answer: `model_key` values `sol`, `luna`, and `astra` select `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`. These keys are not agent names or Azure deployment names.
+
+**V1 and V2 are instruction (prompt) versions, not models; split means question set; label means result-folder name.** Use `dev` for improvement and open the new `holdout` questions only at the end, after fixing V2.
+
+| Result name (label) | Instructions | Question set (split) | Responses | What to check |
+|---|---|---|---|---|
+| `baseline` | V1 | 6 `dev` questions | 18 | Answers before the change |
+| `improved` | V2 | The same 6 `dev` questions | 18 | The before-and-after difference |
+| `holdout` | Unchanged V2 | 4 new `holdout` questions | 12 | Whether V2 also works on new questions |
+
+**Run only the first row, `baseline`, now.** Step 7 runs `improved` and step 8 runs `holdout`, giving **18 + 18 + 12 = 48 responses**. Setup calls and scores from the scoring model (judge) are not added to this count. `improved` is a name, not an improvement verdict; dev and holdout use different questions, so do not treat them as a before/after comparison.
+
 **Generating answers and scoring answers are separate commands.** The two kinds of checks do not replace each other.
 
 | Command | What it does | What it checks |
@@ -536,6 +532,8 @@ python scripts/workshop.py calibrate
 **Checkpoint:** after the evaluation-completed line and a URL, the last line is `Judge calibration passed; ...`.
 
 **If not:** [resolve calibration first](docs/troubleshooting.en.md#calibration).
+
+<a id="baseline-collection"></a>
 
 ### 5-2. Collect the 18 baseline responses
 
@@ -584,7 +582,7 @@ python scripts/workshop.py evaluate --label baseline
 <summary>Reference: question sets and evaluator inputs</summary>
 
 - The six dev cases cover current limits, prior approval, historical policy, uncovered questions, prohibited expenses, and requests to ignore policy.
-- Keep the question sets and result names from the [opening comparison table](#evaluation-runs).
+- Keep the question sets and result names from [this step's evaluation plan](#evaluation-runs).
 - The judge, `gpt-5.4-mini`, is not a candidate, and its two calibration examples are not among the 48 responses.
 - Groundedness and relevance pass at **4 of 5**. `compare` and `summary` only read saved results; they make no model calls.
 - Foundry's groundedness and relevance evaluators see the answer text, not the `decision` or `citations` fields, so **a high groundedness score does not establish a correct decision or citation IDs** ([what each evaluator receives](docs/validation.en.md#business-checks)).
@@ -652,15 +650,17 @@ python scripts/workshop.py show --label baseline --row-id "$ROW_ID"
 
 **If not:** for `Unknown row ID`, paste only the ID that starts with `baseline-`, without parentheses or commas.
 
-**First read the question (`query`) in Terminal A, then compare in this order.** `saved_response` is the agent's answer; `fixed_reference` is the reference answer set in advance.
+**First read the question (`query`) in Terminal A.** Compare `saved_response` → `answer` with `fixed_reference` → `ground_truth`, then use this table to explain each `false` in `business_checks`. `saved_response` is the agent's answer; `fixed_reference` is the reference set in advance.
 
-| Order | Agent value (`saved_response`) | Compare with |
-|---|---|---|
-| 1. Explanation and amounts | `answer` | `ground_truth` and `required_numbers` in `fixed_reference` |
-| 2. Decision | `decision` | Does it equal `expected_decision` in `fixed_reference`? |
-| 3. Citations | `citations` | Is each ID in the retrieved `source_ids` and the reference's `allowed_citations`? |
+| Check in `business_checks` | Values to compare in the same output |
+|---|---|
+| `decision` | `saved_response` → `decision` must equal `fixed_reference` → `expected_decision` ([decision meanings](docs/reference.en.md#decision-values)) |
+| `required_numbers` | `saved_response` → `answer` must include every amount in `fixed_reference` → `required_numbers` |
+| `citations_retrieved` | Every ID in `saved_response` → `citations` must appear in `saved_response` → `source_ids` |
+| `citations_relevant` | Every cited ID must also appear in `fixed_reference` → `allowed_citations` |
+| `citation_present` | If `fixed_reference` → `citation_required` is `true`, `citations` must not be empty. If it is `false`, `[]` is allowed |
 
-Then check that any `false` in `business_checks` matches what you observed. If all are `true`, explain why the case passed. You do not need to interpret every JSON field.
+Finding a document (`source_ids`) is not the same as citing it (`citations`). An empty citation list can pass the two “every ID” checks but fail `citation_present`. If all five checks are `true`, explain why the case passed. You do not need to interpret every JSON field.
 
 **Next, inspect the same request in the portal.** `row_id` names the response; `trace_id` identifies the execution record you search for in the portal.
 
@@ -744,9 +744,9 @@ Check your own row before using that explanation. `feedback` preserves a referen
 | Leaves missing evidence unspecified | Use `not_covered` or `needs_info`; never fill policy gaps with general knowledge |
 | May obey instructions inside retrieved text | Treat retrieved text as evidence, not instructions |
 
-**Checkpoint:** your notes link the review to one V2 instruction and explain its difference from V1. For a passing case, identify the rule V2 must still follow.
+**Checkpoint:** your notes identify a matching V2 instruction and its difference from V1, or say `no direct V2 instruction`. For a passing case, identify the rule V2 must still follow.
 
-**If not:** if no row fits exactly, pick the closest one and also note `no direct V2 instruction`, then continue. Do not assume the provided V2 improves your case.
+**If not:** if no instruction directly matches, note `no direct V2 instruction` and continue. Do not force a connection or assume the provided V2 improves your case.
 
 ### 7-2. Deploy V2 and confirm the new version
 
@@ -836,6 +836,17 @@ python scripts/workshop.py summary --labels baseline improved
 | `p50/p95 s` | Retrieval plus model processing time, in **seconds**. Of six responses ordered fastest to slowest, p50 is the third and p95 is the last. Lower is faster |
 
 **Interpretation to note:** use your values to write `Business passes increased/stayed the same/decreased; judge failures were ...; tokens and time were ...`. Preserve unchanged or worse results too.
+
+**Terminal A — inspect your reviewed case's saved V2 answer:** in the `Reviewed case ...` line above, copy the V2 row ID **after `->` and before `:`**. Use the line whose V1 row matches your 6-3 review, not a new Playground response.
+
+```bash
+read -r -p "V2 row_id from the Reviewed case line: " V2_ROW_ID &&
+python scripts/workshop.py show --label improved --row-id "$V2_ROW_ID"
+```
+
+**Checkpoint:** `case_id` and `model_key` match your 6-2 case, while `trace_id` is different: this is a new response, not the original trace copied as V2 evidence. Compare `saved_response` → `answer`, `decision`, and `citations` with 6-2 and the unchanged `fixed_reference`. Note the V2 `row_id` and what actually changed (or stayed the same), even if its business pass/fail did not change.
+
+**If not:** for `Unknown row ID`, copy only the right-hand ID, without `:` or the following text; use your actual recovery label if applicable. If you lost the V1 view, reopen [6-2's saved row](#review-case); do not collect or evaluate again.
 
 <details>
 <summary>Reference: source files and comparison limits</summary>
@@ -1056,13 +1067,14 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
 
 **If not:** if the file is missing, check that [9-1 verification](#lab-g) completed. Do not create the file or fill in values yourself.
 
-**Editor — save your report:** in the VS Code Explorer, right-click the `src/agent/.foundry/results` folder → **New File** and name it `workshop-report.txt`. Fill this template (not a command) with the values from your notes and save it. Leave no `...`, write empty lists as `none`, and keep `production_release_approved=false`:
+**Editor — save your notes as the report:** organize **the same document** you have been using into this template (not a command). Use VS Code **File → Save As** to save it as `src/agent/.foundry/results/workshop-report.txt` inside your workshop folder. Leave no `...`, write empty lists as `none`, and keep `production_release_approved=false`:
 
 ```text
 1. Review (6-2 line): ...
    Linked V2 instruction (7-1): ...
 2. Change (7-4):
    V1 version (4-3)=...; V2 version (7-2)=...
+   Reviewed V2 row and actual answer/decision/citation change (or unchanged): ...
    V1 -> V2 table: paste the table here
    Interpretation (business passes, judge failures, tokens, time): ...
    improved failures: business=...; Foundry=...
@@ -1071,7 +1083,8 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
    luna: dev=..., holdout=...
    astra: dev=..., holdout=...
    holdout failures (8-3): business=...; Foundry=...
-   limitations (7-4 token or latency increases; 9-2 run statuses other than completed): ...
+   Monitor (9-2): Agent runs counts by status=...; Total tokens=...
+   limitations (token/latency increases, run statuses other than completed, etc.): ...
    production_release_approved=false
 ```
 

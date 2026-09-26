@@ -15,7 +15,7 @@
 
 **Where to run:** your existing **Terminal A, at the repository root**. In a new terminal, [restore the environment only](../README.md#resume-shell). Do not change `.env` names or the V2 instructions. If you used recovery labels, replace `baseline` and `improved` below with those labels.
 
-**Read pass counts in section 2, judge agreement in section 3, and mean scores and failure causes in section 4.** Add all three to your report. Example scores and the optional portal view are not required steps.
+**Record:** continue in `src/agent/.foundry/results/workshop-report.txt`, saved in the main workshop. Append notes on **section 2's pass counts, section 3's judge agreement, and section 4's mean scores and failure causes**, then organize them using the [Level 2 template](#finish-level-2) at the end. Example scores and the optional portal comparison are not required steps.
 
 <a id="register-evaluators"></a>
 
@@ -29,7 +29,7 @@ The **code evaluator** applies the five business rules exactly; the **rubric eva
 python scripts/workshop.py register-evaluators
 ```
 
-**Checkpoint:** two lines, `Registered <LAB_PREFIX>-business-contract version 1 (code)` and `Registered <LAB_PREFIX>-policy-rubric version 1 (rubric)`. Running the command again prints `Reusing ...` and creates nothing.
+**Checkpoint:** two lines, `Registered <LAB_PREFIX>-business-contract version N (code)` and `Registered <LAB_PREFIX>-policy-rubric version N (rubric)`, with each evaluator's actual version number in place of `N`. These are evaluator versions, not V1/V2 instructions or the hosted `agent_version`. Running the command again prints `Reusing ...` and creates nothing.
 
 **If not:** for `already exists and is not owned by this folder`, stop and check the ownership conflict with the instructor. Do not change `LAB_PREFIX` in this folder's `.env` or delete another team's evaluator. See [Level 2 and 3 recovery](troubleshooting.en.md#levels).
 
@@ -62,7 +62,7 @@ Both are objects in your project's evaluator catalog, prefixed with your `LAB_PR
 python scripts/workshop.py evaluate-suite --labels baseline improved
 ```
 
-**Checkpoint:** `Suite evaluation completed: ... (baseline, improved)`, a table with nine rows and a `Portal:` link. The `business_contract` row matches the business passes from your 7-4 summary.
+**Checkpoint:** `Suite evaluation completed: ... (baseline, improved)`, a table with nine rows and a `Portal:` link. Each column combines all three models into **18 responses**, unlike 7-4's per-model `/6` counts.
 
 **If not:** if the command exited with `The suite is still running`, repeat the same command to resume its saved run. If it is still running in your terminal, wait. For other errors, see [Level 2 and 3 recovery](troubleshooting.en.md#levels).
 
@@ -81,7 +81,7 @@ This replaces only failed runs. Do not use it for low valid scores. If the same 
 
 **Read your table in this order:**
 
-1. **Start with `business_contract`.** Record V1 → V2 pass counts and check that they match your local business checks from 7-4.
+1. **Start with `business_contract`.** For each side of 7-4's V1 → V2 `business` column, add the `sol`, `luna`, and `astra` numerators. The two sums must match this row's `baseline` and `improved` numerators out of 18. Record those totals; do not compare a single model's `/6` directly with `/18`.
 2. **Compare `policy_rubric` with `policy_rubric_no_evidence`.** `policy_rubric` receives the question plus retrieved policy text; `policy_rubric_no_evidence` receives only the question. Note whether the same rubric's pass counts changed when the judge had evidence.
 3. **Record one change in the built-in quality, agent, RAG, or safety rows** (or `none`). These scores do not replace the business checks for decisions, amounts, and citations.
 
@@ -143,8 +143,8 @@ python scripts/workshop.py judge-agreement --labels baseline improved
 **Read it:**
 
 - **`judge pass + business fail`:** the judge passed an answer that failed the business checks. A judge with many of these cannot replace the business checks.
-- **`judge fail + business pass`:** the judge failed an answer that passed the business checks. Before letting that judge block a release, read each listed row's answer and the judge's reason in section 2's portal run. Distinguish an actual quality problem from a correct deferral marked down for relevance.
-- **Do not tune a judge to agree.** Keep thresholds, rubrics, and reference answers unchanged, and note which judges may block a release and which stay diagnostic.
+- **`judge fail + business pass`:** the judge failed an answer that passed the business checks. For each listed row ID, open section 2's `Portal:` link → its `baseline` or `improved` run → that row, and read the answer and that judge's score explanation. Distinguish an actual quality problem from a correct deferral marked down by the judge. Skip this check if every list says `none`.
+- **Do not tune a judge to agree.** Keep thresholds, rubrics, and reference answers unchanged. Note which judges to consider for production release blocking and which stay diagnostic. **This is a report recommendation, not a change to Level 3's gate configuration.**
 
 <details>
 <summary>Recorded English result — an example</summary>
@@ -190,7 +190,7 @@ python scripts/workshop.py insights --baseline baseline --candidate improved
 
 **Read it:**
 
-- **Section 2 is pass counts; this section is mean scores.** `delta` is candidate minus baseline. A `business_contract` mean of `0.60` means some checks passed, not that 60% of responses passed.
+- **Section 2 is pass counts; this section is mean scores.** Here `candidate` means the `improved` result set across all three models, not a selected model. `delta` is candidate minus baseline. A `business_contract` mean of `0.60` means some checks passed, not that 60% of responses passed.
 - **`Changed` means different, not automatically better.** Use `delta`, the evaluator's desired direction, and the small 18-row sample size ([statistical comparison legend](https://learn.microsoft.com/azure/foundry/how-to/evaluate-results#compare-the-evaluation-results)).
 - **For clusters, read the failing evaluator first.** `policy_rubric_no_evidence` often means the judge lacked evidence; `business_contract` means a specific contract check failed.
 
@@ -216,11 +216,11 @@ Ten of the twelve clustered V2 samples came from `policy_rubric_no_evidence`, fo
 
 ## Finish Level 2
 
-**Report note:** copy this shape into your [main report](../README.md#finish) and fill it with **your results**. It is not a command.
+**Save the report:** organize the Level 2 notes at the bottom of the same `workshop-report.txt` into this shape and save it. Keep your [step 9-3 main report](../README.md#finish) intact. This is not a command.
 
 ```text
 Business contract: .../18 -> .../18; rubric with evidence: .../18 -> .../18
-Judges that may block a release: ...; diagnostic only: ... (judge agreement)
+Production judge recommendation: consider for blocking=...; diagnostic=... (agreement evidence, not a configuration change)
 What the generic and safety evaluators told me: ...
 Comparison/cluster: evaluator=...; delta/effect=...; verified failure cause, or no failures=...
 ```

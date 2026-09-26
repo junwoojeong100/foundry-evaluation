@@ -15,7 +15,7 @@
 
 **실행 위치:** 기존 **터미널 A**에서 **저장소 루트**로 실행합니다. 새 터미널이면 [환경만 복원](../README.ko.md#resume-shell)합니다. `.env`의 이름과 V2 지침은 바꾸지 않습니다. 복구 때 다른 label을 썼다면 아래 `baseline`·`improved`를 실제 label로 바꿉니다.
 
-**2절에서는 통과 건수, 3절에서는 judge 일치도, 4절에서는 평균 점수와 실패 원인을 읽습니다.** 셋 다 보고에 넣습니다. 예시 점수와 선택 포털 화면은 필수 단계가 아닙니다.
+**기록:** 기본 실습에서 저장한 `src/agent/.foundry/results/workshop-report.txt`를 이어 씁니다. **2절의 통과 건수, 3절의 judge 일치도, 4절의 평균 점수와 실패 원인**을 파일 아래에 메모하고, 마지막에 [레벨 2 양식](#finish-level-2)으로 정리합니다. 예시 점수와 선택 포털 비교 화면은 필수 단계가 아닙니다.
 
 <a id="register-evaluators"></a>
 
@@ -29,7 +29,7 @@
 python scripts/workshop.py register-evaluators
 ```
 
-**완료 확인:** `Registered <LAB_PREFIX>-business-contract version 1 (code)`와 `Registered <LAB_PREFIX>-policy-rubric version 1 (rubric)` 두 줄이 나옵니다. 다시 실행하면 `Reusing ...`이 나오고 아무것도 새로 만들지 않습니다.
+**완료 확인:** `Registered <LAB_PREFIX>-business-contract version N (code)`와 `Registered <LAB_PREFIX>-policy-rubric version N (rubric)` 두 줄에서 `N` 자리에 각 평가기의 실제 버전 번호가 나옵니다. 평가기 버전이지 V1·V2 지침이나 hosted `agent_version`이 아닙니다. 다시 실행하면 `Reusing ...`이 나오고 아무것도 새로 만들지 않습니다.
 
 **다르면:** `already exists and is not owned by this folder`이면 멈추고 강사와 소유권 충돌을 확인합니다. 지금 `.env`의 `LAB_PREFIX`를 바꾸거나 다른 조의 평가기를 삭제하지 않습니다. [레벨 2·3 복구](troubleshooting.ko.md#levels)
 
@@ -62,7 +62,7 @@ python scripts/workshop.py register-evaluators
 python scripts/workshop.py evaluate-suite --labels baseline improved
 ```
 
-**완료 확인:** `Suite evaluation completed: ... (baseline, improved)`, 9행짜리 표, `Portal:` 링크가 나옵니다. `business_contract` 행은 7-4 요약의 업무 통과 수와 같습니다.
+**완료 확인:** `Suite evaluation completed: ... (baseline, improved)`, 9행짜리 표, `Portal:` 링크가 나옵니다. 각 열은 세 모델을 합친 **18응답**이며, 7-4의 모델별 `/6`과 분모가 다릅니다.
 
 **다르면:** `The suite is still running`으로 명령이 끝났다면 같은 명령으로 저장된 run을 이어갑니다. 아직 터미널에서 실행 중이면 기다립니다. 그 밖의 오류는 [레벨 2·3 복구](troubleshooting.ko.md#levels)를 봅니다.
 
@@ -81,7 +81,7 @@ python scripts/workshop.py evaluate-suite --labels baseline improved --retry-fai
 
 **내 표에서 읽을 순서:**
 
-1. **`business_contract`부터 봅니다.** V1 → V2 통과 건수를 적고 7-4의 로컬 업무 검사와 같은지 확인합니다.
+1. **`business_contract`부터 봅니다.** 7-4의 `business` 열에서 V1 쪽과 V2 쪽 각각 `sol`·`luna`·`astra`의 분자를 더합니다. 두 합계가 이 행의 `baseline`·`improved` 분자(`/18`)와 같아야 합니다. 그 합계를 기록하며, 모델 하나의 `/6`과 `/18`을 직접 비교하지 않습니다.
 2. **`policy_rubric`과 `policy_rubric_no_evidence`를 비교합니다.** `policy_rubric`은 질문과 검색된 정책 본문을 받고, `policy_rubric_no_evidence`는 질문만 받습니다. 같은 rubric이라도 judge에게 근거를 주었을 때와 안 주었을 때 통과 건수가 달랐는지 적습니다.
 3. **기본 제공 품질·에이전트·RAG·안전 평가기의 변화 하나를 적습니다**(없으면 `none`). 이 점수들은 판단·금액·인용을 보는 업무 검사를 대신하지 않습니다.
 
@@ -143,8 +143,8 @@ python scripts/workshop.py judge-agreement --labels baseline improved
 **읽는 법:**
 
 - **`judge pass + business fail`:** 업무 검사에서 실패한 답변을 judge가 통과시켰습니다. 이 수가 많은 judge는 업무 검사를 대신할 수 없습니다.
-- **`judge fail + business pass`:** 업무 검사를 통과한 답변을 judge가 떨어뜨렸습니다. 그 judge로 릴리스를 막기 전에, 2절 포털 run에서 목록의 행마다 답변과 judge의 이유를 읽습니다. 실제 품질 문제인지, 올바른 보류를 relevance가 낮게 평가한 것인지 구분합니다.
-- **judge를 결과에 맞추지 않습니다.** 기준값, rubric, 기준 정답은 그대로 두고, 릴리스를 막을 judge와 진단용으로만 쓸 judge를 메모합니다.
+- **`judge fail + business pass`:** 업무 검사를 통과한 답변을 judge가 떨어뜨렸습니다. 목록에 row ID가 있으면 2절의 `Portal:` 링크 → 해당 `baseline` 또는 `improved` run → 해당 행에서 답변과 그 judge의 점수 이유를 읽습니다. 실제 품질 문제인지, 올바른 보류를 낮게 평가한 것인지 구분합니다. 모두 `none`이면 이 확인은 건너뜁니다.
+- **judge를 결과에 맞추지 않습니다.** 기준값, rubric, 기준 정답은 그대로 두고, 운영에서 릴리스 차단용으로 검토할 judge와 진단용 judge를 메모합니다. **보고용 제안이며 레벨 3의 게이트 설정을 바꾸는 작업은 아닙니다.**
 
 <details>
 <summary>기록된 예시 실행의 결과 — 예시</summary>
@@ -191,7 +191,7 @@ python scripts/workshop.py insights --baseline baseline --candidate improved
 
 **읽는 법:**
 
-- **2절은 통과 건수, 이 절은 평균 점수입니다.** `delta`는 candidate − baseline입니다. `business_contract` 평균 `0.60`은 일부 검사가 맞았다는 뜻이지, 응답의 60%가 통과했다는 뜻이 아닙니다.
+- **2절은 통과 건수, 이 절은 평균 점수입니다.** 여기서 `candidate`는 모델 하나가 아니라 세 모델을 합친 `improved` 결과 묶음입니다. `delta`는 candidate − baseline입니다. `business_contract` 평균 `0.60`은 일부 검사가 맞았다는 뜻이지, 응답의 60%가 통과했다는 뜻이 아닙니다.
 - **`Changed`는 차이이지 개선 판정이 아닙니다.** `delta`, 평가기의 좋은 방향, 18행이라는 작은 표본을 함께 봅니다([통계 비교 범례](https://learn.microsoft.com/azure/foundry/how-to/evaluate-results#compare-the-evaluation-results)).
 - **클러스터는 실패한 평가기부터 봅니다.** `policy_rubric_no_evidence` 실패가 많으면 judge가 근거를 못 봤을 수 있습니다. `business_contract` 실패는 어떤 업무 검사가 틀렸는지 확인합니다.
 
@@ -217,11 +217,11 @@ V2에서 클러스터로 묶인 16개 샘플 중 9개가 `policy_rubric_no_evide
 
 ## 레벨 2 마무리
 
-**보고 메모:** 아래 형식을 [9-3의 보고](../README.ko.md#finish)에 복사하고 **내 결과**로 채웁니다. 명령이 아닙니다.
+**보고서 저장:** 같은 `workshop-report.txt` 아래에 적은 레벨 2 메모를 아래 형식으로 정리하고 저장합니다. 기본 실습의 [9-3 보고](../README.ko.md#finish)는 유지합니다. 명령이 아닙니다.
 
 ```text
 업무 검사: .../18 → .../18; 근거 있는 rubric: .../18 → .../18
-릴리스를 막을 judge: ...; 진단용 judge: ... (judge 일치도)
+운영용 judge 제안: 차단용 검토=...; 진단용=... (judge 일치도 근거, 설정 변경 아님)
 범용·안전 평가기로 알게 된 점: ...
 비교/클러스터: 평가기=...; delta/effect=...; 확인한 실패 원인 또는 실패 없음=...
 ```
