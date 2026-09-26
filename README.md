@@ -69,7 +69,7 @@ Question → Python agent → Foundry IQ policy retrieval → candidate model �
 - **Class runner:** for each team `.env`, **one person runs commands with their own account, PC, and one workshop folder**; teammates review that screen together. Running the same `.env` on several PCs causes ownership conflicts over the same named resources. For individual execution, obtain a separate `.env` with distinct `LAB_PREFIX` and `LAB_AGENT_NAME` values for each runner before starting.
 - **Where:** follow the bold label before each block: **Terminal A**, **Terminal B** (step 3 only), **Editor**, or **Portal**. "Your agent" means `LAB_AGENT_NAME`.
 - **One block at a time:** follow **location → run the command → checkpoint → next block**. Wait for the input prompt—the line where you can type another command—to return, except for step 3's server. When asked for input, paste only the requested value and press Enter.
-- **When to stop:** for an error or a missing required **Checkpoint** value, follow the **If not** below it to [recover only that command](docs/troubleshooting.en.md#resume). Once execution finishes, **record and continue** for low valid scores. Never rerun for a better score.
+- **When to stop:** for an error or a missing required **Checkpoint** value, follow the **If not** below it to [recover only that command](docs/troubleshooting.en.md#resume). Once execution finishes, **record and continue** for low valid scores. Never rerun for a better score. To finish early or continue another day, use [the early-stop path](#stop-early).
 - **New terminal later:** start Bash and run the [restore block](#resume-shell) with the path you noted; step 3's Terminal B block already includes it.
 - **Record:** open **one** text document in your editor and record values only where a step asks you to. In 9-3, organize **that same document** using the [report template](#finish) and save it; no separate notes file is needed.
 
@@ -160,6 +160,8 @@ grep -E '^LAB_(LANGUAGE|PROMPT_VERSION)=' .env
 
 </details>
 
+<a id="python-setup"></a>
+
 ### 1-2. Create the Python environment and run the offline tests
 
 **Terminal A — install:**
@@ -182,7 +184,7 @@ python -m unittest discover -s tests -v
 
 **Checkpoint:** the test output ends with **`OK`**.
 
-**If not:** do not continue. For `python3.13: command not found`, return to [tool installation](docs/instructor.en.md#tools); for an installation error, fix it and rerun both blocks. If only tests fail, look up the first failing test's name and error in [common symptoms](docs/troubleshooting.en.md#symptoms).
+**If not:** do not continue. For installation problems, follow the install block's recovery above. For a test `FAIL` or `ERROR`, use [offline-test recovery](docs/troubleshooting.en.md#offline-tests) to distinguish the cause. Do not edit tests or references to make them pass.
 
 <a id="login"></a>
 
@@ -215,6 +217,8 @@ az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" --o
 **Checkpoint:** browser sign-in finishes and the terminal prompt returns without an error. `--output none` suppresses the account JSON.
 
 **If not:** [recover only Azure CLI sign-in](docs/troubleshooting.en.md#login), then continue to block 3.
+
+<a id="azd-login"></a>
 
 **Terminal A — 3. sign in to azd** with the same account:
 
@@ -561,6 +565,8 @@ python scripts/workshop.py evaluate --label baseline
 
 **If not:** [recover evaluation](docs/troubleshooting.en.md#evaluation-retry); do not repeat the collection.
 
+<a id="baseline-report"></a>
+
 ### 5-4. Open the evaluation report
 
 **Portal:** copy the report URL that `evaluate` printed and open it in the browser.
@@ -702,7 +708,9 @@ python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
 
 **If not:** for `already exists`, a review for this row already exists; check it as in the `feedback` row of [resume](docs/troubleshooting.en.md#resume) and never overwrite it.
 
-**Terminal A — verify the saved review:** in the same terminal, print the file you just saved in a readable form. Do not edit it.
+<a id="read-review"></a>
+
+**Terminal A — verify the saved review:** in the same terminal, print the file you just saved in a readable form. Do not edit it. **If you came from 9-3, do not run `feedback` above.** If you lost `ROW_ID`, open the existing `regression-*.jsonl` files in `src/agent/.foundry/datasets/` with your editor and read the fields below.
 
 ```bash
 python -m json.tool --no-ensure-ascii "src/agent/.foundry/datasets/regression-$ROW_ID.jsonl"
@@ -794,6 +802,8 @@ python scripts/workshop.py evaluate --label improved
 **Checkpoint:** `Foundry evaluation completed: ... (18 rows)`, followed by a report URL.
 
 **If not:** [recover evaluation](docs/troubleshooting.en.md#evaluation-retry).
+
+<a id="candidate-comparison"></a>
 
 **Terminal A — save the comparison:**
 
@@ -894,10 +904,14 @@ Click **Send once**: the comparison view sends the question to both versions. Ch
 
 ### 8-1. Collect the holdout responses
 
-**Warning:** keep V2 frozen by changing nothing after 7-2; there is no `freeze` command. If, since 7-2, you did any of the following, **do not collect**; first follow [recovery when V2 changed](docs/troubleshooting.en.md#v2-changed):
+**Warning:** keep V2 frozen by changing nothing after 7-2; there is no `freeze` command. If you did any of the following after 7-2 and **have not yet completed recovery for that change**, follow [recovery when V2 changed](docs/troubleshooting.en.md#v2-changed) before collecting:
 
 - ran `set-prompt` or `azd deploy`; or
 - edited `.env` or a prompt file.
+
+**After recovery:** if A confirmed the original V2 version, or B completed new V2 dev collection, evaluation, and 7-4, do not repeat recovery unless you changed something afterward. For B, use the new version as your noted V2 reference. If holdout records already exist, use the recovery guide's retry label; always compare versions and hashes in 8-2.
+
+<a id="holdout-collection"></a>
 
 **Terminal A:** lines such as `01/12 ...` add up after the readiness JSON (usually 1–3 minutes).
 
@@ -922,6 +936,8 @@ python scripts/workshop.py evaluate --label holdout
 **Checkpoint:** `Foundry evaluation completed: ... (12 rows)`, followed by a report URL.
 
 **If not:** [recover evaluation](docs/troubleshooting.en.md#evaluation-retry).
+
+<a id="holdout-comparison"></a>
 
 **Terminal A — save the comparison:**
 
@@ -1092,7 +1108,7 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
 
 **Checkpoint:** the report file is saved with no `...` left, the 7-4 table pasted, and `production_release_approved=false` unchanged. Do not rerun for better scores.
 
-**If not:** for missing gates, return to 9-1. For missing notes, read the **saved** [review](#save-review), [dev summary](#compare-results), and [holdout summary](#holdout-results); do not repeat review, collection, or evaluation.
+**If not:** for missing gates, return to 9-1. For missing notes, read the **saved** [review](#read-review), [dev summary](#compare-results), and [holdout summary](#holdout-results); do not repeat review, collection, or evaluation.
 
 **Next:** to add Levels 2–3, open the optional section below **before** cleanup; otherwise go to [10. Clean up only your owned workshop objects](#cleanup).
 
@@ -1116,11 +1132,29 @@ Stay in this folder. **Do not start these extras after step 10; it deletes the a
 
 **Goal:** remove the objects this folder created and owns; keep local evidence and shared services. For self-study, this can include candidate-model deployments.
 
+<a id="stop-early"></a>
+
+<details>
+<summary>If you need to finish early or continue another day</summary>
+
+| Choice | Action |
+|---|---|
+| Continue later | Keep the same folder, settings, error, and completed-step notes; [resume the failed stage](docs/troubleshooting.en.md#resume). **Closing the terminal may leave Azure resources costing money.** |
+| End this run | Confirm that active collection, deployment, and evaluation work has finished. Save only completed steps, errors, and existing evidence in your current notes. Do not create results for unfinished steps; continue to [10-1's deletion plan](#cleanup-plan). |
+
+If your local server is still running, stop it with `Ctrl+C` in its terminal. If a cloud job's state is unclear or deployment/role assignment failed, first work with the owner through [cleanup recovery](docs/troubleshooting.en.md#cleanup-recovery) to confirm **every created object is recorded in the ownership plan**. Missing records do not make an empty plan proof of completed cleanup.
+
+If environment setup is still incomplete and this folder cannot run `cleanup`, the owner uses [exclusive-environment shutdown](docs/environment.en.md#final-cleanup). Never delete a shared group. If steps 1–9 were not completed, record **workshop incomplete** separately from the actual cleanup status.
+
+</details>
+
 **Warning:** before cleanup:
 
-- finish every portal check; cleanup deletes the live agent;
+- for a completed workshop, finish every portal check; for an early exit, follow the path above. Cleanup deletes the live agent;
 - never run `azd down` or delete a shared resource group;
 - Search, logs, the foundation, and the auxiliary model remain after this step and keep costing money. In a class, the environment owner manages them; **for an environment you created yourself, stop them by [deleting the resource group](docs/environment.en.md#final-cleanup) after 10-3.**
+
+<a id="cleanup-plan"></a>
 
 ### 10-1. Inspect the deletion plan
 
@@ -1130,7 +1164,7 @@ Stay in this folder. **Do not start these extras after step 10; it deletes the a
 python scripts/workshop.py cleanup --dry-run
 ```
 
-**Checkpoint:** every target in the printed JSON belongs to this folder's ownership record. In particular, `agent` is your `LAB_AGENT_NAME`, and all three `search_objects` names (`...-kb`, `...-source`, `...-policies`) contain your `LAB_PREFIX`:
+**Checkpoint:** every target in the printed JSON belongs to this folder's ownership record. For a completed workshop, `agent` is your `LAB_AGENT_NAME` and all three `search_objects` names (`...-kb`, `...-source`, `...-policies`) contain your `LAB_PREFIX`. **For an early exit, expect only objects actually created.** `agent: null` or empty lists are normal for objects never created; if a created object is missing, use the cleanup recovery above before deletion.
 
 | Plan field | Expected target |
 |---|---|
@@ -1176,7 +1210,7 @@ python scripts/workshop.py check-cleanup
 
 </details>
 
-**Main workshop complete:** keep your [9-3 report](#finish), the cleanup check, and the local evidence files. **If you created the environment yourself,** [delete its resource group](docs/environment.en.md#final-cleanup) when you no longer need it; only that stops the Search, logging, and other foundation costs. Never delete a class or shared group.
+**The main workshop is complete only if you also finished steps 1–9.** Keep your [9-3 report](#finish), the cleanup check, and local evidence. For an early exit, retain the incomplete status and existing evidence only. **If you created the environment yourself,** [delete its resource group](docs/environment.en.md#final-cleanup) when you no longer need it; only that stops the Search, logging, and other foundation costs. Never delete a class or shared group.
 
 <details>
 <summary>Where your saved evidence is</summary>

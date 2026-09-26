@@ -115,7 +115,22 @@ azd ai agent --help
 
 **Checkpoint:** the command list includes `run` and `invoke`.
 
-**If not:** repair the azd/`microsoft.foundry` extension version before starting. An update notice is not itself a failure; do not run “update all” or downgrade tools mid-experiment.
+**If not:** use the version-recovery guidance below. An update notice is not itself a failure; do not run “update all” or downgrade tools mid-experiment.
+
+<a id="tool-version-recovery"></a>
+
+<details>
+<summary>If azd and the extension are installed but run/invoke are missing</summary>
+
+Keep the outputs of `azd version`, `azd extension list`, and `azd ai agent --help`, plus the error. Class participants give them to the instructor, who compares them with **both tool versions from a successful rehearsal** and repairs only the differing tool through its official installation guidance. Record both versions during rehearsal and include them in the team handoff.
+
+This guide does not separately pin a verified azd/extension combination. For self-study without a rehearsal record, check the [official azd installation guidance](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd). If the commands remain missing, check or report a [repository issue](https://github.com/junwoojeong100/foundry-evaluation/issues) with those outputs. Do not continue by guessing versions.
+
+**Checkpoint:** in the same terminal, `azd extension list` shows an installed `microsoft.foundry`, and `azd ai agent --help` includes both `run` and `invoke`.
+
+**If not:** give the outputs and error to the support contact and stop here. Command availability does not prove full-workshop compatibility; the instructor still needs a rehearsal.
+
+</details>
 
 If you are not preparing Azure yourself, stop here and return to [README step 1](../README.md#start) or the [Copilot CLI guide](copilot.en.md). Otherwise check [access](#access), then return to **your chosen preparation path**: [new services](environment.en.md) or [existing services](#existing-foundation). Self-study does not require recreating services you already have. Install Python packages in that path's virtual-environment step, not globally here.
 
@@ -152,18 +167,25 @@ The environment owner needs permission to create or use the workshop resources a
 
 An authorized access administrator must provide that permission or perform the assignments. Do not give administrator/Owner permissions to the agent as a shortcut. Participants without assignment permission need the owner for `prepare-iq` and `grant-agent-access`.
 
-For each row, confirm the assignment in the target scope's **Access control (IAM) → Check access**, or get the access administrator's confirmation. Do not swap managed identities or scopes.
+For each row, check **principal → actual role name → target resource** in that scope's **Access control (IAM) → Check access**, or give these values to the access administrator. “Runner” means the `.env` user `AZURE_EXPECTED_USERNAME`, not a managed identity.
 
-| Principal | Required purpose | Scope |
-|---|---|---|
-| Participant | Foundry access plus the required development/deployment operations | Approved project/account |
-| Preparation operator | Create model deployments and Search schemas | Dedicated workshop resources |
-| Document loader | Search Service Contributor and Search Index Data Contributor | Workshop Search |
-| Search managed identity | Cognitive Services User for planner inference | Planner's Foundry account |
-| Agent instance identity | Search Index Data Reader and Cognitive Services OpenAI User | Workshop Search and candidate-model account |
-| Monitoring operator / project identity | Read the connected telemetry | Application Insights / Logs |
+| Principal / task | Actual role name | Exact scope | Prepare / check when |
+|---|---|---|---|
+| Runner: resource discovery | Reader | `.env` resource group `AZURE_RESOURCE_GROUP` | Before `preflight`; the tools list the group's project and services |
+| Runner: project and agent work | Foundry User | Project `AZURE_AI_PROJECT_NAME` under `AZURE_AI_ACCOUNT_NAME` | New setup's `user-foundry`; check additional runners separately |
+| Runner: model inference | Cognitive Services OpenAI User | Foundry account `AZURE_AI_ACCOUNT_NAME` | New setup's `user-model`; check additional runners separately |
+| Runner: Search schema creation | Search Service Contributor | Search service `AZURE_SEARCH_NAME` | New setup's `user-search-service`; before README 2-1 |
+| Runner: policy upload and retrieval | Search Index Data Contributor | The same Search service | New setup's `user-search-data`; before README 2-1 |
+| Model-preparation operator: create/delete deployments | Cognitive Services OpenAI Contributor | The same Foundry account | Before auxiliary/candidate preparation; not needed by participants using shared models |
+| User viewing telemetry | Log Analytics Reader | Each connected Application Insights resource and Log Analytics workspace | Before portal Logs or `monitor` |
+| Project managed identity | Log Analytics Reader | The same Application Insights resource and workspace, each | New setup's `project-monitor` or existing setup's `prepare-trace-access` |
+| Search managed identity | Cognitive Services User | Planner model's Foundry account | README 2-1 `prepare-iq` |
+| Agent instance identity: retrieval | Search Index Data Reader | Workshop Search service | README 4-2 `grant-agent-access` |
+| Agent instance identity: model inference | Cognitive Services OpenAI User | Candidate models' Foundry account | README 4-2 `grant-agent-access` |
 
-Local success does not prove hosted access. Grant only the roles above: an older role name in the portal (such as Azure AI User) is no reason to grant Owner, and roles that are already sufficient need nothing added. The agent calls models through the account endpoint, so its identity needs neither the project's `Foundry User` nor Owner. Remove roles you added while diagnosing when you clean up the test environment.
+New setup's `user-*` operations configure the project/model/Search roles for **one verified user**. That preparation user's subscription Owner access does not transfer to additional runners; check every user row for each runner when handing out team `.env` files. Resource creation and role assignment remain separate from these inference roles and require the owner/access-administrator arrangement above.
+
+Check names against [Foundry/model roles](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/ai-machine-learning) and [Log Analytics Reader](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/monitor#log-analytics-reader). Local success does not prove hosted access. Do not duplicate sufficient existing/inherited roles or replace an older name such as Azure AI User with Owner. The agent calls models through the account endpoint, so its identity needs neither the project's `Foundry User` nor Owner. Remove roles added while diagnosing when cleaning up the test environment.
 
 **Checkpoint:** every row has a named principal with the exact role at the exact scope, and the environment owner either can create those role assignments or has an authorized access administrator who agreed to.
 
@@ -218,6 +240,8 @@ cd foundry-evaluation-model-prep-en
 
 **If not:** rerun the block with one unused folder name, or `cd` into the root of an unused clone you already have.
 
+<a id="existing-python"></a>
+
 **Terminal — model-preparation folder:**
 
 ```bash
@@ -229,7 +253,7 @@ python -m unittest discover -s tests -v
 
 **Checkpoint:** the test run ends with **`OK`**. The tests cover both languages and verify the fixed policy IDs, monetary rules, and frozen case contracts.
 
-**If not:** fix the failing offline test before any Azure operation; keep the pinned dependencies in `requirements.lock.txt`.
+**If not:** use [offline-test recovery](troubleshooting.en.md#offline-tests) to distinguish environment errors from test failures before any Azure operation; keep the pinned dependencies in `requirements.lock.txt`.
 
 <details>
 <summary>Pinned package versions</summary>
@@ -308,6 +332,8 @@ az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" --o
 **Checkpoint:** Azure CLI opens sign-in if needed and returns to the prompt without error.
 
 **If not:** retry this block with the configured tenant and subscription, then use [authentication troubleshooting](troubleshooting.en.md#login).
+
+<a id="azd-login"></a>
 
 **Terminal A — 3. sign in to azd** with the same account:
 
@@ -594,15 +620,15 @@ Use this checklist only after rehearsal cleanup, the [final model check](#final-
 
 | Item | Instructor responsibility |
 |---|---|
-| Account | Prepare access to the intended subscription, tenant, project, and model deployments for the runner's own account; put that sign-in name in `AZURE_EXPECTED_USERNAME`. Participants sign in and complete MFA in README step 1-3. |
+| Account | Check the [access table's](#access) user roles and scopes for the runner's own account; put that sign-in name in `AZURE_EXPECTED_USERNAME`. Do not assume the instructor's Owner access transfers. Participants sign in and complete MFA in README step 1-3. |
 | Complete `.env` | Use `.env.example`, fill the actual values, and set **`LAB_LANGUAGE=en`**. Do not include passwords, API keys, or tokens. The designated runner runs `bind` in their own folder; an instructor-bound copy does not count. |
 | Ready services | Foundry project, Search, connected Application Insights, three fixed candidates, and the auxiliary deployment. Keep shared deployment names unchanged in `MODEL_*_DEPLOYMENT`; the instructor owns model and foundation costs. |
 | Unused names | A unique `LAB_PREFIX` and `LAB_AGENT_NAME` **per executing folder**, with English and Korean runs in separate folders. Reserve names only; do not pre-create participant-owned KB, source, index, or agent resources. |
-| Tools | Pass the [basic tool checks](#tools). Complete [additional Copilot CLI setup](copilot.en.md) separately if using it. |
+| Tools | Pass the [basic tool checks](#tools). Supply the successful rehearsal's `azd version` and `azd extension list` outputs; use [version recovery](#tool-version-recovery) for differences. Complete [additional Copilot CLI setup](copilot.en.md) separately if using it. |
 | Access support | A person who can resolve narrowly scoped role assignment, 403, and capacity issues |
 | Levels 2–3 | If teaching them, the judge and Sol capacity for all teams ([Prepare Levels 2 and 3](#levels)) |
 
-**Checkpoint:** every row in the table is confirmed, and each team packet holds a complete `.env` with unique `LAB_PREFIX` and `LAB_AGENT_NAME`, the README step-1 link, and the support contact; then send the packet and [README step 1](../README.md#start).
+**Checkpoint:** every row in the table is confirmed, and each team packet holds a complete `.env` with unique `LAB_PREFIX` and `LAB_AGENT_NAME`, the README step-1 link, the rehearsal's tool-version outputs, and the support contact; then send the packet and [README step 1](../README.md#start).
 
 **If not:** withhold the team packet and fix the missing account, setting, service, name, tool, or support owner before participants start.
 
@@ -630,6 +656,8 @@ Before changing Foundry agent code or instructions, read the `microsoft-foundry`
 Keep English and Korean execution paths aligned. Lead with the outcome and starting conditions, keeping direct links for **class participants, self-study setup, and resuming an existing run** visible. Distinguish instructions (V1/V2), question sets (splits), and result names (labels) at the first evaluation step. Collapse existing-Azure preparation, tool delegation, and background explanations, but **keep the guidance needed to review cases and interpret results visible in the main text**.
 
 Each execution step must name **where to act, the command, its completion evidence, and the recovery path**. Give collection, evaluation, aggregation, trace lookup, verification, **candidate preparation, and calibration one command and one checkpoint each**. Recovery pages should fix the failed task, then link to **the main guide's next unexecuted command**, not duplicate a bundle of later steps. Do not repeat checks that a command already performs internally.
+
+Distinguish states before and after recovery: an unattempted second sign-in, `init` failure before records exist, a restored V2, and a saved review that only needs reading must not share a generic rerun path. Separate early shutdown from workshop completion; never require or manufacture evidence for unfinished work.
 
 Place each collapsed example screen right after the checkpoint it illustrates. Setup handoffs should include the shared reading instructions and target the next unexecuted command. Keep notes in one document, save it as the report after evidence and portal checks, and continue in that file for Levels 2–3. Distinguish **provenance links, execution completion, and quality passes**. Recorded answers and scores are examples, not the reader's target results. Keep actual cloud results in the separate [English](validation.en.md) and [Korean](validation.ko.md) result pages; a translated question is not a newly independent holdout case.
 

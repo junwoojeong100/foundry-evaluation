@@ -188,7 +188,7 @@ python -m unittest discover -s tests -v
 
 **완료 확인:** 테스트가 `OK`입니다(`OK (skipped=1)`도 정상: 실행용 복사본에는 가이드가 없어 문서 검사만 건너뜁니다). **`$RUN_DIR/source-manifest.json`**에 소스 commit과 SHA-256 해시가 있고 **`$RUN_DIR/workshop/.env`**에 `LAB_LANGUAGE=ko`와 새 이름이 있습니다. 이전 `.azure`·`.foundry`·가상환경을 재사용하지 않았습니다.
 
-**다르면:** Azure 작업으로 넘어가지 않고 [Python 준비 복구](troubleshooting.ko.md#setup-resume)를 따릅니다. 이미 만들어진 가상환경·소스를 새로 만들지 않습니다.
+**다르면:** Azure 작업으로 넘어가지 않습니다. 폴더·소스 복사 문제는 [준비 상태 복구](troubleshooting.ko.md#setup-resume), 설치·테스트 문제는 [오프라인 테스트 복구](troubleshooting.ko.md#offline-tests)를 따릅니다. 이미 만들어진 가상환경·소스를 새로 만들지 않습니다.
 
 2단계는 **`$RUN_DIR/workshop`**에서 시작하고, 2-2에서 서비스 준비를 위해 **`$REPO_ROOT`**로 돌아갑니다.
 
@@ -223,6 +223,8 @@ az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" --o
 **완료 확인:** 브라우저 로그인을 마치고 오류 없이 프롬프트가 돌아옵니다. `--output none`이므로 계정 JSON은 출력하지 않습니다.
 
 **다르면:** [로그인 복구](troubleshooting.ko.md#login)에서 Azure CLI만 복구한 뒤 다음 블록으로 진행합니다.
+
+<a id="azd-login"></a>
 
 **터미널 — 실행 폴더 (`$RUN_DIR/workshop`):** 같은 계정으로 azd에 로그인합니다.
 
@@ -485,7 +487,7 @@ pwd
 
 ## 최종 정리: README 10단계 뒤 본인 전용 리소스 그룹 삭제
 
-**환경 소유자만 진행합니다.** 실습을 마쳤다면 먼저 README 10단계의 `cleanup`·`check-cleanup`을 끝냅니다. **환경 준비 도중 중단하고 종료하는 경우에도**, 아래 생성 기록과 본인 전용 범위를 확인하면 그룹을 삭제할 수 있습니다. 이때 아직 없는 실습 결과 파일은 요구하지 않습니다. 삭제는 되돌릴 수 없으며, 참가자 정리나 Copilot CLI 실행 요청이 그룹 전체 삭제의 승인은 아닙니다.
+**환경 소유자만 진행합니다.** 실습을 마쳤다면 먼저 README 10단계의 `cleanup`·`check-cleanup`을 끝냅니다. **환경 준비 또는 본 실습 도중 종료하는 경우에도**, 아래 생성 기록과 본인 전용 범위를 확인하면 그룹을 삭제할 수 있습니다. 본 실습을 시작했다면 먼저 [README 중도 종료](../README.ko.md#stop-early)를 따릅니다. 아직 없는 실습 결과 파일은 요구하지 않습니다. 삭제는 되돌릴 수 없으며, 참가자 정리나 Copilot CLI 실행 요청이 그룹 전체 삭제의 승인은 아닙니다.
 
 | 환경 | 선택할 경로 |
 |---|---|
@@ -497,7 +499,7 @@ pwd
 
 **1. 증거를 보관하고 삭제 범위 확인**
 
-필요한 로컬 응답·평가·회귀 기록과 `verified-evidence.json`, `cleanup-check.json`을 보관합니다. 그룹 삭제 후 Foundry 보고서 URL과 Azure trace를 다시 열 수 있다고 가정하지 않습니다. 인증 캐시·암호·토큰은 공유하거나 커밋하지 않습니다.
+이미 생성된 로컬 응답·평가·회귀 기록과, 있다면 `verified-evidence.json`·`cleanup-check.json`을 보관합니다. 중도 종료한 실행의 없는 결과는 만들지 않습니다. 그룹 삭제 후 Foundry 보고서 URL과 Azure trace를 다시 열 수 있다고 가정하지 않습니다. 인증 캐시·암호·토큰은 공유하거나 커밋하지 않습니다.
 
 **편집기 — 기록된 실행 폴더 (`$RUN_DIR`):** 준비 때 보관한 **같은 `RUN_DIR`**의 `config.json`과 `infrastructure-state.json`을 엽니다. 새 run을 만들지 않습니다.
 

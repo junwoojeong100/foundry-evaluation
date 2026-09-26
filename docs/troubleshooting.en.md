@@ -3,7 +3,7 @@
 [Return to the English guide](../README.md) · [한국어](troubleshooting.ko.md)
 
 **Keep the current folder and error output. Do not restart the whole workshop.**
-- **Failed stage:** [sign-in](#login) · [retrieval](#retrieval) · [local run](#symptom-local) · [hosted run](#symptom-hosted) · [calibration](#calibration) · [collection](#collection-retry) · [evaluation](#evaluation-retry) · [V2 changed](#v2-changed) · [cleanup](#cleanup-recovery).
+- **Failed stage:** [offline tests](#offline-tests) · [sign-in](#login) · [retrieval](#retrieval) · [local run](#symptom-local) · [hosted run](#symptom-hosted) · [calibration](#calibration) · [collection](#collection-retry) · [evaluation](#evaluation-retry) · [V2 changed](#v2-changed) · [cleanup](#cleanup-recovery).
 - **Evidence or optional work:** [no baseline failures](#no-failures) · [traces](#telemetry) · [portal](#portal-differs) · [completion](#symptom-completion) · [Levels 2-3](#levels).
 - **Not sure?** [common symptoms](#symptoms) · [saved-state resume](#resume) if a label or state file exists · [environment-owner resume](#setup-resume) if setup failed (environment owners only).
 - Run participant recovery commands from the existing workshop folder's repository root; environment-owner recovery names its own folders.
@@ -15,7 +15,7 @@
 |---|---|
 | Exception, missing/duplicate response, or evaluator error | Stop the next step and [recover the failed command](#resume) |
 | `collect` prints `business=False` | A business check failed, not the command. If collection finishes without errors, continue to that stage's evaluation. |
-| Completed evaluation with low scores and no row errors | Valid low scores are results. Record them and return: `baseline` [step 6](../README.md#lab-d), `improved` [7-4](../README.md#compare-results), or `holdout` [8-3](../README.md#holdout-results). |
+| Completed evaluation with low scores and no row errors | Record them without repeating the completed `evaluate`. Continue with the next unfinished action: `baseline` [5-4 report check](../README.md#baseline-report), `improved` [7-3 save comparison](../README.md#candidate-comparison), or `holdout` [8-2 save comparison and check frozen V2](../README.md#holdout-comparison). Skip blocks already completed. |
 | Missing or incomplete traces | Check ingestion, access, and the [query window](#telemetry); do not claim complete evidence |
 | Only a recording of a successful run | Treat it as observation, not your own completed execution |
 
@@ -70,6 +70,7 @@ Use the matching row, then return to the failed checkpoint. If it persists, pres
 | Route | Symptom | Cause or check | Action / exact return |
 |---|---|---|---|
 | Setup | Missing `.env` or required setting | The workshop cannot infer private deployment names. | Add the complete file; return to [step 1-1 `.env` check](../README.md#workspace-settings). |
+| Setup | Offline tests end with `FAIL` or `ERROR` | Distinguish Python, virtual-environment, and dependency errors from test failures. | Use [offline-test recovery](#offline-tests); do not start Azure operations before `OK`. |
 | Setup | `read: -p: no coprocess` or activation path missing | The shell or folder is not the recorded workshop shell/path. | Run `bash`, then [restore the terminal](../README.md#resume-shell) in the existing folder. Do not clone again. |
 | Setup | Language mismatch | `LAB_LANGUAGE=en` selects English; `LAB_LANGUAGE=ko` or a missing setting selects Korean. | Use the original language/workspace; return to [step 1-1 `.env` check](../README.md#workspace-settings). |
 | Setup | Nonempty `missing_models` | One of the three exact deployments, versions, access paths, or quotas is unavailable. | Check that the `MODEL_*_DEPLOYMENT` values in `.env` are exactly as received, then ask the environment owner to deploy them (for your own environment, [environment step 6-1](environment.en.md#setup-candidates)); return to [preflight](../README.md#project-binding). |
@@ -88,7 +89,7 @@ Use the matching row, then return to the failed checkpoint. If it persists, pres
 | <a id="symptom-hosted"></a>Hosted run | Search 403 / role assignment failure | Local user permissions and hosted agent instance permissions differ. | Check both identities; return to [hosted access](../README.md#agent-access). |
 | Hosted run | Hosted 424 / cold start | The hosted version may not be ready. | After 1–2 minutes, repeat only `smoke` from [hosted smoke](../README.md#hosted-smoke). If it still fails, inspect the error in **your agent → Playground → Log stream**. Do not redeploy. |
 | Collection | 429 or request timeout | Capacity or service throttling interrupted the run. | Preserve the attempt and inspect Retry-After; return to [collection recovery](#collection-retry). |
-| Trace | `connections/read` on startup | Startup may be reading connection metadata directly. | Use injected telemetry configuration; return to [hosted smoke](../README.md#hosted-smoke). |
+| Trace | `connections/read` on startup | Startup may be reading connection metadata directly. | Do not change code or roles; follow [startup-log checks and handoff](#hosted-telemetry). Once resolved, resume only the original step's `smoke`. |
 | Evaluation | Completed job with errors or null scores | Completed job status is not row-level success. | [Recover evaluation](#evaluation-retry); return to [baseline](../README.md#baseline-evaluation), [candidate](../README.md#candidate-evaluation), or [holdout](../README.md#holdout-evaluation). |
 
 **Completion and cleanup**
@@ -110,6 +111,59 @@ Use the matching row, then return to the failed checkpoint. If it persists, pres
 | Trace | Missing App Insights `ResourceId` metadata | The dedicated connection metadata may be incomplete. | The environment owner follows the [owner-only observability repair](instructor.en.md#observability-repair); return to [trace recovery](#telemetry). |
 
 </details>
+
+<a id="offline-tests"></a>
+
+## If the offline tests fail
+
+**Resolve this before Azure sign-in or deployment.** Preserve the first `FAIL` or `ERROR` test name and traceback. Run the following in **the same folder** where the tests failed. For new-environment setup, that is `RUN_DIR/workshop`, not the original clone.
+
+**Terminal — check the existing virtual environment and dependencies:**
+
+```bash
+source src/agent/.venv/bin/activate &&
+python --version &&
+python -c 'import sys; print(sys.executable); print(sys.prefix)' &&
+python -m pip check
+```
+
+**Checkpoint:** Python is `3.13.x`, the executable and environment paths are under this folder's `src/agent/.venv`, and the last line is `No broken requirements found.` This check alone does not mean the tests passed.
+
+**If not:** resolve only the matching cause below.
+
+| Finding | Next action |
+|---|---|
+| Missing `activate` file | Return to your original install path: [participant 1-2](../README.md#python-setup), [new environment 1-6](environment.en.md#setup-python), or [existing-environment Python setup](instructor.en.md#existing-python). Create only a missing virtual environment; preserve the source and run records. |
+| Wrong Python version or environment path | Check the current folder and [Python 3.13 installation](instructor.en.md#tools). Do not use another folder's Python or delete the existing environment as a workaround. |
+| The original error is `ModuleNotFoundError`, or `pip check` reports conflicting dependencies | Use the pinned-dependency repair below only after the Python version and paths match. |
+| Environment checks pass, but an assertion or other test failure remains | Give the test name, traceback, and Python version to the instructor. For self-study, remove secrets/personal information, check or report a [repository issue](https://github.com/junwoojeong100/foundry-evaluation/issues), and stop. Do not edit tests, policies, or fixed references to get `OK`. |
+
+**Terminal — only for confirmed missing or conflicting dependencies:**
+
+```bash
+python -m pip install -r requirements.lock.txt &&
+python -m pip check
+```
+
+**Checkpoint:** installation finishes without errors and prints `No broken requirements found.`.
+
+**If not:** preserve the download/dependency error and stop. Do not switch to arbitrary versions or global installation.
+
+**Terminal — rerun only the same tests after resolving the cause:**
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+**Checkpoint:** the run ends with `OK`. The new-environment runtime copy may show `OK (skipped=1)` because it omits only the documentation checks.
+
+**If not:** give the first failing name and error to the support contact; keep Azure operations on hold.
+
+| Original test path | Continue after `OK` |
+|---|---|
+| Participant README 1-2 | [1-3 sign-in](../README.md#login) |
+| New environment 1-6 | [2-1 sign-in](environment.en.md#setup-identity) |
+| Existing-environment preparation | [1. settings and sign-in](instructor.en.md#existing-settings) |
 
 <a id="login"></a>
 
@@ -144,13 +198,15 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 
 <a id="login-return"></a>
 
-After the required sign-ins finish, return to **the path you were following before opening this troubleshooting page** and run only its verification block. Keep the same folder; do not repeat successful sign-ins.
+**If you repaired only Azure CLI and have not signed in to azd yet, finish azd sign-in first.** If only azd failed and Azure CLI already succeeded, go straight to verification. Keep the same folder and do not repeat successful sign-ins.
 
-| Where you were signing in | Return to this verification block | Continue afterward |
-|---|---|---|
-| Participant README 1-3 | [README sign-in check](../README.md#login-check) | README 1-4 project check |
-| New environment 2-1 | [Environment sign-in check](environment.en.md#login-check) | That guide's 2-2 identity, preservation, and capacity check |
-| Existing-environment preparation 1 | [Existing-environment sign-in check](instructor.en.md#login-check) | Choose candidate deployment names there → 2 auxiliary deployment |
+Follow one row for **the path you were on before opening this page**. Run its verification block only after both sign-ins finish.
+
+| Where you were signing in | If azd sign-in is still unattempted | Verify after both sign-ins | Continue afterward |
+|---|---|---|---|
+| Participant README 1-3 | [README block 3: azd](../README.md#azd-login) | [README sign-in check](../README.md#login-check) | README 1-4 project check |
+| New environment 2-1 | [Environment azd sign-in](environment.en.md#azd-login) | [Environment sign-in check](environment.en.md#login-check) | That guide's 2-2 identity, preservation, and capacity check |
+| Existing-environment preparation 1 | [Existing-environment azd sign-in](instructor.en.md#azd-login) | [Existing-environment sign-in check](instructor.en.md#login-check) | Choose candidate deployment names there → 2 auxiliary deployment |
 
 **During new-environment preparation, services do not exist yet: do not continue to README `preflight` or `bind`.**
 
@@ -166,6 +222,18 @@ After the required sign-ins finish, return to **the path you were following befo
 </details>
 
 **Next:** continue below the verification block in the page selected above; do not switch preparation paths.
+
+<a id="hosted-telemetry"></a>
+
+## If startup logs show `connections/read`
+
+**Participant:** stop at the original step. Find the error under **your agent → Playground → Log stream** and give the environment owner only the failed step, `LAB_AGENT_NAME`, available deployment version, and relevant error excerpt. Do not share connection strings, tokens, or the full `.env`; do not grant the agent Owner or edit source to get past the error.
+
+**Environment owner:** open the deployed source and `azure.yaml` in your editor. The supplied `telemetry_connection` in `src/agent/main.py` does not query project connections when `APPLICATIONINSIGHTS_CONNECTION_STRING` or `OTEL_EXPORTER_OTLP_ENDPOINT` is injected. The supplied hosted service's `env` in `azure.yaml` does not pass `LAB_AUTH_MODE=cli`. If the deployed version differs or you cannot confirm runtime injection, send the error and version to the source maintainer or platform support. Do not copy connection strings or redeploy without identifying the cause.
+
+**Checkpoint:** after resolving the cause, only the original step's `smoke` runs without a startup error and meets that step's language, instruction, and numeric-version requirements.
+
+**If not:** preserve the error and current version and stop. If the repair redeployed after 7-2, use [V2-change recovery](#v2-changed) to restore comparable conditions.
 
 <a id="retrieval"></a>
 
@@ -417,7 +485,7 @@ python scripts/workshop.py set-prompt v2 &&
 python scripts/workshop.py smoke
 ```
 
-**Checkpoint:** `prompt_version: v2`, and `agent_version` equals the **V2 version** you noted in 7-2. If holdout collection never started, go to [8-1](../README.md#lab-f). If `holdout/manifest.json` already exists, preserve it and use [holdout recollection](#collection-retry-holdout).
+**Checkpoint:** `prompt_version: v2`, and `agent_version` equals the **V2 version** you noted in 7-2. Do not repeat A unless something changes afterward. If holdout collection never started, go to [8-1's collection block](../README.md#holdout-collection). If `holdout/manifest.json` already exists, preserve it and use [holdout recollection](#collection-retry-holdout).
 
 **If not:** if the version differs or `Hosted prompt does not match` persists after restoring the original instructions and settings, the conditions no longer match the original V2. Follow **B**.
 
@@ -425,7 +493,7 @@ python scripts/workshop.py smoke
 
 1. **Terminal:** check the current version with A's **command block** (reuse its output if you just ran it). For `Hosted prompt does not match`, run `azd deploy --no-prompt` **once**, then repeat A's command block. Once it shows `prompt_version: v2`, note the new `agent_version`.
 2. Collect `improved-retry` with [V2 dev collection recovery](#collection-retry-improved). Complete README 7-3's evaluation/comparison and 7-4's summary with that label.
-3. Then continue to step 8. If `holdout/manifest.json` already exists, use `holdout-retry` from [holdout recollection](#collection-retry-holdout). Use the changed labels in subsequent commands, file paths, and `verify`.
+3. Use the new version as your noted V2 reference. If nothing changed afterward, go to [8-1's collection block](../README.md#holdout-collection). If `holdout/manifest.json` already exists, use `holdout-retry` from [holdout recollection](#collection-retry-holdout). Use the changed labels in subsequent commands, file paths, and `verify`.
 
 If you already saw the holdout, record `holdout reused during V2-change recovery` in your report. Do not tune instructions using those results or describe this as fresh, untouched validation.
 
@@ -433,7 +501,7 @@ If you already saw the holdout, record `holdout reused during V2-change recovery
 
 **If not:** stop and record the error and label names. Do not delete earlier results or redeploy repeatedly to match versions.
 
-**Next:** return to [8-1 collection](../README.md#lab-f) or [8-2's check](../README.md#holdout-evaluation).
+**Next:** return to the unfinished [8-1 collection](../README.md#holdout-collection) or [8-2's check](../README.md#holdout-comparison). Do not repeat completed collection or evaluation.
 
 <a id="portal-differs"></a>
 
@@ -604,7 +672,7 @@ After a separately approved full-group deletion, use [final foundation verificat
 
 ## Environment owners: resume incomplete setup
 
-**Participants: stop here unless you were preparing the Azure environment.** Keep the original clone and `RUN_DIR`; do **not** make a new `RUN_ID`, repeat `init`, or overwrite a snapshot.
+**Participants: stop here unless you were preparing the Azure environment.** Keep the original clone and `RUN_DIR`; do **not** make a new `RUN_ID`, repeat an already completed `init`, or overwrite a snapshot.
 
 **Terminal — check the existing paths:** start `bash`, then paste the original clone path and existing `RUN_DIR` without quotes:
 
@@ -612,15 +680,17 @@ After a separately approved full-group deletion, use [final foundation verificat
 read -r -p "Absolute path of the original setup clone: " REPO_ROOT &&
 cd "$REPO_ROOT" &&
 read -r -p "Existing absolute RUN_DIR path: " RUN_DIR &&
-ls "$RUN_DIR/config.json"
+printf 'RUN_DIR=%s\n' "$RUN_DIR"
 ```
 
-**Checkpoint:** the existing `config.json` path prints. Open it in your editor and check that `workspace` points to `workshop` under this `RUN_DIR`.
+**Checkpoint:** the terminal is in the original clone and the printed path matches your recorded `RUN_DIR`. Use your editor to choose the matching file state below. If `config.json` exists, first check that `workspace` points to `workshop` under this `RUN_DIR`.
 
-**If not:** recheck both paths in your notes. If the file is missing or belongs to another run, do not create or overwrite records.
+**If not:** recheck both recorded paths. If a path is uncertain or belongs to another run, do not create or overwrite records.
 
 | Existing files / completed work | Next action |
 |---|---|
+| `init` failed input validation and `RUN_DIR` itself does not exist | [Correct the initial settings and retry only the same `init`](#setup-init-retry). Do not generate another run ID. |
+| `RUN_DIR` exists but `config.json` does not | Partial creation: preserve the folder/error for the preparation owner. This is not eligible for an `init` retry. |
 | `config.json` only; no `workshop/` | Run `source src/agent/.venv/bin/activate` in the original clone. Run only [the `prepare` command](environment.en.md#setup-snapshot) with this `RUN_DIR`, then continue to Python setup. |
 | `workshop/` but no `source-manifest.json` | Source copy stopped. Keep the folder and error; do not delete it or invent a manifest. |
 | Snapshot and manifest; Python or tests unfinished | Enter `"$RUN_DIR/workshop"`, run [isolated Python setup](environment.en.md#setup-python), and require `OK` before sign-in. |
@@ -655,3 +725,25 @@ If login expired, use the configured account; do not bypass errors with another 
 **If not:** preserve `config.json`, `RUN_DIR`, and the last error. In self-study you are the environment owner: check that `subscription` and `run_id` in `config.json` match this run, then resume only with the same `RUN_DIR`. Do not generate a new `RUN_ID` or overwrite the snapshot.
 
 **Next:** return to the matching environment step above, or to [README bind](../README.md#bind-project) after handoff is complete.
+
+<a id="setup-init-retry"></a>
+
+## If `init` failed before creating records
+
+**Use this branch only when initial input validation failed and the recorded `RUN_DIR` itself does not exist.** First [restore the existing paths](#setup-resume) into `REPO_ROOT` and `RUN_DIR`. Correct and save the [five initial settings](environment.en.md#initial-settings) in the original clone's `.env`. Do not repeat the full block that generates a new timestamped `RUN_ID`.
+
+**Terminal — original clone (`$REPO_ROOT`), same `RUN_DIR`:**
+
+```bash
+if [ -e "$RUN_DIR" ] || [ -L "$RUN_DIR" ]; then
+  printf '%s\n' 'Stop: RUN_DIR already exists; preserve it and use saved-state recovery.' >&2
+  false
+else
+  source src/agent/.venv/bin/activate &&
+  python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language en
+fi
+```
+
+**Checkpoint:** the output JSON shows `language: en` and the same `RUN_DIR` now contains `config.json`. Continue to [1-5 source copy](environment.en.md#setup-snapshot).
+
+**If not:** preserve the error and path. If the folder already exists, use the [saved-state table](#setup-resume); do not manufacture missing files or delete the folder.

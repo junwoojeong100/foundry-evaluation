@@ -115,7 +115,22 @@ azd ai agent --help
 
 **완료 확인:** 명령 목록에 `run`, `invoke`가 있다.
 
-**다르면:** azd와 `microsoft.foundry` 확장 버전을 맞춘 뒤 다시 확인한다. 업데이트 안내 자체를 실패로 보지 않으며, 실험 중 “모두 업데이트”나 임의 다운그레이드를 하지 않는다.
+**다르면:** 아래 버전 복구 안내를 따른다. 업데이트 안내 자체를 실패로 보지 않으며, 실험 중 “모두 업데이트”나 임의 다운그레이드를 하지 않는다.
+
+<a id="tool-version-recovery"></a>
+
+<details>
+<summary>azd·확장은 설치됐지만 run·invoke가 없다면</summary>
+
+위의 `azd version`, `azd extension list`, `azd ai agent --help` 출력과 오류를 보관한다. 수업 참가자는 강사에게 전달하고, 강사는 **리허설에 성공한 두 도구의 버전 출력**과 대조해 다른 도구만 공식 설치 안내로 복구한다. 리허설할 때 이 두 버전을 기록해 조별 전달 자료에 포함한다.
+
+이 가이드는 검증된 azd·확장 버전 조합을 별도로 고정하지 않는다. 혼자 실습하고 비교할 리허설 기록이 없다면 [공식 azd 설치 안내](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)를 확인하고, 명령이 계속 없으면 위 출력으로 [저장소 이슈](https://github.com/junwoojeong100/foundry-evaluation/issues)를 확인하거나 보고한다. 버전을 추측해 바꾸며 실습을 진행하지 않는다.
+
+**완료 확인:** 같은 터미널의 `azd extension list`에 설치된 `microsoft.foundry`가 있고 `azd ai agent --help`에 `run`·`invoke`가 모두 있다.
+
+**다르면:** 위 출력과 오류를 지원 담당자에게 전달하고 여기서 멈춘다. 명령 존재 확인은 전체 실습의 호환성 보장이 아니므로 강사 리허설은 별도로 필요하다.
+
+</details>
 
 Azure를 직접 준비하지 않는다면 여기서 멈추고 [README 1단계](../README.ko.md#start)나 [Copilot CLI 안내](copilot.ko.md)로 돌아간다. 직접 준비한다면 [권한](#access)을 확인한 뒤 **선택했던 준비 경로**로 돌아간다: [새 전용 환경 만들기](environment.ko.md) 또는 [기존 환경 준비](#existing-foundation). 혼자 실습해도 이미 있는 서비스를 다시 만들지 않는다. Python 패키지는 선택한 경로의 가상환경 설치 단계에서 설치하며, 지금 전역으로 설치하지 않는다.
 
@@ -154,18 +169,25 @@ Agent hosting과 SDK 패키지의 GA/preview 상태는 서로 다를 수 있으�
 
 승인된 접근 관리자가 권한을 준비하거나 해당 작업을 수행해야 한다. 관리자·Owner 권한을 에이전트에 우회로로 주지 않는다. 역할 부여 권한이 없는 참가자는 `prepare-iq`와 `grant-agent-access`에서 환경 소유자의 지원이 필요하다.
 
-각 행마다 대상 범위의 **Access control (IAM) → Check access**에서 확인하거나 접근 관리자의 확인을 받는다. managed identity와 범위를 서로 바꾸지 않는다.
+각 행의 **주체 → 실제 역할 이름 → 대상 리소스**를 대상 범위의 **Access control (IAM) → Check access**에서 확인하거나 접근 관리자에게 전달한다. “실행자”는 `.env`의 `AZURE_EXPECTED_USERNAME` 사용자이며, managed identity와 바꾸지 않는다.
 
-| 주체 | 최소 업무 권한 | 범위 |
-|---|---|---|
-| 참가자 | Foundry 접근과 필요한 개발·배포 작업 | 승인된 프로젝트/계정 |
-| 준비 담당자 | 모델 배포·Search 스키마 생성 권한 | 실습 리소스 |
-| 문서 적재 담당자 | Search Service Contributor, Search Index Data Contributor | 실습 Search |
-| Search managed identity | Cognitive Services User | planner 모델이 있는 Foundry 계정 |
-| 에이전트 인스턴스의 managed identity | Search Index Data Reader, Cognitive Services OpenAI User | 실습 Search, 세 후보 모델이 있는 Foundry 계정 |
-| 관측 담당자 / project identity | 연결된 telemetry 읽기 | Application Insights / Logs |
+| 주체·작업 | 실제 역할 이름 | 정확한 범위 | 준비·확인 시점 |
+|---|---|---|---|
+| 실행자: 리소스 조회 | Reader | `.env`의 `AZURE_RESOURCE_GROUP` | `preflight` 이전. 도구가 그룹의 프로젝트·서비스를 조회함 |
+| 실행자: 프로젝트·에이전트 작업 | Foundry User | `AZURE_AI_ACCOUNT_NAME` 아래 `AZURE_AI_PROJECT_NAME` 프로젝트 | 새 환경의 `user-foundry`; 추가 실행자는 사전 확인 |
+| 실행자: 모델 호출 | Cognitive Services OpenAI User | `AZURE_AI_ACCOUNT_NAME` Foundry 계정 | 새 환경의 `user-model`; 추가 실행자는 사전 확인 |
+| 실행자: Search 스키마 생성 | Search Service Contributor | `AZURE_SEARCH_NAME` Search 서비스 | 새 환경의 `user-search-service`; README 2-1 이전 |
+| 실행자: 정책 적재·검색 | Search Index Data Contributor | 같은 Search 서비스 | 새 환경의 `user-search-data`; README 2-1 이전 |
+| 모델 준비 담당자: 배포 생성·삭제 | Cognitive Services OpenAI Contributor | 같은 Foundry 계정 | 보조·후보 모델 준비 이전. 공유 모델을 쓰는 참가자에게는 불필요 |
+| 관측하는 사용자 | Log Analytics Reader | 연결된 Application Insights와 Log Analytics workspace 각각 | 포털 Logs·`monitor` 이전 |
+| 프로젝트 managed identity | Log Analytics Reader | 같은 Application Insights와 workspace 각각 | 새 환경의 `project-monitor` 또는 기존 환경의 `prepare-trace-access` |
+| Search managed identity | Cognitive Services User | planner 모델이 있는 Foundry 계정 | README 2-1 `prepare-iq` |
+| 에이전트 인스턴스 managed identity: 검색 | Search Index Data Reader | 실습 Search 서비스 | README 4-2 `grant-agent-access` |
+| 에이전트 인스턴스 managed identity: 모델 호출 | Cognitive Services OpenAI User | 세 후보 모델이 있는 Foundry 계정 | README 4-2 `grant-agent-access` |
 
-로컬 성공이 hosted 에이전트 권한을 보장하지 않는다. 위 표의 역할만 부여한다. 포털에 이전 역할 이름(Azure AI User 등)이 보여도 Owner를 주지 않고, 기존 역할이 충분하면 추가하지 않는다. 에이전트는 계정 endpoint로 모델을 호출하므로 그 managed identity에는 프로젝트의 `Foundry User`나 Owner가 필요 없다. 진단 중 추가한 역할은 검증 환경을 정리할 때 제거한다.
+새 환경의 `user-*` 작업은 확인한 사용자 **한 명**에게 프로젝트·모델·Search 역할을 설정한다. 그 준비 사용자의 구독 Owner 권한은 추가 실행자에게 전달되지 않으므로, 조별 `.env`를 줄 때는 위 사용자 행을 각 실행자에 대해 확인한다. 리소스 생성·역할 부여는 표의 추론 권한과 별개이며 위 환경 소유자·접근 관리자 조건을 따른다.
+
+역할 이름은 [Foundry·모델 역할](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/ai-machine-learning)과 [Log Analytics Reader](https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/monitor#log-analytics-reader)에서 확인한다. 로컬 성공이 hosted 접근을 보장하지 않는다. 기존·상속 역할이 충분하면 중복 추가하지 않으며, 이전 이름(Azure AI User 등)이 보여도 Owner로 바꾸지 않는다. 에이전트는 계정 endpoint로 모델을 호출하므로 그 identity에는 프로젝트의 `Foundry User`나 Owner가 필요 없다. 진단 중 추가한 역할은 검증 환경을 정리할 때 제거한다.
 
 **완료 확인:** 모든 행에 주체, 정확한 역할, 정확한 범위가 정해져 있고, 환경 소유자가 그 역할을 직접 부여할 수 있거나 승인된 접근 관리자가 부여하기로 했다.
 
@@ -221,6 +243,8 @@ cd foundry-evaluation-model-prep-ko
 
 **다르면:** 미사용 폴더 이름 하나로 블록을 다시 실행하거나, 이미 있는 미사용 clone의 루트로 `cd`한다.
 
+<a id="existing-python"></a>
+
 **터미널 — 모델 준비 폴더:**
 
 ```bash
@@ -232,7 +256,7 @@ python -m unittest discover -s tests -v
 
 **완료 확인:** 테스트가 **`OK`**로 끝난다. 테스트는 두 언어와 고정된 정책 ID, 금액 규칙, 동결된 사례 계약을 확인한다.
 
-**다르면:** Azure 작업을 시작하지 말고 실패한 오프라인 테스트를 먼저 고친다. `requirements.lock.txt`의 고정 의존성은 유지한다.
+**다르면:** Azure 작업을 시작하지 말고 [오프라인 테스트 복구](troubleshooting.ko.md#offline-tests)로 환경 오류와 테스트 실패를 구분한다. `requirements.lock.txt`의 고정 의존성은 유지한다.
 
 <details>
 <summary>고정 패키지 버전</summary>
@@ -311,6 +335,8 @@ az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" --o
 **완료 확인:** Azure CLI 로그인이 오류 없이 끝나고 프롬프트로 돌아온다.
 
 **다르면:** 이 블록만 지정 tenant·subscription으로 다시 실행하고, 계속 실패하면 [로그인 문제 해결](troubleshooting.ko.md#login)을 본다.
+
+<a id="azd-login"></a>
 
 **터미널 A — 3. azd 로그인:** 같은 계정을 쓴다.
 
@@ -598,15 +624,15 @@ python scripts/workshop.py preflight
 
 | 전달 항목 | 강사가 확인할 내용 |
 |---|---|
-| 계정 접근 | 실행자 본인의 계정에 의도한 구독, tenant, 프로젝트, 모델 배포 접근을 준비하고 `AZURE_EXPECTED_USERNAME`에 그 로그인 이름을 넣는다. 참가자는 README 1-3에서 로그인하고 MFA를 완료한다. |
+| 계정 접근 | 실행자 본인의 계정에 [권한 표](#access)의 사용자 역할·범위를 확인하고 `AZURE_EXPECTED_USERNAME`에 그 로그인 이름을 넣는다. 강사의 Owner 권한이 전달된다고 가정하지 않는다. 참가자는 README 1-3에서 로그인하고 MFA를 완료한다. |
 | 조별 `.env` | `.env.example`의 모든 값을 채우고 **`LAB_LANGUAGE=ko`**로 설정한다. 암호·API key·token은 넣지 않는다. 지정 실행자가 자기 폴더에서 `bind`를 실행한다. 강사 PC에서 바인딩한 복사본은 대신할 수 없다. |
 | 준비된 서비스 | Foundry 프로젝트, Search, 연결된 Application Insights, 세 후보 모델, 별도 보조 배포를 확인한다. `MODEL_*_DEPLOYMENT`의 공유 배포 이름은 바꾸지 않는다. 모델과 기반 서비스 비용은 강사가 관리한다. |
 | 고유한 이름 | **실행할 폴더마다** 미사용 `LAB_PREFIX`, `LAB_AGENT_NAME`을 정한다. 영문·국문 실행은 폴더를 나눈다. 이름만 예약하고 KB, source, index, 에이전트는 미리 만들지 않는다. |
-| 준비된 도구 | [기본 도구 설치·확인](#tools) 통과. Copilot CLI 사용 시 [추가 준비](copilot.ko.md)는 별도 수행 |
+| 준비된 도구 | [기본 도구 설치·확인](#tools) 통과. 성공한 리허설의 `azd version`·`azd extension list` 출력을 전달하며 차이가 있으면 [버전 복구](#tool-version-recovery)를 따른다. Copilot CLI 사용 시 [추가 준비](copilot.ko.md)는 별도 수행 |
 | 도움받을 담당자 | `grant-agent-access` 역할 부여·403·quota 오류를 처리할 담당자 |
 | 레벨 2·3 | 가르친다면 모든 조를 감당할 judge·Sol 용량([레벨 2·3 준비](#levels)) |
 
-**완료 확인:** 표의 모든 행을 확인했고, 조별 전달물에 고유 `LAB_PREFIX`·`LAB_AGENT_NAME`이 든 완성된 `.env`, README 1단계 링크, 지원 담당자가 들어 있다. 그러면 전달물과 [README 1단계](../README.ko.md#start)를 보낸다.
+**완료 확인:** 표의 모든 행을 확인했고, 조별 전달물에 고유 `LAB_PREFIX`·`LAB_AGENT_NAME`이 든 완성된 `.env`, README 1단계 링크, 리허설 도구 버전 출력, 지원 담당자가 들어 있다. 그러면 전달물과 [README 1단계](../README.ko.md#start)를 보낸다.
 
 **다르면:** 전달을 보류하고 누락된 계정, 설정, 서비스, 이름, 도구, 지원 담당자를 참가자 시작 전에 고친다.
 
@@ -636,6 +662,8 @@ Foundry 에이전트를 수정하거나 설명하기 전에 `microsoft-foundry` 
 영문·국문 실행 경로를 함께 유지한다. 결과와 시작 조건부터 쓰고, **수업 참가·개인 환경 준비·기존 실행 복구**의 시작 링크를 본문에 보이게 둔다. 지침(V1·V2), 질문 묶음(split), 결과 이름(label)은 첫 평가 단계에서 구분한다. 기존 Azure 준비·도구 위임과 배경 설명은 접어 두되, **사례 검토와 결과 해석에 필요한 설명은 본문에 보이게 둔다.**
 
 실행 단계마다 **작업 위치·명령·완료 증거·복구 경로**를 명시한다. 수집·평가·집계·trace 조회·증거 검증뿐 아니라 **후보 준비와 calibration도 명령 하나와 완료 확인 하나씩** 배치한다. 복구 페이지에 뒤의 실습 명령을 묶어 복제하지 말고, 실패한 작업을 복구한 뒤 **메인 가이드의 다음 미실행 명령**으로 돌려보낸다. 내부에서 이미 수행하는 검사를 별도 명령으로 반복하지 않는다.
+
+복구 전후의 상태도 구분한다. 아직 하지 않은 다른 로그인, 기록 생성 전 `init` 실패, 복구를 마친 V2, 읽기만 할 검토 기록을 같은 재실행 경로로 보내지 않는다. 중도 종료는 실습 완료와 분리하고, 없는 증거를 요구하거나 만들어 채우게 하지 않는다.
 
 접힌 예시 화면은 그것이 보여 주는 완료 확인 바로 뒤에 둔다. 환경 준비 문서는 공통 진행 방법을 읽고 아직 실행하지 않은 명령으로 돌아오게 한다. 메모는 한 문서에 모으고 증거·포털 확인 뒤 같은 문서를 보고서로 저장하며, 레벨 2·3도 그 파일을 이어 쓴다. **출처 연결·실행 완료·품질 통과**를 구분한다. 촬영 예시의 답변·점수를 독자의 목표 결과로 쓰지 않는다. 실제 cloud 실행 결과는 [국문 결과](validation.ko.md)와 [영문 결과](validation.en.md)에 따로 두며, 번역한 질문은 새로운 독립 holdout 사례가 아니다.
 

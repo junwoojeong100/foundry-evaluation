@@ -127,7 +127,7 @@
 - 검색 planner와 judge에는 고정 배포(`gpt-5.4-mini`)를 사용하며, 이 보조 모델은 후보 모델을 대체하지 않습니다.
 - 세 후보는 모두 OpenAI 모델이므로 여러 공급자 간 이식성을 검증했다고 주장하지 않습니다.
 
-↩ [5단계 baseline](../README.ko.md#lab-c) 또는 [8단계 holdout](../README.ko.md#lab-f).
+↩ 브라우저 **뒤로**로 이 참고를 열기 직전 블록에 돌아갑니다. 설정 확인 중이었다면 [1-1 설정](../README.ko.md#workspace-settings), 평가 중이었다면 [5단계 baseline](../README.ko.md#lab-c) 또는 [8단계 holdout](../README.ko.md#lab-f)입니다.
 
 <a id="execution-path"></a>
 
@@ -161,7 +161,7 @@
 
 호스팅 서비스가 GA라고 해서 함께 쓰는 모든 SDK나 API도 GA라는 뜻은 아닙니다.
 
-↩ [1단계 setup](../README.ko.md#lab-a).
+↩ [1단계 시작 준비](../README.ko.md#start).
 
 <a id="language"></a>
 

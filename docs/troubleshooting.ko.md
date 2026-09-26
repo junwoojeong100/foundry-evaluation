@@ -3,7 +3,7 @@
 [참가자 가이드로 돌아가기](../README.ko.md) · [English](troubleshooting.en.md)
 
 **현재 폴더와 오류 출력을 유지하고, 실습 전체를 처음부터 반복하지 않습니다.**
-- **실패 단계:** [로그인](#login) · [검색](#retrieval) · [로컬 실행](#symptom-local) · [Hosted Agent](#symptom-hosted) · [calibration](#calibration) · [수집](#collection-retry) · [평가](#evaluation-retry) · [V2 변경](#v2-changed) · [정리](#cleanup-recovery).
+- **실패 단계:** [오프라인 테스트](#offline-tests) · [로그인](#login) · [검색](#retrieval) · [로컬 실행](#symptom-local) · [Hosted Agent](#symptom-hosted) · [calibration](#calibration) · [수집](#collection-retry) · [평가](#evaluation-retry) · [V2 변경](#v2-changed) · [정리](#cleanup-recovery).
 - **증거·선택 단계:** [baseline 전부 통과](#no-failures) · [trace](#telemetry) · [포털](#portal-differs) · [완료 판단](#symptom-completion) · [레벨 2·3](#levels).
 - **확실하지 않으면:** [증상별 확인](#symptoms)을 먼저 봅니다. label이나 상태 파일이 있으면 [저장 상태로 이어가기](#resume), 환경 준비 실패라면 [환경 소유자 이어가기](#setup-resume)를 봅니다(환경 소유자만).
 - 참가자 복구 명령은 기존 실습 폴더의 저장소 루트에서 실행합니다. 환경 소유자 복구는 실행 폴더를 따로 안내합니다.
@@ -15,7 +15,7 @@
 |---|---|
 | 명령이 예외·오류로 끝남, 응답 누락·중복, 또는 평가기 오류 | 다음 단계를 중단하고 [실패한 명령부터 복구](#resume) |
 | `collect`가 `business=False`를 출력함 | 업무 검사 실패이지 명령 실패가 아닙니다. 수집이 오류 없이 끝났다면 해당 평가로 진행합니다. |
-| 평가 run은 완료됐고 행 오류는 없지만 유효 점수가 낮음 | 유효한 낮은 점수는 결과입니다. 기록하고 돌아갑니다: `baseline` [6단계](../README.ko.md#lab-d), `improved` [7-4](../README.ko.md#compare-results), `holdout` [8-3](../README.ko.md#holdout-results). |
+| 평가 run은 완료됐고 행 오류는 없지만 유효 점수가 낮음 | 기록하고, 완료된 `evaluate`는 반복하지 않습니다. 다음 미실행 작업으로 갑니다: `baseline` [5-4 보고서 확인](../README.ko.md#baseline-report), `improved` [7-3 비교 저장](../README.ko.md#candidate-comparison), `holdout` [8-2 비교 저장·V2 고정 확인](../README.ko.md#holdout-comparison). 이미 마친 블록은 건너뜁니다. |
 | trace가 아직 0건이거나 일부만 보임 | [수집 지연·조회 기간·권한 확인](#telemetry). 전체 증거가 확인됐다고 판정하지 않습니다. |
 | 녹화 화면만 봄 | 직접 실행 완료가 아니라 관찰로 기록합니다. |
 
@@ -70,6 +70,7 @@
 | 분류 | 증상 | 원인 또는 확인 | 조치 / 정확한 복귀 지점 |
 |---|---|---|---|
 | 환경 | `.env`가 없거나 필수 값 누락 | 비공개 배포 이름은 추측할 수 없습니다. | 전체 파일을 둔 뒤 [1-1 `.env` 확인](../README.ko.md#workspace-settings)으로 돌아갑니다. |
+| 환경 | 오프라인 테스트가 `FAIL`·`ERROR`로 끝남 | Python·가상환경·의존성 오류와 실제 테스트 실패를 구분해야 합니다. | [오프라인 테스트 복구](#offline-tests). `OK` 전에는 Azure 작업을 시작하지 않습니다. |
 | 환경 | `read: -p: no coprocess` 또는 경로/activate 파일 오류 | 지금 연 셸이나 폴더가 실습 때 쓰던 위치가 아닐 수 있습니다. | `bash`를 실행하고 [터미널 복원](../README.ko.md#resume-shell)으로 기존 폴더에 돌아갑니다. 새 clone을 만들지 않습니다. |
 | 환경 | 언어가 다르거나 language mismatch | 영어는 `LAB_LANGUAGE=en`, 한국어는 `LAB_LANGUAGE=ko`이며 설정이 없으면 한국어입니다. | 원래 언어와 작업 폴더를 유지하고 [1-1 `.env` 확인](../README.ko.md#workspace-settings)으로 돌아갑니다. |
 | 환경 | `preflight`의 `missing_models`가 비어 있지 않음 | 세 후보 배포 중 이름·버전·접근 권한·할당량 중 하나가 맞지 않습니다. | `.env`의 `MODEL_*_DEPLOYMENT`가 받은 값 그대로인지 확인한 뒤 환경 소유자에게 배포를 요청합니다(직접 만든 환경이면 [환경 준비 6-1](environment.ko.md#setup-candidates)). 그다음 [preflight](../README.ko.md#project-binding)로 돌아갑니다. |
@@ -88,7 +89,7 @@
 | <a id="symptom-hosted"></a>Hosted Agent | Search 403 / 역할 부여 실패 | 사용자 권한과 Hosted Agent 인스턴스 ID 권한은 다릅니다. | 두 ID를 확인한 뒤 [에이전트 접근 권한](../README.ko.md#agent-access)으로 돌아갑니다. |
 | Hosted Agent | Hosted 424 / cold start | 해당 Hosted 버전이 아직 준비되지 않았을 수 있습니다. | 1–2분 뒤 [원격 응답 확인](../README.ko.md#hosted-smoke)의 `smoke`만 반복합니다. 계속 실패하면 **내 에이전트 → Playground → Log stream**의 오류를 확인합니다. 재배포하지 않습니다. |
 | 수집 | 429 / 시간 초과 | 용량 또는 서비스 제한으로 중단됐을 수 있습니다. | 원인과 Retry-After를 보존한 뒤 [수집 복구](#collection-retry)로 돌아갑니다. |
-| trace | 시작 시 `connections/read` 거부 | 시작 코드가 연결 메타데이터를 직접 읽고 있을 수 있습니다. | 주입된 telemetry 설정을 사용한 뒤 [원격 응답 확인](../README.ko.md#hosted-smoke)으로 돌아갑니다. |
+| trace | 시작 시 `connections/read` 거부 | 시작 코드가 연결 메타데이터를 직접 읽고 있을 수 있습니다. | 코드·역할을 바꾸지 말고 [시작 로그 확인·인계](#hosted-telemetry)를 따릅니다. 해결 뒤 원래 단계의 `smoke`만 재개합니다. |
 | 평가 | 평가 완료인데 오류 행이나 `null` 점수 | 평가 run 완료와 행별 성공은 다릅니다. | [평가 복구](#evaluation-retry) 후 [baseline](../README.ko.md#baseline-evaluation), [후보](../README.ko.md#candidate-evaluation), [holdout](../README.ko.md#holdout-evaluation)으로 돌아갑니다. |
 
 **완료·정리**
@@ -110,6 +111,59 @@
 | trace | App Insights `ResourceId` 메타데이터 누락 | 실습 전용 App Insights 연결 메타데이터가 불완전할 수 있습니다. | 환경 소유자가 [소유자 전용 관측 복구](instructor.ko.md#observability-repair)를 따른 뒤 [trace 복구](#telemetry)로 돌아갑니다. |
 
 </details>
+
+<a id="offline-tests"></a>
+
+## 오프라인 테스트가 실패했다면
+
+**Azure 로그인·배포 전에 해결합니다.** 첫 `FAIL`·`ERROR`의 테스트 이름과 traceback을 보존합니다. 아래 명령은 테스트를 실행했던 **같은 폴더**에서 사용합니다. 새 환경 준비의 실행 폴더는 원래 clone이 아니라 `RUN_DIR/workshop`입니다.
+
+**터미널 — 기존 가상환경과 의존성 확인:**
+
+```bash
+source src/agent/.venv/bin/activate &&
+python --version &&
+python -c 'import sys; print(sys.executable); print(sys.prefix)' &&
+python -m pip check
+```
+
+**완료 확인:** Python은 `3.13.x`, 실행 파일과 가상환경 경로는 이 폴더의 `src/agent/.venv` 아래이며, 마지막 줄은 `No broken requirements found.`입니다. 이 확인만으로 테스트가 통과한 것은 아닙니다.
+
+**다르면:** 아래에서 해당 원인만 고칩니다.
+
+| 확인 결과 | 다음 행동 |
+|---|---|
+| `activate` 파일이 없음 | 원래 설치 위치로 돌아갑니다: [참가자 1-2](../README.ko.md#python-setup), [새 환경 1-6](environment.ko.md#setup-python), [기존 환경 Python 준비](instructor.ko.md#existing-python). 없는 가상환경만 만들며 소스·실행 기록은 보존합니다. |
+| Python 버전이나 가상환경 경로가 다름 | 현재 폴더와 [Python 3.13 설치](instructor.ko.md#tools)를 확인합니다. 다른 폴더의 Python을 쓰거나 기존 가상환경을 삭제해 우회하지 않습니다. |
+| 원래 오류가 `ModuleNotFoundError`이거나 `pip check`가 의존성 불일치를 보고함 | 위 Python·경로가 맞을 때만 아래 고정 의존성 복구를 실행합니다. |
+| 환경 확인은 정상이지만 assertion 등 테스트 실패가 남음 | 테스트 이름·traceback·Python 버전을 수업 담당자에게 전달합니다. 혼자 실습하면 비밀·개인 정보를 제거한 오류로 [저장소 이슈](https://github.com/junwoojeong100/foundry-evaluation/issues)를 확인하거나 보고하고 중단합니다. 테스트·정책·고정 정답을 수정해 `OK`로 만들지 않습니다. |
+
+**터미널 — 누락·불일치 의존성이 확인된 경우에만:**
+
+```bash
+python -m pip install -r requirements.lock.txt &&
+python -m pip check
+```
+
+**완료 확인:** 설치가 오류 없이 끝나고 `No broken requirements found.`가 나옵니다.
+
+**다르면:** 다운로드·의존성 오류를 보존하고 중단합니다. 임의 버전 설치나 전역 설치로 우회하지 않습니다.
+
+**터미널 — 원인을 해결한 뒤 같은 테스트만 다시 실행:**
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+**완료 확인:** `OK`로 끝납니다. 새 환경의 실행용 복사본은 문서 검사만 생략한 `OK (skipped=1)`도 정상입니다.
+
+**다르면:** 첫 실패 이름·오류를 지원 담당자에게 전달하고 Azure 작업은 계속 보류합니다.
+
+| 테스트를 실행하던 경로 | `OK` 뒤 이어갈 곳 |
+|---|---|
+| 참가자 README 1-2 | [1-3 로그인](../README.ko.md#login) |
+| 새 환경 준비 1-6 | [2-1 로그인](environment.ko.md#setup-identity) |
+| 기존 환경 준비 | [1. 설정·로그인](instructor.ko.md#existing-settings) |
 
 <a id="login"></a>
 
@@ -144,13 +198,15 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 
 <a id="login-return"></a>
 
-필요한 로그인을 마쳤으면 **이 문제 해결 문서로 오기 직전의 경로**로 돌아가 두 로그인 확인 블록만 실행합니다. 폴더를 바꾸거나 성공한 로그인을 반복하지 않습니다.
+**Azure CLI만 복구했고 azd 로그인은 아직 안 했다면, azd 로그인부터 마칩니다.** azd만 실패했고 Azure CLI는 이미 성공했다면 바로 두 로그인 확인으로 갑니다. 폴더를 바꾸거나 성공한 로그인을 반복하지 않습니다.
 
-| 로그인하던 경로 | 돌아갈 확인 블록 | 확인 뒤 이어갈 곳 |
-|---|---|---|
-| 참가자 README 1-3 | [README 두 로그인 확인](../README.ko.md#login-check) | README 1-4 프로젝트 확인 |
-| 새 환경 준비 2-1 | [환경 준비 두 로그인 확인](environment.ko.md#login-check) | 같은 문서 2-2 계정·보존·용량 확인 |
-| 기존 환경 준비 1 | [기존 환경 두 로그인 확인](instructor.ko.md#login-check) | 같은 문서의 후보 배포 이름 지정 → 2 보조 배포 준비 |
+**이 문서로 오기 직전의 경로**에서 아래 한 행을 따릅니다. 두 로그인을 모두 마쳐야 확인 블록을 실행합니다.
+
+| 로그인하던 경로 | azd 로그인이 아직이면 | 두 로그인 완료 후 확인 | 확인 뒤 이어갈 곳 |
+|---|---|---|---|
+| 참가자 README 1-3 | [README 3번 azd 로그인](../README.ko.md#azd-login) | [README 두 로그인 확인](../README.ko.md#login-check) | README 1-4 프로젝트 확인 |
+| 새 환경 준비 2-1 | [환경 준비 azd 로그인](environment.ko.md#azd-login) | [환경 준비 두 로그인 확인](environment.ko.md#login-check) | 같은 문서 2-2 계정·보존·용량 확인 |
+| 기존 환경 준비 1 | [기존 환경 azd 로그인](instructor.ko.md#azd-login) | [기존 환경 두 로그인 확인](instructor.ko.md#login-check) | 같은 문서의 후보 배포 이름 지정 → 2 보조 배포 준비 |
 
 **새 환경 준비 중에는 아직 서비스가 없으므로 README의 `preflight`·`bind`로 넘어가지 않습니다.**
 
@@ -166,6 +222,18 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 </details>
 
 **다음:** 위 표에서 선택한 문서의 확인 블록 아래부터 이어갑니다. 준비 경로를 바꾸지 않습니다.
+
+<a id="hosted-telemetry"></a>
+
+## 시작 로그에 `connections/read`가 있다면
+
+**참가자:** 원래 단계에서 멈춥니다. **내 에이전트 → Playground → Log stream**에서 해당 오류를 확인하고, 실패한 단계·`LAB_AGENT_NAME`·확인 가능한 배포 버전·오류 부분만 환경 소유자에게 전달합니다. 연결 문자열·토큰·`.env` 전체는 공유하지 않으며, 해결하려고 에이전트에 Owner를 주거나 소스를 바꾸지 않습니다.
+
+**환경 소유자:** 배포에 사용한 소스와 `azure.yaml`을 편집기로 확인합니다. 제공된 `src/agent/main.py`의 `telemetry_connection`은 `APPLICATIONINSIGHTS_CONNECTION_STRING` 또는 `OTEL_EXPORTER_OTLP_ENDPOINT`가 주입되면 프로젝트 연결을 조회하지 않습니다. 제공된 `azure.yaml`의 hosted 서비스 `env`에는 `LAB_AUTH_MODE=cli`를 전달하지 않습니다. 배포본이 이 조건과 다르거나 런타임의 주입 설정을 확인할 수 없으면 오류와 버전을 소스 유지 관리자·플랫폼 지원에 전달합니다. 확인 없이 연결 문자열을 복사하거나 재배포하지 않습니다.
+
+**완료 확인:** 원인을 해결한 뒤 원래 단계의 `smoke`만 실행했을 때 시작 오류가 없고 해당 단계의 언어·지침·숫자 버전 조건을 만족합니다.
+
+**다르면:** 오류와 현재 버전을 보존하고 중단합니다. 수정 과정에서 7-2 뒤에 재배포했다면 [V2 변경 복구](#v2-changed)로 비교 기준을 다시 맞춥니다.
 
 <a id="retrieval"></a>
 
@@ -418,7 +486,7 @@ python scripts/workshop.py set-prompt v2 &&
 python scripts/workshop.py smoke
 ```
 
-**완료 확인:** `prompt_version: v2`이고 `agent_version`이 메모한 **V2 버전**(7-2)과 같습니다. holdout 수집을 시작한 적이 없으면 [8-1](../README.ko.md#lab-f)로 갑니다. 이미 `holdout/manifest.json`이 있으면 기존 기록을 보존하고 [holdout 재수집](#collection-retry-holdout)으로 갑니다.
+**완료 확인:** `prompt_version: v2`이고 `agent_version`이 메모한 **V2 버전**(7-2)과 같습니다. 이후 추가 변경이 없다면 A를 반복하지 않습니다. holdout 수집을 시작한 적이 없으면 [8-1 수집 블록](../README.ko.md#holdout-collection)으로 갑니다. 이미 `holdout/manifest.json`이 있으면 기존 기록을 보존하고 [holdout 재수집](#collection-retry-holdout)으로 갑니다.
 
 **다르면:** 원본 지침과 설정을 복원한 뒤에도 버전이 다르거나 `Hosted prompt does not match`가 계속되면 기존 V2와 같은 조건이 아닙니다. **B**를 따릅니다.
 
@@ -426,7 +494,7 @@ python scripts/workshop.py smoke
 
 1. **터미널:** A의 **명령 블록**으로 현재 버전을 확인합니다(방금 실행했다면 그 출력 사용). `Hosted prompt does not match`이면 `azd deploy --no-prompt`를 **한 번만** 실행한 뒤 A의 명령 블록을 다시 실행합니다. `prompt_version: v2`가 나오면 새 `agent_version`을 메모합니다.
 2. [V2 dev 수집 복구](#collection-retry-improved)로 `improved-retry`를 수집합니다. README 7-3 평가·비교와 7-4 요약까지 그 label로 마칩니다.
-3. 그 뒤 8단계를 진행합니다. 이미 `holdout/manifest.json`이 있으면 [holdout 재수집](#collection-retry-holdout)의 `holdout-retry`를 씁니다. 이후 명령·파일 경로·`verify`에도 바뀐 label을 씁니다.
+3. 새 버전을 메모의 V2 기준으로 삼고, 이후 추가 변경이 없으면 [8-1 수집 블록](../README.ko.md#holdout-collection)으로 갑니다. 이미 `holdout/manifest.json`이 있으면 [holdout 재수집](#collection-retry-holdout)의 `holdout-retry`를 씁니다. 이후 명령·파일 경로·`verify`에도 바뀐 label을 씁니다.
 
 이미 holdout을 봤다면 보고서에 `V2 변경 복구로 holdout 재사용`을 적습니다. 결과를 보고 지침을 튜닝하거나 이를 새로운 미사용 검증으로 보고하지 않습니다.
 
@@ -434,7 +502,7 @@ python scripts/workshop.py smoke
 
 **다르면:** 멈추고 오류와 label 이름을 기록합니다. 기존 결과를 지우거나 버전을 맞추려고 반복 배포하지 않습니다.
 
-**다음:** [8-1 수집](../README.ko.md#lab-f) 또는 [8-2 확인](../README.ko.md#holdout-evaluation)으로 돌아갑니다.
+**다음:** 아직 하지 않은 [8-1 수집](../README.ko.md#holdout-collection) 또는 [8-2 확인](../README.ko.md#holdout-comparison)으로 돌아갑니다. 완료한 수집·평가는 반복하지 않습니다.
 
 <a id="portal-differs"></a>
 
@@ -605,7 +673,7 @@ python scripts/workshop.py check-cleanup
 
 ## 환경 소유자: 미완료 준비 이어가기
 
-**참가자는 환경 준비 중이 아니었다면 여기서 멈춥니다.** 원래 clone과 `RUN_DIR`를 유지하고, 새 `RUN_ID` 생성·`init` 반복·스냅샷 덮어쓰기는 하지 않습니다.
+**참가자는 환경 준비 중이 아니었다면 여기서 멈춥니다.** 원래 clone과 `RUN_DIR`를 유지하고, 새 `RUN_ID` 생성·이미 완료한 `init` 반복·스냅샷 덮어쓰기는 하지 않습니다.
 
 **터미널 — 기존 경로 확인:** `bash`를 실행하고 원래 clone 경로와 기존 `RUN_DIR`를 따옴표 없이 입력합니다.
 
@@ -613,15 +681,17 @@ python scripts/workshop.py check-cleanup
 read -r -p "환경 준비에 사용한 원래 clone의 절대 경로: " REPO_ROOT &&
 cd "$REPO_ROOT" &&
 read -r -p "기존 RUN_DIR의 절대 경로: " RUN_DIR &&
-ls "$RUN_DIR/config.json"
+printf 'RUN_DIR=%s\n' "$RUN_DIR"
 ```
 
-**완료 확인:** 기존 `config.json` 경로가 출력됩니다. 편집기로 열어 `workspace`가 이 `RUN_DIR` 아래의 `workshop` 경로인지 확인합니다.
+**완료 확인:** 원래 clone으로 이동했고 출력 경로가 메모한 `RUN_DIR`와 같습니다. 편집기에서 아래 표에 맞는 파일 상태를 고릅니다. `config.json`이 있다면 `workspace`가 이 `RUN_DIR` 아래의 `workshop`인지 먼저 확인합니다.
 
-**다르면:** 메모한 두 경로를 다시 확인합니다. 파일이 없거나 다른 실행이면 기록을 새로 만들거나 덮어쓰지 않습니다.
+**다르면:** 메모한 두 경로를 다시 확인합니다. 경로가 불명확하거나 다른 실행이면 기록을 새로 만들거나 덮어쓰지 않습니다.
 
 | 남아 있는 파일 / 완료한 작업 | 다음 행동 |
 |---|---|
+| `init`가 입력 검증에서 실패했고 `RUN_DIR` 자체가 없음 | [초기 설정 수정 후 같은 `init`만 재시도](#setup-init-retry)합니다. 새 실행 ID는 만들지 않습니다. |
+| `RUN_DIR`는 있지만 `config.json`이 없음 | 부분 생성 상태입니다. 폴더·오류를 보존해 준비 담당자에게 전달합니다. `init` 재시도 대상이 아닙니다. |
 | `config.json`만 있고 `workshop/` 없음 | 원래 clone에서 `source src/agent/.venv/bin/activate`를 실행합니다. 이 `RUN_DIR`로 [`prepare` 명령만](environment.ko.md#setup-snapshot) 실행한 뒤 Python 준비로 갑니다. |
 | `workshop/`은 있고 `source-manifest.json` 없음 | 소스 복사가 중단됐습니다. 폴더와 오류를 보존하고, 폴더를 지우거나 manifest를 만들지 않습니다. |
 | 스냅샷·manifest는 있고 Python·테스트 미완료 | `"$RUN_DIR/workshop"`에서 [독립 Python 준비](environment.ko.md#setup-python)를 이어가고, 로그인 전에 `OK`를 확인합니다. |
@@ -656,3 +726,25 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 **다르면:** `config.json`, `RUN_DIR`, 마지막 오류를 보존합니다. 혼자라면 본인이 환경 소유자이므로 `config.json`의 `subscription`·`run_id`가 이번 실행과 같은지 대조한 뒤 같은 `RUN_DIR`로만 재개합니다. 새 `RUN_ID`를 만들거나 스냅샷을 덮어쓰지 않습니다.
 
 **다음:** 위 표의 해당 환경 준비 단계로 돌아가거나, 전달까지 끝났다면 [README bind](../README.ko.md#bind-project)로 진행합니다.
+
+<a id="setup-init-retry"></a>
+
+## `init`가 기록 생성 전에 실패했다면
+
+**이 분기는 초기 입력 검증 실패로 기록한 `RUN_DIR` 자체가 아직 없을 때만 씁니다.** 먼저 [기존 경로 확인](#setup-resume)으로 `REPO_ROOT`·`RUN_DIR`를 복원합니다. 원래 clone의 `.env`에서 [초기 다섯 설정](environment.ko.md#initial-settings)을 수정·저장합니다. 시각으로 새 `RUN_ID`를 만드는 전체 블록은 반복하지 않습니다.
+
+**터미널 — 원래 clone (`$REPO_ROOT`), 같은 `RUN_DIR`:**
+
+```bash
+if [ -e "$RUN_DIR" ] || [ -L "$RUN_DIR" ]; then
+  printf '%s\n' 'Stop: RUN_DIR already exists; preserve it and use saved-state recovery.' >&2
+  false
+else
+  source src/agent/.venv/bin/activate &&
+  python scripts/prepare_environment.py init --run-dir "$RUN_DIR" --language ko
+fi
+```
+
+**완료 확인:** 출력 JSON이 `language: ko`이고 같은 `RUN_DIR`에 `config.json`이 생겼습니다. 이제 [1-5 소스 복사](environment.ko.md#setup-snapshot)로 갑니다.
+
+**다르면:** 오류와 경로를 보존합니다. 폴더가 이미 있으면 [저장 상태별 표](#setup-resume)로 돌아가며, 없는 파일을 직접 만들거나 폴더를 삭제하지 않습니다.

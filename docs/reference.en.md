@@ -127,7 +127,7 @@ Changing `LAB_PREFIX` for a new team does not rename shared model deployments.
 - A separate fixed `gpt-5.4-mini` deployment serves retrieval planning and evaluation judging; it does not replace a candidate model.
 - All three candidates are OpenAI models, so this is not a cross-provider interoperability benchmark.
 
-↩ [step 5 baseline](../README.md#lab-c) or [step 8 holdout](../README.md#lab-f).
+↩ Use browser **Back** to return to the block where you opened this reference. During setup, return to [1-1 settings](../README.md#workspace-settings); during evaluation, return to [step 5 baseline](../README.md#lab-c) or [step 8 holdout](../README.md#lab-f).
 
 <a id="execution-path"></a>
 
@@ -161,7 +161,7 @@ Application-side JSON validation differs from service-enforced Structured Output
 
 A GA hosting service does not make every SDK or API used with it GA.
 
-↩ [step 1 setup](../README.md#lab-a).
+↩ [step 1 setup](../README.md#start).
 
 <a id="language"></a>
 

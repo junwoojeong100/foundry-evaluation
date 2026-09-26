@@ -188,7 +188,7 @@ python -m unittest discover -s tests -v
 
 **Checkpoint:** tests end with `OK` (`OK (skipped=1)` is normal: the runtime copy omits guides, so it skips the documentation checks). **`$RUN_DIR/source-manifest.json`** records the source commit and hashes. **`$RUN_DIR/workshop/.env`** has `LAB_LANGUAGE=en`, new owned names, and no reused `.azure`, `.foundry`, or virtual environment.
 
-**If not:** stop before Azure operations and follow [Python setup recovery](troubleshooting.en.md#setup-resume). Do not recreate an existing virtual environment or source snapshot.
+**If not:** stop before Azure operations. For folder/source-copy problems, use [saved setup recovery](troubleshooting.en.md#setup-resume); for installation or test failures, use [offline-test recovery](troubleshooting.en.md#offline-tests). Do not recreate an existing virtual environment or source snapshot.
 
 Start step 2 in **`$RUN_DIR/workshop`**; step 2-2 then sends you back to **`$REPO_ROOT`** for provisioning.
 
@@ -223,6 +223,8 @@ az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" --o
 **Checkpoint:** browser sign-in finishes and the prompt returns without an error. `--output none` suppresses the account JSON.
 
 **If not:** [recover only Azure CLI sign-in](troubleshooting.en.md#login), then continue to the next block.
+
+<a id="azd-login"></a>
 
 **Terminal — runtime folder (`$RUN_DIR/workshop`):** sign in to azd with the same account.
 
@@ -483,7 +485,7 @@ Stop here. **If you created this environment for self-study,** return to this gu
 
 ## Final cleanup: delete your exclusive resource group after README step 10
 
-**Only the environment owner proceeds.** After a completed workshop, first finish README step 10's `cleanup` and `check-cleanup`. **If you abandon an incomplete setup,** you can also delete the group after verifying the creation records and exclusive ownership below; workshop result files that do not exist yet are not required. Deletion is irreversible. Participant cleanup or a Copilot CLI execution request is not authorization to delete a whole group.
+**Only the environment owner proceeds.** After a completed workshop, first finish README step 10's `cleanup` and `check-cleanup`. **If you end setup or the main workshop early,** you can also delete the group after verifying the creation records and exclusive ownership below. If the main workshop started, first follow [the README early-stop path](../README.md#stop-early). Result files that do not exist yet are not required. Deletion is irreversible. Participant cleanup or a Copilot CLI execution request is not authorization to delete a whole group.
 
 | Environment | Choose this path |
 |---|---|
@@ -495,7 +497,7 @@ Stop here. **If you created this environment for self-study,** return to this gu
 
 **1. Preserve evidence and verify the deletion scope**
 
-Keep the required local responses, evaluations, regression records, `verified-evidence.json`, and `cleanup-check.json`. Do not assume Foundry report URLs or Azure traces will remain accessible after deletion. Do not share or commit authentication caches, passwords, or tokens.
+Keep the local responses, evaluations, and regression records already created, plus `verified-evidence.json` and `cleanup-check.json` if they exist. Do not manufacture missing results for an early exit. Do not assume Foundry report URLs or Azure traces will remain accessible after deletion. Do not share or commit authentication caches, passwords, or tokens.
 
 **Editor — recorded run folder (`$RUN_DIR`):** open `config.json` and `infrastructure-state.json` from the **same recorded `RUN_DIR`**. Do not create a new run.
 

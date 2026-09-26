@@ -69,7 +69,7 @@
 - **수업 실행자:** 조별 `.env` 하나당 **한 명이 자기 계정·PC·실습 폴더 하나로** 명령을 실행하고, 나머지는 그 화면을 보며 함께 검토합니다. 같은 `.env`를 여러 PC에서 실행하면 같은 이름의 자원을 서로 소유하려 하므로 중단됩니다. 각자 실행하려면 시작 전에 강사에게 실행자별 다른 `LAB_PREFIX`·`LAB_AGENT_NAME`이 든 `.env`를 받습니다.
 - **작업 위치:** 블록 앞의 굵은 라벨(**터미널 A**, **터미널 B**(3단계만), **편집기**, **포털**)을 따릅니다. “내 에이전트”는 `LAB_AGENT_NAME`입니다.
 - **한 블록씩:** **작업 위치 → 명령 실행 → 완료 확인 → 다음 블록** 순서입니다. 입력 프롬프트(다음 명령을 입력할 수 있는 줄)가 돌아올 때까지 기다립니다. 3단계 서버만 예외입니다. 입력 요청이 나오면 값만 붙여넣고 Enter를 누릅니다.
-- **멈출 때:** 오류가 나거나 **완료 확인**의 필수 값이 없으면 바로 아래 **다르면**을 따라 [그 명령만 복구](docs/troubleshooting.ko.md#resume)합니다. 실행이 끝난 뒤의 낮은 유효 점수는 **기록하고 계속**합니다. 좋은 점수를 얻으려고 다시 실행하지 않습니다.
+- **멈출 때:** 오류가 나거나 **완료 확인**의 필수 값이 없으면 바로 아래 **다르면**을 따라 [그 명령만 복구](docs/troubleshooting.ko.md#resume)합니다. 실행이 끝난 뒤의 낮은 유효 점수는 **기록하고 계속**합니다. 좋은 점수를 얻으려고 다시 실행하지 않습니다. 오늘 끝내거나 나중에 이어 하려면 [중도 종료 안내](#stop-early)를 따릅니다.
 - **새 터미널:** Bash를 열고 메모한 경로로 [복원 블록](#resume-shell)을 실행합니다(3단계 터미널 B 블록에는 포함됨).
 - **기록:** 편집기에 텍스트 문서 **하나**를 열고, 각 단계에서 “메모합니다”라고 안내한 값만 적습니다. 9-3에서 **같은 문서**를 [보고서 양식](#finish)에 맞춰 저장합니다. 별도 메모 파일을 만들 필요는 없습니다.
 
@@ -162,6 +162,8 @@ grep -E '^LAB_(LANGUAGE|PROMPT_VERSION)=' .env
 
 </details>
 
+<a id="python-setup"></a>
+
 ### 1-2. 가상환경과 로컬 테스트
 
 **터미널 A — 설치:**
@@ -184,7 +186,7 @@ python -m unittest discover -s tests -v
 
 **완료 확인:** 테스트 출력이 **`OK`**로 끝납니다.
 
-**다르면:** 다음 단계로 가지 않습니다. `python3.13: command not found`이면 [도구 설치](docs/instructor.ko.md#tools)로 돌아가고, 설치 중 오류이면 그 오류를 해결한 뒤 두 블록을 다시 실행합니다. 테스트만 실패하면 처음 실패한 테스트 이름과 오류로 [증상별 확인](docs/troubleshooting.ko.md#symptoms)을 봅니다.
+**다르면:** 다음 단계로 가지 않습니다. 설치 문제는 위 설치 블록의 안내를 따르고, 테스트의 `FAIL`·`ERROR`는 [오프라인 테스트 복구](docs/troubleshooting.ko.md#offline-tests)에서 원인을 구분합니다. 테스트나 정답을 고쳐 통과시키지 않습니다.
 
 <a id="login"></a>
 
@@ -217,6 +219,8 @@ az login --tenant "$LOGIN_TENANT_ID" --subscription "$LOGIN_SUBSCRIPTION_ID" --o
 **완료 확인:** 브라우저 로그인을 마치고 터미널에 오류 없이 프롬프트가 돌아옵니다. `--output none`이므로 계정 JSON은 출력하지 않습니다.
 
 **다르면:** [로그인 복구](docs/troubleshooting.ko.md#login)에서 Azure CLI만 복구한 뒤 3번으로 진행합니다.
+
+<a id="azd-login"></a>
 
 **터미널 A — 3. azd 로그인:** 같은 계정을 씁니다.
 
@@ -574,6 +578,8 @@ python scripts/workshop.py evaluate --label baseline
 
 **다르면:** [평가 복구](docs/troubleshooting.ko.md#evaluation-retry)를 따릅니다. 수집은 반복하지 않습니다.
 
+<a id="baseline-report"></a>
+
 ### 5-4. 평가 보고서 열기
 
 **포털:** `evaluate`가 출력한 report URL을 복사해 브라우저에서 엽니다.
@@ -716,7 +722,9 @@ python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
 
 **다르면:** `already exists`이면 이 행의 검토 기록이 이미 있습니다. [복구 안내](docs/troubleshooting.ko.md#resume)의 `feedback` 행대로 확인하고 덮어쓰지 않습니다.
 
-**터미널 A — 저장된 기록 확인:** 같은 터미널에서 방금 저장한 파일을 읽기 좋게 출력합니다. 파일은 수정하지 않습니다.
+<a id="read-review"></a>
+
+**터미널 A — 저장된 기록 확인:** 같은 터미널에서 방금 저장한 파일을 읽기 좋게 출력합니다. 파일은 수정하지 않습니다. **9-3에서 왔다면 위 `feedback`은 실행하지 않습니다.** `ROW_ID`를 잃었다면 편집기에서 `src/agent/.foundry/datasets/`의 기존 `regression-*.jsonl`을 열어 아래 필드를 읽습니다.
 
 ```bash
 python -m json.tool --no-ensure-ascii "src/agent/.foundry/datasets/regression-$ROW_ID.jsonl"
@@ -821,6 +829,8 @@ python scripts/workshop.py evaluate --label improved
 
 **다르면:** [평가 복구](docs/troubleshooting.ko.md#evaluation-retry)를 따릅니다.
 
+<a id="candidate-comparison"></a>
+
 **터미널 A — 비교 저장:**
 
 ```bash
@@ -922,10 +932,14 @@ python scripts/workshop.py show --label improved --row-id "$V2_ROW_ID"
 
 ### 8-1. Holdout 응답 수집
 
-**주의:** 7-2에서 배포한 V2를 바꾸지 않고 그대로 씁니다. 별도 `freeze` 명령은 없습니다. 7-2 이후 아래 중 하나라도 했다면 **수집하지 말고** 먼저 [V2가 바뀌었을 때 복구](docs/troubleshooting.ko.md#v2-changed)를 따릅니다.
+**주의:** 7-2에서 배포한 V2를 바꾸지 않고 그대로 씁니다. 별도 `freeze` 명령은 없습니다. 7-2 이후 아래 작업을 했고 **그 변경의 복구를 아직 마치지 않았다면**, 수집 전에 [V2가 바뀌었을 때 복구](docs/troubleshooting.ko.md#v2-changed)를 따릅니다.
 
 - `set-prompt` 또는 `azd deploy` 실행
 - `.env` 또는 prompt 파일 수정
+
+**복구를 마쳤다면:** A의 원래 V2 버전 확인, 또는 B의 새 V2 dev 수집·평가·7-4 확인을 마친 뒤 추가 변경이 없으면 복구를 반복하지 않습니다. B에서는 새 버전을 메모의 V2 기준으로 삼습니다. 이미 holdout 기록이 있다면 복구 문서의 retry label을 쓰며, 8-2의 버전·해시 대조는 생략하지 않습니다.
+
+<a id="holdout-collection"></a>
 
 **터미널 A:** 준비 점검 JSON 뒤에 `01/12 ...` 줄이 늘어납니다(보통 1–3분).
 
@@ -950,6 +964,8 @@ python scripts/workshop.py evaluate --label holdout
 **완료 확인:** `Foundry evaluation completed: ... (12 rows)`와 report URL.
 
 **다르면:** [평가 복구](docs/troubleshooting.ko.md#evaluation-retry)를 따릅니다.
+
+<a id="holdout-comparison"></a>
 
 **터미널 A — 비교 저장:**
 
@@ -1123,7 +1139,7 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
 
 **완료 확인:** 보고서 파일을 저장했고, `...`가 남아 있지 않으며, 7-4의 표와 `production_release_approved=false`가 있습니다. 점수를 높이려고 재실행하지 않습니다.
 
-**다르면:** 게이트 값이 없으면 9-1로 돌아갑니다. 메모가 빠졌다면 **저장된** [검토 기록](#save-review)·[dev 요약](#compare-results)·[holdout 요약](#holdout-results)을 읽어 채웁니다. 검토·수집·평가를 다시 실행하지 않습니다.
+**다르면:** 게이트 값이 없으면 9-1로 돌아갑니다. 메모가 빠졌다면 **저장된** [검토 기록](#read-review)·[dev 요약](#compare-results)·[holdout 요약](#holdout-results)을 읽어 채웁니다. 검토·수집·평가를 다시 실행하지 않습니다.
 
 **다음:** 레벨 2·3을 추가하려면 정리 **전에** 아래 선택 항목을 엽니다. 추가하지 않으면 [10. 내 실습 자원만 정리하기](#cleanup)로 갑니다.
 
@@ -1148,11 +1164,29 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
 
 **목표:** 이 폴더가 만들어 소유한 객체를 지우고, 로컬 증거와 공유 서비스는 남깁니다. 개인 실습에서는 직접 만든 후보 모델 배포도 삭제 대상일 수 있습니다.
 
+<a id="stop-early"></a>
+
+<details>
+<summary>중도 종료하거나 나중에 이어 하려면</summary>
+
+| 선택 | 할 일 |
+|---|---|
+| 나중에 이어 하기 | 같은 폴더·설정·오류·완료한 단계를 보관하고 [실패한 단계부터 재개](docs/troubleshooting.ko.md#resume)합니다. **터미널을 닫아도 Azure 자원 비용은 계속될 수 있습니다.** |
+| 이번 실행 끝내기 | 진행 중인 수집·배포·평가가 끝났는지 확인하고, 완료한 단계·오류·현재 증거만 기존 메모에 저장합니다. 미완료 단계의 결과를 만들지 말고 아래 [10-1 삭제 계획](#cleanup-plan)부터 진행합니다. |
+
+로컬 서버가 켜져 있다면 그 터미널에서 `Ctrl+C`로 종료합니다. 클라우드 작업 상태가 불명확하거나 배포·역할 부여 중 실패했다면, **생성된 객체가 소유권 계획에 모두 기록됐는지** 환경 소유자와 [정리 복구](docs/troubleshooting.ko.md#cleanup-recovery)에서 먼저 확인합니다. 기록 누락을 빈 계획으로 간주해 정리 완료로 보고하지 않습니다.
+
+아직 환경 준비 중이라 이 폴더의 `cleanup`을 실행할 수 없다면 환경 소유자의 [전용 환경 종료](docs/environment.ko.md#final-cleanup)를 따릅니다. 공유 그룹은 삭제하지 않습니다. 1–9단계를 끝내지 않았다면 **실습 미완료**와 실제 정리 상태를 따로 기록합니다.
+
+</details>
+
 **주의:** 정리 전에 확인합니다.
 
-- 포털 확인을 모두 마칩니다. 정리하면 실행 중인 에이전트가 삭제됩니다.
+- 실습을 완료하는 경로에서는 포털 확인을 모두 마칩니다. 중도 종료는 위 안내를 따릅니다. 정리하면 실행 중인 에이전트가 삭제됩니다.
 - `azd down`이나 공유 resource group 삭제는 실행하지 않습니다.
 - Search, 로그, 기반 서비스, 보조 모델은 이 단계 뒤에도 남아 비용이 계속 발생합니다. 수업이면 환경 소유자가 관리하고, **혼자 만든 환경이면 10-3 뒤 [리소스 그룹 삭제](docs/environment.ko.md#final-cleanup)로 멈춥니다.**
+
+<a id="cleanup-plan"></a>
 
 ### 10-1. 삭제 계획만 확인
 
@@ -1162,7 +1196,7 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
 python scripts/workshop.py cleanup --dry-run
 ```
 
-**완료 확인:** 출력 JSON의 모든 대상이 이 폴더의 소유권 기록에 속합니다. 특히 `agent`가 내 `LAB_AGENT_NAME`이고, `search_objects`의 세 이름(`...-kb`, `...-source`, `...-policies`)에 모두 내 `LAB_PREFIX`가 들어 있습니다.
+**완료 확인:** 출력 JSON의 모든 대상이 이 폴더의 소유권 기록에 속합니다. 완료 경로에서는 `agent`가 내 `LAB_AGENT_NAME`이고 `search_objects`의 세 이름(`...-kb`, `...-source`, `...-policies`)에 모두 내 `LAB_PREFIX`가 들어 있습니다. **중도 종료는 실제 생성한 대상만 있어야 합니다.** 만들지 않은 에이전트의 `agent: null`이나 빈 목록은 정상이며, 생성한 대상이 계획에서 빠졌다면 삭제 전에 위 정리 복구로 확인합니다.
 
 | 계획 필드 | 있어야 할 대상 |
 |---|---|
@@ -1208,7 +1242,7 @@ python scripts/workshop.py check-cleanup
 
 </details>
 
-**기본 실습 완료:** [9-3의 보고](#finish), 삭제 확인 결과, 로컬 증거 파일을 보관합니다. **혼자 만든 환경이라면** 더 쓰지 않을 때 [리소스 그룹 삭제](docs/environment.ko.md#final-cleanup)까지 해야 Search·로그 같은 기반 서비스 비용이 멈춥니다. 수업·공유 환경의 그룹은 삭제하지 않습니다.
+**1–9단계도 마쳤다면 기본 실습 완료입니다.** [9-3의 보고](#finish), 삭제 확인 결과, 로컬 증거 파일을 보관합니다. 중도 종료라면 실습 미완료 상태와 현재 증거만 보관합니다. **혼자 만든 환경이라면** 더 쓰지 않을 때 [리소스 그룹 삭제](docs/environment.ko.md#final-cleanup)까지 해야 Search·로그 같은 기반 서비스 비용이 멈춥니다. 수업·공유 환경의 그룹은 삭제하지 않습니다.
 
 <details>
 <summary>저장된 증거의 위치</summary>

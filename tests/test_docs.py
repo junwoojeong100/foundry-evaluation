@@ -520,6 +520,227 @@ class DocumentationTests(unittest.TestCase):
                     "workshop", ["collect", "--split", "dev", "--label", "baseline"],
                 ))
 
+    def test_offline_test_recovery_keeps_the_original_preparation_path(self):
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            recovery = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+            recovery = recovery.split('<a id="offline-tests"></a>', 1)[1]
+            recovery = recovery.split('<a id="login"></a>', 1)[0]
+            with self.subTest(language=language):
+                shell_blocks = [body for kind, _, body in blocks(recovery) if kind == "bash"]
+                self.assertEqual(len(shell_blocks), 3)
+                self.assertIn("source src/agent/.venv/bin/activate", shell_blocks[0])
+                self.assertIn("python --version", shell_blocks[0])
+                self.assertIn("sys.executable", shell_blocks[0])
+                self.assertIn("sys.prefix", shell_blocks[0])
+                self.assertIn("python -m pip check", shell_blocks[0])
+                self.assertEqual(shell_blocks[1].strip(), (
+                    "python -m pip install -r requirements.lock.txt &&\npython -m pip check"
+                ))
+                self.assertEqual(shell_blocks[2].strip(), "python -m unittest discover -s tests -v")
+                for target in (f"../{name}#login", f"environment.{language}.md#setup-identity",
+                               f"instructor.{language}.md#existing-settings"):
+                    self.assertIn(target, LINKS.findall(prose(recovery)))
+                self.assertIn("ModuleNotFoundError", recovery)
+                self.assertIn("assertion", recovery)
+                for path in (ROOT / name, ROOT / "docs" / f"environment.{language}.md",
+                             ROOT / "docs" / f"instructor.{language}.md"):
+                    self.assertIn(f"troubleshooting.{language}.md#offline-tests", self.documents[path])
+
+    def test_login_recovery_links_unattempted_azd_before_verification(self):
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            recovery = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+            returns = recovery.split('<a id="login-return"></a>', 1)[1].split("<details>", 1)[0]
+            for link, path in (
+                (f"../{name}", ROOT / name),
+                (f"environment.{language}.md", ROOT / "docs" / f"environment.{language}.md"),
+                (f"instructor.{language}.md", ROOT / "docs" / f"instructor.{language}.md"),
+            ):
+                with self.subTest(language=language, path=path.name):
+                    self.assertLess(returns.index(f"{link}#azd-login"), returns.index(f"{link}#login-check"))
+                    text = self.documents[path]
+                    login = text.split('<a id="azd-login"></a>', 1)[1]
+                    login = login.split('<a id="login-check"></a>', 1)[0]
+                    shell_blocks = [body for kind, _, body in blocks(login) if kind == "bash"]
+                    self.assertEqual(
+                        [body.strip() for body in shell_blocks],
+                        ['azd auth login --tenant-id "$LOGIN_TENANT_ID"'],
+                    )
+
+    def test_low_score_return_preserves_report_comparison_and_freeze_checks(self):
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            text = self.documents[ROOT / name]
+            recovery = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+            decision = recovery.split('<a id="resume"></a>', 1)[0]
+            with self.subTest(language=language):
+                for anchor in ("baseline-report", "candidate-comparison", "holdout-comparison"):
+                    self.assertIn(f"../{name}#{anchor}", LINKS.findall(prose(decision)))
+                report = text.split('<a id="baseline-report"></a>', 1)[1]
+                report = report.split('<a id="lab-d"></a>', 1)[0]
+                self.assertIn("Completed", report)
+                self.assertEqual(list(commands(report)), [])
+                for anchor, labels in (
+                    ("candidate-comparison", ["baseline", "improved"]),
+                    ("holdout-comparison", ["baseline", "improved", "holdout"]),
+                ):
+                    destination = text.split(f'<a id="{anchor}"></a>', 1)[1]
+                    _, script, args = next(commands(destination))
+                    self.assertEqual((script, args), ("workshop", ["compare", "--labels", *labels]))
+                holdout = text.split('<a id="holdout-comparison"></a>', 1)[1]
+                holdout = holdout.split('<a id="holdout-results"></a>', 1)[0]
+                self.assertIn("agent_version", holdout)
+                self.assertIn("prompt_hash", holdout)
+
+    def test_report_review_recovery_starts_with_a_read_not_feedback(self):
+        for name in ("README.md", "README.ko.md"):
+            text = self.documents[ROOT / name]
+            report = text.split('<a id="finish"></a>', 1)[1].split('<a id="levels"></a>', 1)[0]
+            with self.subTest(document=name):
+                self.assertIn("#read-review", LINKS.findall(prose(report)))
+                self.assertNotIn("#save-review", LINKS.findall(prose(report)))
+                read = text.split('<a id="read-review"></a>', 1)[1].split('<a id="lab-e"></a>', 1)[0]
+                shell_blocks = [body.strip() for kind, _, body in blocks(read) if kind == "bash"]
+                self.assertEqual(shell_blocks, [
+                    'python -m json.tool --no-ensure-ascii "src/agent/.foundry/datasets/regression-$ROW_ID.jsonl"',
+                ])
+                self.assertEqual(list(commands(read)), [])
+
+    def test_v2_recovery_returns_to_collection_without_reentering_the_warning(self):
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            text = self.documents[ROOT / name]
+            recovery = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+            recovery = recovery.split('<a id="v2-changed"></a>', 1)[1]
+            recovery = recovery.split('<a id="portal-differs"></a>', 1)[0]
+            with self.subTest(language=language):
+                self.assertIn(f"../{name}#holdout-collection", LINKS.findall(prose(recovery)))
+                self.assertIn(f"../{name}#holdout-comparison", LINKS.findall(prose(recovery)))
+                self.assertNotIn(f"../{name}#lab-f", LINKS.findall(prose(recovery)))
+                self.assertIn("improved-retry", recovery)
+                self.assertIn("holdout-retry", recovery)
+                self.assertIn("prompt_hash", recovery)
+                destination = text.split('<a id="holdout-collection"></a>', 1)[1]
+                _, script, args = next(commands(destination))
+                self.assertEqual((script, args), (
+                    "workshop", ["collect", "--split", "holdout", "--label", "holdout"],
+                ))
+                self.assertLess(text.index('<a id="lab-f"></a>'), text.index('<a id="holdout-collection"></a>'))
+
+    def test_init_recovery_reuses_the_missing_run_and_rejects_existing_paths(self):
+        setup = importlib.import_module("prepare_environment")
+        for language in ("en", "ko"):
+            recovery = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+            resume = recovery.split('<a id="setup-resume"></a>', 1)[1]
+            resume = resume.split('<a id="setup-init-retry"></a>', 1)[0]
+            retry = recovery.split('<a id="setup-init-retry"></a>', 1)[1]
+            shell_blocks = [body for kind, _, body in blocks(retry) if kind == "bash"]
+            with self.subTest(language=language):
+                self.assertIn("#setup-init-retry", LINKS.findall(prose(resume)))
+                self.assertIn(f"environment.{language}.md#setup-snapshot", LINKS.findall(prose(retry)))
+                self.assertEqual(len(shell_blocks), 1)
+                self.assertEqual(
+                    [(script, args) for _, script, args in commands(retry)],
+                    [("prepare_environment", ["init", "--run-dir", "$RUN_DIR", "--language", language])],
+                )
+                self.assertNotIn("date ", shell_blocks[0])
+                self.assertNotIn('ls "$RUN_DIR/config.json"', next(
+                    body for kind, _, body in blocks(resume) if kind == "bash"
+                ))
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory).resolve()
+                run = root / ".workshop" / f"{language}-fixture"
+                values = {
+                    "AZURE_SUBSCRIPTION_ID": "fixture-subscription",
+                    "AZURE_TENANT_ID": "fixture-tenant",
+                    "AZURE_EXPECTED_USERNAME": "runner@example.invalid",
+                    "AZURE_RESOURCE_GROUP": "",
+                }
+                with patch.object(setup, "ROOT", root), \
+                        patch.object(setup, "dotenv_values", return_value={}) as settings, \
+                        patch.object(setup.subprocess, "check_output", return_value="fixture-revision\n"):
+                    with self.assertRaisesRegex(ValueError, "authorized account"):
+                        setup.initialize(run, language)
+                    self.assertFalse(run.exists(), "Input validation must fail before creating the run.")
+                    settings.return_value = values
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        setup.initialize(run, language)
+                    config = json.loads((run / "config.json").read_text())
+                    self.assertEqual(config["language"], language)
+                    self.assertEqual(config["workspace"], str(run / "workshop"))
+                    with self.assertRaisesRegex(ValueError, "already exists"):
+                        setup.initialize(run, language)
+                original = (run / "config.json").read_bytes()
+                partial = run.with_name(f"{language}-partial")
+                partial.mkdir()
+                link = run.with_name(f"{language}-link")
+                link.symlink_to(run.with_name(f"{language}-missing"))
+                for existing in (run, partial, link):
+                    with self.subTest(language=language, existing=existing.name):
+                        result = subprocess.run(
+                            ["bash", "--noprofile", "--norc", "-c", shell_blocks[0]],
+                            cwd=root, env={**os.environ, "RUN_DIR": str(existing)},
+                            text=True, capture_output=True, check=False, timeout=10,
+                        )
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertIn("Stop: RUN_DIR already exists", result.stderr)
+                        self.assertEqual((run / "config.json").read_bytes(), original)
+                        self.assertEqual(list(partial.iterdir()), [])
+                        self.assertTrue(link.is_symlink())
+
+    def test_access_checklist_names_roles_and_separates_human_and_project_access(self):
+        expected_roles = {
+            "user-foundry": "Foundry User",
+            "user-model": "Cognitive Services OpenAI User",
+            "user-search-service": "Search Service Contributor",
+            "user-search-data": "Search Index Data Contributor",
+            "project-monitor": "Log Analytics Reader",
+        }
+        for language in ("en", "ko"):
+            text = self.documents[ROOT / "docs" / f"instructor.{language}.md"]
+            access = text.split('<a id="access"></a>', 1)[1].split('<a id="existing-foundation"></a>', 1)[0]
+            rows = re.findall(r"^\| .+\|$", access, re.MULTILINE)
+            with self.subTest(language=language):
+                for operation, role in expected_roles.items():
+                    matching = [row for row in rows if f"`{operation}`" in row]
+                    self.assertEqual(len(matching), 1, operation)
+                    self.assertIn(f"| {role} |", matching[0])
+                monitoring = [row for row in rows if "| Log Analytics Reader |" in row]
+                self.assertEqual(len(monitoring), 2, "Human access and project identity need separate rows.")
+                self.assertIn("prepare-trace-access", next(row for row in rows if "`project-monitor`" in row))
+                self.assertTrue(any("| Reader |" in row and "AZURE_RESOURCE_GROUP" in row for row in rows))
+                self.assertTrue(any("| Cognitive Services OpenAI Contributor |" in row for row in rows))
+
+    def test_early_stop_uses_owned_objects_not_completed_evaluations(self):
+        from cloud_setup import cleanup_plan
+
+        plan = cleanup_plan({"owned_models": [], "owned_search_paths": [], "owned_roles": []})
+        self.assertIsNone(plan["agent"])
+        self.assertEqual(plan["search_objects"], [])
+        self.assertIn("evaluation evidence", plan["preserved"])
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            text = self.documents[ROOT / name]
+            stop = text.split('<a id="stop-early"></a>', 1)[1].split('<a id="cleanup-plan"></a>', 1)[0]
+            cleanup = text.split('<a id="cleanup-plan"></a>', 1)[1]
+            foundation = self.documents[ROOT / "docs" / f"environment.{language}.md"]
+            foundation = foundation.split('<a id="final-cleanup"></a>', 1)[1]
+            with self.subTest(language=language):
+                self.assertIn("#stop-early", text.split('<a id="start"></a>', 1)[0])
+                self.assertIn("#cleanup-plan", LINKS.findall(prose(stop)))
+                self.assertIn(f"docs/environment.{language}.md#final-cleanup", LINKS.findall(prose(stop)))
+                self.assertEqual(list(commands(stop)), [], "Stopping early must not synthesize missing results.")
+                _, script, args = next(commands(cleanup))
+                self.assertEqual((script, args), ("workshop", ["cleanup", "--dry-run"]))
+                self.assertIn("agent: null", cleanup)
+                self.assertIn(f"../{name}#stop-early", LINKS.findall(prose(foundation)))
+
+    def test_reference_returns_do_not_skip_workspace_preparation(self):
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            text = self.documents[ROOT / "docs" / f"reference.{language}.md"]
+            models = text.split('<a id="model-names"></a>', 1)[1].split('<a id="execution-path"></a>', 1)[0]
+            endpoints = text.split('<a id="endpoints"></a>', 1)[1].split('<a id="language"></a>', 1)[0]
+            with self.subTest(language=language):
+                self.assertIn(f"../{name}#workspace-settings", LINKS.findall(prose(models)))
+                self.assertIn(f"../{name}#start", LINKS.findall(prose(endpoints)))
+                self.assertNotIn(f"../{name}#lab-a", LINKS.findall(prose(endpoints)))
+
     def test_independent_commands_have_individual_checkpoints(self):
         evidence_stages = {"collect", "evaluate", "compare", "monitor", "summary", "verify"}
         guides = [(ROOT / name, evidence_stages) for name in ("README.md", "README.ko.md")]
