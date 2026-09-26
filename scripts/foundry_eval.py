@@ -781,8 +781,11 @@ def generate_rubric(label: str = "improved", timeout: int = 1800) -> dict[str, A
             save_state(state)
             print(f"Generated {generated['name']} version {generated['version']}")
         definition = project.beta.evaluators.get_version(generated["name"], generated["version"]).as_dict()["definition"]
+        record["generated_evaluator"] = {"name": generated["name"], "version": generated["version"]}
+        record["definition"] = definition
         record["dimensions"] = [{"id": item["id"], "weight": item["weight"]} for item in definition.get("dimensions", [])]
         record["pass_threshold"] = definition.get("pass_threshold")
+        write_json(path, record)
         manifest, items = suite_items(label)
         if "eval_id" not in record:
             criteria = [
@@ -823,6 +826,7 @@ def generate_rubric(label: str = "improved", timeout: int = 1800) -> dict[str, A
             }
             write_json(path, record)
     print(f"Generated rubric: {generated['name']} version {generated['version']}, pass threshold {record['pass_threshold']}")
+    print(f"Full rubric definition: {path} (generated_evaluator, definition)")
     for dimension in record["dimensions"]:
         print(f"  - {dimension['id']} (weight {dimension['weight']})")
     for key in ("policy_rubric", "generated_rubric"):

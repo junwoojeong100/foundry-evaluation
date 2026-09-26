@@ -156,7 +156,7 @@ grep -E '^LAB_(LANGUAGE|PROMPT_VERSION)=' .env
 <summary>이 값들이 중요한 이유</summary>
 
 - 이어서 하는 실행이라면 `LAB_LANGUAGE`와 `LAB_PROMPT_VERSION`을 바꾸지 않습니다. 결과와 소유권이 언어에 묶여 있습니다.
-- `LAB_PREFIX`·`LAB_AGENT_NAME`은 영문 소문자로 시작하는 3–50자의 소문자·숫자·하이픈입니다.
+- `LAB_PREFIX`·`LAB_AGENT_NAME`은 영문 소문자로 시작하는 3–50자의 소문자·숫자·하이픈입니다. 후보 배포 이름을 접두사에서 만들 때는 `-astra`까지 50자 안에 들어가도록 **`LAB_PREFIX`를 처음부터 3–44자**로 정합니다([기존 배포 이름 조건](docs/instructor.ko.md#candidate-names)).
 - `MODEL_*` 값을 바꿔도 모델이 생기지 않습니다. 조별 이름을 바꿔도 강사의 배포 이름은 유지합니다([이름 구분](docs/reference.ko.md#model-names)).
 
 </details>
@@ -196,6 +196,8 @@ python -m unittest discover -s tests -v
 - 1번에서 입력한 ID는 2–4번에서 그대로 씁니다. `.env`의 `=` 오른쪽 값만 붙여넣고, 암호·로그인 코드는 넣지 않습니다.
 - 2·3번 뒤에는 브라우저에서 `AZURE_EXPECTED_USERNAME` 계정으로 로그인하고(다른 계정이 보이면 **다른 계정 사용**) 프롬프트가 돌아올 때까지 기다립니다.
 - 2·3번에서 오류가 나면 거기서 멈추고 다음 블록으로 가지 않습니다.
+
+<a id="login-input"></a>
 
 **터미널 A — 1. ID 입력:** 이 로그인은 이 폴더의 `.azure-cli/`에만 보관합니다(공유·커밋 금지).
 
@@ -303,6 +305,8 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 **다르면:** `No such file or directory`이면 `/`로 시작하는 전체 경로를 따옴표 없이 다시 붙여넣습니다(`~`는 쓰지 않음). 경로를 잊었다면 실습 폴더를 연 VS Code 창에서 **Terminal → New Terminal**을 열고 `pwd`로 확인합니다.
 
 **복원 뒤:** 메모한 다음 미실행 블록으로 돌아갑니다. 아래 “다음: 2단계”는 처음 1단계를 마친 사람의 경로입니다. 로그인 만료 오류가 실제로 나면 [로그인 복구](docs/troubleshooting.ko.md#login)를 따릅니다.
+
+**로그인 도중 터미널을 닫았다면:** 위 복원은 `LOGIN_TENANT_ID`·`LOGIN_SUBSCRIPTION_ID`를 되살리지 않습니다. [1-3의 ID 입력 블록만](#login-input) 실행한 뒤 미완료 로그인 또는 로그인 확인부터 이어갑니다. 이미 성공한 로그인은 반복하지 않습니다.
 
 </details>
 
@@ -1190,12 +1194,13 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
 
 | 선택 | 할 일 |
 |---|---|
+| Azure 생성·변경 명령을 실행하기 전에 끝내기 | clone·설치 등 로컬 작업만 중지하고 마지막 완료 블록과 오류를 메모합니다. 정리를 위해 로그인하거나 `cleanup`·리소스 그룹 삭제를 실행하지 않습니다. Azure 생성·변경 여부가 불명확하면 아래 정리 복구로 확인합니다. |
 | 나중에 이어 하기 | 진행 중인 작업이 끝나면 같은 메모에 `마지막 완료 블록 / 다음 블록 / 실습 폴더`와 사용 중인 label을 저장합니다. 같은 폴더·설정·증거를 보존하고 [정상 중단 또는 오류에 맞게 재개](docs/troubleshooting.ko.md#resume)합니다. **터미널을 닫아도 Azure 자원 비용은 계속될 수 있습니다.** |
-| 이번 실행 끝내기 | 진행 중인 수집·배포·평가가 끝났는지 확인하고, 완료한 단계·오류·현재 증거만 기존 메모에 저장합니다. 미완료 단계의 결과를 만들지 말고 아래 [10-1 삭제 계획](#cleanup-plan)부터 진행합니다. |
+| Azure 생성·변경을 시작한 실행 끝내기 | 진행 중인 수집·배포·평가가 끝났는지 확인하고, 완료한 단계·오류·현재 증거만 기존 메모에 저장합니다. 미완료 단계의 결과를 만들지 말고 아래 [10-1 삭제 계획](#cleanup-plan)부터 진행합니다. |
 
 로컬 서버가 켜져 있다면 그 터미널에서 `Ctrl+C`로 종료합니다. 클라우드 작업 상태가 불명확하거나 배포·역할 부여 중 실패했다면, **생성된 객체가 소유권 계획에 모두 기록됐는지** 환경 소유자와 [정리 복구](docs/troubleshooting.ko.md#cleanup-recovery)에서 먼저 확인합니다. 기록 누락을 빈 계획으로 간주해 정리 완료로 보고하지 않습니다.
 
-아직 환경 준비 중이라 이 폴더의 `cleanup`을 실행할 수 없다면 환경 소유자의 [전용 환경 종료](docs/environment.ko.md#final-cleanup)를 따릅니다. 공유 그룹은 삭제하지 않습니다. 1–9단계를 끝내지 않았다면 **실습 미완료**와 실제 정리 상태를 따로 기록합니다.
+환경 준비 중 Azure 자원을 만든 뒤 이 폴더의 `cleanup`을 실행할 수 없다면 환경 소유자의 [전용 환경 종료](docs/environment.ko.md#final-cleanup)를 따릅니다. 공유 그룹은 삭제하지 않습니다. 1–9단계를 끝내지 않았다면 **실습 미완료**와 실제 정리 상태를 따로 기록합니다.
 
 </details>
 

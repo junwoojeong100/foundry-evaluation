@@ -234,9 +234,25 @@ Agent hosting과 SDK 패키지의 GA/preview 상태는 서로 다를 수 있으�
 
 **이 링크로 바로 왔다면:** 먼저 [도구 확인](#tools)과 [권한 확인](#access)을 마치고 여기로 돌아온다. 기존 서비스가 있으므로 새 환경 생성 경로로 가지 않는다.
 
-**이 경로의 순서:** 아래에서 범위를 확인하고 로컬 테스트를 통과한 뒤 [1. 설정·로그인](#existing-settings) → [2. 보조 배포](#auxiliary-model) → [3. 후보 모델과 calibration](#check-candidates) → 리허설 또는 개인 실습 복귀 순으로 진행한다.
+**이 경로의 순서:** 아래에서 범위·필수 서비스 설정을 확인하고 로컬 테스트를 통과한 뒤 [1. 설정·로그인](#existing-settings) → [2. 보조 배포](#auxiliary-model) → [3. 후보 모델과 calibration](#check-candidates) → 리허설 또는 개인 실습 복귀 순으로 진행한다.
 
 **먼저 범위를 확인한다.** Foundry 계정·프로젝트, Search, 연결된 Application Insights는 **`AZURE_RESOURCE_GROUP`의 같은 그룹**에 있어야 한다. 후보·보조 모델은 같은 Foundry 계정의 배포여야 한다. 다른 그룹이나 계정이면 멈추고 환경 소유자와 범위를 맞춘다. 예시에 맞추려고 공유 리소스를 옮기지 않는다.
+
+<a id="existing-service-checks"></a>
+
+**환경 소유자 — 리소스가 있다는 것과 사용할 준비가 됐다는 것은 다르다.** 아래 설정을 먼저 확인한다. 공유 서비스 변경은 소유자 승인 없이 하지 않는다.
+
+| 확인할 곳 | 필요한 상태와 부족할 때의 행동 |
+|---|---|
+| Azure Portal → Search → **Settings → Identity → System assigned** | **On**과 object/principal ID가 있어야 한다. Off이면 승인된 소유자가 **On → Save** 후 ID를 확인한다([공식 절차](https://learn.microsoft.com/azure/search/search-how-to-managed-identities#create-a-system-managed-identity)). `prepare-iq`는 이 identity를 사용하지만 만들지는 않는다. 공유 수업의 역할은 [공유 Search 접근 준비](#shared-search-access)에서 소유자가 맡는다. |
+| Search → **Settings → Keys** | **Role-based access control** 또는 **Both**여야 한다([확인 절차](https://learn.microsoft.com/azure/search/search-get-started-rbac#configure-role-based-access)). 아니면 소유자가 승인된 RBAC 설정과 [역할](#access)을 준비한다. key로 우회하지 않는다. |
+| New Foundry → 내 프로젝트 → **Manage → Project details → Connected resources** | 같은 그룹의 `AZURE_APPLICATION_INSIGHTS_NAME`에 해당하는 Application Insights 연결이 **하나** 있어야 한다. 연결이 없으면 아래 절차, 뒤의 preflight에서 `ResourceId` 누락이 나오면 [메타데이터 복구](#observability-repair)를 따른다. 다른 리소스에 연결됐거나 여러 개면 소유자와 확인하고 멈춘다. |
+
+**관측 연결이 없을 때만:** 승인된 소유자가 **Connected resources → Add connection → Application Insights**에서 **기존 `AZURE_APPLICATION_INSIGHTS_NAME` 리소스**를 선택하고 **Connect**한다([공식 절차](https://learn.microsoft.com/azure/foundry/observability/how-to/trace-agent-setup#use-the-project-details-connection-path)). 새 리소스를 만들거나 기존 공유 연결을 교체하지 않는다. `repair-observability`는 누락된 연결 자체를 만들지 않는다.
+
+**완료 확인:** Search identity와 RBAC가 준비됐고, Foundry 프로젝트에 의도한 Application Insights 연결 하나가 보인다. 뒤의 preflight가 연결의 `ResourceId`까지 대조한다.
+
+**다르면:** 로컬 준비를 계속하기 전에 환경 소유자가 해당 설정을 해결한다. 참가자에게 공유 설정 변경을 맡기거나 새 기반 환경으로 우회하지 않는다.
 
 미사용 clone을 **모델 준비 폴더**로 쓴다.
 
@@ -336,6 +352,8 @@ Copilot CLI 페이지에서 설정값만 준비하러 왔다면 여기서 [계�
 
 **터미널 A — 1. ID 입력:** 이 로그인은 이 폴더의 `.azure-cli/`에만 보관한다(공유·커밋 금지).
 
+<a id="login-input"></a>
+
 ```bash
 export AZURE_CONFIG_DIR="$PWD/.azure-cli" &&
 read -r -p ".env의 AZURE_TENANT_ID 값: " LOGIN_TENANT_ID &&
@@ -382,16 +400,20 @@ azd auth status --output json
 
 **다르면:** 지정한 계정으로 다시 로그인한다. 브라우저가 열리지 않으면 [로그인 문제 해결](troubleshooting.ko.md#login)을 따른다.
 
+<a id="candidate-names"></a>
+
 **편집기 — preflight 전에 후보 배포 이름 정하기:** 아래 표에 따라 `.env`의 세 `MODEL_*_DEPLOYMENT` 값을 수정한다.
+
+**실행기의 이름 조건:** 기존 배포를 포함한 세 `MODEL_*_DEPLOYMENT`는 **소문자로 시작하는 3–50자의 소문자·숫자·하이픈**이어야 한다. 새 후보 이름을 접두사에서 만들면 가장 긴 `-astra`를 포함하도록 **`LAB_PREFIX`를 처음부터 3–44자**로 정한다. 이미 실행을 시작한 폴더의 접두사를 바꾸지 않는다.
 
 | 후보 상태 | 해당 `MODEL_*_DEPLOYMENT`에 넣을 값 |
 |---|---|
 | 지정 모델·버전이 이미 배포됨 | **실제 배포 이름**을 복사. 새 접두사와 같을 필요는 없음 |
 | 후보가 아직 배포되지 않음 | 실제 `LAB_PREFIX` 뒤에 `-sol`, `-luna`, `-astra`를 붙인 미사용 이름을 예약. 아래 3번에서 없는 배포를 생성 |
 
-**완료 확인:** 세 값은 실제 기존 배포 이름이거나 아직 쓰지 않은 `<LAB_PREFIX>-sol` / `-luna` / `-astra` 이름이다.
+**완료 확인:** 세 값은 위 이름 조건을 만족하는 실제 기존 배포 이름이거나 아직 쓰지 않은 `<LAB_PREFIX>-sol` / `-luna` / `-astra` 이름이다.
 
-**다르면:** preflight를 실행하지 말고 세 값만 고친다.
+**다르면:** preflight를 실행하지 않는다. 오타만 실제 이름대로 고친다. 기존 이름이 조건 밖이면 값을 임의로 소문자화하지 말고, 환경 소유자가 같은 모델·버전의 호환 이름 배포를 준비할지 비용·범위와 함께 승인받는다.
 
 템플릿의 `ll-team01-sol` 같은 이름이 실제 배포의 존재를 뜻하지는 않는다. 고정 [모델 ID·버전](reference.ko.md#model-names)은 유지하며 보조 배포는 아래에서 별도로 준비한다.
 
@@ -484,16 +506,26 @@ python scripts/workshop.py calibrate
 <a id="azd-초기화"></a>
 <a id="observability-repair"></a>
 
-평가가 Application Insights `ResourceId` metadata 누락을 보고하면 재시도 전에 아래 소유자 전용 복구를 연다.
+preflight·calibration·평가·trace 조회가 Application Insights `ResourceId` metadata 누락을 보고하면 재시도 전에 아래 소유자 전용 복구를 연다.
 
 <details>
 <summary>소유자 전용 관측 복구</summary>
 
-[관측 증상 행](troubleshooting.ko.md#symptoms)을 따른다. 승인된 강사만 전용 실습 연결을 복구할 수 있으며, 예시를 맞추려고 공유 연결을 수정하지 않는다.
+승인된 환경 소유자만 전용 실습 연결을 복구할 수 있으며, 예시를 맞추려고 공유 연결을 수정하지 않는다.
+
+연결 자체가 없으면 먼저 [기존 서비스 설정](#existing-service-checks)을 따른다. `ResourceId`가 다른 리소스를 가리키면 자동 복구하지 말고 환경 소유자와 연결 대상을 확인한다.
 
 `python scripts/workshop.py repair-observability --confirm`은 이 연결이 실습 전용임을 확인한 뒤에만 사용한다.
 
-원인을 해결한 뒤 저장된 run 상태에 따라 [calibration 복구](troubleshooting.ko.md#calibration) 또는 [평가 복구](troubleshooting.ko.md#evaluation-retry)를 선택한다. 로컬 오류만으로 `--retry-failed`를 사용하거나 낮은 점수를 통과할 때까지 반복하지 않는다.
+**복구 후에는 원래 실패한 명령으로 돌아간다.**
+
+| 실패했던 명령 | 복귀 지점 |
+|---|---|
+| `preflight` | 기존 환경 준비라면 [후보 점검](#check-candidates), 참가자라면 [README 1-4](../README.ko.md#project-binding) |
+| 새 환경의 `prepare-models` | [환경 준비 6-1](environment.ko.md#setup-candidates) |
+| `calibrate` / `evaluate` / `monitor` | 각각 [calibration 복구](troubleshooting.ko.md#calibration) / [평가 복구](troubleshooting.ko.md#evaluation-retry) / [trace 복구](troubleshooting.ko.md#telemetry) |
+
+아직 평가 run이 없는 preflight 실패를 trace·평가 복구로 보내지 않는다. 로컬 오류만으로 `--retry-failed`를 사용하거나 낮은 점수를 통과할 때까지 반복하지 않는다.
 
 </details>
 
@@ -564,6 +596,8 @@ cd foundry-evaluation-rehearsal-ko
 
 ## 레벨 2·3 준비
 
+**레벨 3의 시작 전 확인에서 왔다면:** 환경 소유자와 아래 필요한 준비만 확인·완료한 뒤 [레벨 3의 1절](level-3.ko.md#generate-rubric)로 돌아간다. 리허설·정리 경로는 리허설을 진행하는 강사에게만 해당한다.
+
 가르칠 레벨([레벨 2](level-2.ko.md), [레벨 3](level-3.ko.md))만 리허설 clone의 README 9단계 뒤, 10단계 전에 리허설한다. 참가자는 자기 폴더에서 9단계와 10단계 사이에 진행한다. 팀이 시작하기 전에 trace 접근, judge·Sol 용량, 3절을 가르친다면 red team 승인, 정리 범위를 확인한다. 레벨 3의 4절은 참가자 권한으로 Foundry 계정의 평가 API를 호출하므로, 참가자에게 Foundry 계정 범위의 **Foundry User**가 필요하다. [전용 새 환경 생성](environment.ko.md)의 `user-foundry`가 만드는 프로젝트 범위 할당만으로는 부족하다.
 
 **터미널 — 기존 기반 환경의 trace 접근 준비:** 공유 기반 환경의 모델 준비 폴더에서 한 번 실행한다. 성공한 뒤에는 리허설 폴더와 조별 폴더에서 반복하지 않는다. [전용 새 환경 생성](environment.ko.md) 경로로 만든 새 환경에는 이미 이 역할이 있다.
@@ -599,7 +633,7 @@ python scripts/workshop.py prepare-trace-access
 
 </details>
 
-**다음:** 리허설 clone에서 [README 10단계](../README.ko.md#cleanup)를 실행한 뒤 [전달 전 최종 모델 확인](#final-model-check)으로 간다.
+**다음:** 사전 준비 확인만 했다면 [레벨 3의 1절](level-3.ko.md#generate-rubric)로 돌아간다. 선택 레벨 리허설까지 마친 강사만 리허설 clone에서 [README 10단계](../README.ko.md#cleanup)를 실행한 뒤 [전달 전 최종 모델 확인](#final-model-check)으로 간다.
 
 <a id="final-model-check"></a>
 

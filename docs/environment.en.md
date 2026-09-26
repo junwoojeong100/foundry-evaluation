@@ -8,10 +8,11 @@
 
 **Self-study:** “instructor” and “environment owner” mean you. Follow the prerequisites below → steps 1–6 here → README 1-4 `bind`. Do not run the instructor rehearsal or team handoff.
 
-**Check two prerequisites.** Do not repeat checks you already finished.
+**Check three prerequisites.** Do not repeat checks you already finished.
 
 1. Finish [tool installation and checks](instructor.en.md#tools): Git, Python 3.13, Azure CLI, azd and its extension, Bash/WSL, curl, an editor, and a browser.
 2. Check [access](instructor.en.md#access). Use an active subscription Owner role, or have an approved access administrator support the required resource creation and scoped role assignments.
+3. **Network policy:** this path **enables public network access** on Foundry and Search and uses Entra authentication. Confirm your organization permits this configuration before creation. Workspace isolation is not network isolation. If it is not permitted, stop and arrange an approved configuration with the owner; do not bypass policy.
 
 **Then return to [step 1 on this page](#setup-workspace).** Use one Bash/WSL terminal and run one block at a time. Do not continue through the rest of the instructor guide.
 
@@ -152,6 +153,8 @@ pwd
 
 **If not:** use [setup recovery](troubleshooting.en.md#setup-resume) to check the existing paths. Do not create a new run ID.
 
+**If you paused during sign-in:** run `cd "$RUN_DIR/workshop"` and [only 2-1's ID-input block](#login-input) to restore `LOGIN_TENANT_ID` and `LOGIN_SUBSCRIPTION_ID`. Continue the unfinished sign-in or verification without repeating successful sign-ins.
+
 </details>
 
 <a id="setup-snapshot"></a>
@@ -201,6 +204,8 @@ Start step 2 in **`$RUN_DIR/workshop`**; step 2-2 then sends you back to **`$REP
 Sign in from **`$RUN_DIR/workshop`** so the English agent later uses this isolated CLI profile. Do **not** run README `preflight` or `bind` yet; the foundation does not exist.
 
 After each sign-in command, finish browser sign-in with the `.env` account, `AZURE_EXPECTED_USERNAME`. Choose **Use another account** if a different one appears.
+
+<a id="login-input"></a>
 
 **Terminal — runtime folder (`$RUN_DIR/workshop`):** enter the IDs. This keeps the sign-in in this folder's `.azure-cli/` (never share or commit it):
 

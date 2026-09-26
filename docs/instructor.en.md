@@ -231,9 +231,25 @@ Use this path only when the foundation services already exist. If you completed 
 
 **If you arrived directly at this link:** finish the [tool checks](#tools) and [access checks](#access), then return here. Do not create a new environment when these services already exist.
 
-**Order for this path:** check the scope and pass the local tests below, then [1. settings and sign-in](#existing-settings) → [2. auxiliary deployment](#auxiliary-model) → [3. candidates and calibration](#check-candidates) → rehearsal or self-study handoff.
+**Order for this path:** check the scope and required service settings, pass the local tests below, then [1. settings and sign-in](#existing-settings) → [2. auxiliary deployment](#auxiliary-model) → [3. candidates and calibration](#check-candidates) → rehearsal or self-study handoff.
 
 **Check the scope first:** the Foundry account/project, Search, and connected Application Insights must be in the configured **`AZURE_RESOURCE_GROUP`**, and the candidate and auxiliary models must be deployments of that Foundry account. If they are split across groups or accounts, stop and align the setup with the owner; do not move shared resources to fit the example.
+
+<a id="existing-service-checks"></a>
+
+**Environment owner — existing resources are not necessarily ready to use.** Check these settings first; do not change shared services without the owner's approval.
+
+| Where to check | Required state and action if missing |
+|---|---|
+| Azure Portal → Search → **Settings → Identity → System assigned** | **On**, with an object/principal ID. If Off, the authorized owner selects **On → Save** and checks the ID ([official steps](https://learn.microsoft.com/azure/search/search-how-to-managed-identities#create-a-system-managed-identity)). `prepare-iq` uses this identity but does not create it. For a shared class, the owner handles its role through [shared Search access preparation](#shared-search-access). |
+| Search → **Settings → Keys** | **Role-based access control** or **Both** ([check procedure](https://learn.microsoft.com/azure/search/search-get-started-rbac#configure-role-based-access)). Otherwise, the owner prepares approved RBAC settings and [roles](#access); do not bypass this with a key. |
+| New Foundry → your project → **Manage → Project details → Connected resources** | Exactly **one** Application Insights connection to `AZURE_APPLICATION_INSIGHTS_NAME` in the same group. If absent, follow the procedure below; if the later preflight reports missing `ResourceId`, use [metadata repair](#observability-repair). Stop and check with the owner if there are multiple connections or a different target. |
+
+**Only when the observability connection is absent:** the authorized owner selects **Connected resources → Add connection → Application Insights**, chooses the **existing `AZURE_APPLICATION_INSIGHTS_NAME` resource**, and selects **Connect** ([official steps](https://learn.microsoft.com/azure/foundry/observability/how-to/trace-agent-setup#use-the-project-details-connection-path)). Do not create another resource or replace an existing shared connection. `repair-observability` does not create a missing connection.
+
+**Checkpoint:** Search identity and RBAC are ready, and the Foundry project shows the one intended Application Insights connection. The later preflight also checks its `ResourceId`.
+
+**If not:** have the environment owner resolve the setting before continuing local preparation. Do not delegate shared-setting changes to participants or create a new foundation as a workaround.
 
 Use an unused clone as your **model-preparation folder**.
 
@@ -333,6 +349,8 @@ After the local tests pass, sign in from the **model-preparation folder** so thi
 
 **Terminal A — 1. enter the IDs:** this keeps the sign-in in this folder's `.azure-cli/` (never share or commit it):
 
+<a id="login-input"></a>
+
 ```bash
 export AZURE_CONFIG_DIR="$PWD/.azure-cli" &&
 read -r -p "AZURE_TENANT_ID value from .env: " LOGIN_TENANT_ID &&
@@ -379,16 +397,20 @@ azd auth status --output json
 
 **If not:** sign in again with the configured account; if no browser opens, see [authentication troubleshooting](troubleshooting.en.md#login).
 
+<a id="candidate-names"></a>
+
 **Editor — choose candidate deployment names before preflight:** update the three `MODEL_*_DEPLOYMENT` values in `.env` using this table.
+
+**Runner naming requirements:** all three `MODEL_*_DEPLOYMENT` values, including existing deployments, must use **3–50 lowercase letters, digits, or hyphens and start with a lowercase letter**. When deriving new candidate names, **choose a 3–44-character `LAB_PREFIX` from the start** to fit the longest suffix, `-astra`. Do not change the prefix of a folder whose run already started.
 
 | Candidate state | Value for its `MODEL_*_DEPLOYMENT` |
 |---|---|
 | The required model/version is already deployed | Copy its **actual deployment name**; it does not need your new prefix. |
 | The candidate is not deployed yet | Reserve an unused name formed from your actual `LAB_PREFIX` plus `-sol`, `-luna`, or `-astra`. Step 3 creates the missing deployments. |
 
-**Checkpoint:** each `MODEL_*_DEPLOYMENT` value is either an actual existing deployment name or an unused `<LAB_PREFIX>-sol` / `-luna` / `-astra` name.
+**Checkpoint:** each `MODEL_*_DEPLOYMENT` value meets the naming requirements and is either an actual existing deployment name or an unused `<LAB_PREFIX>-sol` / `-luna` / `-astra` name.
 
-**If not:** fix only those three `.env` values before running preflight.
+**If not:** do not run preflight. Correct typos to the actual names only. If an existing name is incompatible, do not merely lowercase the setting; have the owner obtain approval for the cost and scope of a compatible-name deployment with the same model/version.
 
 Template names such as `ll-team01-sol` are not proof of an existing deployment. Keep the fixed [model IDs and versions](reference.en.md#model-names); prepare the auxiliary deployment separately below.
 
@@ -480,16 +502,26 @@ python scripts/workshop.py calibrate
 
 <a id="observability-repair"></a>
 
-If evaluation reports missing Application Insights `ResourceId` metadata, open the owner-only recovery below before retrying.
+If preflight, calibration, evaluation, or trace lookup reports missing Application Insights `ResourceId` metadata, open the owner-only recovery below before retrying.
 
 <details>
 <summary>Owner-only observability recovery</summary>
 
-Use the [observability symptom row](troubleshooting.en.md#symptoms). Only an authorized instructor may repair a dedicated workshop connection; never modify a shared connection to make an example work.
+Only an authorized environment owner may repair a dedicated workshop connection; never modify a shared connection to make an example work.
+
+If the connection itself is absent, first use [existing-service setup](#existing-service-checks). If `ResourceId` points to another resource, stop and check the intended target with the owner instead of repairing automatically.
 
 Use `python scripts/workshop.py repair-observability --confirm` only after confirming the connection is dedicated to this workshop.
 
-After resolving the cause, choose [calibration recovery](troubleshooting.en.md#calibration) or [evaluation recovery](troubleshooting.en.md#evaluation-retry) based on the saved run status. A local error alone does not authorize `--retry-failed`; never retry a valid low score to force a pass.
+**After repair, return to the command that originally failed.**
+
+| Failed command | Return to |
+|---|---|
+| `preflight` | [Candidate check](#check-candidates) for existing-environment preparation, or [README 1-4](../README.md#project-binding) for participants |
+| New-environment `prepare-models` | [Environment 6-1](environment.en.md#setup-candidates) |
+| `calibrate` / `evaluate` / `monitor` | [Calibration recovery](troubleshooting.en.md#calibration) / [evaluation recovery](troubleshooting.en.md#evaluation-retry) / [trace recovery](troubleshooting.en.md#telemetry), respectively |
+
+Do not send an initial preflight failure to trace/evaluation recovery before any run exists. A local error alone does not authorize `--retry-failed`; never retry a valid low score to force a pass.
 
 </details>
 
@@ -560,6 +592,8 @@ Keep the local server in a trusted development environment, never expose it publ
 
 ## Prepare Levels 2 and 3
 
+**If Level 3's prerequisites brought you here:** have the environment owner check or finish only the required preparation below, then return to [Level 3 section 1](level-3.en.md#generate-rubric). The rehearsal and cleanup path applies only to an instructor conducting a rehearsal.
+
 Rehearse only the levels you will teach ([Level 2](level-2.en.md), [Level 3](level-3.en.md)), after README step 9 in the rehearsal clone and before its step 10. Teams do them between steps 9 and 10 in their own folders. Before teams start, confirm trace access, judge and Sol capacity, red-team approval if you teach section 3, and cleanup boundaries. Level 3 section 4 calls the Foundry account's evaluation API as each participant, so participants need **Foundry User** on the Foundry account; a project-scope assignment, such as the one `user-foundry` creates in the [new-environment guide](environment.en.md), is not enough.
 
 **Terminal — prepare trace access for existing foundations:** run once in the model-preparation folder for the shared foundation. Rehearsal and team folders do not need this command after it succeeds. New environments created with [the new-environment guide](environment.en.md) already have these roles.
@@ -595,7 +629,7 @@ If teaching Levels 2–3, rehearse capacity, trace access, red-team approval, an
 
 </details>
 
-**Next:** run [README step 10](../README.md#cleanup) in the rehearsal clone, then the [final model check](#final-model-check).
+**Next:** after prerequisite checks only, return to [Level 3 section 1](level-3.en.md#generate-rubric). Only an instructor who finished the optional-level rehearsal runs [README step 10](../README.md#cleanup) in the rehearsal clone, then the [final model check](#final-model-check).
 
 <a id="final-model-check"></a>
 

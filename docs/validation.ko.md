@@ -39,7 +39,7 @@ python scripts/workshop.py summary --labels baseline
 
 **다르면:** `comparison.json`이 없거나 `baseline`이 빠졌다고 나오면 [6-1](../README.ko.md#6-1-결과-집계와-검토-대상-찾기)의 `compare` 블록을 실행한 뒤 이 `summary`를 다시 실행한다. `collect`나 `evaluate`는 반복하지 않는다.
 
-**다음:** [README 6-2](../README.ko.md#review-case)로 돌아가 이 목록의 첫 `row_id`를 고른다.
+**다음:** 6-1의 trace 확인을 아직 마치지 않았다면 [baseline `monitor`](../README.ko.md#baseline-traces)부터 완료한다. 검토 저장에는 이 명령이 만드는 `telemetry.json`이 필요하다. 이미 완료했다면 [README 6-2](../README.ko.md#review-case)로 돌아가 이 목록의 첫 `row_id`를 고른다.
 
 **터미널 — 7-4, 같은 dev의 전후 값·검토 사례의 V2 결과·미통과 행:**
 

@@ -784,6 +784,81 @@ class Level2Tests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "already holds a 15-question run. Re-run with --count 15"):
                     stress_test("sol", 20)
 
+    def test_generated_rubric_persists_full_criteria_for_new_and_completed_runs(self):
+        from contextlib import nullcontext
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        from foundry_eval import generate_rubric
+
+        generated = {"key": "generated_rubric", "name": "ll-test-generated-rubric", "version": "7"}
+        definition = {
+            "type": "rubric", "pass_threshold": 0.7,
+            "dimensions": [{
+                "id": "policy_decision", "weight": 2,
+                "description": "Check the decision against the dated policy, not wording alone.",
+                "rubric": {"0": "The decision contradicts the policy.", "1": "The decision follows the policy."},
+            }],
+        }
+        counts = {"policy_rubric": {"passed": 1, "total": 1}, "generated_rubric": {"passed": 0, "total": 1}}
+        failed_rows = {"policy_rubric": [], "generated_rubric": ["improved-sol-D01"]}
+        output = {
+            "status": "completed", "datasource_item": {"row_id": "improved-sol-D01"},
+            "results": [{"name": "policy_rubric", "passed": True}, {"name": "generated_rubric", "passed": False}],
+        }
+        for cached in (False, True):
+            with self.subTest(cached=cached), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "rubric-compare.json"
+                if cached:
+                    path.write_text(json.dumps({
+                        "eval_id": "eval-1", "run_id": "run-1", "status": "completed", "label": "improved",
+                        "counts": counts, "failed_rows": failed_rows, "job_id": "original-generation-job",
+                    }), encoding="utf-8")
+                evaluators = SimpleNamespace(
+                    get_version=Mock(return_value=SimpleNamespace(as_dict=lambda: {"definition": definition})),
+                    create_generation_job=Mock(side_effect=AssertionError("Do not regenerate the owned rubric")),
+                )
+                runs = SimpleNamespace(
+                    create=Mock(return_value=SimpleNamespace(id="run-1", status="completed")),
+                    output_items=SimpleNamespace(list=Mock(return_value=[
+                        SimpleNamespace(model_dump=lambda **_: output),
+                    ])),
+                )
+                client = SimpleNamespace(evals=SimpleNamespace(
+                    create=Mock(return_value=SimpleNamespace(id="eval-1")), runs=runs,
+                ))
+                project = SimpleNamespace(
+                    beta=SimpleNamespace(evaluators=evaluators), get_openai_client=lambda: nullcontext(client),
+                )
+                with patch("foundry_eval.LEVEL3_DIR", path.parent), \
+                        patch("foundry_eval.RuntimeConfig.from_env",
+                              return_value=SimpleNamespace(prefix="ll-test", language="en")), \
+                        patch("foundry_eval.load_state", return_value={"owned_evaluators": [generated]}), \
+                        patch("foundry_eval.required", return_value="judge"), \
+                        patch("foundry_eval.owned_evaluator",
+                              return_value={"name": "ll-test-policy-rubric", "version": "1"}), \
+                        patch("foundry_eval.suite_items", return_value=({"run_id": "source-1"}, [])), \
+                        patch("foundry_eval.project_client", side_effect=lambda _: nullcontext(project)), \
+                        patch("builtins.print") as printed:
+                    result = generate_rubric("improved")
+                saved = json.loads(path.read_text(encoding="utf-8"))
+                self.assertEqual(saved, result)
+                self.assertEqual(saved["definition"], definition)
+                self.assertEqual(saved["generated_evaluator"], {"name": generated["name"], "version": "7"})
+                self.assertEqual(saved["counts"], counts)
+                self.assertEqual(saved["failed_rows"], failed_rows)
+                self.assertEqual(saved["dimensions"], [{"id": "policy_decision", "weight": 2}])
+                self.assertEqual(saved["pass_threshold"], 0.7)
+                if cached:
+                    self.assertEqual(saved["job_id"], "original-generation-job")
+                evaluators.get_version.assert_called_once_with(generated["name"], "7")
+                evaluators.create_generation_job.assert_not_called()
+                for operation in (client.evals.create, runs.create, runs.output_items.list):
+                    self.assertEqual(operation.call_count, int(not cached))
+                self.assertIn(
+                    f"Full rubric definition: {path} (generated_evaluator, definition)",
+                    [call.args[0] for call in printed.call_args_list],
+                )
+
     def red_team_items(self):
         items = []
         for strategy in ("baseline", "base64", "flip"):

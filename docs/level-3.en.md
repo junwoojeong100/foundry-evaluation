@@ -41,13 +41,15 @@
 python scripts/workshop.py generate-rubric --label improved
 ```
 
-**Checkpoint:** `Generated rubric: <LAB_PREFIX>-generated-rubric version 1, pass threshold ...`, a list of dimensions with weights, then `policy_rubric: .../18 passed on improved` and `generated_rubric: .../18 passed on improved`, each with its failed rows or `none`.
+**Checkpoint:** `Generated rubric: <LAB_PREFIX>-generated-rubric version 1, pass threshold ...`, the `Full rubric definition:` file path, a list of dimensions with weights, then `policy_rubric: .../18 passed on improved` and `generated_rubric: .../18 passed on improved`, each with its failed rows or `none`.
 
 **If not:** after the command exits with `Rubric generation is still running` or `The run is still in progress`, repeat it to resume. For other errors, see [Level 2 and 3 recovery](troubleshooting.en.md#levels).
 
+**Editor — open the complete scoring criteria:** open `src/agent/.foundry/results/level3/rubric-compare.json`. Match `generated_evaluator`'s `name` and `version` with the printed values, then read **the dimension descriptions, scoring rules, weights, and `pass_threshold` in `definition`**. IDs and weights in `dimensions` alone do not complete this review. If these fields are missing from an older completed record, run the same command once to save the definition; it reuses the completed comparison run without rescoring.
+
 **Read it:**
 
-- **Do not accept generated criteria without review.** Read whether each criterion checks policies, decisions, amounts, and citations appropriately. Generation uses an LLM, so criteria and weights can differ between teams and runs.
+- **Do not accept generated criteria without review.** Check the full definition above against policies, decisions, amounts, and citations. Generation uses an LLM, so criteria and weights can differ between teams and runs.
 - **Start with the business failures from your main-guide 7-4 notes, even if both rubrics say `failed rows: none`.** For each business-failed V2 row, check whether its ID appears in each rubric's failed-row list. If absent, that rubric passed a response that failed the business contract; record the missed check. With no business failures, record that fact rather than inventing one. A rubric does not replace the decision, amount, and citation checks.
 
 <details>
@@ -193,7 +195,7 @@ python scripts/workshop.py evaluate-agent --split dev
 
 - **This is how a pipeline evaluates an agent.** There is no collector code: Foundry calls the agent and applies the evaluators, as `azd ai agent eval run` and CI jobs do.
 - **Level 2's code evaluator grades the live answers,** so offline and live results use the same business contract.
-- **Compare with your saved `improved` result model by model.** The answers are new, so a model can pass a row here that it failed in step 7, or the reverse. That is model variation, not an evaluator change.
+- **Compare with your saved `improved` result model by model.** The business checks are the same, but **both retrieved evidence and model responses can change** on a new call. Compare the same case's answer, decision, citations, and retrieved evidence in its trace; record unconfirmed causes as unknown. Do not attribute pass-count differences to model variation alone.
 
 <details>
 <summary>How Foundry calls this hosted invocations agent</summary>
@@ -287,6 +289,10 @@ python scripts/workshop.py continuous-eval
 **Checkpoint:** `HH:MM UTC  completed  N traces: relevance .../N, task_adherence .../N, indirect_attack .../N`, with **N at least 1**. Creating the schedule alone is not completion. Record the time, trace count, and all three evaluation results.
 
 **If not:** for `in_progress` or `queued`, check again in a minute with the same command. For `failed`, an error, or zero traces, record the section as incomplete and check traffic and access with the instructor. Do not delete and recreate the schedule.
+
+<a id="continuous-expired"></a>
+
+**If resuming later:** open `src/agent/.foundry/results/level3/continuous.json` and compare `ends` with the current **UTC date and time**. Repeating the command does not restart an expired schedule. Check an already-started `queued`/`in_progress` run until it finishes. With neither an active run nor a completed result meeting the row-level checkpoint below, record **section 6 incomplete**, report the missing-result block in [section 7](#release-gate), then clean up. Do not manufacture completion through a new schedule or repeated lookups.
 
 **Portal — check row-level results:** open the printed `Portal:` link and select the completed run you recorded above. The portal may display local time: **06:00 UTC = 15:00 KST**, not 06:00 KST. If the time is unclear, open `src/agent/.foundry/results/level3/continuous.json` in your editor, find that entry in `runs` by its UTC `created` value, and match its `run_id` with the ID in the opened run's URL.
 
@@ -401,7 +407,9 @@ Check and save the [results table](#level-3-results) you filled in within the ex
 <details>
 <summary>Optional: run the same checks in GitHub Actions</summary>
 
-[`ci/release-gate.yml`](../ci/release-gate.yml) runs the same commands for a new candidate: its `evaluate` job runs [`ci/evaluate-candidate.sh`](../ci/evaluate-candidate.sh) (main-guide steps 5–9 and sections 4–5, plus section 3 when the `red_team` input is enabled) against agent versions you already deployed, and its `gate` job runs `gate --composite --waive continuous` on the saved results, adding `--waive red-team` when `red_team` is off. A non-zero exit stops the release.
+[`ci/release-gate.yml`](../ci/release-gate.yml) runs the same commands for a new candidate: its `evaluate` job runs [`ci/evaluate-candidate.sh`](../ci/evaluate-candidate.sh) (the main guide's collection, evaluation, traces, and verification, plus sections 4–5 and section 3 when `red_team` is enabled) against agent versions you already deployed, and its `gate` job runs `gate --composite --waive continuous` on the saved results, adding `--waive red-team` when `red_team` is off. A non-zero exit stops the release.
+
+**Outside this CI run:** it does not run step 5-1's `calibrate`. CI completion is not evidence that judge calibration was checked again.
 
 **Before you start:** keep the V1/V2 agent versions deployed through main-guide step 7-2, plus their KB and models. Do this optional exercise **before README step 10 cleanup**. If already deleted, skip CI for this run rather than redeploying to reconstruct the results.
 

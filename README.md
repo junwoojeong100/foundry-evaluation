@@ -154,7 +154,7 @@ grep -E '^LAB_(LANGUAGE|PROMPT_VERSION)=' .env
 <summary>Why these values matter</summary>
 
 - Keep `LAB_LANGUAGE` and `LAB_PROMPT_VERSION` unchanged when resuming a run; results and ownership are language-bound.
-- Team names in `LAB_PREFIX` and `LAB_AGENT_NAME` use 3–50 lowercase letters, digits, or hyphens and start with a letter.
+- Team names in `LAB_PREFIX` and `LAB_AGENT_NAME` use 3–50 lowercase letters, digits, or hyphens and start with a letter. When deriving candidate deployment names, **choose a 3–44-character `LAB_PREFIX` from the start** so the `-astra` suffix fits within 50 characters ([existing deployment-name requirements](docs/instructor.en.md#candidate-names)).
 - Changing a `MODEL_*` value does not create a model. Keep the instructor's names even when you change team names ([name distinctions](docs/reference.en.md#model-names)).
 
 </details>
@@ -194,6 +194,8 @@ python -m unittest discover -s tests -v
 - Block 1 stores the IDs that blocks 2–4 reuse. Paste only the values after `=` from `.env`, never a password or login code.
 - After blocks 2 and 3, finish the browser sign-in as `AZURE_EXPECTED_USERNAME` (choose **Use another account** if needed) and wait for the prompt.
 - If block 2 or 3 shows an error, stop there and do not run the next block.
+
+<a id="login-input"></a>
 
 **Terminal A — 1. enter the IDs:** this keeps the sign-in in this folder's `.azure-cli/` (never share or commit it):
 
@@ -297,6 +299,8 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 **If not:** for `No such file or directory`, paste the full path starting with `/` again, without quotes and without `~`. If you forgot it, use **Terminal → New Terminal** in the VS Code window that has your workshop folder open, then run `pwd`.
 
 **After restoring:** return to the next unexecuted block in your notes. “Next: step 2” below is only for someone finishing step 1 for the first time. If a command reports an expired sign-in, use [sign-in recovery](docs/troubleshooting.en.md#login).
+
+**If you closed the terminal during sign-in:** restoration does not restore `LOGIN_TENANT_ID` or `LOGIN_SUBSCRIPTION_ID`. Run [only 1-3's ID-input block](#login-input), then continue the unfinished sign-in or verification. Do not repeat successful sign-ins.
 
 </details>
 
@@ -1158,12 +1162,13 @@ Stay in this folder. **Do not start these extras after step 10; it deletes the a
 
 | Choice | Action |
 |---|---|
+| End before running any Azure creation/change command | Stop local work such as cloning or installation and note the last completed block and error. Do not sign in, run `cleanup`, or delete a resource group just to finish. If unsure whether Azure changes started, use cleanup recovery below. |
 | Continue later | Once active work finishes, save `Last completed block / Next block / Workshop folder` and the labels in use in the same notes. Keep the same folder, settings, and evidence; [resume according to a normal pause or error](docs/troubleshooting.en.md#resume). **Closing the terminal may leave Azure resources costing money.** |
-| End this run | Confirm that active collection, deployment, and evaluation work has finished. Save only completed steps, errors, and existing evidence in your current notes. Do not create results for unfinished steps; continue to [10-1's deletion plan](#cleanup-plan). |
+| End a run that started creating/changing Azure resources | Confirm that active collection, deployment, and evaluation work has finished. Save only completed steps, errors, and existing evidence in your current notes. Do not create results for unfinished steps; continue to [10-1's deletion plan](#cleanup-plan). |
 
 If your local server is still running, stop it with `Ctrl+C` in its terminal. If a cloud job's state is unclear or deployment/role assignment failed, first work with the owner through [cleanup recovery](docs/troubleshooting.en.md#cleanup-recovery) to confirm **every created object is recorded in the ownership plan**. Missing records do not make an empty plan proof of completed cleanup.
 
-If environment setup is still incomplete and this folder cannot run `cleanup`, the owner uses [exclusive-environment shutdown](docs/environment.en.md#final-cleanup). Never delete a shared group. If steps 1–9 were not completed, record **workshop incomplete** separately from the actual cleanup status.
+If setup created Azure resources but this folder cannot yet run `cleanup`, the owner uses [exclusive-environment shutdown](docs/environment.en.md#final-cleanup). Never delete a shared group. If steps 1–9 were not completed, record **workshop incomplete** separately from the actual cleanup status.
 
 </details>
 

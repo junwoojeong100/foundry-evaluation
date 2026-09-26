@@ -38,7 +38,7 @@ python scripts/workshop.py summary --labels baseline
 
 **If not:** if it says `comparison.json` is missing or lacks `baseline`, run the [6-1](../README.md#6-1-aggregate-the-results-and-find-a-row-to-review) `compare` block, then rerun this `summary`. Do not rerun `collect` or `evaluate`.
 
-**Next:** return to [README 6-2](../README.md#review-case) and choose the first `row_id` in that list.
+**Next:** if 6-1's trace check is unfinished, complete [baseline `monitor`](../README.md#baseline-traces) first; saving the review needs its `telemetry.json`. If already complete, return to [README 6-2](../README.md#review-case) and choose the first `row_id` in that list.
 
 **Terminal — step 7-4, same-dev changes, the reviewed case's V2 result, and failed rows:**
 

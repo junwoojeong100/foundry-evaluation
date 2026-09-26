@@ -29,6 +29,7 @@ In this guide, “instructor” and “environment owner” mean the instructor 
 
 | How you stopped | What to do now |
 |---|---|
+| Closed the terminal during sign-in without an error | [Restore the terminal](../README.md#resume-shell), then run [only the ID-input block](../README.md#login-input) to restore `LOGIN_TENANT_ID` and `LOGIN_SUBSCRIPTION_ID`. Continue unfinished sign-in/verification without repeating successful sign-ins. For environment preparation, use [setup resume](#setup-resume). |
 | Virtual environment exists; normal break with the last completed block noted | [Restore the terminal](../README.md#resume-shell) in the existing folder and start the **next block** in your notes. For example: 2-3 completed → start 3-1. Do not repeat completed deployment, collection, or evaluation. |
 | Before creating the virtual environment (before 1-2) | Return to the existing folder in Bash and continue after the last completed block. Do not run `source .../activate` yet. If 1-1 is complete, continue [1-2](../README.md#python-setup). |
 | An error occurred, or completion is uncertain | Use the failed-stage table and saved state below. File existence alone does not establish portal checks or human review. |
@@ -143,7 +144,8 @@ Use the matching row, then return to the failed checkpoint. If it persists, pres
 | Retrieval | IQ 400 | The pinned API/schema or planner deployment may not match. | Inspect those three items; return to [policy retrieval](../README.md#policy-retrieval). |
 | Setup | CLI extension notice after JSON | The supplied parser separates recognized notices only. | Do not upgrade mid-experiment; return to [preflight](../README.md#project-binding). |
 | Sign-in | CLI credential timeout | Token refresh delay can look like login failure. | Distinguish timeout from failed login; return to [login check](../README.md#login-check). |
-| Trace | Missing App Insights `ResourceId` metadata | The dedicated connection metadata may be incomplete. | The environment owner follows the [owner-only observability repair](instructor.en.md#observability-repair); return to [trace recovery](#telemetry). |
+| Setup/trace | No Application Insights connection or multiple connections | Existing resources do not establish a project connection. | The owner checks [existing-service settings](instructor.en.md#existing-service-checks), then returns to the original failed command. |
+| Setup/evaluation/trace | Missing App Insights `ResourceId` metadata | The dedicated connection metadata may be incomplete. | Follow the original-command return table in [owner-only observability repair](instructor.en.md#observability-repair). Do not start trace/evaluation recovery after an initial preflight failure. |
 
 </details>
 
@@ -202,9 +204,17 @@ python -m unittest discover -s tests -v
 
 <a id="login"></a>
 
-## If the authentication browser does not open
+## If sign-in fails or authentication expires
 
-First run the **CLI-profile and tenant/subscription input block** from [README step 1-3](../README.md#login) in the same terminal.
+**First note the original failed command and stage, then restore only the ID inputs in the correct folder.** Do not switch `AZURE_CONFIG_DIR` to another clone.
+
+| Path being recovered | Restore the CLI profile and ID inputs |
+|---|---|
+| Participant README or a workshop already in progress | In the existing workshop folder, run [only the README ID-input block](../README.md#login-input). |
+| Existing-environment preparation | In the model-preparation folder, run [only its ID-input block](instructor.en.md#login-input). |
+| New-environment steps 2–6 | First `cd "$RUN_DIR/workshop"`, then run [only the environment ID-input block](environment.en.md#login-input). If `REPO_ROOT` or `RUN_DIR` is lost, [restore the existing paths](#setup-resume) first. |
+
+The new-environment CLI profile is **`$RUN_DIR/workshop/.azure-cli`**. Setting it to `$PWD/.azure-cli` in the original provisioning clone selects a different cache; enter the IDs from the runtime folder above.
 
 **Run only the command for the CLI whose sign-in failed.** If both need sign-in, run Azure CLI first, then azd.
 
@@ -242,8 +252,10 @@ Follow one row for **the path you were on before opening this page**. Run its ve
 | Participant README 1-3 | [README block 3: azd](../README.md#azd-login) | [README sign-in check](../README.md#login-check) | README 1-4 project check |
 | New environment 2-1 | [Environment azd sign-in](environment.en.md#azd-login) | [Environment sign-in check](environment.en.md#login-check) | That guide's 2-2 identity, preservation, and capacity check |
 | Existing-environment preparation 1 | [Existing-environment azd sign-in](instructor.en.md#azd-login) | [Existing-environment sign-in check](instructor.en.md#login-check) | Choose candidate deployment names there → 2 auxiliary deployment |
+| Authentication expired during the workshop or existing-environment preparation | Do not restart initial sign-in; recover only the expired CLI above | Only the sign-in check from the [README](../README.md#login-check) for the workshop, or [existing-environment guide](instructor.en.md#login-check) for preparation | Return to **recovery for the original failed command** in your notes. Do not repeat completed preflight, `bind`, or deployment. |
+| Authentication expired during new-environment steps 2–6 | Recover only the expired CLI above | Only the [environment sign-in check](environment.en.md#login-check) block | For steps 2–5, `cd "$REPO_ROOT"`, keep `AZURE_CONFIG_DIR`, and resume the original failed command. For step 6, stay in `RUN_DIR/workshop`. |
 
-**During new-environment preparation, services do not exist yet: do not continue to README `preflight` or `bind`.**
+**Until new-environment preparation finishes, do not continue to README `preflight` or `bind`.**
 
 **Checkpoint:** the chosen verification block shows the Azure CLI and azd account, tenant, and subscription matching that folder's `.env`.
 
@@ -256,7 +268,7 @@ Follow one row for **the path you were on before opening this page**. Run its ve
 
 </details>
 
-**Next:** continue below the verification block in the page selected above; do not switch preparation paths.
+**Next:** follow only the table's **Continue afterward** column. After recovering an expired sign-in mid-workshop, do not restart the initial preparation below the verification block.
 
 <a id="hosted-telemetry"></a>
 
@@ -384,7 +396,7 @@ Use this only when:
 | V1 dev label | `baseline` | After successful V1 recovery: `baseline-retry`. Use it in later `feedback`, `compare`, `summary`, `monitor`, and the value after `verify --baseline`. |
 | V2 dev label | `improved` | After successful V2 recovery: `improved-retry`. Use it in later comparisons, reads, traces, and the value after `verify --candidate`. |
 | V2 holdout label | `holdout` | After successful holdout recovery: `holdout-retry`. Use it in later comparisons, reads, traces, and the value after `verify --holdout`. |
-| Collection `concurrency` | `4` | Read the **completed V1 baseline's** `src/agent/.foundry/results/<actual label>/manifest.json`. If `2`, apply `--concurrency 2` to later V2 dev and holdout `collect` commands too. |
+| Collection `concurrency` | `4` | Read the **completed V1 baseline's** `src/agent/.foundry/results/<actual label>/manifest.json`. Use that value for later V2 dev and holdout `collect` too. If not the default `4`, specify it with `--concurrency`; for example, `2` needs `--concurrency 2`. |
 
 **Change values, not option names.** Apply actual names to label values after `--label`, `--labels`, `--baseline`, `--candidate`, and `--holdout`, and to result paths and output descriptions. **Keep `--split dev` and `--split holdout` unchanged.** Copy `row_id` from that label's actual output. Do not rename or edit existing folders, files, row IDs, or manifests.
 
@@ -396,7 +408,14 @@ For example, after recovering **only V2 dev**, final verification is `python scr
 
 ### Failed initial baseline
 
-**Terminal — recollect V1:** use this after a 429 or timeout where a lower concurrency is the recovery:
+**After resolving the cause, choose concurrency first.** Non-rate-limit errors can also be recovered; the same stopped-collector, preserved-evidence, and unused-label conditions apply.
+
+| Resolved error | Concurrency for this retry |
+|---|---|
+| A 429 or timeout where reducing concurrency is the recovery | `2` |
+| Another execution error | Keep `concurrency` from the failed `manifest.json`. Without a manifest, use the original command's value (`4` if omitted). |
+
+**Terminal — recollect V1:** this example uses `2`. If you chose `4`, **replace only `--concurrency 2` with `--concurrency 4`** and run once. Keep any other original value unchanged.
 
 ```bash
 python scripts/workshop.py collect --split dev --label baseline-retry --concurrency 2
@@ -406,7 +425,7 @@ python scripts/workshop.py collect --split dev --label baseline-retry --concurre
 
 **If not:** do not create another label; preserve the error and original failure record.
 
-**Next:** update your [run-value notes](#run-values) to `V1 dev=baseline-retry`, `concurrency=2`, then resume [step 5-3's evaluation command](../README.md#baseline-evaluation). Apply `--concurrency 2` to later V2 dev and holdout collection, and read the example `baseline-sol-D01` as `baseline-retry-sol-D01`. Do not repeat completed collection.
+**Next:** update your [run-value notes](#run-values) to `V1 dev=baseline-retry` and the **actual `concurrency` in the completed `baseline-retry/manifest.json`**, then resume [step 5-3's evaluation command](../README.md#baseline-evaluation). Use the same concurrency for later V2 dev and holdout collection (`--concurrency 2` if `2`). Read the example `baseline-sol-D01` as `baseline-retry-sol-D01`; do not repeat completed collection.
 
 <a id="collection-retry-improved"></a>
 
@@ -414,7 +433,7 @@ python scripts/workshop.py collect --split dev --label baseline-retry --concurre
 
 Also use this command to collect a new label when README 7-4 shows the review was not carried (`source trace carried: no`) or [V2 changed after 7-2](#v2-changed).
 
-**Terminal — recollect V2 dev:** check `concurrency` in the completed baseline's `manifest.json`. If it is `2`, replace `--concurrency 4` below with `--concurrency 2`.
+**Terminal — recollect V2 dev:** check `concurrency` in the completed baseline's `manifest.json`. Set `--concurrency 4` below to that value (`--concurrency 2` if it is `2`).
 
 ```bash
 python scripts/workshop.py collect --split dev --label improved-retry --concurrency 4
@@ -430,7 +449,7 @@ python scripts/workshop.py collect --split dev --label improved-retry --concurre
 
 ### Holdout collection failed
 
-**Terminal — recollect holdout:** check `concurrency` in the completed baseline's `manifest.json`. If it is `2`, replace `--concurrency 4` below with `--concurrency 2`.
+**Terminal — recollect holdout:** check `concurrency` in the completed baseline's `manifest.json`. Set `--concurrency 4` below to that value (`--concurrency 2` if it is `2`).
 
 ```bash
 python scripts/workshop.py collect --split holdout --label holdout-retry --concurrency 4
@@ -626,7 +645,7 @@ When a row says to run a command named by the failed output, copy that exact `py
 
 | Message or situation | Next action |
 |---|---|
-| `Rubric generation ended as ...` or `The run ended as ...` | Review the failed status and error with the instructor. Use [state-file recovery](#level-state-recovery) only after resolving the cause and only if the message explicitly calls for deletion. |
+| `Rubric generation ended as ...` or `The run ended as ...` | Resolve the cause and check [state-file recovery eligibility](#level-state-recovery). For rubric/stress/red-team runs with saved `status` of `failed`, `canceled`, or `cancelled`, an `Inspect <file>` message also permits archiving before one retry. |
 | `... already compares the rubrics on ...` or `... already holds a ...-question run` | Arguments differ from the saved Foundry evaluation run. Resume with the recorded values. Plan a separate experiment for new conditions; do not erase the existing record. |
 | An HTTP `429` (Too Many Requests) error | Wait for `Retry-After`, or one minute if absent. Choose resume or failed-run retry based on the saved status. Do not increase `--count`. |
 | `This folder has no deployed hosted agent` | Check the cause with the instructor. If already cleaned up, record sections 4 and 6 as **skipped, not completed** and do not redeploy. Do not claim Level 3 completion for unrun sections. |
@@ -641,7 +660,8 @@ When a row says to run a command named by the failed output, copy that exact `py
 | Message or situation | Next action |
 |---|---|
 | `Schedule ... already exists and is not owned by this folder` | The schedule is not recorded as yours. Check the conflict with the instructor; do not change `LAB_PREFIX` or delete the schedule. |
-| `No scheduled run yet` | The first continuous-evaluation run starts at the printed time. Run `continuous-eval` again after it. |
+| `No scheduled run yet` | If the schedule is still active, run `continuous-eval` after the printed first-run time. For an expired schedule, use [resume after expiry](level-3.en.md#continuous-expired). |
+| `ends` in `continuous.json` is earlier than the current UTC time | Use [resume after expiry](level-3.en.md#continuous-expired) to check for an active run or valid completed result. With neither, record section 6 as incomplete and section 7's blocking result; do not create a new schedule. |
 | Continuous evaluation is `queued`/`in_progress`, or `failed`/zero traces | For waiting states, check again in one minute with the same command. For failure or zero traces, record incomplete execution and check traffic/access with the instructor. Creating a schedule is not completion. |
 | Continuous evaluation is `completed` but has evaluator errors or empty results | The [row-level checkpoint](level-3.en.md#continuous-eval) has not passed. Record incomplete execution and inspect the cause; distinguish this from valid `passed: false` results. |
 | The `red-team` scan is hard to find in the portal | In New Foundry, open **Evaluations → Red team** and select `<LAB_PREFIX>-red-team-sol`. Read the rates under **Overall metric results**; the list's **Issues in last run** column is not the number of successful attacks. |
@@ -658,9 +678,14 @@ When a row says to run a command named by the failed output, copy that exact `py
 
 <a id="level-state-recovery"></a>
 
-### Level 3 only: when an error explicitly requires deleting a state file
+### Level 3: archive failed state before one retry
 
-**Not for waiting, low scores, or changing labels/counts.** Use this only when the execution-error message explicitly names a state file to delete after resolving the cause. Instead of deleting evidence, archive that file so the command can create a retry.
+**Not for waiting, low scores, or changing labels/counts.** Confirm the original command exited, resolve the execution error, and review retry costs. Use this only in either case:
+
+- The error explicitly names a state file to delete.
+- A rubric-comparison, stress, or red-team error says `The run ended as failed/canceled/cancelled ... Inspect <file>`, and that file's `run_id` and `status` identify the same terminal failure. Check in your editor without editing the state.
+
+Archive the file instead of deleting evidence. The word `Inspect` alone, or an uncertain state, does not authorize archiving or retrying.
 
 **Terminal — existing workshop root:** confirm the original command exited. Paste the **file path from the error**, without the words `Delete` / `and re-run` or surrounding quotes. Both the printed absolute path and a `src/agent/...` relative path work. The block accepts only rubric, stress, red-team, or trace state files in **this folder's** `level3/`; it does not accept agent or continuous-evaluation state, raw output, or another workshop's files.
 
@@ -800,13 +825,13 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 
 | Interrupted setup stage | Where to resume |
 |---|---|
-| Sign-in | Resume the unfinished sign-in in [environment 2-1](environment.en.md#setup-identity). Do not repeat successful sign-ins. |
+| Sign-in | In the runtime folder, rerun [only the environment ID-input block](environment.en.md#login-input) to restore `LOGIN_TENANT_ID` and `LOGIN_SUBSCRIPTION_ID`, then continue unfinished sign-in/verification. Do not repeat successful sign-ins. |
 | Provisioning in environment steps 2–5 | Run `cd "$REPO_ROOT"`, keep `AZURE_CONFIG_DIR`, [select the interrupted stage](environment.en.md#setup-route), and run its failed command and remaining unexecuted commands with the same `--run-dir "$RUN_DIR"`. |
 | Candidate preparation in environment step 6 | Stay in `"$RUN_DIR/workshop"` and resume the failed [step 6](environment.en.md#setup-candidates) command. |
 | Candidates ready; only calibration unfinished | Resume at [judge calibration](environment.en.md#setup-calibration) in the same workspace; do not repeat `prepare-models` |
 | Environment already completed | Choose the [handoff](environment.en.md#handoff); do not repeat preparation. |
 
-If login expired, use the configured account; do not bypass errors with another account, new names, or deleted ownership records.
+If login expired, follow the new-environment row in [sign-in recovery](#login). Keep the runtime folder's CLI profile; do not bypass errors with another account, new names, or deleted ownership records.
 
 **Checkpoint:** the original workspace, `RUN_DIR`, virtual environment, and `AZURE_CONFIG_DIR` are restored, and only the interrupted environment step is selected.
 

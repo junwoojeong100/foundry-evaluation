@@ -29,6 +29,7 @@
 
 | 중단한 상태 | 지금 할 일 |
 |---|---|
+| 로그인 도중 오류 없이 터미널을 닫음 | [터미널 복원](../README.ko.md#resume-shell) 후 [ID 입력 블록만](../README.ko.md#login-input) 실행해 `LOGIN_TENANT_ID`·`LOGIN_SUBSCRIPTION_ID`를 복원. 성공한 로그인은 반복하지 않고 미완료 로그인·확인부터 진행. 환경 준비 중이었다면 [준비 재개](#setup-resume)를 사용 |
 | 가상환경이 있고, 오류 없이 쉬었으며 마지막 완료 블록을 메모함 | 기존 폴더에서 [터미널 복원](../README.ko.md#resume-shell) 후 메모한 **다음 블록**부터 진행. 예: 2-3 완료 → 3-1 시작. 완료한 배포·수집·평가를 반복하지 않음 |
 | 가상환경 생성 전(1-2 이전)에 중단함 | Bash에서 기존 폴더로 돌아와 마지막 완료 블록의 다음 작업을 진행. `source .../activate`는 아직 실행하지 않음. 1-1을 마쳤다면 [1-2](../README.ko.md#python-setup)로 이동 |
 | 오류가 있었거나 완료 여부를 모름 | 아래 실패 단계 표와 저장 상태로 확인. 포털 확인·사람의 검토 완료는 파일 존재만으로 판단하지 않음 |
@@ -143,7 +144,8 @@ azd ai agent show --output json
 | 검색 | IQ 400 / schema 오류 | 고정 API 버전, KB schema, 보조 planner 지원이 맞지 않을 수 있습니다. | 세 가지를 확인한 뒤 [정책 검색](../README.ko.md#policy-retrieval)으로 돌아갑니다. |
 | 환경 | JSON 뒤의 azd 업데이트 안내 | 제공 실행기는 UTF-8 HTTP 본문과 확인된 안내만 분리합니다. | 수업 중 업그레이드하지 말고 [preflight](../README.ko.md#project-binding)로 돌아갑니다. |
 | 로그인 | CLI credential 시간 초과 | 토큰 갱신 지연이 로그인 실패처럼 보일 수 있습니다. | 실제 로그인 실패와 구분한 뒤 [로그인 확인](../README.ko.md#login-check)으로 돌아갑니다. |
-| trace | App Insights `ResourceId` 메타데이터 누락 | 실습 전용 App Insights 연결 메타데이터가 불완전할 수 있습니다. | 환경 소유자가 [소유자 전용 관측 복구](instructor.ko.md#observability-repair)를 따른 뒤 [trace 복구](#telemetry)로 돌아갑니다. |
+| 환경·trace | Application Insights 연결 없음 또는 여러 연결 | 리소스 존재만으로 프로젝트 연결이 준비되지는 않습니다. | 환경 소유자가 [기존 서비스 설정](instructor.ko.md#existing-service-checks)을 확인한 뒤 원래 실패한 명령으로 돌아갑니다. |
+| 환경·평가·trace | App Insights `ResourceId` 메타데이터 누락 | 실습 전용 App Insights 연결 메타데이터가 불완전할 수 있습니다. | [소유자 전용 관측 복구](instructor.ko.md#observability-repair)의 원래 명령별 복귀 표를 따릅니다. 첫 preflight 실패라면 trace·평가 복구를 시작하지 않습니다. |
 
 </details>
 
@@ -202,9 +204,17 @@ python -m unittest discover -s tests -v
 
 <a id="login"></a>
 
-## 로그인 브라우저가 열리지 않는다면
+## 로그인에 실패하거나 인증이 만료됐다면
 
-같은 터미널에서 먼저 [README 1-3](../README.ko.md#login)의 **CLI 경로 지정과 tenant·구독 입력 블록**을 실행합니다.
+**먼저 원래 실패한 명령·단계를 메모하고, 올바른 폴더에서 ID 입력만 복원합니다.** `AZURE_CONFIG_DIR`를 다른 clone으로 바꾸지 않습니다.
+
+| 복구 중인 경로 | CLI 경로와 ID 입력 복원 |
+|---|---|
+| 참가자 README 또는 실습 진행 중 | 기존 실습 폴더에서 [README ID 입력 블록만](../README.ko.md#login-input) 실행 |
+| 기존 환경 준비 | 모델 준비 폴더에서 [기존 환경 ID 입력 블록만](instructor.ko.md#login-input) 실행 |
+| 새 환경 준비 2–6단계 | 먼저 `cd "$RUN_DIR/workshop"`, 이어서 [환경 준비 ID 입력 블록만](environment.ko.md#login-input) 실행. `REPO_ROOT`·`RUN_DIR`를 잊었다면 [기존 경로 복원](#setup-resume)부터 진행 |
+
+새 환경 준비의 CLI 프로필은 **`$RUN_DIR/workshop/.azure-cli`**입니다. 서비스 생성용 원래 clone에서 `$PWD/.azure-cli`로 바꾸면 다른 로그인 캐시를 선택하므로, 반드시 위 실행 폴더에서 입력합니다.
 
 **로그인에 실패한 CLI의 명령만 실행합니다.** 둘 다 필요하면 Azure CLI → azd 순서입니다.
 
@@ -242,8 +252,10 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 | 참가자 README 1-3 | [README 3번 azd 로그인](../README.ko.md#azd-login) | [README 두 로그인 확인](../README.ko.md#login-check) | README 1-4 프로젝트 확인 |
 | 새 환경 준비 2-1 | [환경 준비 azd 로그인](environment.ko.md#azd-login) | [환경 준비 두 로그인 확인](environment.ko.md#login-check) | 같은 문서 2-2 계정·보존·용량 확인 |
 | 기존 환경 준비 1 | [기존 환경 azd 로그인](instructor.ko.md#azd-login) | [기존 환경 두 로그인 확인](instructor.ko.md#login-check) | 같은 문서의 후보 배포 이름 지정 → 2 보조 배포 준비 |
+| 실습 또는 기존 환경 준비 진행 중 인증 만료 | 새 로그인 단계로 돌아가지 않음. 위에서 만료된 CLI만 복구 | 실습은 [README](../README.ko.md#login-check), 기존 환경 준비는 [그 문서](instructor.ko.md#login-check)의 두 로그인 확인 블록만 | 메모한 **원래 실패 명령의 복구**로 복귀. 완료한 preflight·`bind`·배포를 반복하지 않음 |
+| 새 환경 준비 2–6단계 진행 중 인증 만료 | 위에서 만료된 CLI만 복구 | [환경 준비 두 로그인 확인](environment.ko.md#login-check) 블록만 | 2–5단계였다면 `cd "$REPO_ROOT"` 후 `AZURE_CONFIG_DIR`를 유지하고 원래 실패 명령부터 재개. 6단계였다면 `RUN_DIR/workshop`에 머묾 |
 
-**새 환경 준비 중에는 아직 서비스가 없으므로 README의 `preflight`·`bind`로 넘어가지 않습니다.**
+**새 환경 준비가 끝나기 전에는 README의 `preflight`·`bind`로 넘어가지 않습니다.**
 
 **완료 확인:** 선택한 확인 블록에서 Azure CLI와 azd의 계정, tenant, subscription이 그 폴더의 `.env`와 일치합니다.
 
@@ -256,7 +268,7 @@ azd auth login --tenant-id "$LOGIN_TENANT_ID" --use-device-code
 
 </details>
 
-**다음:** 위 표에서 선택한 문서의 확인 블록 아래부터 이어갑니다. 준비 경로를 바꾸지 않습니다.
+**다음:** 위 표의 **확인 뒤 이어갈 곳**만 따릅니다. 진행 중 만료를 복구했다면 확인 블록 아래의 초기 준비를 다시 시작하지 않습니다.
 
 <a id="hosted-telemetry"></a>
 
@@ -384,7 +396,7 @@ python scripts/workshop.py monitor --label baseline --hours 24
 | V1 dev label | `baseline` | V1 복구 성공 시 `baseline-retry`. 이후 `feedback`·`compare`·`summary`·`monitor`와 `verify --baseline`의 값 |
 | V2 dev label | `improved` | V2 복구 성공 시 `improved-retry`. 이후 비교·조회·trace와 `verify --candidate`의 값 |
 | V2 holdout label | `holdout` | holdout 복구 성공 시 `holdout-retry`. 이후 비교·조회·trace와 `verify --holdout`의 값 |
-| 수집 동시성 `concurrency` | `4` | **완료한 V1 baseline**의 `src/agent/.foundry/results/<실제 label>/manifest.json`에서 읽음. `2`이면 이후 V2 dev·holdout `collect`에도 `--concurrency 2` 적용 |
+| 수집 동시성 `concurrency` | `4` | **완료한 V1 baseline**의 `src/agent/.foundry/results/<실제 label>/manifest.json`에서 읽음. 이후 V2 dev·holdout `collect`에도 같은 값을 적용. 기본 `4`가 아니면 해당 `--concurrency` 값을 지정하며, 예를 들어 `2`는 `--concurrency 2` |
 
 **바꿀 것은 값이지 옵션 이름이 아닙니다.** `--label`·`--labels`·`--baseline`·`--candidate`·`--holdout` 뒤의 label 값, 읽을 결과 경로와 출력 설명에 실제 이름을 적용합니다. **`--split dev`·`--split holdout`은 바꾸지 않습니다.** `row_id`는 그 label의 실제 출력에서 복사합니다. 기존 폴더·파일·row ID·manifest를 이름 변경하거나 편집하지 않습니다.
 
@@ -396,7 +408,14 @@ python scripts/workshop.py monitor --label baseline --hours 24
 
 ### 처음 baseline 실패
 
-**터미널 — V1 재수집:** 429 또는 시간 초과에서 낮은 동시성이 복구 방법일 때 사용합니다.
+**원인을 해결한 뒤 동시성을 먼저 고릅니다.** 속도 제한이 아닌 오류도 복구할 수 있으며, 원래 수집기 종료·실패 기록 보존·미사용 label 조건은 같습니다.
+
+| 해결한 오류 | 이번에 사용할 동시성 |
+|---|---|
+| 429 또는 시간 초과이며 동시성을 낮추는 것이 복구 방법임 | `2` |
+| 그 밖의 실행 오류 | 실패한 `manifest.json`의 `concurrency`를 유지. manifest가 없으면 원래 명령의 값(옵션을 생략했다면 `4`) |
+
+**터미널 — V1 재수집:** 아래는 동시성 `2`의 명령입니다. 위에서 고른 값이 `4`이면 **`--concurrency 2`만 `--concurrency 4`로 바꿔** 한 번 실행합니다. 다른 원래 값이면 그 값을 유지합니다.
 
 ```bash
 python scripts/workshop.py collect --split dev --label baseline-retry --concurrency 2
@@ -406,7 +425,7 @@ python scripts/workshop.py collect --split dev --label baseline-retry --concurre
 
 **다르면:** 새 label을 또 만들지 말고 오류와 원래 실패 기록을 보존합니다.
 
-**다음:** [실행값 메모](#run-values)를 `V1 dev=baseline-retry`, `concurrency=2`로 갱신하고 [5-3의 평가 명령](../README.ko.md#baseline-evaluation)부터 이어갑니다. 이후 V2 dev·holdout 수집에도 `--concurrency 2`를 적용하며, 예시 `baseline-sol-D01`은 `baseline-retry-sol-D01`로 읽습니다. 완료한 수집은 반복하지 않습니다.
+**다음:** [실행값 메모](#run-values)를 `V1 dev=baseline-retry`와 **완료된 `baseline-retry/manifest.json`의 실제 `concurrency`**로 갱신하고 [5-3의 평가 명령](../README.ko.md#baseline-evaluation)부터 이어갑니다. 이후 V2 dev·holdout 수집도 같은 동시성으로 맞춥니다(`2`이면 `--concurrency 2`). 예시 `baseline-sol-D01`은 `baseline-retry-sol-D01`로 읽으며 완료한 수집은 반복하지 않습니다.
 
 <a id="collection-retry-improved"></a>
 
@@ -414,7 +433,7 @@ python scripts/workshop.py collect --split dev --label baseline-retry --concurre
 
 README 7-4에서 검토 기록이 연결되지 않았거나(`source trace carried: no`) [7-2 뒤 V2가 바뀐](#v2-changed) 경우에도 이 명령으로 새 label을 수집합니다.
 
-**터미널 — V2 dev 재수집:** 완료한 baseline의 `manifest.json`에서 `concurrency`를 확인합니다. `2`이면 아래 `--concurrency 4`를 `--concurrency 2`로 바꿉니다.
+**터미널 — V2 dev 재수집:** 완료한 baseline의 `manifest.json`에서 `concurrency`를 확인합니다. 아래 `--concurrency 4`를 그 값으로 맞춥니다(`2`이면 `--concurrency 2`).
 
 ```bash
 python scripts/workshop.py collect --split dev --label improved-retry --concurrency 4
@@ -430,7 +449,7 @@ python scripts/workshop.py collect --split dev --label improved-retry --concurre
 
 ### Holdout 수집 실패
 
-**터미널 — holdout 재수집:** 완료한 baseline의 `manifest.json`에서 `concurrency`를 확인합니다. `2`이면 아래 `--concurrency 4`를 `--concurrency 2`로 바꿉니다.
+**터미널 — holdout 재수집:** 완료한 baseline의 `manifest.json`에서 `concurrency`를 확인합니다. 아래 `--concurrency 4`를 그 값으로 맞춥니다(`2`이면 `--concurrency 2`).
 
 ```bash
 python scripts/workshop.py collect --split holdout --label holdout-retry --concurrency 4
@@ -627,7 +646,7 @@ python scripts/workshop.py smoke
 
 | 메시지 또는 상황 | 다음 행동 |
 |---|---|
-| `Rubric generation ended as ...`, `The run ended as ...` | 실패 상태·오류를 강사와 확인합니다. 원인이 해결되고 메시지가 파일 삭제를 명시한 경우에만 [상태 파일 복구](#level-state-recovery)를 따릅니다. |
+| `Rubric generation ended as ...`, `The run ended as ...` | 원인을 해결한 뒤 [상태 파일 복구의 허용 조건](#level-state-recovery)을 확인합니다. rubric·stress·red-team의 저장된 `status`가 `failed`·`canceled`·`cancelled`이면 `Inspect <파일>` 메시지도 보관 후 한 번 재시도할 수 있습니다. |
 | `... already compares the rubrics on ...` 또는 `... already holds a ...-question run` | 저장된 run과 인자가 다릅니다. 메시지에 나온 기존 값으로 재개합니다. 다른 조건의 새 실험은 별도로 계획하며 기존 기록을 지우지 않습니다. |
 | HTTP `429`(Too Many Requests) 오류 | `Retry-After`가 있으면 그만큼, 없으면 1분 기다립니다. 저장된 run 상태에 맞게 재개/실패 재시도를 고릅니다. `--count`는 늘리지 않습니다. |
 | `This folder has no deployed hosted agent` | 강사와 원인을 확인합니다. 이미 정리했다면 4·6절은 **완료가 아닌 생략**으로 기록하고 재배포하지 않습니다. 실행하지 않은 절을 레벨 3 완료로 표시하지 않습니다. |
@@ -642,7 +661,8 @@ python scripts/workshop.py smoke
 | 메시지 또는 상황 | 다음 행동 |
 |---|---|
 | `Schedule ... already exists and is not owned by this folder` | 내 소유로 기록되지 않은 일정입니다. 강사와 충돌을 확인하며 지금 `LAB_PREFIX`를 바꾸거나 그 일정을 삭제하지 않습니다. |
-| `No scheduled run yet` | 연속 평가의 첫 실행은 출력된 시각에 시작합니다. 그 뒤에 `continuous-eval`을 다시 실행합니다. |
+| `No scheduled run yet` | 아직 일정이 유효하면 출력된 첫 실행 시각 뒤 `continuous-eval`을 다시 실행합니다. 지난 일정이면 [만료 후 재개](level-3.ko.md#continuous-expired)를 따릅니다. |
+| `continuous.json`의 `ends`가 현재 UTC보다 이름 | [만료 후 재개](level-3.ko.md#continuous-expired)에서 진행 중 run과 유효한 완료 결과를 확인합니다. 둘 다 없으면 6절 미완료와 7절의 차단 결과를 기록하며 새 일정을 만들지 않습니다. |
 | 연속 평가가 `queued`·`in_progress`이거나, 실패했거나, trace가 0건임 | 대기 상태는 1분 뒤 같은 명령으로 조회합니다. 실패·0 trace는 미완료로 기록하고 트래픽·권한을 강사와 확인합니다. 일정 생성만으로 완료 처리하지 않습니다. |
 | 연속 평가가 `completed`지만 평가 오류·빈 결과가 있음 | [행별 완료 기준](level-3.ko.md#continuous-eval)을 아직 충족하지 못했습니다. 미완료로 기록하고 원인을 확인합니다. 유효한 `passed: false`와 구분합니다. |
 | 포털에서 `red-team` 스캔을 찾기 어려움 | New Foundry에서 **Evaluations → Red team** 탭을 열고 `<LAB_PREFIX>-red-team-sol`을 고릅니다. 비율은 **Overall metric results**에서 읽습니다. 목록의 **Issues in last run** 열은 성공한 공격 수가 아닙니다. |
@@ -659,9 +679,14 @@ python scripts/workshop.py smoke
 
 <a id="level-state-recovery"></a>
 
-### 레벨 3에서 오류가 상태 파일 삭제를 명시한 경우에만
+### 레벨 3의 실패 상태를 보관하고 한 번 재시도
 
-**대기·낮은 점수·label/질문 수 변경에는 사용하지 않습니다.** 실행 오류의 원인을 해결한 뒤, 오류 메시지가 삭제할 상태 파일을 명시했을 때만 사용합니다. 증거를 지우는 대신 그 파일을 보관 폴더로 옮겨 재시도를 가능하게 합니다.
+**대기·낮은 점수·label/질문 수 변경에는 사용하지 않습니다.** 원래 명령이 종료됐고 실행 오류의 원인과 재호출 비용을 확인한 뒤, 아래 둘 중 하나일 때만 사용합니다.
+
+- 오류 메시지가 삭제할 상태 파일을 명시합니다.
+- rubric 비교·stress·red-team의 오류가 `The run ended as failed/canceled/cancelled ... Inspect <파일>`이며, 그 파일의 `run_id`와 `status`가 같은 종료된 실패를 가리킵니다. 편집기에서 확인하며 상태를 고치지 않습니다.
+
+증거를 지우는 대신 그 파일을 보관 폴더로 옮깁니다. `Inspect`라는 단어만 있거나 상태가 불명확하면 보관·재시도하지 않습니다.
 
 **터미널 — 기존 실습 폴더의 저장소 루트:** 원래 명령이 끝났는지 확인합니다. 입력에는 **오류에 나온 파일 경로만** 붙여넣고, `Delete`·`and re-run` 같은 문구나 따옴표는 넣지 않습니다. 출력된 절대 경로와 `src/agent/...` 상대 경로 모두 됩니다. 블록은 **이 폴더의** `level3/` 안 rubric·stress·red-team·trace 상태 파일만 허용합니다. 에이전트·연속 평가 상태, 원문 출력, 다른 실습 폴더는 허용하지 않습니다.
 
@@ -801,13 +826,13 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 
 | 중단한 준비 단계 | 이어갈 위치 |
 |---|---|
-| 로그인 | [환경 준비 2-1](environment.ko.md#setup-identity)의 미완료 로그인부터 이어갑니다. 이미 성공한 로그인은 반복하지 않습니다. |
+| 로그인 | 실행 폴더에서 [환경 준비 ID 입력 블록만](environment.ko.md#login-input) 다시 실행해 `LOGIN_TENANT_ID`·`LOGIN_SUBSCRIPTION_ID`를 복원한 뒤 미완료 로그인·확인부터 이어갑니다. 이미 성공한 로그인은 반복하지 않습니다. |
 | 환경 준비 2–5단계 서비스 생성 | `cd "$REPO_ROOT"`, `AZURE_CONFIG_DIR` 유지, [중단한 단계](environment.ko.md#setup-route)의 실패한 명령과 그 뒤 미실행 명령을 같은 `--run-dir "$RUN_DIR"`로 실행 |
 | 환경 준비 6단계 후보 모델 준비 | `"$RUN_DIR/workshop"`에서 [6단계](environment.ko.md#setup-candidates)의 실패 명령부터 재개 |
 | 후보 준비 완료, calibration만 미완료 | 같은 실행 폴더에서 [judge 점검](environment.ko.md#setup-calibration)부터 재개. `prepare-models`는 반복하지 않음 |
 | 환경 준비 완료 | [전달 경로](environment.ko.md#handoff)를 선택. 준비를 반복하지 않음 |
 
-로그인이 만료됐다면 설정된 계정으로 복구하며 다른 계정·새 이름·소유권 삭제로 우회하지 않습니다.
+로그인이 만료됐다면 [로그인 복구](#login)의 새 환경 준비 행을 따릅니다. 실행 폴더의 CLI 프로필을 유지하고 다른 계정·새 이름·소유권 삭제로 우회하지 않습니다.
 
 **완료 확인:** 원래 실행 폴더, `RUN_DIR`, 가상환경, `AZURE_CONFIG_DIR`가 복원됐고 중단한 단계만 선택했습니다.
 

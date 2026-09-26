@@ -1249,6 +1249,10 @@ class DocumentationTests(unittest.TestCase):
                 rubric = rubric.split('<a id="stress-test"></a>', 1)[0]
                 self.assertIn("7-4", rubric)
                 self.assertIn("failed rows: none", rubric)
+                for field in ("generated_evaluator", "definition", "name", "version", "pass_threshold"):
+                    self.assertIn(f"`{field}`", rubric)
+                self.assertIn("src/agent/.foundry/results/level3/rubric-compare.json", rubric)
+                self.assertIn("Full rubric definition:", rubric)
                 stress = level3.split('<a id="stress-test"></a>', 1)[1]
                 stress = stress.split('<a id="red-team"></a>', 1)[0]
                 self.assertIn("src/agent/.foundry/results/level3/stress-sol.json", stress)
@@ -1259,6 +1263,153 @@ class DocumentationTests(unittest.TestCase):
                 self.assertIn("src/agent/.foundry/results/level3/continuous.json", continuous)
                 for field in ("runs", "created", "run_id"):
                     self.assertIn(f"`{field}`", continuous)
+                expiry = continuous.split('<a id="continuous-expired"></a>', 1)[1].split("<details>", 1)[0]
+                for field in ("ends", "queued", "in_progress", "UTC"):
+                    self.assertIn(field, expiry)
+                self.assertIn("#release-gate", LINKS.findall(prose(expiry)))
+                recovery = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+                self.assertIn(f"level-3.{language}.md#continuous-expired", LINKS.findall(prose(recovery)))
+
+    def test_candidate_name_guidance_reserves_space_for_the_longest_suffix(self):
+        from contracts import MODEL_SPECS
+        from settings import safe_name
+
+        for key in MODEL_SPECS:
+            name = "a" * 44 + f"-{key}"
+            self.assertEqual(safe_name(name, "deployment"), name)
+        with self.assertRaises(ValueError):
+            safe_name("a" * 45 + "-astra", "deployment")
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            main = self.documents[ROOT / name]
+            preparation = self.documents[ROOT / "docs" / f"instructor.{language}.md"]
+            names = preparation.split('<a id="candidate-names"></a>', 1)[1]
+            names = names.split('<a id="auxiliary-model"></a>', 1)[0]
+            with self.subTest(language=language):
+                for text in (main, names):
+                    for marker in ("3–44", "3–50", "`-astra`"):
+                        self.assertIn(marker, text)
+                self.assertIn("`MODEL_*_DEPLOYMENT`", names)
+                self.assertIn(f"docs/instructor.{language}.md#candidate-names", LINKS.findall(prose(main)))
+
+    def test_existing_service_checks_precede_commands_and_repair_returns_to_its_origin(self):
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            text = self.documents[ROOT / "docs" / f"instructor.{language}.md"]
+            setup = text.split('<a id="existing-foundation"></a>', 1)[1].split("```bash", 1)[0]
+            setup = re.sub(r"<details>.*?</details>", "", setup, flags=re.DOTALL)
+            repair = text.split('<a id="observability-repair"></a>', 1)[1].split("</details>", 1)[0]
+            with self.subTest(language=language):
+                for marker in ("existing-service-checks", "System assigned", "On", "Save", "Role-based access control",
+                               "Both", "Connected resources", "Add connection", "AZURE_APPLICATION_INSIGHTS_NAME",
+                               "ResourceId", "repair-observability"):
+                    self.assertIn(marker, setup)
+                for target in ("#existing-service-checks", "#check-candidates", f"../{name}#project-binding",
+                               f"environment.{language}.md#setup-candidates",
+                               f"troubleshooting.{language}.md#calibration",
+                               f"troubleshooting.{language}.md#evaluation-retry",
+                               f"troubleshooting.{language}.md#telemetry"):
+                    self.assertIn(target, LINKS.findall(prose(repair)))
+
+    def test_login_input_blocks_restore_both_ids_in_the_selected_workspace(self):
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            paths = [ROOT / name, *(ROOT / "docs" / f"{guide}.{language}.md"
+                                   for guide in ("environment", "instructor"))]
+            for path in paths:
+                section = self.documents[path].split('<a id="login-input"></a>', 1)[1]
+                body = next(body for kind, _, body in blocks(section) if kind == "bash")
+                with self.subTest(document=path.name), tempfile.TemporaryDirectory() as directory:
+                    workspace = Path(directory) / "workshop with spaces"
+                    workspace.mkdir()
+                    result = subprocess.run(
+                        ["bash", "--noprofile", "--norc", "-c", body + '\nprintf "%s\\n" '
+                         '"$AZURE_CONFIG_DIR" "$LOGIN_TENANT_ID" "$LOGIN_SUBSCRIPTION_ID"'],
+                        cwd=workspace, input="fixture-tenant\nfixture-subscription\n",
+                        text=True, capture_output=True, check=False, timeout=10,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(result.stdout.splitlines(), [
+                        str(workspace.resolve() / ".azure-cli"), "fixture-tenant", "fixture-subscription",
+                    ])
+            recovery = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+            login = recovery.split('<a id="login"></a>', 1)[1].split('<a id="hosted-telemetry"></a>', 1)[0]
+            with self.subTest(language=language):
+                for target in (f"../{name}#login-input", f"environment.{language}.md#login-input",
+                               f"instructor.{language}.md#login-input"):
+                    self.assertIn(target, LINKS.findall(prose(login)))
+                for marker in ('cd "$RUN_DIR/workshop"', '$RUN_DIR/workshop/.azure-cli', 'cd "$REPO_ROOT"',
+                               "AZURE_CONFIG_DIR"):
+                    self.assertIn(marker, login)
+                resume = self.documents[ROOT / name].split('<a id="resume-shell"></a>', 1)[1].split("</details>", 1)[0]
+                self.assertIn("#login-input", LINKS.findall(prose(resume)))
+
+    def test_baseline_recovery_covers_non_rate_limit_errors_and_actual_concurrency(self):
+        for language in ("en", "ko"):
+            text = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+            recovery = text.split('<a id="collection-retry-baseline"></a>', 1)[1]
+            recovery = recovery.split('<a id="collection-retry-improved"></a>', 1)[0]
+            with self.subTest(language=language):
+                before = recovery.split("```bash", 1)[0]
+                for marker in ("429", "manifest.json", "concurrency", "--concurrency 2", "--concurrency 4"):
+                    self.assertIn(marker, before)
+                self.assertIn("baseline-retry/manifest.json", recovery)
+                self.assertIn("baseline-evaluation", recovery)
+
+    def test_auxiliary_reading_returns_to_required_work_not_cleanup(self):
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            results = self.documents[ROOT / "docs" / f"validation.{language}.md"]
+            review = results.split("summary --labels baseline\n", 1)[1]
+            review = review.split("summary --labels baseline improved", 1)[0]
+            instructor = self.documents[ROOT / "docs" / f"instructor.{language}.md"]
+            levels = instructor.split('<a id="levels"></a>', 1)[1].split('<a id="final-model-check"></a>', 1)[0]
+            with self.subTest(language=language):
+                self.assertLess(review.index(f"../{name}#baseline-traces"), review.index(f"../{name}#review-case"))
+                self.assertIn("telemetry.json", review)
+                self.assertIn(f"level-3.{language}.md#generate-rubric", LINKS.findall(prose(levels.split("```bash", 1)[0])))
+
+    def test_new_environment_discloses_network_policy_and_local_only_stop_is_separate(self):
+        for name, language, network, local_stop in (
+            ("README.md", "en", "enables public network access", "End before running any Azure creation/change command"),
+            ("README.ko.md", "ko", "공개 네트워크 접근을 활성화", "Azure 생성·변경 명령을 실행하기 전에 끝내기"),
+        ):
+            preparation = self.documents[ROOT / "docs" / f"environment.{language}.md"].split("```bash", 1)[0]
+            main = self.documents[ROOT / name]
+            stop = main.split('<a id="stop-early"></a>', 1)[1].split('<a id="cleanup-plan"></a>', 1)[0]
+            with self.subTest(language=language):
+                self.assertIn(network, preparation)
+                self.assertIn("Entra", preparation)
+                row = next(line for line in stop.splitlines() if line.startswith(f"| {local_stop} |"))
+                self.assertIn("cleanup", row)
+                self.assertNotIn("](#cleanup-plan)", row)
+                self.assertLess(stop.index(local_stop), stop.index("](#cleanup-plan)"))
+
+    def test_ci_scope_does_not_claim_calibration_that_the_pipeline_omits(self):
+        script = (ROOT / "ci" / "evaluate-candidate.sh").read_text(encoding="utf-8")
+        self.assertNotIn(["calibrate"], [args for _, _, args in commands(f"```bash\n{script}\n```")])
+        for language in ("en", "ko"):
+            text = self.documents[ROOT / "docs" / f"level-3.{language}.md"]
+            ci = text.split('<a id="ci-setup"></a>', 1)[1].split("```bash", 1)[0]
+            with self.subTest(language=language):
+                self.assertIn("5-1", ci)
+                self.assertIn("`calibrate`", ci)
+
+    def test_terminal_level3_run_errors_have_an_archive_route_without_a_delete_message(self):
+        from foundry_eval import wait_for_run
+
+        for status in ("failed", "canceled", "cancelled"):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "stress-sol.json"
+                record = {"run_id": "failed-run", "status": status, "error": "fixture service failure"}
+                path.write_text(json.dumps(record), encoding="utf-8")
+                original = path.read_bytes()
+                with self.assertRaisesRegex(ValueError, f"The run ended as {status}: .*Inspect ") as stopped:
+                    wait_for_run(None, "eval-1", record, path, timeout=1)
+                self.assertIn(str(path), str(stopped.exception))
+                self.assertEqual(path.read_bytes(), original)
+        for language in ("en", "ko"):
+            text = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+            recovery = text.split('<a id="level-state-recovery"></a>', 1)[1].split("```bash", 1)[0]
+            with self.subTest(language=language):
+                for marker in ("failed/canceled/cancelled", "Inspect", "`run_id`", "`status`"):
+                    self.assertIn(marker, recovery)
 
     def test_level3_recovery_archives_only_eligible_state_without_losing_evidence(self):
         recovery_blocks = []

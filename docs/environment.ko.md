@@ -8,10 +8,11 @@
 
 **혼자 실습한다면:** “강사”·“환경 소유자”는 본인입니다. 아래 시작 전 확인 → 이 문서 1–6단계 → README 1-4 `bind` 순서입니다. 강사용 리허설·조별 전달은 하지 않습니다.
 
-**시작 전 확인은 두 가지입니다.** 이미 마친 확인은 반복하지 않습니다.
+**시작 전 확인은 세 가지입니다.** 이미 마친 확인은 반복하지 않습니다.
 
 1. [도구 설치·확인](instructor.ko.md#tools)을 마칩니다. Git, Python 3.13, Azure CLI, azd와 확장, Bash/WSL, curl, 편집기, 브라우저가 필요합니다.
 2. [권한](instructor.ko.md#access)을 확인합니다. 사용할 구독의 활성 Owner이거나, 필요한 자원 생성과 범위 지정 역할 부여를 승인된 접근 관리자가 지원해야 합니다.
+3. **네트워크 정책:** 이 경로는 Foundry·Search의 **공개 네트워크 접근을 활성화**하고 Entra 인증을 사용합니다. 조직이 이 구성을 허용하는지 생성 전에 확인합니다. 실행 폴더 격리는 네트워크 격리가 아닙니다. 허용되지 않으면 여기서 멈추고 환경 소유자와 승인된 구성을 준비하며 정책을 우회하지 않습니다.
 
 **확인이 끝나면 이 문서 [1단계](#setup-workspace)로 돌아옵니다.** Bash/WSL 터미널 하나에서 한 블록씩 실행합니다. 강사 문서의 나머지를 순서대로 진행하지 않습니다.
 
@@ -152,6 +153,8 @@ pwd
 
 **다르면:** [환경 준비 복구](troubleshooting.ko.md#setup-resume)에서 기존 경로를 확인합니다. 새 실행 ID를 만들지 않습니다.
 
+**로그인 도중 중단했다면:** `cd "$RUN_DIR/workshop"` 후 [2-1의 ID 입력 블록만](#login-input) 다시 실행해 `LOGIN_TENANT_ID`·`LOGIN_SUBSCRIPTION_ID`를 복원합니다. 성공한 로그인은 반복하지 않고 미완료 로그인·확인부터 이어갑니다.
+
 </details>
 
 <a id="setup-snapshot"></a>
@@ -201,6 +204,8 @@ python -m unittest discover -s tests -v
 **`$RUN_DIR/workshop`**에서 로그인합니다. 그래야 이후 한국어 실습 명령이 이 폴더의 격리된 CLI 프로필을 씁니다. 아직 기반 서비스가 없으므로 README의 `preflight`·`bind`는 실행하지 않습니다.
 
 두 로그인 명령 뒤에는 브라우저에서 `.env`의 `AZURE_EXPECTED_USERNAME` 계정으로 로그인합니다. 다른 계정이 보이면 **다른 계정 사용**을 선택합니다.
+
+<a id="login-input"></a>
 
 **터미널 — 실행 폴더 (`$RUN_DIR/workshop`):** ID를 입력합니다. 이 로그인은 이 폴더의 `.azure-cli/`에만 보관합니다(공유·커밋 금지).
 

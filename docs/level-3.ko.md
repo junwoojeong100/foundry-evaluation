@@ -41,13 +41,15 @@
 python scripts/workshop.py generate-rubric --label improved
 ```
 
-**완료 확인:** `Generated rubric: <LAB_PREFIX>-generated-rubric version 1, pass threshold ...`, 가중치가 붙은 차원 목록, 그리고 `policy_rubric: .../18 passed on improved`와 `generated_rubric: .../18 passed on improved`가 실패 행 또는 `none`과 함께 나옵니다.
+**완료 확인:** `Generated rubric: <LAB_PREFIX>-generated-rubric version 1, pass threshold ...`, `Full rubric definition:` 파일 경로, 가중치가 붙은 차원 목록, 그리고 `policy_rubric: .../18 passed on improved`와 `generated_rubric: .../18 passed on improved`가 실패 행 또는 `none`과 함께 나옵니다.
 
 **다르면:** `Rubric generation is still running` 또는 `The run is still in progress`로 종료됐다면 같은 명령으로 재개합니다. 그 밖의 오류는 [레벨 2·3 복구](troubleshooting.ko.md#levels)를 봅니다.
 
+**편집기 — 전체 채점 기준 열기:** `src/agent/.foundry/results/level3/rubric-compare.json`을 엽니다. `generated_evaluator`의 `name`·`version`이 위 출력과 같은지 확인하고, **`definition`의 차원별 설명·채점 규칙·가중치·`pass_threshold`**를 읽습니다. `dimensions`의 ID·가중치만으로 기준 검토를 완료했다고 기록하지 않습니다. 이전에 완료한 기록에 이 필드가 없다면 같은 명령을 한 번 실행해 정의를 저장합니다. 완료된 비교 run은 재사용하며 다시 채점하지 않습니다.
+
 **읽는 법:**
 
-- **생성된 기준을 그대로 믿지 않습니다.** 각 기준이 정책·판단·금액·인용을 제대로 확인하는지 읽습니다. LLM이 생성하므로 기준과 가중치는 조마다, 실행마다 다를 수 있습니다.
+- **생성된 기준을 그대로 믿지 않습니다.** 위 전체 정의가 정책·판단·금액·인용을 제대로 확인하는지 대조합니다. LLM이 생성하므로 기준과 가중치는 조마다, 실행마다 다를 수 있습니다.
 - **두 rubric이 모두 `failed rows: none`이어도 기본 실습 7-4에 메모한 업무 미통과 행부터 봅니다.** 업무 미통과 V2 row ID가 각 rubric의 실패 목록에도 있는지 확인합니다. 없다면 그 rubric은 업무 검사를 실패한 응답을 통과시킨 것이므로 놓친 검사를 기록합니다. 업무 미통과가 없다면 없다고 적으며 실패를 만들지 않습니다. rubric은 판단값·금액·인용 검사를 대신하지 않습니다.
 
 <details>
@@ -194,7 +196,7 @@ python scripts/workshop.py evaluate-agent --split dev
 
 - **파이프라인이 에이전트를 평가하는 방식입니다.** 수집 코드 없이 Foundry가 에이전트를 호출하고 평가기를 적용합니다. `azd ai agent eval run`과 CI 작업도 이렇게 동작합니다.
 - **레벨 2의 코드 평가기가 실시간 답변을 채점하므로,** 저장된 결과와 실시간 결과가 같은 업무 검사로 채점됩니다.
-- **저장된 `improved` 결과와 모델별로 비교합니다.** 답변을 새로 받으므로 7단계에서 실패한 행을 여기서 통과하거나 그 반대일 수 있습니다. 평가기가 바뀐 것이 아니라 모델의 실행 간 차이입니다.
+- **저장된 `improved` 결과와 모델별로 비교합니다.** 같은 업무 검사로 채점하지만 **새 검색 근거와 모델 응답이 모두 달라질 수 있습니다.** 같은 사례의 답변·판단·인용과 trace의 검색 근거를 대조하고, 확인하지 못한 원인은 미확인으로 기록합니다. 통과 수 차이를 모델의 변동만으로 단정하지 않습니다.
 
 <details>
 <summary>Foundry가 이 invocations 에이전트를 호출하는 방식</summary>
@@ -290,6 +292,10 @@ python scripts/workshop.py continuous-eval
 **완료 확인:** `HH:MM UTC  completed  N traces: relevance .../N, task_adherence .../N, indirect_attack .../N`이 나오고 **N이 1 이상**입니다. 일정 생성만으로는 완료가 아닙니다. 시각·trace 수·세 평가 결과를 메모합니다.
 
 **다르면:** `in_progress`·`queued`이면 1분 뒤 같은 명령으로 조회합니다. `failed`·오류·0 traces이면 미완료로 기록하고 강사와 트래픽·권한을 확인합니다. 일정을 지우고 새로 만들지 않습니다.
+
+<a id="continuous-expired"></a>
+
+**나중에 재개했다면:** 편집기에서 `src/agent/.foundry/results/level3/continuous.json`의 `ends`를 현재 **UTC 날짜·시각**과 비교합니다. 만료된 일정은 같은 명령으로 조회해도 새로 시작하지 않습니다. 이미 시작한 `queued`·`in_progress` run은 끝날 때까지 확인합니다. 진행 중 run도, 아래 행별 기준을 충족하는 완료 결과도 없다면 **6절 미완료**를 기록하고 [7절](#release-gate)에서 누락에 따른 차단을 보고한 뒤 정리합니다. 새 일정이나 조회 반복으로 완료 처리하지 않습니다.
 
 **포털 — 행별 결과 확인:** 출력의 `Portal:` 링크를 열고 위에서 메모한 완료 run을 선택합니다. 포털이 한국 시간을 표시하면 **06:00 UTC = 15:00 KST**이며 06:00 KST가 아닙니다. 시각이 헷갈리면 편집기에서 `src/agent/.foundry/results/level3/continuous.json`을 열어 `runs`의 UTC `created` 값으로 해당 항목을 찾고, 그 `run_id`를 열린 run URL의 ID와 대조합니다.
 
@@ -404,7 +410,9 @@ exit code: 0
 <details>
 <summary>선택: 같은 검사를 GitHub Actions에서 실행</summary>
 
-[`ci/release-gate.yml`](../ci/release-gate.yml)은 새 후보에 같은 명령을 실행합니다. `evaluate` 작업은 이미 배포한 에이전트 버전에 [`ci/evaluate-candidate.sh`](../ci/evaluate-candidate.sh)(기본 실습 5–9단계와 4–5절, `red_team` 입력을 켜면 3절도)를 실행하고, `gate` 작업은 저장된 결과로 `gate --composite --waive continuous`를 실행하고, `red_team` 입력을 끄면 `--waive red-team`도 붙입니다. 0이 아닌 종료 코드가 릴리스를 멈춥니다.
+[`ci/release-gate.yml`](../ci/release-gate.yml)은 새 후보에 같은 명령을 실행합니다. `evaluate` 작업은 이미 배포한 에이전트 버전에 [`ci/evaluate-candidate.sh`](../ci/evaluate-candidate.sh)(기본 실습의 수집·평가·trace·verify와 4–5절, `red_team` 입력을 켜면 3절도)를 실행하고, `gate` 작업은 저장된 결과로 `gate --composite --waive continuous`를 실행하고, `red_team` 입력을 끄면 `--waive red-team`도 붙입니다. 0이 아닌 종료 코드가 릴리스를 멈춥니다.
+
+**CI에서 하지 않는 것:** 5-1의 `calibrate`는 실행하지 않습니다. CI 완료를 judge calibration까지 다시 점검한 결과로 해석하지 않습니다.
 
 **시작 전:** 기본 실습 7-2까지 마친 V1·V2 에이전트 버전과 KB·모델을 유지합니다. 이 선택 실습은 **README 10단계 정리 전에** 합니다. 이미 삭제했다면 재배포로 결과를 재구성하지 말고 이번 실행의 CI를 생략합니다.
 
