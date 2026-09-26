@@ -406,16 +406,34 @@ exit code: 0
 
 [`ci/release-gate.yml`](../ci/release-gate.yml)은 새 후보에 같은 명령을 실행합니다. `evaluate` 작업은 이미 배포한 에이전트 버전에 [`ci/evaluate-candidate.sh`](../ci/evaluate-candidate.sh)(기본 실습 5–9단계와 4–5절, `red_team` 입력을 켜면 3절도)를 실행하고, `gate` 작업은 저장된 결과로 `gate --composite --waive continuous`를 실행하고, `red_team` 입력을 끄면 `--waive red-team`도 붙입니다. 0이 아닌 종료 코드가 릴리스를 멈춥니다.
 
-**시작 전:** 작업 폴더에서 기본 실습 7-2단계까지 마쳐, V1과 V2가 배포된 에이전트의 버전으로 있어야 합니다. 6-3의 row ID와 이유를 준비합니다.
+**시작 전:** 기본 실습 7-2까지 마친 V1·V2 에이전트 버전과 KB·모델을 유지합니다. 이 선택 실습은 **README 10단계 정리 전에** 합니다. 이미 삭제했다면 재배포로 결과를 재구성하지 말고 이번 실행의 CI를 생략합니다.
+
+**GitHub 준비:** 이 실습 소스가 들어 있고 Actions 실행·변수 설정·워크플로 게시 권한이 있는 승인된 GitHub 사본을 사용합니다. 없다면 GitHub의 **Fork**로 사본을 준비합니다. 원본을 clone한 것만으로 원본 저장소의 설정 권한이 생기지는 않습니다. 아래 `<owner>/<repo>`는 그 사본이며 기본·실행 브랜치는 `main`입니다. 새 환경의 `RUN_DIR/workshop`에는 `.git`과 `ci/`가 없으므로 CI 파일은 **GitHub 사본의 소스**에서 준비합니다. 실행 폴더의 `.env`·인증 캐시·`.foundry` 증거는 게시하지 않습니다.
+
+1번에는 [GitHub CLI](https://cli.github.com/)도 필요합니다. 일반 터미널에서 `gh --version`과 `gh auth status`를 확인하고, 없다면 설치하거나 `gh auth login`으로 해당 저장소를 사용할 본인 계정에 로그인합니다. GitHub 인증은 Azure 인증과 별개입니다. 이 준비나 승인된 Azure 관리자의 지원이 없으면 식별자를 만들기 전에 멈춥니다.
+
+**CI 검토 입력:** 원래 6-3의 row ID·trace ID·이유는 보고서에 보존합니다. CI는 새 응답을 항상 `baseline` label로 수집하므로 `review_row_id`는 `baseline-<model_key>-<case_id>`입니다. [6-2의 저장된 행](../README.ko.md#review-case)에서 모델·사례를 확인합니다. 예를 들어 `baseline-retry-sol-D01`은 CI 입력에서만 `baseline-sol-D01`이 됩니다. 로컬 파일·label·검토 기록은 바꾸지 않습니다. `review_reason`은 기록한 이유이며, 같은 질문을 선택하는 것이지 새 응답을 사람이 검토했다는 뜻은 아닙니다([검토의 범위](#ci-review-provenance)).
 
 1. **식별자:** user-assigned managed identity를 만들고 저장소용 GitHub federated credential을 추가합니다([GitHub Actions를 Azure에 연결](https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect)). subject는 직접 입력하지 말고 GitHub에서 복사합니다. `gh api repos/<owner>/<repo>/actions/oidc/customization/sub --jq .sub_claim_prefix`의 출력 뒤에 `:ref:refs/heads/main`을 붙입니다. 이 접두사에는 `repo:<owner>@<owner-id>/<repo>@<repo-id>`처럼 소유자와 저장소 ID가 들어갈 수 있습니다.
 2. **역할:** Foundry 계정에 **Foundry User**(이전 이름 Azure AI User)를, 구독에 **Reader**를 부여합니다. 평가는 이 식별자로 계정의 모델과 평가 API를 호출하므로 프로젝트 범위 할당으로는 부족합니다. `collect`가 실행하는 `preflight` 검사는 모델 할당량을, `monitor`는 Application Insights를 읽습니다. Search 역할은 필요 없고 Owner는 주지 않습니다. 새 역할 할당이 모든 호출에 적용되기까지 최대 1시간 정도 걸릴 수 있습니다.
 3. **변수:** 저장소의 **Settings → Secrets and variables → Actions → Variables**에서 `AZURE_CLIENT_ID`에 식별자의 client ID를 넣고, 워크플로 `env` 블록이 읽는 나머지 `vars.*` 이름을 `.env`의 값으로 추가합니다. 비밀값은 없습니다.
-4. **실행:** `ci/release-gate.yml`을 `.github/workflows/`에 복사한 뒤, V1·V2 버전 번호와 6-3의 row ID·이유를 넣어 **release-gate**를 실행합니다.
+4. **게시:** 위 GitHub 사본의 **Add file → Create new file**에서 `.github/workflows/release-gate.yml`을 만들고 `ci/release-gate.yml` 내용을 붙입니다. 이 파일만 `main`에 커밋하거나 승인된 PR로 병합합니다. 이미 파일이 있으면 덮어쓰지 말고 확인합니다. 로컬 복사만으로는 게시되지 않습니다.
+5. **실행:** GitHub의 `main`에서 파일이 보이는지 확인한 뒤 **Actions → release-gate → Run workflow**에서 `main`, 실제 `baseline_version`·`candidate_version`, 위 CI용 `review_row_id`·`review_reason`을 입력합니다. `red_team`은 조직 승인이 있을 때만 켭니다. 워크플로가 없으면 게시 경로·브랜치·Actions 권한부터 확인하며 Azure를 재배포하지 않습니다.
 
 **완료 확인:** `evaluate` 작업이 `verify`를 통과하고 `workshop-results` artifact를 올리며, `gate` 작업이 복합 게이트 표와 `Composite gate passed ...` 또는 `Composite gate FAILED: ...`를 출력합니다.
 
-**다르면:** 실패한 단계의 로그를 엽니다. 메시지는 워크숍 명령의 메시지와 같으므로 그 명령의 복구 방법([레벨 2·3 복구](troubleshooting.ko.md#levels) 또는 기본 실습의 복구)을 따른 뒤 워크플로를 다시 실행합니다. 로그인 단계의 `AADSTS700213`은 federated credential의 subject가 1번과 다르다는 뜻입니다. 평가 중 `PermissionDenied`나 `errored rows`는 2번 역할이 없거나 아직 적용되지 않았다는 뜻이므로, 기다린 뒤 워크플로를 다시 실행합니다.
+**다르면:** 실패한 단계의 로그와, 업로드되었다면 `workshop-results` artifact를 먼저 보관하고 실제 원인을 구분합니다.
+
+| 결과·오류 | 다음 행동 |
+|---|---|
+| 유효한 품질 신호와 `Composite gate FAILED` | 정상적인 릴리스 차단입니다. 실패 신호를 보고하며 점수를 높이려고 재평가하지 않습니다. |
+| `AADSTS700213` | 1번의 federated credential subject를 실제 저장소·`main` 브랜치와 대조합니다. |
+| `PermissionDenied` | 관리자가 거부된 주체·작업·범위와 2번 역할을 확인합니다. 새 할당이 있었다면 반영을 기다립니다. |
+| `errored rows` | 권한 문제라는 뜻으로 단정하지 않습니다. 저장된 `evaluation.json`의 report URL이나 레벨 3 run의 오류에서 실제 실패 행을 확인합니다. `429`이면 `Retry-After`를 따릅니다([평가 복구](troubleshooting.ko.md#evaluation-retry), [레벨 2·3 복구](troubleshooting.ko.md#levels)). |
+
+**`evaluate` 재시도는 저장된 단계 재개가 아닙니다.** 이전 artifact를 복원하지 않는 새 러너에서 유료 응답·trace를 다시 수집합니다. 원래 클라우드 작업의 종료와 원인 해결을 확인하고 새 유료 실행을 승인한 뒤 새 workflow run을 시작합니다. 이전 run·artifact는 별도 실험으로 보존하며, 완료한 참가자 폴더에서 CI 복구를 실행하거나 증거를 수정하지 않습니다. 정리도 실패했다면 새 시도 전에 소유자와 남은 객체부터 처리합니다.
+
+`evaluate`는 성공했고 `gate`에만 설치·artifact 다운로드 오류가 있었다면, 유효한 품질 차단과 구분해 그 오류를 해결하고 **원래 artifact로 `gate`만** 재실행합니다. 이 작업은 저장 결과만 읽으며 응답을 다시 수집하지 않습니다.
 
 <a id="ci-review-provenance"></a>
 

@@ -267,9 +267,26 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 
 - From the `identity` output: `requested_account_matches: true`, `configured_subscription_matches: true`, `configured_tenant_matches: true`, `subscription_state: Enabled`, and `default_subscription_changed: false`;
 - From the `ownership` output: `existing_groups_explicitly_preserved: true`;
-- From `model-capacity`: GlobalStandard records for the three candidates and auxiliary `gpt-5.4-mini`. Each model's `capacity_records` must include a record whose `availableCapacity` meets `required_capacity` (`50` per candidate, `100` for the auxiliary model). This is service capacity; step 6-1 separately checks subscription quota.
+- From `model-capacity`: GlobalStandard records for the three candidates and auxiliary `gpt-5.4-mini`. Each model's `capacity_records` must include a record whose `availableCapacity` meets `required_capacity` (`50` per candidate, `100` for the auxiliary model). This is service capacity, **not your subscription's unused quota**.
 
 **If not:** do not create resources. For an identity mismatch, return to the sign-in check; for an access error, use [access checks](instructor.en.md#access). For `No verified GlobalStandard capacity`, recheck only the same `model-capacity` command; stop here if capacity is still insufficient. Service capacity and subscription quota are separate, so a quota increase alone may not resolve this. Do not change subscriptions, models, or regions, or create another run ID.
+
+<a id="subscription-quota"></a>
+
+**Environment owner — check subscription quota before billable services:** in [model quota management](https://learn.microsoft.com/azure/foundry/openai/how-to/quota#view-and-request-quotas-in-foundry-portal), select the configured subscription, **Sweden Central**, and **GlobalStandard**. Compare available quota after existing allocations, not the total limit, with these deployment capacities.
+
+| Model | Unused deployment capacity required for this environment |
+|---|---:|
+| `gpt-6-sol` | 50 capacity units |
+| `gpt-6-luna` | 50 capacity units |
+| `gpt-6-astra` | 50 capacity units |
+| `gpt-5.4-mini` planner/judge | 100 capacity units |
+
+A capacity unit is not a request count. If the portal shows TPM, use the linked documentation's **model-specific conversion**, not one common ratio for all models.
+
+**Checkpoint:** all four models have enough unused subscription quota and the service capacity checked above. Step 6-1 checks candidate quota again because usage can change.
+
+**If not:** if model-specific units or available quota cannot be verified, consult the subscription administrator and do not create resources. For insufficient quota, request an increase and **do not enter step 3 until it is granted and available**. Keep the same `RUN_DIR`; do not create the Search/logging foundation while waiting. Recheck this step's capacity and quota when resuming. A pending request is not available quota.
 
 <a id="setup-foundation"></a>
 

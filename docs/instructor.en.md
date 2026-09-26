@@ -157,11 +157,14 @@ Agent hosting and the SDK packages can have different GA/preview status; do not 
 
 ## Access boundaries
 
-The environment owner needs permission to create or use the workshop resources and to assign the listed roles at their target scopes. **Contributor does not grant role-assignment permission** (`Microsoft.Authorization/roleAssignments/write`). For self-study, first verify **subscription Owner** below. The environment-setup commands and README 2-1 and 4-2 assign roles at the new resources' scopes, so the role table below is for reference.
+The environment owner needs permission to create or use the workshop resources and to assign the listed roles at their target scopes. **Contributor does not grant role-assignment permission** (`Microsoft.Authorization/roleAssignments/write`). For self-study, first verify **subscription Owner** below. This checks resource-management and role-assignment permission, not the runner's model-inference, Search, and other data access.
 
 **Portal — verify Owner for self-study:** in [Azure Portal](https://portal.azure.com/), open **Subscriptions → your subscription → Access control (IAM) → Check access → View my access**. If role assignments appear directly instead of a `View my access` button, read that list ([official access check](https://learn.microsoft.com/azure/role-based-access-control/check-access)).
 
-**Checkpoint:** you have an active **Owner** role on that subscription. You do not need to add roles manually to Search or agent resources that do not exist yet. Return to [new-environment preparation](environment.en.md) for new services, or [existing-environment preparation](#existing-foundation) for services you already have.
+**Checkpoint:** you have an active **Owner** role on that subscription. The next action depends on your preparation path.
+
+- **New services:** return to [new-environment preparation](environment.en.md). Its commands prepare user roles on the new resources; do not manually assign roles to Search or agents that do not exist yet.
+- **Existing services:** first check the runner rows below for `AZURE_EXPECTED_USERNAME`. Use **Access control (IAM) → Check access** at each scope; an authorized administrator prepares only missing access, without duplicating sufficient inherited roles. Also check the model-preparation operator row if you will deploy models. After these user-access checks, return to [existing-environment preparation](#existing-foundation). Prepare Search and agent identities separately at the steps named in the table.
 
 **If not:** recheck the account and subscription. For an `Eligible` role, finish [role activation](https://learn.microsoft.com/azure/role-based-access-control/role-assignments-eligible-activate) first. With Contributor alone, you need an access administrator's help as described below.
 
@@ -171,7 +174,7 @@ For each row, check **principal → actual role name → target resource** in th
 
 | Principal / task | Actual role name | Exact scope | Prepare / check when |
 |---|---|---|---|
-| Runner: resource discovery | Reader | `.env` resource group `AZURE_RESOURCE_GROUP` | Before `preflight`; the tools list the group's project and services |
+| Runner: resource, model-catalog, and quota discovery | Reader | `.env` subscription `AZURE_SUBSCRIPTION_ID`, including its `AZURE_RESOURCE_GROUP` | Before `preflight` and each `collect`. Even with existing deployments, these commands read subscription-level regional models/usage, so group-only Reader is insufficient. Check every runner; do not duplicate sufficient inherited access. |
 | Runner: project and agent work | Foundry User | Project `AZURE_AI_PROJECT_NAME` under `AZURE_AI_ACCOUNT_NAME` | New setup's `user-foundry`; check additional runners separately |
 | Runner: model inference | Cognitive Services OpenAI User | Foundry account `AZURE_AI_ACCOUNT_NAME` | New setup's `user-model`; check additional runners separately |
 | Runner: Search schema creation | Search Service Contributor | Search service `AZURE_SEARCH_NAME` | New setup's `user-search-service`; before README 2-1 |
@@ -179,7 +182,7 @@ For each row, check **principal → actual role name → target resource** in th
 | Model-preparation operator: create/delete deployments | Cognitive Services OpenAI Contributor | The same Foundry account | Before auxiliary/candidate preparation; not needed by participants using shared models |
 | User viewing telemetry | Log Analytics Reader | Each connected Application Insights resource and Log Analytics workspace | Before portal Logs or `monitor` |
 | Project managed identity | Log Analytics Reader | The same Application Insights resource and workspace, each | New setup's `project-monitor` or existing setup's `prepare-trace-access` |
-| Search managed identity | Cognitive Services User | Planner model's Foundry account | README 2-1 `prepare-iq` |
+| Search managed identity | Cognitive Services User | Planner model's Foundry account | For a shared class, prepare once [before rehearsal](#shared-search-access) and retain through the class. Exclusive self-study may create it in README 2-1 `prepare-iq`. |
 | Agent instance identity: retrieval | Search Index Data Reader | Workshop Search service | README 4-2 `grant-agent-access` |
 | Agent instance identity: model inference | Cognitive Services OpenAI User | Candidate models' Foundry account | README 4-2 `grant-agent-access` |
 
@@ -201,6 +204,23 @@ Supported hosted-agent environments are listed in the [Hosted Agent quickstart](
 </details>
 
 **Next:** with an existing foundation, continue to [Prepare with an existing foundation](#existing-foundation); for new services, return to [Create a dedicated environment](environment.en.md).
+
+If subscription-wide Reader is not permitted, the access administrator must arrange approved read access covering both resource discovery and regional model-catalog/quota queries. See [subscription-level read access](https://learn.microsoft.com/azure/foundry/openai/how-to/quota#prerequisites). Do not borrow the instructor's account, add Owner, or skip `preflight` as a workaround.
+
+<a id="role-recovery"></a>
+
+### Role-assignment errors: administrator acts, then runner retries
+
+For `AuthorizationFailed` or `roleAssignments/write`, keep the runner's folder and sign-in unchanged. The administrator uses **their own session** to verify the following principal, role, and scope and prepare only missing assignments.
+
+| Failed command | Principal-identification information for the administrator | Role and scope to assign |
+|---|---|---|
+| `prepare-iq` | Object/principal ID under **Identity → System assigned** on service `AZURE_SEARCH_NAME` | **Cognitive Services User** for the Search identity on Foundry account `AZURE_AI_ACCOUNT_NAME`, not for the runner or agent |
+| `grant-agent-access` | `instance_identity → principal_id` in `src/agent/.foundry/results/hosted-agent.json`, `LAB_AGENT_NAME`, and Search/Foundry resource names | **Search Index Data Reader** on `AZURE_SEARCH_NAME` and **Cognitive Services OpenAI User** on `AZURE_AI_ACCOUNT_NAME`, for that agent identity |
+
+**Checkpoint:** the administrator confirmed the actual principal and assignments. The runner repeats only the failed command in the same account and folder; existing assignments are reused. Participant cleanup does not delete administrator-created assignments, so the administrator records their IDs and cleanup responsibility. Retain shared Search access until the entire class finishes.
+
+**If not:** stop and give the administrator the denied operation and scope. Do not share the whole `.env` or authentication cache, or switch the runner's login to the administrator. In self-study, restore or activate your already-approved assignment permission before retrying. Do not redeploy or give the agent Owner.
 
 <a id="existing-foundation"></a>
 <a id="install-and-verify-locally"></a>
@@ -481,6 +501,18 @@ After resolving the cause, choose [calibration recovery](troubleshooting.en.md#c
 ## Separate model preparation, rehearsal, and participant execution
 
 **For a class, keep model ownership in the preparation folder.** Do not rehearse the full exercise in that folder: its step-10 cleanup can delete the models you intend to share with participants.
+
+<a id="shared-search-access"></a>
+
+**Environment owner — prepare shared Search-to-planner access before the first rehearsal.** Every team uses this role; do not let a rehearsal or participant folder's `prepare-iq` create it first.
+
+1. In Azure Portal, open **Identity → System assigned** on `AZURE_SEARCH_NAME` and identify its existing object/principal ID.
+2. In **Access control (IAM)** on the planner's account `AZURE_AI_ACCOUNT_NAME`, check that Search identity's **Cognitive Services User** assignment. If missing, an authorized access administrator assigns exactly that principal, role, and account scope.
+3. Keep its assignment ID, principal, and scope with the shared environment's records. Do not add it to participant ownership files or pre-create team KBs, sources, or indexes.
+
+**Checkpoint:** shared access exists before the first rehearsal and is absent from `owned_roles` in rehearsal/team `src/agent/.foundry/local-state.json`. Teams reuse the existing assignment, so shared access survives their cleanup.
+
+**If not:** withhold team handoff and cleanup of the affected folder. If a folder already records the shared assignment as owned, the environment owner must first reconcile its records and other teams' usage. Do not edit ownership files to make the check pass.
 
 ```text
 Preparation folder (owns the shared models)

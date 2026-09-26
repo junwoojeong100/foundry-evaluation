@@ -706,7 +706,115 @@ class DocumentationTests(unittest.TestCase):
                 self.assertEqual(len(monitoring), 2, "Human access and project identity need separate rows.")
                 self.assertIn("prepare-trace-access", next(row for row in rows if "`project-monitor`" in row))
                 self.assertTrue(any("| Reader |" in row and "AZURE_RESOURCE_GROUP" in row for row in rows))
+                discovery = next(row for row in rows if "| Reader |" in row)
+                for field in ("AZURE_SUBSCRIPTION_ID", "preflight", "collect"):
+                    self.assertIn(field, discovery)
                 self.assertTrue(any("| Cognitive Services OpenAI Contributor |" in row for row in rows))
+
+    def test_shared_planner_access_is_prepared_outside_team_ownership(self):
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            instructor = self.documents[ROOT / "docs" / f"instructor.{language}.md"]
+            access = instructor.split('<a id="access"></a>', 1)[1]
+            access = access.split('<a id="existing-foundation"></a>', 1)[0]
+            preparation = instructor.split('<a id="shared-search-access"></a>', 1)[1]
+            preparation = preparation.split("```bash", 1)[0]
+            with self.subTest(language=language):
+                self.assertIn("](#shared-search-access)", access)
+                for field in ("AZURE_SEARCH_NAME", "AZURE_AI_ACCOUNT_NAME",
+                              "Cognitive Services User", "owned_roles", "local-state.json"):
+                    self.assertIn(field, preparation)
+                main = self.documents[ROOT / name]
+                cleanup = main.split('<a id="cleanup-plan"></a>', 1)[1]
+                self.assertIn(f"docs/instructor.{language}.md#shared-search-access", cleanup)
+                self.assertEqual(main.count(f"docs/instructor.{language}.md#role-recovery"), 2)
+                recovery = access.split('<a id="role-recovery"></a>', 1)[1]
+                for field in ("prepare-iq", "grant-agent-access", "hosted-agent.json",
+                              "instance_identity", "principal_id", "LAB_AGENT_NAME"):
+                    self.assertIn(field, recovery)
+
+    def test_subscription_quota_is_checked_before_creating_paid_foundation(self):
+        from contracts import MODEL_SPECS
+
+        expected = {model: "50" for model, _ in MODEL_SPECS.values()}
+        expected["gpt-5.4-mini"] = "100"
+        for language in ("en", "ko"):
+            text = self.documents[ROOT / "docs" / f"environment.{language}.md"]
+            with self.subTest(language=language):
+                self.assertLess(text.index('<a id="subscription-quota"></a>'),
+                                text.index('<a id="setup-foundation"></a>'))
+                quota = text.split('<a id="subscription-quota"></a>', 1)[1]
+                quota = quota.split('<a id="setup-foundation"></a>', 1)[0]
+                self.assertEqual(dict(re.findall(
+                    r"^\| `([^`]+)`[^|\n]*\| (\d+) capacity units \|$", quota, re.MULTILINE,
+                )), expected)
+                for field in ("Sweden Central", "GlobalStandard", "TPM", "RUN_DIR",
+                              "https://learn.microsoft.com/azure/foundry/openai/how-to/quota"):
+                    self.assertIn(field, quota)
+
+    def test_cleanup_recovery_separates_verification_from_partial_deletion(self):
+        for language in ("en", "ko"):
+            text = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+            recovery = text.split('<a id="cleanup-recovery"></a>', 1)[1]
+            recovery = re.split(r'\n<a id="(?!partial-cleanup")[^"]+"></a>', recovery, maxsplit=1)[0]
+            verification, remaining = recovery.split('<a id="partial-cleanup"></a>', 1)
+            with self.subTest(language=language):
+                self.assertEqual([args for _, _, args in commands(verification)], [["check-cleanup"]])
+                self.assertEqual([args for _, _, args in commands(remaining)], [
+                    ["cleanup", "--dry-run"], ["cleanup", "--confirm"], ["check-cleanup"],
+                ])
+                self.assertIn("src/agent/.foundry/local-state.json", verification)
+                before_retry = remaining.split("```bash", 1)[0]
+                for filename in ("cleanup-plan.json", "local-state.json", "cleanup.json", "cleanup-check.json"):
+                    self.assertIn(filename, before_retry)
+                self.assertIn(f"environment.{language}.md#final-cleanup-check", remaining)
+
+    def test_partial_cleanup_retry_preserves_original_evidence_and_uses_remaining_plan(self):
+        cloud = importlib.import_module("cloud_setup")
+        state = {
+            "agent_owned": "fixture-agent", "owned_models": [], "owned_search_paths": [],
+            "owned_roles": ["fixture-role"],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            results = root / "results"
+            results.mkdir()
+            ownership = root / "local-state.json"
+            ownership.write_text(json.dumps(state))
+            with patch.object(cloud, "authenticate"), \
+                    patch.object(cloud.RuntimeConfig, "from_env") as config, \
+                    patch.object(cloud, "load_state", return_value=state), \
+                    patch.object(cloud, "save_state", side_effect=lambda value: ownership.write_text(json.dumps(value))), \
+                    patch.object(cloud, "RESULTS_DIR", results), \
+                    patch.object(cloud, "search_client"), \
+                    patch.object(cloud, "deployments", return_value=[]), \
+                    patch.object(cloud, "azd") as delete_agent, \
+                    patch.object(cloud, "az", side_effect=[RuntimeError("fixture role deletion failed"), {}]), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                config.return_value.agent_name = "fixture-agent"
+                with self.assertRaisesRegex(RuntimeError, "fixture role deletion failed"):
+                    cloud.cleanup(confirm=True)
+                self.assertNotIn("agent_owned", state)
+                self.assertEqual(state["owned_roles"], ["fixture-role"])
+                self.assertFalse((results / "cleanup.json").exists())
+                archive = results / "original-attempt"
+                archive.mkdir()
+                originals = {
+                    "cleanup-plan.json": (results / "cleanup-plan.json").read_bytes(),
+                    "local-state.json": ownership.read_bytes(),
+                }
+                for name, contents in originals.items():
+                    (archive / name).write_bytes(contents)
+                cloud.cleanup(confirm=False)
+                self.assertEqual((results / "cleanup-plan.json").read_bytes(), originals["cleanup-plan.json"])
+                cloud.cleanup(confirm=True)
+                completed = json.loads((results / "cleanup.json").read_text())
+                self.assertTrue(completed["completed"])
+                self.assertIsNone(completed["plan"]["agent"])
+                self.assertEqual(completed["plan"]["role_assignments"], ["fixture-role"])
+                self.assertEqual(json.loads(originals["cleanup-plan.json"])["agent"], "fixture-agent")
+                delete_agent.assert_called_once()
+                for name, contents in originals.items():
+                    self.assertEqual((archive / name).read_bytes(), contents)
 
     def test_early_stop_uses_owned_objects_not_completed_evaluations(self):
         from cloud_setup import cleanup_plan
@@ -893,6 +1001,51 @@ class DocumentationTests(unittest.TestCase):
                 recovery = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
                 self.assertIn(["collect", "--split", "dev", "--label", "baseline-retry", "--concurrency", "2"],
                               [args for _, _, args in commands(recovery)])
+
+    def test_assisted_handoffs_cover_initial_edits_terminal_and_foundation_costs(self):
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            text = self.documents[ROOT / "docs" / f"copilot.{language}.md"]
+            execution = text.split("### 3-2.", 1)[1].split('<a id="finish"></a>', 1)[0]
+            prompt = next(body for kind, _, body in blocks(execution) if kind == "text")
+            sign_in = next(line for line in prompt.splitlines() if line.startswith("2."))
+            completion = text.split('<a id="finish"></a>', 1)[1]
+            completion = re.sub(r"<details>.*?</details>", "", completion, flags=re.DOTALL)
+            with self.subTest(language=language):
+                self.assertIn(".env.example", text.split("### 3-2.", 1)[0])
+                self.assertIn(f"environment.{language}.md#initial-settings", text)
+                self.assertIn(f"docs/instructor.{language}.md#existing-foundation", prompt)
+                self.assertIn("LAB_AUX_DEPLOYMENT", prompt.split("6.", 1)[1])
+                for field in ("bash", "resume-shell", "RUN_DIR/workshop"):
+                    self.assertIn(field, sign_in)
+                self.assertLess(execution.index(f"../{name}#resume-shell"),
+                                execution.index(f"../{name}#login)"))
+                self.assertIn(f"environment.{language}.md#final-cleanup", completion)
+                self.assertIn("workshop-report.txt", completion)
+
+    def test_ci_setup_covers_publication_and_recovered_review_inputs(self):
+        import yaml
+
+        workflow = yaml.safe_load((ROOT / "ci" / "release-gate.yml").read_text())
+        trigger = workflow.get("on", workflow.get(True))["workflow_dispatch"]
+        self.assertIn("baseline-<model_key>-<case_id>", trigger["inputs"]["review_row_id"]["description"])
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            text = self.documents[ROOT / "docs" / f"level-3.{language}.md"]
+            setup = text.split('<a id="ci-setup"></a>', 1)[1]
+            setup = setup.split('<a id="ci-review-provenance"></a>', 1)[0]
+            with self.subTest(language=language):
+                for field in ("Fork", "RUN_DIR/workshop", ".git", "ci/", "gh --version",
+                              "gh auth status", "Add file", ".github/workflows/release-gate.yml",
+                              "Run workflow", "baseline-<model_key>-<case_id>",
+                              "baseline-retry-sol-D01", "baseline-sol-D01",
+                              f"../{name}#review-case"):
+                    self.assertIn(field, setup)
+                self.assertLess(setup.index("Add file"), setup.index("Run workflow"))
+                errored = next(row for row in setup.splitlines() if row.startswith("| `errored rows`"))
+                for field in ("evaluation.json", "429", "Retry-After"):
+                    self.assertIn(field, errored)
+                self.assertNotIn("PermissionDenied", errored)
+                for field in ("workshop-results", "`evaluate`", "`gate`", "artifact"):
+                    self.assertIn(field, setup)
 
     def test_ci_review_documentation_distinguishes_new_answers_from_original_provenance(self):
         from experiments import feedback

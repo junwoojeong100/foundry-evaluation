@@ -128,11 +128,11 @@ README.ko.md를 읽고 국문 실습의 1~10단계를 한 줄씩 요약해줘.
 
 에디터에서 이 clone을 확인합니다. README에 있는 명령이나 Azure 명령은 아직 실행하지 않습니다.
 
-- `.env`가 있습니다.
-- 설정 **이름만** 보고, 값은 복사하거나 채팅에 붙이지 않습니다.
-- 준비된 환경이나 기존 기반 서비스의 `.env`에는 실습 설정 이름이 있고, 새 환경 생성 `.env`에는 초기 설정 이름만 있습니다.
+- 이 clone의 루트에 `.env`가 있습니다. 값은 **내 편집기에서만 확인**하고, 파일 전체나 비밀값은 채팅에 붙이지 않습니다.
+- 완성된 환경이면 [README 설정 확인](../README.ko.md#workspace-settings)을, 기존 서비스 준비 중이면 [기존 환경 설정표](instructor.ko.md#existing-settings)를 따릅니다. 아직 준비하지 않은 배포 이름·엔드포인트는 추측하지 말고 계획에 미완료로 남깁니다.
+- 새 환경용 파일은 `.env.example`의 **모든 설정 이름을 유지**하고 [초기 설정표](environment.ko.md#initial-settings)의 다섯 행만 작성합니다. 나머지 템플릿 행을 지우거나 설정 이름만 보고 서비스가 준비됐다고 판단하지 않습니다.
 
-**완료 확인:** 이 clone에 고른 방식의 `.env`가 있고, README에 있는 명령과 Azure 명령은 아직 실행하지 않았습니다.
+**완료 확인:** 선택한 준비 경로와 `.env` 작성 단계가 일치하고, 남은 준비를 구분했습니다. README 실습 명령과 Azure 명령은 아직 실행하지 않았습니다. `.env`를 실행하거나 `source`하지 않습니다.
 
 **다르면:** 위에서 고른 `.env` 준비만 마친 뒤 다시 확인합니다: [README 1-1](../README.ko.md#workspace-settings), [설정값별 포털 확인 위치](instructor.ko.md#existing-settings), [초기 설정](environment.ko.md#initial-settings) 중 하나입니다.
 
@@ -270,16 +270,15 @@ README.ko.md, docs/instructor.ko.md, docs/environment.ko.md, docs/troubleshootin
 ```text
 방금 확인한 범위에서 국문 실습을 실행해줘.
 
-1. 새 환경이 필요하면 docs/environment.ko.md와 제공 스크립트를 사용하고, 가이드가 지정한 실행 폴더와 복귀 단계에서만 이어가.
-
-2. 과금 자원 생성, 역할 부여, 삭제 전에는 정확한 대상과 범위를 보여주고 승인을 받아. 로그인 시점에는 절대 경로와 README 1-3 절차를 안내한 뒤 기다려; 로그인·MFA는 내가 별도 터미널에서 한다.
+1. 계획에서 고른 준비 경로를 따라. 새 서비스는 docs/environment.ko.md와 제공 스크립트를 사용해. 기존 서비스의 준비가 덜 됐다면 docs/instructor.ko.md#existing-foundation의 미완료 단계만 끝내고 새 기반 환경을 만들지 마. 그 가이드가 요구하는 초기 .env 편집은 내가 하도록 안내하고 저장 확인을 받아. 완성된 환경은 README를 바로 따라. 선택한 가이드의 실행 폴더와 복귀 단계에서만 이어가.
+2. 과금 자원 생성, 역할 부여, 삭제 전에는 정확한 대상과 범위를 보여주고 승인을 받아. 로그인 전에 실제 실행 폴더의 Python 준비를 마쳐. 절대 경로를 보여주고, 별도 터미널에서 bash 시작 → README resume-shell 복원 블록 → README 1-3의 로그인 네 블록만 수행하도록 안내하고 기다려. 새 환경의 실행 폴더는 원래 clone이 아니라 RUN_DIR/workshop이며 로그인·MFA는 내가 직접 한다.
 3. 독립된 터미널마다 현재 폴더, 가상환경, AZURE_CONFIG_DIR를 확인하고, Python 준비가 없으면 README 설치 단계부터 진행해.
 
 4. baseline 수집/평가 -> 실제 trace 검토 -> V2 -> holdout 순서로 실행해. 자동 검토는 --reviewer assistant로 남기고, 실패 기록과 label은 보존하며 실패 단계만 복구해. 해결되지 않는 오류는 보고해.
 5. 필수 포털 확인마다 위치와 확인값을 안내하고 내 확인을 기다려. 48개 응답, 48개 trace, 평가 결과, 검토된 baseline 원본 trace를 확인해. 실제 결과와 포털 메모로 README 9-3의 보고서를 src/agent/.foundry/results/workshop-report.txt에 저장하고 production_release_approved=false를 유지해. 내가 저장된 보고서를 검토한 뒤에만 정리 dry-run 검토와 승인을 진행해.
 
 6. 주의:
-   - LAB_LANGUAGE=ko를 유지하고, 설정·상태·기계가 생성하는 증거는 제공 스크립트만 만들거나 바꾸게 해. 서술형 보고서 workshop-report.txt 작성은 허용하지만, 보고서를 채우려고 증거를 수정하지 마.
+   - LAB_LANGUAGE=ko를 유지해. 수동 설정 수정은 선택한 준비 가이드가 요구하는 초기 .env 편집만 예외로 허용해(예: 기존 환경의 LAB_AUX_DEPLOYMENT). 정확한 폴더·필드·실제 값의 확인 위치를 안내하고 내가 저장할 때까지 기다리며, 필수 설정이 끝나기 전에는 preflight를 실행하지 마. 그 밖의 설정·상태·기계가 생성하는 증거는 제공 스크립트만 만들거나 바꾸게 해. 소유권·증거는 수동 편집하지 마. 서술형 보고서 workshop-report.txt 작성은 허용하지만, 보고서를 채우려고 증거를 수정하지 마.
    - 중복 생성이나 모델·정책·정답·평가기·데이터·평가 규칙·코드·스캐폴드 변경은 하지 마.
    - 기존 결과 label의 이름 변경·덮어쓰기·삭제는 하지 마. 수집 실패일 때만 docs/troubleshooting.ko.md#collection-retry가 지정한 미사용 retry label을 쓰고, 평가·trace 복구는 기존 label을 유지해.
    - 낮은 점수를 통과시키려고 재실행하지 마.
@@ -299,7 +298,13 @@ README.ko.md, docs/instructor.ko.md, docs/environment.ko.md, docs/troubleshootin
 
 **다르면:** 실행 전에 폴더, 경로, 다음 행동, 승인/로그인 대기를 다시 보고하게 합니다.
 
-실행 중에는 Copilot 대화를 열어 둡니다. 로그인 요청이 오면 별도 터미널에서 [README 1-3](../README.ko.md#login)만 수행하고, [두 계정 확인](../README.ko.md#login-check)과 포털 확인 결과를 Copilot에 알립니다. 기본 승인 모드를 유지합니다. `/autopilot`은 가능하지만 `/allow-all`은 쓰지 않습니다. 프롬프트 문구를 보안 경계로 믿지 말고, 승인 절차와 사람의 포털 확인을 유지합니다.
+실행 중에는 Copilot 대화를 열어 둡니다. 로그인 요청이 오면 다음 순서만 수행합니다.
+
+1. Copilot이 **Python 준비를 마친 실행 폴더의 절대 경로**를 안내했는지 확인합니다. 새 환경이면 원래 clone이 아니라 `RUN_DIR/workshop`입니다.
+2. 별도 일반 터미널에서 `bash`를 실행하고 그 경로로 [터미널 복원 블록](../README.ko.md#resume-shell)을 실행합니다. `pwd`가 안내한 경로이고 `(.venv)`가 표시되어야 합니다. 다르면 로그인하지 말고 경로·Python 준비 오류를 Copilot에 알립니다.
+3. [README 1-3의 네 블록](../README.ko.md#login)만 실행하고 [두 계정 확인](../README.ko.md#login-check) 결과를 Copilot에 알립니다. 직접 `preflight`·`bind`로 넘어가지 않습니다. 토큰·로그인 코드는 전달하지 않습니다.
+
+포털 확인은 이후 요청하는 단계에서 결과를 전달합니다. 기본 승인 모드를 유지합니다. `/autopilot`은 가능하지만 `/allow-all`은 쓰지 않습니다. 프롬프트 문구를 보안 경계로 믿지 말고, 승인 절차와 사람의 포털 확인을 유지합니다.
 
 <a id="finish"></a>
 
@@ -310,6 +315,7 @@ README.ko.md, docs/instructor.ko.md, docs/environment.ko.md, docs/troubleshootin
 - [README 9단계](../README.ko.md#completion-decision)에서 48개 응답, 48개 trace, 평가 결과, 검토된 baseline 원본 trace, `production_release_approved=false`를 확인했습니다.
 - `src/agent/.foundry/results/workshop-report.txt`에 저장된 [9-3 보고서](../README.ko.md#finish)를 내가 검토했습니다. 세 항목이 실제 결과와 포털 메모로 채워졌고 `...`가 없습니다. 채팅 요약만으로는 보고서 저장을 대신하지 못합니다.
 - [README 10단계](../README.ko.md#cleanup)의 dry-run 검토, 승인, 정리, 정리 확인이 끝났습니다.
+- 기반 서비스는 별도로 남는다는 점을 확인하고 아래 비용 관리 인계를 마칩니다. 10단계 확인만으로 기반 서비스 비용이 멈췄다고 보고하지 않습니다.
 - 품질 게이트가 `false`여도 유효한 실행 결과로 두며, 자동 검토를 사람의 검토나 운영 승인으로 표시하지 않습니다.
 
 **다르면:** 마지막으로 완료 확인이 되지 않은 README 단계로 돌아가거나, 아래 재개 확인을 펼칩니다.
@@ -352,7 +358,14 @@ README 9-3 보고서의 저장·검토 여부를 확인하되, 파일이 있다�
 
 </details>
 
-**다음:** 이 완료 확인이 끝나면 실습은 끝납니다. 아래는 완료 후 선택 참고입니다.
+**다음 — 비용 관리 인계:** 기본 실습은 끝났지만 README 10단계만으로 Search·로그 등 기반 서비스 비용이 멈추지는 않습니다.
+
+| 환경의 다음 용도 | 마지막 행동 |
+|---|---|
+| 이번에 만든 본인 전용 환경을 더 쓰지 않음 | [기반 환경 최종 정리](environment.ko.md#final-cleanup)에서 생성 기록·소유권·정확한 삭제 범위를 확인하고 삭제 완료까지 확인합니다. 그룹 전체 삭제는 Copilot 실행 요청·10단계 승인과 별도로 구독·그룹·삭제 영향을 승인해야 합니다. |
+| 공유 환경, 계속 쓸 환경, 또는 소유권·다음 용도가 불명확함 | 삭제하지 않습니다. 비용 담당자와 보존 종료·재검토 날짜를 환경 소유자와 정하고 `workshop-report.txt`에 기록합니다. |
+
+로컬 보고서·증거는 보관합니다. 그룹 전체 삭제 뒤에는 `check-cleanup`을 반복하지 말고 환경 가이드의 삭제 확인을 따릅니다. 아래는 선택 참고입니다.
 
 <a id="azure-skills"></a>
 

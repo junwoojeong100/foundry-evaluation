@@ -1,5 +1,6 @@
 # GitHub Actions release pipeline for the workshop (docs/level-3.en.md#release-gate).
-# GitHub runs workflows only from .github/workflows/, so this file does nothing until you copy it there.
+# Publish this file as .github/workflows/release-gate.yml on your authorized repository's default branch.
+# A local copy alone does not make the workflow available in GitHub Actions.
 # The evaluate job signs in with OpenID Connect and runs ci/evaluate-candidate.sh against agent versions that
 # a workshop folder already deployed. The gate job reads the saved results only and makes no Azure calls.
 # Setup (identity, roles, repository variables): docs/level-3.en.md#ci-setup
@@ -17,7 +18,7 @@ on:
         required: true
         default: "2"
       review_row_id:
-        description: Row ID you reviewed in step 6, for example baseline-sol-D01
+        description: CI row ID baseline-<model_key>-<case_id>, even for a local baseline-retry review
         required: true
       review_reason:
         description: The review reason you recorded in step 6

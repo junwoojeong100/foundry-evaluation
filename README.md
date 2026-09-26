@@ -322,7 +322,7 @@ python scripts/workshop.py prepare-iq
 
 **Checkpoint:** after the `Created: ...` lines, `Foundry IQ ready: <your KB>; 7 synthetic documents.` appears. Your KB is `LAB_PREFIX` plus `-kb`.
 
-**If not:** for a role-assignment permission error such as `AuthorizationFailed` or `roleAssignments/write`, the environment owner (you, in self-study) checks [access](docs/instructor.en.md#access), then rerun only this command. For other errors, see [common symptoms](docs/troubleshooting.en.md#symptoms).
+**If not:** for `AuthorizationFailed` or `roleAssignments/write`, stop before 2-2. The access administrator **assigns and confirms the Search identity's planner access** using the `prepare-iq` row in [role-assignment recovery](docs/instructor.en.md#role-recovery). Then the runner repeats only this command in the same account and folder; do not switch the runner's login to the administrator. For other errors, see [common symptoms](docs/troubleshooting.en.md#symptoms).
 
 <a id="policy-retrieval"></a>
 
@@ -461,7 +461,7 @@ python scripts/workshop.py grant-agent-access
 
 **Checkpoint:** `Search read and Foundry model inference access configured for <your agent>.`
 
-**If not:** for a role-assignment permission error, the environment owner (you, in self-study) checks that they can assign the roles in the “agent instance” row of the [access table](docs/instructor.en.md#access), then rerun only this command. Do not redeploy or add Owner permissions. For other errors, see [Hosted Agent symptoms](docs/troubleshooting.en.md#symptom-hosted).
+**If not:** for a role-assignment permission error, identify the agent principal, roles, and scopes using the `grant-agent-access` row in [role-assignment recovery](docs/instructor.en.md#role-recovery). After the administrator completes the assignments in their own session, the runner repeats only this command in the same account and folder. Do not redeploy or add Owner permissions. For other errors, see [Hosted Agent symptoms](docs/troubleshooting.en.md#symptom-hosted).
 
 <a id="hosted-smoke"></a>
 
@@ -1168,7 +1168,7 @@ python scripts/workshop.py cleanup --dry-run
 
 | Plan field | Expected target |
 |---|---|
-| `agent`, `search_objects`, `role_assignments` | Your `LAB_AGENT_NAME`, your three `LAB_PREFIX` knowledge objects, and roles created by this folder (long IDs, usually two) |
+| `agent`, `search_objects`, `role_assignments` | Your `LAB_AGENT_NAME`, your three `LAB_PREFIX` knowledge objects, and roles created by this folder (long IDs, usually two). In a shared class, have the owner confirm that [shared Search-to-planner access](docs/instructor.en.md#shared-search-access) is not listed; if it is, stop before 10-2. Exclusive self-study may also own that role in this folder. |
 | `models` | **Empty for participants using shared deployments.** For self-study, it can contain only the candidates you created with `prepare-models`; delete them only if nobody else uses them. |
 | `schedules`, `custom_evaluators`, `generated_datasets` | Empty unless you added Levels 2–3; then only this folder's schedule, evaluators, and generated datasets |
 | `preserved` | The existing Foundry project, Search, App Insights, and evaluation evidence (not deleted) |

@@ -644,28 +644,59 @@ PY
 
 ## If cleanup or its verification stopped
 
-Keep the same workspace, account, and ownership records. Files below are under **`src/agent/.foundry/results/`**.
+Keep the same workspace, account, and names, and confirm the original cleanup process has stopped. Plans/results are in `src/agent/.foundry/results/`; ownership is in `src/agent/.foundry/local-state.json`. Do not edit these files.
 
 | What finished | Next action |
 |---|---|
-| `cleanup --confirm` succeeded; `cleanup.json` records `completed: true`, but `check-cleanup` failed | Preserve that file and its `plan`. Resolve the reported access/propagation problem, then repeat **only the check below**. |
-| Deletion itself stopped, or ownership/targets do not match | Stop automated deletion. Preserve the error, `cleanup-plan.json` if present, and ownership state. Before any further deletion, the owner (you, in self-study) checks that the plan's names match `LAB_AGENT_NAME` and `LAB_PREFIX` in this folder's `.env` and reconciles the original plan with Azure; partial counts are not complete cleanup. |
+| `cleanup --confirm` succeeded; `cleanup.json` records `completed: true`, but `check-cleanup` failed | Use **A: retry verification only**. Never repeat successful deletion. |
+| Deletion partly succeeded, then failed, and the owner can reconcile every original target and remaining ownership record with Azure | Use **B: reconciled, approved remaining deletion**. Archive the original plan before retrying. |
+| Ownership, targets, shared dependencies, or deletion outcomes are uncertain | Stop automated deletion. Give the owner the error, plan, and ownership record. Do not edit records or run B to manufacture a completion file. |
 
-**Terminal — only after the deletion command succeeded:**
+**A — deletion succeeded; only verification failed:** preserve the completion file and its `plan`, resolve access/propagation errors, then run only this check.
 
 ```bash
 python scripts/workshop.py check-cleanup
 ```
 
-Require the [step 10-3 checkpoint](../README.md#cleanup-check). If an object still exists or a preserved service is missing, report it; do not claim completion. Repeating `cleanup --confirm` would replace the recorded plan with the remaining ownership set, not verify the original deletion.
+Require the [step 10-3 checkpoint](../README.md#cleanup-check). If an object still exists or a preserved service is missing, report it; do not claim completion. Repeating `cleanup --confirm` would replace the recorded plan with the remaining ownership set, not verify the original deletion. Do not use B to bypass this check.
 
-After a separately approved full-group deletion, use [final foundation verification](environment.en.md#final-cleanup-check), not `check-cleanup`.
+<a id="partial-cleanup"></a>
 
-**Checkpoint:** [step 10-3](../README.md#cleanup-check) confirms owned objects are gone and preserved shared services still exist.
+**B — owner-reconciled and approved continuation of partial deletion**
 
-**If not:** keep the cleanup files and reported Azure state for the owner; do not run `cleanup --confirm` again to replace the original plan.
+1. **Editor:** create an unused archive folder under `results/` and copy the original `cleanup-plan.json`, `local-state.json` from its location above, and any `cleanup.json`/`cleanup-check.json` into it. Record the error and archive path. Do not move/edit active files or overwrite an earlier archive.
+2. **Environment owner:** record whether each original target is already absent or still present in Azure. The remaining ownership record must agree. Stop if a deleted target remains recorded as owned, a shared Search/planner role or another owner is involved, or an outcome is uncertain. Do not edit records to force agreement.
+3. **Terminal — inspect only the remaining plan:**
 
-**Next:** return to [10-3 cleanup verification](../README.md#cleanup-check). To retire your exclusive group, follow the [creation-record and deletion-scope checks](environment.en.md#final-cleanup).
+```bash
+python scripts/workshop.py cleanup --dry-run
+```
+
+**Checkpoint:** only still-present, exclusively owned targets from the archived original plan remain. No new target or shared dependency is listed, and the owner approved this remaining plan. An empty list alone does not prove the original targets were deleted.
+
+**If not:** stop further deletion and give the owner the discrepancy.
+
+**Terminal — only after that reconciliation and separate approval:**
+
+```bash
+python scripts/workshop.py cleanup --confirm
+```
+
+**Checkpoint:** it ends with `Owned workshop resources removed; shared infrastructure and evidence preserved.`
+
+**If not:** preserve both attempts and stop. Do not loop automatically.
+
+**Terminal — after the remaining deletion succeeds:**
+
+```bash
+python scripts/workshop.py check-cleanup
+```
+
+**Checkpoint:** [10-3's values](../README.md#cleanup-check) match the **resumed plan**, and the owner also confirmed the earlier attempt's deleted targets are absent. The latest check covers only its latest plan; do not report smaller counts as verification of the entire original plan. Keep both attempts' evidence with the report.
+
+**If not:** give the owner the check result and original plan; do not delete more.
+
+**Next:** after A or B is verified, workshop cleanup is complete. To retire an exclusive environment, follow the [creation-record and deletion-scope checks](environment.en.md#final-cleanup). After separately approved whole-group deletion, use [final foundation verification](environment.en.md#final-cleanup-check), not `check-cleanup`. Never delete a shared group as a shortcut.
 
 <a id="setup-resume"></a>
 <a id="environment-owners-resume-setup-after-closing-the-terminal"></a>

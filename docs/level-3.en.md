@@ -403,16 +403,34 @@ Check and save the [results table](#level-3-results) you filled in within the ex
 
 [`ci/release-gate.yml`](../ci/release-gate.yml) runs the same commands for a new candidate: its `evaluate` job runs [`ci/evaluate-candidate.sh`](../ci/evaluate-candidate.sh) (main-guide steps 5–9 and sections 4–5, plus section 3 when the `red_team` input is enabled) against agent versions you already deployed, and its `gate` job runs `gate --composite --waive continuous` on the saved results, adding `--waive red-team` when `red_team` is off. A non-zero exit stops the release.
 
-**Before you start:** your workshop folder has finished the main guide through step 7-2, so V1 and V2 are versions of your deployed agent. Keep your 6-3 row ID and reason.
+**Before you start:** keep the V1/V2 agent versions deployed through main-guide step 7-2, plus their KB and models. Do this optional exercise **before README step 10 cleanup**. If already deleted, skip CI for this run rather than redeploying to reconstruct the results.
+
+**GitHub preparation:** use an approved GitHub copy containing this workshop source, with permission to run Actions, configure variables, and publish workflows. If needed, create a copy with GitHub's **Fork**. Cloning the upstream repository does not grant its settings permissions. Use your copy for `<owner>/<repo>` below, with `main` as its default and execution branch. The new-environment `RUN_DIR/workshop` has neither `.git` nor `ci/`, so prepare CI files in **your GitHub copy's source**. Do not publish the execution folder's `.env`, authentication caches, or `.foundry` evidence.
+
+Item 1 also needs [GitHub CLI](https://cli.github.com/). Check `gh --version` and `gh auth status` in a regular terminal; install it if missing or use `gh auth login` with your own authorized GitHub account. GitHub authentication is separate from Azure authentication. Stop before creating the identity if these prerequisites or authorized Azure-administrator support are unavailable.
+
+**CI review input:** preserve the original step-6-3 row ID, trace ID, and reason in your report. CI always collects new responses under `baseline`, so `review_row_id` is `baseline-<model_key>-<case_id>`. Read the model and case from [6-2's saved row](../README.md#review-case). For example, `baseline-retry-sol-D01` becomes `baseline-sol-D01` only in the CI input. Do not rename local files/labels or edit the original review. `review_reason` is your recorded reason; selecting the same question does not establish human review of the new answer ([review boundary](#ci-review-provenance)).
 
 1. **Identity:** create a user-assigned managed identity and add a GitHub federated credential for your repository ([connect GitHub Actions to Azure](https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect)). Copy its subject from GitHub instead of typing it: append `:ref:refs/heads/main` to the output of `gh api repos/<owner>/<repo>/actions/oidc/customization/sub --jq .sub_claim_prefix`. The prefix can include owner and repository IDs, as in `repo:<owner>@<owner-id>/<repo>@<repo-id>`.
 2. **Roles:** give it **Foundry User** (formerly Azure AI User) on the Foundry account and **Reader** on the subscription. The evaluations call the account's models and evaluation API as this identity, so a project-scope assignment is not enough; each `collect` runs the `preflight` check, which reads model quotas, and `monitor` reads Application Insights. It needs no Search roles, and never Owner. A new role assignment can take up to an hour to apply to every call.
 3. **Variables:** in the repository's **Settings → Secrets and variables → Actions → Variables**, set `AZURE_CLIENT_ID` to the identity's client ID, then add each other `vars.*` name that the workflow's `env` block reads, with its value from your `.env`. None is a secret.
-4. **Run:** copy `ci/release-gate.yml` to `.github/workflows/`, then run **release-gate** with your V1 and V2 version numbers and your 6-3 row ID and reason.
+4. **Publish:** in that GitHub copy, use **Add file → Create new file** to create `.github/workflows/release-gate.yml` with the contents of `ci/release-gate.yml`. Commit only this file to `main`, or merge it through an approved PR. If it already exists, inspect it rather than overwriting it. A local copy alone is not publication.
+5. **Run:** confirm the file is visible on GitHub's `main`, then open **Actions → release-gate → Run workflow**. Select `main` and enter the actual `baseline_version`, `candidate_version`, and the CI `review_row_id`/`review_reason` prepared above. Enable `red_team` only with organizational approval. If the workflow is absent, check its published path, branch, and Actions permissions before changing Azure; do not redeploy.
 
 **Checkpoint:** the `evaluate` job passes `verify` and uploads the `workshop-results` artifact, and the `gate` job prints the composite table ending in `Composite gate passed ...` or `Composite gate FAILED: ...`.
 
-**If not:** open the failed step's log. Its messages are the workshop commands' own, so follow that command's recovery ([Level 2 and 3 recovery](troubleshooting.en.md#levels) or the main guide's), then run the workflow again. `AADSTS700213` at sign-in means the federated credential's subject does not match item 1. `PermissionDenied` or `errored rows` in an evaluation means an item 2 role is missing or not applied yet; wait, then run the workflow again.
+**If not:** first preserve the failed step's log and its `workshop-results` artifact, if uploaded, then identify the actual cause.
+
+| Result or error | Next action |
+|---|---|
+| Valid quality signals with `Composite gate FAILED` | This is an expected release block. Report the failed signals; do not reevaluate for better scores. |
+| `AADSTS700213` | Compare item 1's federated-credential subject with the actual repository and `main` branch. |
+| `PermissionDenied` | Have the administrator check the denied principal, operation, scope, and item 2 roles. Wait for propagation if an assignment was added. |
+| `errored rows` | Do not assume an access problem. Inspect the failed rows through the saved `evaluation.json` report URL or the Level 3 run's error. For `429`, respect `Retry-After` ([evaluation recovery](troubleshooting.en.md#evaluation-retry), [Level 2–3 recovery](troubleshooting.en.md#levels)). |
+
+**An `evaluate` retry is not saved-stage resume.** A fresh runner does not restore the old artifact; it collects new paid responses and traces. Confirm the original cloud work ended, resolve the cause, and approve a new paid attempt before dispatching a new workflow run. Preserve the previous run/artifact as a separate experiment. Do not run CI recovery in the completed participant folder or edit its evidence. If cleanup also failed, resolve remaining objects with the owner before another attempt.
+
+If `evaluate` succeeded and only `gate` had an installation/artifact-download error, distinguish that from a valid quality block. Resolve the error and rerun **only `gate` with the original artifact**. That job reads saved results and does not recollect answers.
 
 <a id="ci-review-provenance"></a>
 

@@ -329,7 +329,7 @@ python scripts/workshop.py prepare-iq
 
 **완료 확인:** `Created: ...` 줄들 뒤에 `Foundry IQ ready: <내 KB>; 7 synthetic documents.`가 나옵니다. 내 KB 이름은 `LAB_PREFIX` + `-kb`입니다.
 
-**다르면:** `AuthorizationFailed`나 `roleAssignments/write` 같은 역할 부여 권한 오류이면 환경 소유자(혼자라면 본인)가 [권한](docs/instructor.ko.md#access)을 확인한 뒤 이 명령만 다시 실행합니다. 그 밖의 오류는 [증상별 확인](docs/troubleshooting.ko.md#symptoms)을 봅니다.
+**다르면:** `AuthorizationFailed`나 `roleAssignments/write`이면 2-2 전에 멈춥니다. 접근 관리자가 [역할 부여 복구](docs/instructor.ko.md#role-recovery)의 `prepare-iq` 행대로 **Search identity의 planner 접근을 실제로 부여·확인한 뒤**, 실행자가 같은 계정·폴더에서 이 명령만 다시 실행합니다. 관리자 계정으로 바꿔 로그인하지 않습니다. 그 밖의 오류는 [증상별 확인](docs/troubleshooting.ko.md#symptoms)을 봅니다.
 
 <a id="policy-retrieval"></a>
 
@@ -469,7 +469,7 @@ python scripts/workshop.py grant-agent-access
 
 **완료 확인:** `Search read and Foundry model inference access configured for <내 에이전트>.`
 
-**다르면:** 역할 부여 권한 오류이면 환경 소유자(혼자라면 본인)가 [권한 표](docs/instructor.ko.md#access)의 “에이전트 인스턴스” 행 역할을 부여할 수 있는지 확인한 뒤 이 명령만 다시 실행합니다. 재배포하거나 Owner 권한을 추가하지 않습니다. 그 밖의 오류는 [Hosted Agent 증상](docs/troubleshooting.ko.md#symptom-hosted)을 봅니다.
+**다르면:** 역할 부여 권한 오류이면 [역할 부여 복구](docs/instructor.ko.md#role-recovery)의 `grant-agent-access` 행에서 에이전트 principal과 역할·범위를 확인합니다. 관리자가 자기 세션에서 할당을 마친 뒤 실행자가 같은 계정·폴더에서 이 명령만 다시 실행합니다. 재배포하거나 Owner 권한을 추가하지 않습니다. 그 밖의 오류는 [Hosted Agent 증상](docs/troubleshooting.ko.md#symptom-hosted)을 봅니다.
 
 <a id="hosted-smoke"></a>
 
@@ -1200,7 +1200,7 @@ python scripts/workshop.py cleanup --dry-run
 
 | 계획 필드 | 있어야 할 대상 |
 |---|---|
-| `agent`, `search_objects`, `role_assignments` | 내 `LAB_AGENT_NAME`, 내 `LAB_PREFIX` 지식 객체 3개, 이 폴더에서 만든 역할(긴 ID, 보통 2개) |
+| `agent`, `search_objects`, `role_assignments` | 내 `LAB_AGENT_NAME`, 내 `LAB_PREFIX` 지식 객체 3개, 이 폴더에서 만든 역할(긴 ID, 보통 2개). 공유 수업에서는 [공유 Search의 planner 역할](docs/instructor.ko.md#shared-search-access)이 목록에 없는지 소유자와 확인하며, 있으면 10-2 전에 멈춥니다. 본인 전용 개인 실습은 이 역할도 폴더 소유일 수 있습니다. |
 | `models` | **공유 배포를 쓰는 참가자는 빈 목록입니다.** 개인 실습에서 `prepare-models`로 만든 후보만 포함될 수 있으며, 다른 사용자가 쓰지 않을 때만 삭제합니다 |
 | `schedules`, `custom_evaluators`, `generated_datasets` | 레벨 2·3을 하지 않았다면 빈 목록. 했다면 이 폴더의 일정·평가기·생성 데이터셋만 포함 |
 | `preserved` | 기존 Foundry 프로젝트·Search·App Insights·평가 증거(삭제하지 않음) |

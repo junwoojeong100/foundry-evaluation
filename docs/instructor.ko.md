@@ -159,11 +159,14 @@ Agent hosting과 SDK 패키지의 GA/preview 상태는 서로 다를 수 있으�
 
 ## 권한
 
-환경 소유자는 필요한 리소스 그룹·리소스를 만들거나 사용할 수 있고, 아래 역할을 해당 범위에 부여할 수 있어야 한다. **Contributor에는 역할 부여 권한**(`Microsoft.Authorization/roleAssignments/write`)이 없다. 혼자 실습하면 먼저 아래에서 **구독 Owner**를 확인한다. 새 자원의 역할은 환경 준비 명령과 README 2-1·4-2가 부여하므로 아래 역할 표는 참고용이다.
+환경 소유자는 필요한 리소스 그룹·리소스를 만들거나 사용할 수 있고, 아래 역할을 해당 범위에 부여할 수 있어야 한다. **Contributor에는 역할 부여 권한**(`Microsoft.Authorization/roleAssignments/write`)이 없다. 혼자 실습하면 먼저 아래에서 **구독 Owner**를 확인한다. 이는 자원 관리·역할 부여 권한의 확인이며, 실행자의 모델 호출·Search 등 데이터 접근 확인을 대신하지 않는다.
 
 **포털 — 혼자 실습할 때 Owner 확인:** [Azure Portal](https://portal.azure.com/)의 **Subscriptions → 사용할 구독 → Access control (IAM) → Check access → View my access**에서 본인의 역할을 확인한다. `View my access` 대신 역할 목록이 바로 보이면 그 목록을 본다([공식 확인 절차](https://learn.microsoft.com/azure/role-based-access-control/check-access)).
 
-**완료 확인:** 해당 구독에 본인의 활성 **Owner** 역할이 있다. 아직 만들지 않은 Search·에이전트의 역할을 여기서 수동으로 추가할 필요는 없다. 새 서비스를 준비 중이면 [새 전용 환경 만들기](environment.ko.md), 기존 서비스를 준비 중이면 [기존 환경 준비](#existing-foundation)로 돌아간다.
+**완료 확인:** 해당 구독에 본인의 활성 **Owner** 역할이 있다. 다음 행동은 준비 경로에 따라 다르다.
+
+- **새 서비스:** [새 전용 환경 만들기](environment.ko.md)로 돌아간다. 그 문서의 명령이 새 자원의 사용자 역할을 준비하므로 아직 없는 Search·에이전트에 수동으로 역할을 추가하지 않는다.
+- **기존 서비스:** 아래 표의 실행자 행을 `AZURE_EXPECTED_USERNAME` 계정으로 먼저 확인한다. 각 범위의 **Access control (IAM) → Check access**에서 부족한 접근만 승인된 관리자가 부여하며, 충분한 상속 권한은 중복 추가하지 않는다. 모델을 배포한다면 모델 준비 담당자 행도 확인한다. 사용자 접근 확인이 끝나면 [기존 환경 준비](#existing-foundation)로 돌아간다. Search·에이전트 identity는 표에 적힌 단계에서 별도로 준비한다.
 
 **다르면:** 계정과 구독을 다시 확인한다. 역할이 활성화 대상(`Eligible`)이면 [역할 활성화](https://learn.microsoft.com/azure/role-based-access-control/role-assignments-eligible-activate)를 먼저 마친다. Contributor만 있으면 아래처럼 접근 관리자의 지원이 필요하다.
 
@@ -173,7 +176,7 @@ Agent hosting과 SDK 패키지의 GA/preview 상태는 서로 다를 수 있으�
 
 | 주체·작업 | 실제 역할 이름 | 정확한 범위 | 준비·확인 시점 |
 |---|---|---|---|
-| 실행자: 리소스 조회 | Reader | `.env`의 `AZURE_RESOURCE_GROUP` | `preflight` 이전. 도구가 그룹의 프로젝트·서비스를 조회함 |
+| 실행자: 리소스·모델 카탈로그·할당량 조회 | Reader | `.env`의 `AZURE_SUBSCRIPTION_ID` 구독(하위 `AZURE_RESOURCE_GROUP` 포함) | `preflight`와 각 `collect` 이전. 모델이 이미 배포돼 있어도 구독 범위의 지역 모델·사용량을 조회하므로 그룹 Reader만으로는 부족함. 실행자마다 확인하며 충분한 상속 권한은 중복 부여하지 않음 |
 | 실행자: 프로젝트·에이전트 작업 | Foundry User | `AZURE_AI_ACCOUNT_NAME` 아래 `AZURE_AI_PROJECT_NAME` 프로젝트 | 새 환경의 `user-foundry`; 추가 실행자는 사전 확인 |
 | 실행자: 모델 호출 | Cognitive Services OpenAI User | `AZURE_AI_ACCOUNT_NAME` Foundry 계정 | 새 환경의 `user-model`; 추가 실행자는 사전 확인 |
 | 실행자: Search 스키마 생성 | Search Service Contributor | `AZURE_SEARCH_NAME` Search 서비스 | 새 환경의 `user-search-service`; README 2-1 이전 |
@@ -181,7 +184,7 @@ Agent hosting과 SDK 패키지의 GA/preview 상태는 서로 다를 수 있으�
 | 모델 준비 담당자: 배포 생성·삭제 | Cognitive Services OpenAI Contributor | 같은 Foundry 계정 | 보조·후보 모델 준비 이전. 공유 모델을 쓰는 참가자에게는 불필요 |
 | 관측하는 사용자 | Log Analytics Reader | 연결된 Application Insights와 Log Analytics workspace 각각 | 포털 Logs·`monitor` 이전 |
 | 프로젝트 managed identity | Log Analytics Reader | 같은 Application Insights와 workspace 각각 | 새 환경의 `project-monitor` 또는 기존 환경의 `prepare-trace-access` |
-| Search managed identity | Cognitive Services User | planner 모델이 있는 Foundry 계정 | README 2-1 `prepare-iq` |
+| Search managed identity | Cognitive Services User | planner 모델이 있는 Foundry 계정 | 공유 수업은 [리허설 전 공유 권한 준비](#shared-search-access)에서 한 번 준비하고 수업 종료까지 보존. 본인 전용 개인 실습은 README 2-1 `prepare-iq`에서 생성 가능 |
 | 에이전트 인스턴스 managed identity: 검색 | Search Index Data Reader | 실습 Search 서비스 | README 4-2 `grant-agent-access` |
 | 에이전트 인스턴스 managed identity: 모델 호출 | Cognitive Services OpenAI User | 세 후보 모델이 있는 Foundry 계정 | README 4-2 `grant-agent-access` |
 
@@ -203,6 +206,23 @@ Agent hosting과 SDK 패키지의 GA/preview 상태는 서로 다를 수 있으�
 </details>
 
 **다음:** 기존 기반 환경을 쓰면 [기존 기반 환경으로 준비](#existing-foundation)로 간다. 새 서비스를 만들면 [전용 새 환경 생성](environment.ko.md)으로 돌아간다.
+
+구독 전체 Reader가 허용되지 않으면 접근 관리자가 리소스 조회와 지역 모델 카탈로그·할당량 조회를 모두 허용하는 승인된 읽기 권한을 준비해야 한다. [구독 범위 조회 안내](https://learn.microsoft.com/azure/foundry/openai/how-to/quota#prerequisites)를 참고한다. 강사 계정을 빌리거나 Owner 부여·`preflight` 생략으로 우회하지 않는다.
+
+<a id="role-recovery"></a>
+
+### 역할 부여 오류: 관리자 작업 후 실행자가 재시도
+
+`AuthorizationFailed`·`roleAssignments/write`이면 실행자의 폴더·로그인을 유지한다. 관리자는 **자기 세션**에서 아래 주체·역할·범위를 확인하고 부족한 할당만 준비한다.
+
+| 실패한 명령 | 관리자에게 전달할 주체 확인 정보 | 부여할 역할·범위 |
+|---|---|---|
+| `prepare-iq` | `AZURE_SEARCH_NAME` 서비스의 **Identity → System assigned**에 있는 object/principal ID | Search identity에 **Cognitive Services User**, `AZURE_AI_ACCOUNT_NAME` Foundry 계정 범위. 실행자나 에이전트에 주는 역할이 아님 |
+| `grant-agent-access` | `src/agent/.foundry/results/hosted-agent.json`의 `instance_identity → principal_id`, `LAB_AGENT_NAME`, Search·Foundry 자원 이름 | 해당 에이전트 identity에 **Search Index Data Reader**, `AZURE_SEARCH_NAME` 범위와 **Cognitive Services OpenAI User**, `AZURE_AI_ACCOUNT_NAME` 범위 |
+
+**완료 확인:** 관리자가 실제 주체와 할당을 확인했다. 실행자는 같은 계정·폴더에서 실패했던 명령만 다시 실행한다. 기존 할당은 재사용된다. 관리자가 만든 할당은 참가자 정리가 삭제하지 않으므로 관리자가 ID와 정리 책임을 기록한다. 공유 Search 역할은 수업 전체가 끝날 때까지 보존한다.
+
+**다르면:** 여기서 멈추고 거부된 작업·범위를 관리자에게 전달한다. `.env` 전체·인증 캐시를 전달하거나 관리자로 바꿔 로그인하지 않는다. 혼자 실습하면 이미 승인된 역할 부여 권한을 복구·활성화한 뒤 재시도한다. 재배포하거나 에이전트에 Owner를 주지 않는다.
 
 <a id="existing-foundation"></a>
 
@@ -485,6 +505,18 @@ python scripts/workshop.py calibrate
 ## 모델 준비·리허설·참가자 실행을 분리
 
 **수업용 모델의 소유권은 준비 폴더에 남긴다.** 그 폴더에서 전체 실습을 리허설하면 10단계 정리가 참가자에게 공유할 모델까지 삭제할 수 있다.
+
+<a id="shared-search-access"></a>
+
+**환경 소유자 — 첫 리허설 전에 공유 Search의 planner 접근을 준비한다.** 모든 조가 쓰는 역할이므로 리허설·참가자 폴더의 `prepare-iq`가 처음 만들게 두지 않는다.
+
+1. Azure Portal에서 `AZURE_SEARCH_NAME` 서비스의 **Identity → System assigned**를 열어 기존 object/principal ID를 확인한다.
+2. planner가 배포된 `AZURE_AI_ACCOUNT_NAME` 계정의 **Access control (IAM)**에서 그 Search identity의 **Cognitive Services User** 할당을 확인한다. 없으면 승인된 접근 관리자가 이 주체·역할·계정 범위만 부여한다.
+3. 할당 ID·주체·범위를 공유 환경 관리 기록에 보관한다. 참가자 소유권 파일에 추가하거나 조별 KB·source·index를 미리 만들지 않는다.
+
+**완료 확인:** 공유 역할이 첫 리허설 전에 존재하고, 리허설·조별 `src/agent/.foundry/local-state.json`의 `owned_roles`에는 없다. 각 조는 기존 할당을 재사용하므로 조별 정리 뒤에도 공유 접근이 남는다.
+
+**다르면:** 조별 전달과 해당 폴더의 정리를 보류한다. 이미 어느 폴더가 공유 역할을 소유 대상으로 기록했다면 환경 소유자가 기록과 다른 조의 사용 여부를 먼저 확인한다. 소유권 파일을 고쳐 통과시키지 않는다.
 
 ```text
 모델 준비 폴더 (공유 모델의 소유권 유지)

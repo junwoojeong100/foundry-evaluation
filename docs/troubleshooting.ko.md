@@ -645,28 +645,59 @@ PY
 
 ## 정리 또는 정리 확인이 중단됐다면
 
-같은 폴더·계정·소유권 기록을 유지합니다. 아래 파일은 **`src/agent/.foundry/results/`**에 있습니다.
+같은 폴더·계정·이름을 유지하고 원래 정리 프로세스가 종료됐는지 확인합니다. 정리 계획·결과는 `src/agent/.foundry/results/`, 소유권 기록은 `src/agent/.foundry/local-state.json`에 있습니다. 이 파일은 수정하지 않습니다.
 
 | 어디까지 끝났나 | 다음 행동 |
 |---|---|
-| `cleanup --confirm` 성공, `cleanup.json`에 `completed: true`가 있지만 `check-cleanup` 실패 | 그 파일과 `plan`을 보존. 보고된 접근·반영 지연 문제를 해결하고 **아래 확인 명령만** 반복 |
-| 삭제 자체가 중단되었거나 소유권·대상이 다름 | 자동 삭제 중단. 오류, 있다면 `cleanup-plan.json`, 소유권 상태를 보존. 추가 삭제 전 소유자(혼자라면 본인)가 계획의 이름이 이 폴더 `.env`의 `LAB_AGENT_NAME`·`LAB_PREFIX`와 같은지, 원래 계획과 Azure 상태가 맞는지 대조하며 부분 삭제 건수를 전체 정리 완료로 표시하지 않음 |
+| `cleanup --confirm` 성공, `cleanup.json`에 `completed: true`가 있지만 `check-cleanup` 실패 | **A: 확인만 재시도**. 성공한 삭제는 반복하지 않습니다. |
+| 일부 삭제 뒤 실패했고 소유자가 원래 대상 전부와 남은 소유권 기록을 Azure 상태와 대조할 수 있음 | **B: 대조·승인된 나머지 삭제**. 재시도 전에 원래 계획을 보관합니다. |
+| 소유권·대상·공유 의존성·삭제 결과가 불명확함 | 자동 삭제 중단. 오류·계획·소유권 기록을 소유자에게 전달합니다. 완료 파일을 만들려고 기록을 고치거나 B를 실행하지 않습니다. |
 
-**터미널 — 삭제 명령이 성공한 경우에만:**
+**A — 삭제 명령은 성공했고 확인만 실패:** 완료 파일과 `plan`을 보존하고 접근·반영 지연 문제를 해결한 뒤 아래 확인만 실행합니다.
 
 ```bash
 python scripts/workshop.py check-cleanup
 ```
 
-[10-3의 완료 기준](../README.ko.md#cleanup-check)을 확인합니다. 대상이 남아 있거나 보존할 서비스가 없다면 보고하며 완료로 처리하지 않습니다. `cleanup --confirm`을 반복하면 원래 삭제를 검증하는 대신 **남은 소유 대상 기준으로 계획이 교체**됩니다.
+[10-3의 완료 기준](../README.ko.md#cleanup-check)을 확인합니다. 대상이 남아 있거나 보존할 서비스가 없다면 보고하며 완료로 처리하지 않습니다. `cleanup --confirm`을 반복하면 원래 삭제를 검증하는 대신 **남은 소유 대상 기준으로 계획이 교체**됩니다. B로 넘어가 이 확인을 우회하지 않습니다.
 
-별도 승인으로 그룹 전체를 삭제한 뒤에는 `check-cleanup`이 아니라 [기반 환경의 최종 확인](environment.ko.md#final-cleanup-check)을 따릅니다.
+<a id="partial-cleanup"></a>
 
-**완료 확인:** [10-3 완료 기준](../README.ko.md#cleanup-check)에서 소유한 객체가 삭제됐고 보존할 공유 서비스가 남아 있음을 확인합니다.
+**B — 소유자가 대조·승인한 부분 삭제 이어가기**
 
-**다르면:** 정리 파일과 보고된 Azure 상태를 소유자에게 전달합니다. 원래 계획을 바꾸기 위해 `cleanup --confirm`을 반복하지 않습니다.
+1. **편집기:** `results/` 아래 아직 쓰지 않은 보관 폴더에 원래 `cleanup-plan.json`, 위 위치의 `local-state.json`, 있다면 `cleanup.json`·`cleanup-check.json`을 복사합니다. 오류·보관 경로도 기록합니다. 활성 파일을 옮기거나 편집하거나 이전 보관본을 덮어쓰지 않습니다.
+2. **환경 소유자:** 원래 계획의 모든 대상이 Azure에서 이미 삭제됐는지 아직 남았는지 기록합니다. 남은 소유권 기록과 일치해야 합니다. 삭제된 대상이 소유 기록에 남거나, 공유 Search/planner 역할·다른 소유자·불명확한 결과가 있으면 멈춥니다. 기록을 고쳐 맞추지 않습니다.
+3. **터미널 — 남은 계획만 확인:**
 
-**다음:** [10-3 정리 확인](../README.ko.md#cleanup-check)으로 돌아갑니다. 본인 전용 그룹 전체를 종료하려면 [생성 기록과 삭제 범위 확인](environment.ko.md#final-cleanup)을 따릅니다.
+```bash
+python scripts/workshop.py cleanup --dry-run
+```
+
+**완료 확인:** 원래 보관 계획에 있던, 아직 남아 있는 본인 전용 대상만 나옵니다. 새 대상·공유 의존성이 없고 소유자가 이 나머지 계획을 승인했습니다. 빈 목록만으로 원래 대상의 삭제를 증명하지는 못합니다.
+
+**다르면:** 추가 삭제를 멈추고 소유자에게 차이를 전달합니다.
+
+**터미널 — 위 대조·별도 승인을 마친 경우에만:**
+
+```bash
+python scripts/workshop.py cleanup --confirm
+```
+
+**완료 확인:** `Owned workshop resources removed; shared infrastructure and evidence preserved.`로 끝납니다.
+
+**다르면:** 두 시도의 기록을 모두 보존하고 멈춥니다. 자동 반복하지 않습니다.
+
+**터미널 — 나머지 삭제가 성공한 뒤:**
+
+```bash
+python scripts/workshop.py check-cleanup
+```
+
+**완료 확인:** [10-3의 값](../README.ko.md#cleanup-check)은 **재개한 계획**과 맞고, 앞선 시도에서 삭제한 대상도 모두 없음을 소유자가 확인했습니다. 마지막 확인은 최신 계획만 검사하므로 줄어든 개수를 원래 전체 계획의 검증으로 보고하지 않습니다. 두 시도의 증거를 보고서와 함께 보관합니다.
+
+**다르면:** 확인 결과와 원래 계획을 소유자에게 전달하며 추가 삭제하지 않습니다.
+
+**다음:** A 또는 B의 확인을 마치면 기본 정리는 끝났습니다. 본인 전용 환경을 종료하려면 [생성 기록과 삭제 범위 확인](environment.ko.md#final-cleanup)을 따릅니다. 별도 승인으로 그룹 전체를 삭제한 뒤에는 `check-cleanup`이 아니라 [기반 환경의 최종 확인](environment.ko.md#final-cleanup-check)을 사용합니다. 공유 그룹 삭제로 우회하지 않습니다.
 
 <a id="setup-resume"></a>
 <a id="환경-소유자-터미널을-닫은-뒤-준비-이어가기"></a>

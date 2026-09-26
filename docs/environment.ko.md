@@ -267,9 +267,26 @@ python scripts/provision_environment.py model-capacity --run-dir "$RUN_DIR"
 
 - `identity` 출력: `requested_account_matches: true`, `configured_subscription_matches: true`, `configured_tenant_matches: true`, `subscription_state: Enabled`, `default_subscription_changed: false`
 - `ownership` 출력: `existing_groups_explicitly_preserved: true`
-- `model-capacity` 출력: 세 후보와 보조 모델 `gpt-5.4-mini`의 GlobalStandard 레코드. 모델마다 `capacity_records` 안에 `availableCapacity`가 `required_capacity` 이상인 레코드가 있어야 합니다(후보 각각 `50`, 보조 모델 `100`). 이것은 서비스 용량이며 구독 할당량은 6-1에서 별도로 검사합니다.
+- `model-capacity` 출력: 세 후보와 보조 모델 `gpt-5.4-mini`의 GlobalStandard 레코드. 모델마다 `capacity_records` 안에 `availableCapacity`가 `required_capacity` 이상인 레코드가 있어야 합니다(후보 각각 `50`, 보조 모델 `100`). 이것은 서비스 용량이며 **내 구독의 미사용 할당량은 아닙니다.**
 
 **다르면:** 자원을 생성하지 않습니다. 계정 불일치는 위 로그인 확인으로, 권한 오류는 [권한 확인](instructor.ko.md#access)으로 돌아갑니다. `No verified GlobalStandard capacity`이면 같은 `model-capacity` 명령만 다시 확인합니다. 계속 부족하면 여기서 멈춥니다. 서비스 용량과 구독 할당량은 별개이므로 할당량 증설만으로 해결된다고 가정하지 않습니다. 구독·모델·리전을 바꾸거나 새 실행 ID를 만들지 않습니다.
+
+<a id="subscription-quota"></a>
+
+**환경 소유자 — 유료 서비스 생성 전 구독 할당량 확인:** [모델 할당량 관리](https://learn.microsoft.com/azure/foundry/openai/how-to/quota#view-and-request-quotas-in-foundry-portal)에서 설정한 구독·**Sweden Central**·**GlobalStandard**를 선택합니다. 전체 한도가 아니라 기존 할당을 뺀 가용량을 아래 배포 용량과 대조합니다.
+
+| 모델 | 이번 환경에 필요한 미사용 배포 용량 |
+|---|---:|
+| `gpt-6-sol` | 50 capacity units |
+| `gpt-6-luna` | 50 capacity units |
+| `gpt-6-astra` | 50 capacity units |
+| `gpt-5.4-mini` planner/judge | 100 capacity units |
+
+capacity unit은 요청 수가 아닙니다. 포털이 TPM으로 표시하면 연결된 문서의 **모델별 환산**을 사용하며 모든 모델에 같은 비율을 적용하지 않습니다.
+
+**완료 확인:** 네 모델 모두 필요한 미사용 구독 할당량과 위 서비스 용량을 확인했습니다. 사용량은 바뀔 수 있어 6-1에서 후보 할당량을 다시 검사합니다.
+
+**다르면:** 모델별 단위·가용량을 확인할 수 없으면 구독 관리자에게 확인하고 자원을 만들지 않습니다. 부족하면 증설을 요청하고 **승인·반영될 때까지 3단계로 가지 않습니다.** 같은 `RUN_DIR`를 보존하며 기다리는 동안 Search·로그 기반 서비스를 먼저 만들지 않습니다. 재개할 때 이 단계의 용량·할당량을 다시 확인합니다. 신청 중인 증설은 가용 할당량이 아닙니다.
 
 <a id="setup-foundation"></a>
 
