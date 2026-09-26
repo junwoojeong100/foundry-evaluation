@@ -117,14 +117,25 @@ azd ai agent --help
 
 **다르면:** 아래 버전 복구 안내를 따른다. 업데이트 안내 자체를 실패로 보지 않으며, 실험 중 “모두 업데이트”나 임의 다운그레이드를 하지 않는다.
 
+<a id="tested-toolchain"></a>
+
+**혼자 준비할 때의 버전 비교 기준:** 기록된 실행과 최근 명령 확인을 구분한다. 최신 버전 권장이나 강제 다운그레이드 표가 아니다.
+
+| 확인한 범위·날짜 | azd | `microsoft.foundry` | `azure.ai.agents` |
+|---|---|---|---|
+| 기록된 배포·로컬 실행, 2026-09-23 | `1.34.0` | 버전 미기록 | `1.0.0-beta.10` |
+| 로컬 `run`·`invoke` 명령 존재 재확인, 2026-09-26 | `1.34.0` | `1.0.0-beta.2` | `1.0.0-beta.10` |
+
+`azd ai agent`는 `azure.ai.agents` 확장이 처리하므로 `azd extension list`에서 두 확장 모두 대조한다. 첫 행의 기록되지 않은 버전은 추정하지 않는다. 둘째 행은 `azd version`·`azd extension list`·`azd ai agent --help`의 확인이며, 전체 Azure 실습을 다시 실행한 검증은 아니다. [기록된 평가 결과](validation.ko.md)와도 구분한다.
+
 <a id="tool-version-recovery"></a>
 
 <details>
 <summary>azd·확장은 설치됐지만 run·invoke가 없다면</summary>
 
-위의 `azd version`, `azd extension list`, `azd ai agent --help` 출력과 오류를 보관한다. 수업 참가자는 강사에게 전달하고, 강사는 **리허설에 성공한 두 도구의 버전 출력**과 대조해 다른 도구만 공식 설치 안내로 복구한다. 리허설할 때 이 두 버전을 기록해 조별 전달 자료에 포함한다.
+위의 `azd version`, `azd extension list`, `azd ai agent --help` 출력과 오류를 보관한다. 수업 참가자는 강사에게 전달하고, 강사는 **리허설에 성공한 azd와 두 확장의 버전 출력**과 대조해 다른 도구만 공식 설치 안내로 복구한다. 리허설할 때 이 버전을 기록해 조별 전달 자료에 포함한다.
 
-이 가이드는 검증된 azd·확장 버전 조합을 별도로 고정하지 않는다. 혼자 실습하고 비교할 리허설 기록이 없다면 [공식 azd 설치 안내](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)를 확인하고, 명령이 계속 없으면 위 출력으로 [저장소 이슈](https://github.com/junwoojeong100/foundry-evaluation/issues)를 확인하거나 보고한다. 버전을 추측해 바꾸며 실습을 진행하지 않는다.
+혼자 실습한다면 먼저 [위 버전 비교 기준](#tested-toolchain)과 설치된 버전을 대조한다. 명령이 없으면 [공식 azd 설치 안내](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)로 해당 도구를 복구하고, 계속 없으면 위 출력으로 [저장소 이슈](https://github.com/junwoojeong100/foundry-evaluation/issues)를 확인하거나 보고한다. 기록된 조합과 다르다는 이유만으로 정상 도구를 바꾸거나 버전을 추측하지 않는다.
 
 **완료 확인:** 같은 터미널의 `azd extension list`에 설치된 `microsoft.foundry`가 있고 `azd ai agent --help`에 `run`·`invoke`가 모두 있다.
 
@@ -703,12 +714,15 @@ python scripts/workshop.py preflight
 **다르면:** 전달을 보류하고 누락된 계정, 설정, 서비스, 이름, 도구, 지원 담당자를 참가자 시작 전에 고친다.
 
 <a id="정리-원칙"></a>
+<a id="foundation-cleanup"></a>
 
 ## 정리와 유지 관리
 
 **README — 각 조의 실습 폴더:** [README 10단계 dry run](../README.ko.md#cleanup)을 먼저 확인한다. 표시된 이름이 그 폴더의 소유 객체와 일치할 때만 정리를 확정한다. 공유 리소스 그룹 전체를 삭제하거나 공유 리소스에서 `azd down`을 실행하지 않는다. 공유 Search, 모델 배포, 로깅은 조별 정리 뒤에도 비용이 발생하므로 환경 소유자가 Cost Management에서 계속 확인한다.
 
-본인만 쓰는 개인 실습 리소스 그룹은 README 10단계 후 [전용 기반 환경의 최종 정리](environment.ko.md#final-cleanup)를 사용한다.
+**새 환경 준비 도구로 만든 본인 전용 그룹**이며 기존 `RUN_DIR`의 생성 기록을 보관했다면, README 10단계 후 [전용 기반 환경의 최종 정리](environment.ko.md#final-cleanup)를 사용한다.
+
+**기존 서비스를 사용한 개인 실습도 기존 그룹은 보존한다.** 이 경로에는 `RUN_DIR`가 없는 것이 정상이다. 이번 준비에서 추가한 보조 배포 등은 기록한 Resource ID를 기준으로 소유자와 별도 정리 범위·담당자·종료일을 정한다. 기록되지 않은 그룹 전체 삭제로 비용을 중단하려 하지 않는다.
 
 **완료 확인:** README 10단계 dry run 목록이 그 폴더가 소유한 객체와만 일치한다.
 
@@ -739,7 +753,7 @@ Foundry 에이전트를 수정하거나 설명하기 전에 `microsoft-foundry` 
 python -m unittest discover -s tests -p 'test_docs.py' -v
 ```
 
-로컬 링크·앵커·첨부 파일, 코드 블록 구조, Bash·JSON 문법, 실제 파서와 Python 명령 인자의 일치, 한영 명령 순서를 확인한다. 첫 평가 단계의 **18 + 18 + 12응답이 실제 질문·모델 수와 맞는지**, 필수 결과 해석이 접혀 있지 않은지도 검사한다. 기본·후보 준비·수집 복구 경로의 독립된 완료 확인, 참가자·환경 준비 가이드의 **다르면** 안내, 복귀 링크와 공통 진행 방법, **대시보드 → 보고 → 정리** 순서, 같은 보고서 파일과 Monitor 기록 항목도 검사한다. 조별 실행자 안내, 기존 환경의 Bash 시작·언어 명시, 로그인 복구의 경로별 복귀도 확인한다. 예시 명령을 실행하거나 Azure에 접속하지 않으며, 과거 cloud 점수를 재검증하는 테스트가 아니다. 가이드가 없는 실행용 소스 스냅샷에서는 문서 검사를 건너뛴다.
+로컬 링크·앵커·첨부 파일, 코드 블록 구조, Bash·JSON 문법, 실제 파서와 Python 명령 인자의 일치, 한영 명령 순서를 확인한다. 첫 평가 단계의 **18 + 18 + 12응답이 실제 질문·모델 수와 맞는지**, 필수 결과 해석이 접혀 있지 않은지도 검사한다. 기본·후보 준비·수집 복구 경로의 독립된 완료 확인, 참가자·환경 준비 가이드의 **다르면** 안내, 복귀 링크와 공통 진행 방법, **대시보드 → 보고 → 정리** 순서, 같은 보고서 파일과 Monitor 기록 항목도 검사한다. 조별 실행자 안내, 기존 환경의 Bash 시작·언어 명시, 로그인 복구의 경로별 복귀도 확인한다. 입력·변수 복원·복구 분기는 격리된 Bash와 명령 대역으로 실행해 확인하며, 실제 실험 명령이나 Azure 호출은 하지 않는다. 과거 cloud 점수를 재검증하는 테스트가 아니다. 가이드가 없는 실행용 소스 스냅샷에서는 문서 검사를 건너뛴다.
 
 추가로 참가자·환경 소유자·재개 사용자 입장에서 [시작 안내](../README.ko.md#start-here)를 따라 읽는다. **지금 할 일·완료 표시·다음 위치**를 추측 없이 찾을 수 있는지 확인한다. 자동 검사가 처음 읽는 사람의 이해도까지 입증하지는 않는다.
 

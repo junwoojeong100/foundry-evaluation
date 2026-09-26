@@ -11,7 +11,7 @@
 | Red team 허용 여부 | 조직이 허용할 때만 3절 실행. 아니면 **완료가 아닌 생략**으로 기록 |
 | 마친 뒤 | 기본 보고서에 결과를 붙인 뒤 [10단계 정리](../README.ko.md#cleanup) |
 
-**실행 순서와 범위:** 저장소 루트의 기존 **터미널 A**에서 1–7절을 순서대로 합니다. 기존 터미널 A가 없다면 새 터미널을 열고 [환경만 복원](../README.ko.md#resume-shell)합니다. 이름·V2 지침·배포 버전은 유지합니다. 복구 때 다른 `label`을 썼다면 `--label improved` 대신 그 `label`을 씁니다.
+**실행 순서와 범위:** 저장소 루트의 기존 **터미널 A**에서 1–7절을 순서대로 합니다. 기존 터미널 A가 없다면 [환경과 실행값만 복원](../README.ko.md#resume-shell)합니다. 이름·V2 지침·배포 버전은 유지합니다. 아래 명령은 기본 실습의 `CANDIDATE_LABEL`을 그대로 쓰며, 출력·경로의 `improved`도 실제 label로 읽습니다.
 
 **비용과 증거:** 1–6절은 모델·judge 호출이 추가 과금되며, 6절은 최대 8시간 일정도 만듭니다. 이 레벨에서 만든 응답과 결과는 기본 실습의 48개 응답에 합치지 않습니다. 7절은 **저장된 결과만** 읽습니다. 먼저 9단계 업무 게이트, 이어서 이 레벨의 결과입니다.
 
@@ -38,7 +38,7 @@
 **터미널 A:** Foundry가 V2 지침을 읽어 가중치가 있는 차원을 제안하고, 두 rubric이 V2 응답을 채점합니다.
 
 ```bash
-python scripts/workshop.py generate-rubric --label improved
+python scripts/workshop.py generate-rubric --label "$CANDIDATE_LABEL"
 ```
 
 **완료 확인:** `Generated rubric: <LAB_PREFIX>-generated-rubric version 1, pass threshold ...`, `Full rubric definition:` 파일 경로, 가중치가 붙은 차원 목록, 그리고 `policy_rubric: .../18 passed on improved`와 `generated_rubric: .../18 passed on improved`가 실패 행 또는 `none`과 함께 나옵니다.
@@ -234,7 +234,7 @@ Traces recorded: 18
 **터미널 A:** Foundry가 Application Insights에서 기본 실습 7단계의 trace 18개를 읽어 채점합니다. **에이전트·검색은 다시 실행하지 않지만, judge의 유료 모델 호출은 발생합니다.**
 
 ```bash
-python scripts/workshop.py evaluate-traces --label improved
+python scripts/workshop.py evaluate-traces --label "$CANDIDATE_LABEL"
 ```
 
 **완료 확인:** `Trace evaluation completed: 18 traces from improved, read from Application Insights.`에 이어, `relevance`·`intent_resolution`·`task_adherence`·`indirect_attack`에 대해 `traces`와 `saved responses (Level 2)` 열이 있는 표가 나옵니다.

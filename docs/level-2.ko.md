@@ -13,7 +13,7 @@
 | 비용 | judge 추가 호출. **새 에이전트 응답은 만들지 않음** |
 | 마친 뒤 | [레벨 3](level-3.ko.md) 또는 [10단계 정리](../README.ko.md#cleanup). 10단계 정리는 여기서 만든 사용자 지정 평가기도 삭제합니다 |
 
-**실행 위치:** 기존 **터미널 A**에서 **저장소 루트**로 실행합니다. 새 터미널이면 [환경만 복원](../README.ko.md#resume-shell)합니다. `.env`의 이름과 V2 지침은 바꾸지 않습니다. 복구 때 다른 label을 썼다면 아래 `baseline`·`improved`를 실제 label로 바꿉니다.
+**실행 위치:** 기존 **터미널 A**에서 **저장소 루트**로 실행합니다. 새 터미널이면 [환경과 실행값만 복원](../README.ko.md#resume-shell)합니다. `.env`의 이름과 V2 지침은 바꾸지 않습니다. 아래 명령은 기본 실습의 `BASELINE_LABEL`·`CANDIDATE_LABEL`을 그대로 쓰며, 출력·경로의 `baseline`·`improved`도 실제 label로 읽습니다.
 
 **기록:** 기본 실습에서 저장한 `src/agent/.foundry/results/workshop-report.txt`를 이어 씁니다. **2절의 통과 건수, 3절의 judge 일치도, 4절의 평균 점수와 실패 원인**을 파일 아래에 메모하고, 마지막에 [레벨 2 양식](#finish-level-2)으로 정리합니다. 예시 점수와 선택 포털 비교 화면은 필수 단계가 아닙니다.
 
@@ -59,7 +59,7 @@ python scripts/workshop.py register-evaluators
 **터미널 A:** 저장된 `baseline`·`improved` 응답을 한 eval group으로 평가합니다. 몇 분 걸립니다.
 
 ```bash
-python scripts/workshop.py evaluate-suite --labels baseline improved
+python scripts/workshop.py evaluate-suite --labels "$BASELINE_LABEL" "$CANDIDATE_LABEL"
 ```
 
 **완료 확인:** `Suite evaluation completed: ... (baseline, improved)`, 9행짜리 표, `Portal:` 링크가 나옵니다. 각 열은 세 모델을 합친 **18응답**이며, 7-4의 모델별 `/6`과 분모가 다릅니다.
@@ -72,7 +72,7 @@ python scripts/workshop.py evaluate-suite --labels baseline improved
 결과가 실패했다면 저장된 오류부터 확인합니다. 속도 제한은 가능한 원인 중 하나일 뿐입니다. 429라면 `Retry-After`만큼 기다린 뒤 실행합니다.
 
 ```bash
-python scripts/workshop.py evaluate-suite --labels baseline improved --retry-failed
+python scripts/workshop.py evaluate-suite --labels "$BASELINE_LABEL" "$CANDIDATE_LABEL" --retry-failed
 ```
 
 실패한 run만 교체하며 이전 시도는 남습니다. 낮은 유효 점수에는 쓰지 않습니다. 같은 오류가 반복되면 멈추고 강사에게 전달합니다.
@@ -133,7 +133,7 @@ indirect_attack            safety   18/18     18/18
 **터미널 A:** 2절의 모든 LLM judge를 정확한 업무 검사인 `business_contract`와 같은 실제 응답 36개에서 비교합니다. 5-1에서는 직접 작성한 예제 2개로만 judge를 확인했습니다. 이 명령은 저장된 결과만 읽고 새 호출은 하지 않습니다.
 
 ```bash
-python scripts/workshop.py judge-agreement --labels baseline improved
+python scripts/workshop.py judge-agreement --labels "$BASELINE_LABEL" "$CANDIDATE_LABEL"
 ```
 
 **완료 확인:** `Judge agreement with business_contract on 36 saved rows (baseline, improved); no new calls.`, judge 일곱 행의 표가 나오고, 이어서 row ID 또는 `none`이 붙은 `Business passes that a judge failed`가 나옵니다.
@@ -179,7 +179,7 @@ Business passes that a judge failed (review each):
 **터미널 A:** Foundry가 2절의 `baseline`·`improved` run을 비교하고, `improved` run의 실패를 비슷한 원인끼리 **클러스터(묶음)**로 정리합니다.
 
 ```bash
-python scripts/workshop.py insights --baseline baseline --candidate improved
+python scripts/workshop.py insights --baseline "$BASELINE_LABEL" --candidate "$CANDIDATE_LABEL"
 ```
 
 **완료 확인:** 출력에 다음이 차례로 나옵니다.

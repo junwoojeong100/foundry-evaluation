@@ -13,7 +13,7 @@
 | Cost | Additional judge calls; **no new agent responses** |
 | After this level | [Level 3](level-3.en.md) or [step 10 cleanup](../README.md#cleanup), which also removes these custom evaluators |
 
-**Where to run:** your existing **Terminal A, at the repository root**. In a new terminal, [restore the environment only](../README.md#resume-shell). Do not change `.env` names or the V2 instructions. If you used recovery labels, replace `baseline` and `improved` below with those labels.
+**Where to run:** your existing **Terminal A, at the repository root**. In a new terminal, [restore only the environment and run values](../README.md#resume-shell). Do not change `.env` names or the V2 instructions. Commands reuse the main workshop's `BASELINE_LABEL` and `CANDIDATE_LABEL`; read `baseline` and `improved` in output and paths as those actual labels too.
 
 **Record:** continue in `src/agent/.foundry/results/workshop-report.txt`, saved in the main workshop. Append notes on **section 2's pass counts, section 3's judge agreement, and section 4's mean scores and failure causes**, then organize them using the [Level 2 template](#finish-level-2) at the end. Example scores and the optional portal comparison are not required steps.
 
@@ -59,7 +59,7 @@ Both are objects in your project's evaluator catalog, prefixed with your `LAB_PR
 **Terminal A:** run the saved `baseline` and `improved` responses in one eval group; this takes several minutes:
 
 ```bash
-python scripts/workshop.py evaluate-suite --labels baseline improved
+python scripts/workshop.py evaluate-suite --labels "$BASELINE_LABEL" "$CANDIDATE_LABEL"
 ```
 
 **Checkpoint:** `Suite evaluation completed: ... (baseline, improved)`, a table with nine rows and a `Portal:` link. Each column combines all three models into **18 responses**, unlike 7-4's per-model `/6` counts.
@@ -72,7 +72,7 @@ python scripts/workshop.py evaluate-suite --labels baseline improved
 If results failed, inspect the saved error first. Rate limiting is only one possible cause. For a 429, wait for `Retry-After`, then run:
 
 ```bash
-python scripts/workshop.py evaluate-suite --labels baseline improved --retry-failed
+python scripts/workshop.py evaluate-suite --labels "$BASELINE_LABEL" "$CANDIDATE_LABEL" --retry-failed
 ```
 
 This replaces only failed runs. Do not use it for low valid scores. If the same error repeats, stop and tell the instructor.
@@ -133,7 +133,7 @@ Details: [built-in evaluators](https://learn.microsoft.com/azure/foundry/concept
 **Terminal A:** compare every LLM judge from section 2 with `business_contract`, the exact business check, on the same 36 real responses. Step 5-1 checked the judge on only two written examples; this command reads saved results and makes no calls:
 
 ```bash
-python scripts/workshop.py judge-agreement --labels baseline improved
+python scripts/workshop.py judge-agreement --labels "$BASELINE_LABEL" "$CANDIDATE_LABEL"
 ```
 
 **Checkpoint:** `Judge agreement with business_contract on 36 saved rows (baseline, improved); no new calls.`, a table with seven judge rows, then `Business passes that a judge failed` with row IDs or `none`.
@@ -178,7 +178,7 @@ The 19 business failures are V1's 18 rows and Sol's V2 D02. The five built-in ju
 **Terminal A:** Foundry compares section 2's `baseline` and `improved` runs and groups the `improved` run's failures by similar causes into **clusters**:
 
 ```bash
-python scripts/workshop.py insights --baseline baseline --candidate improved
+python scripts/workshop.py insights --baseline "$BASELINE_LABEL" --candidate "$CANDIDATE_LABEL"
 ```
 
 **Checkpoint:** the output shows, in order:

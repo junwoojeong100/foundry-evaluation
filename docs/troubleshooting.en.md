@@ -25,7 +25,9 @@ In this guide, “instructor” and “environment owner” mean the instructor 
 
 ## Resume from where you stopped
 
-**First check for active work.** If the original terminal or job is still running, wait; do not start a second command.
+**First check for active work.** If the original terminal or job is still running, wait; do not start a second command. If you lost the collection terminal, use the [local collector check](#collector-status).
+
+**Long-pause limit:** `monitor` looks back at most **168 hours (7 days)**. If collection finished but you have not confirmed `complete: true` in `telemetry.json`, finish [trace verification](#telemetry) within that window. Preserve completed trace evidence; it does not need another query. This query limit is separate from Azure retention.
 
 | How you stopped | What to do now |
 |---|---|
@@ -45,7 +47,7 @@ In this guide, “instructor” and “environment owner” mean the instructor 
 | Evaluation failed, or result validation/download stopped | Use the [saved-status decision table](#evaluation-retry). Not every local error permits `--retry-failed`. |
 | `Telemetry is incomplete` | Check ingestion/access and the [two-hour query window](#telemetry); repeat only `monitor` for that label |
 | `Hosted prompt does not match` (holdout collection), or 8-2 shows different improved and holdout versions | [If V2 changed after 7-2](#v2-changed); do not delete or edit results |
-| `Label ... already exists` | Read the status files below. If collection is `completed`, find the next unfinished evaluation/trace step. If `failed`, recover collection. If `running`, check the original process: wait while active; [recover collection](#collection-retry) only after confirming it stopped. |
+| `Label ... already exists` | Read the status files below. If collection is `completed`, find the next unfinished evaluation/trace step. If `failed`, recover collection. If `running`, use the [local collector check](#collector-status) and recover collection only after confirming it stopped. |
 | A `feedback` record exists, or the wrong row was saved | [Check the review record](#review-recovery). Its row, reason, language, and trace must match an actual review. Adding another row does not exclude the mistaken one. |
 | Cleanup or its verification stopped | Use [cleanup recovery](#cleanup-recovery); do not repeat successful deletion to fix a failed check. |
 | A Level 2 or 3 command stopped | Use [Level 2–3 recovery](#levels); your step 5–9 results stay unchanged |
@@ -68,6 +70,44 @@ Choose the recovery section for the first incomplete file; a completed manifest 
 **If not:** preserve the current folder and error output. Look up the error message in [common symptoms](#symptoms); in a class, show the stage, label, and status files to the instructor.
 
 **Next:** open the matching section above, or use [common symptoms](#symptoms) when the stage is still unclear.
+
+<a id="collector-status"></a>
+
+## If you closed or lost the collection terminal
+
+**Check your account's local `workshop.py collect` process, not the Azure agent.** A closed window or a manifest marked `running` does not establish whether it stopped. These commands only inspect processes; they do not terminate any.
+
+**Terminal — macOS, Linux, or WSL: list your collectors:**
+
+```bash
+COLLECTOR_PROCESSES=$(ps -ww -u "$(id -u)" -o pid=,etime=,args=) &&
+printf '%s\n' "$COLLECTOR_PROCESSES" |
+  awk '/[w]orkshop[.]py[[:space:]]+collect/ { print; found = 1 } END { if (!found) print "No matching local collector." }'
+```
+
+**Checkpoint:** each row starts with a PID, then elapsed time and the command. `No matching local collector.` means this account has no matching collector. If rows appear, compare `--label` with your original command, then run **only your OS's block** below.
+
+**If not:** preserve a lookup error and do not recollect. An error does not mean no collector exists.
+
+**Terminal — macOS only: check that PID's working folder:**
+
+```bash
+read -r -p "Collector PID from the list: " COLLECTOR_PID &&
+lsof -a -p "$COLLECTOR_PID" -d cwd -Fn
+```
+
+**Terminal — Linux or WSL only: check that PID's working folder:**
+
+```bash
+read -r -p "Collector PID from the list: " COLLECTOR_PID &&
+readlink "/proc/$COLLECTOR_PID/cwd"
+```
+
+**Checkpoint:** compare the path on macOS's line starting with `n`, or the Linux/WSL output path, with your recorded workshop folder. **Wait if any collector in this folder remains**, even under another label. Leave processes in other folders untouched.
+
+**If not:** the process may have ended during the lookup, so check the first list again. If missing tools or access errors prevent checking its folder, the state is uncertain. Preserve the error instead of terminating anything or recollecting.
+
+**Next:** once no collector remains in this folder, inspect the [saved state](#resume). A `completed` collection continues at the next unfinished step; a failed collection, or `running` left after the process ended, uses [collection recovery](#collection-retry). Process termination does not establish collection success.
 
 <a id="deployment-recovery"></a>
 
@@ -346,13 +386,15 @@ Malformed/missing results without a recorded failed/errored run require owner re
 
 `monitor` defaults to the **last two hours**, even if the portal displays Last Day. For a run from the last 24 hours, extend the window while keeping the **same label**:
 
-**Terminal — extend the existing trace query window:**
+**Terminal — extend the existing trace query window:** enter the actual label and hours covering the collection time (`24` for the last day, at most `168`).
 
 ```bash
-python scripts/workshop.py monitor --label baseline --hours 24
+read -r -p "Actual label whose traces need checking: " RESULT_LABEL &&
+read -r -p "Lookback hours (1–168; 24 for the last day): " TRACE_HOURS &&
+python scripts/workshop.py monitor --label "$RESULT_LABEL" --hours "$TRACE_HOURS"
 ```
 
-Replace `baseline` with the label whose monitoring failed (`improved` or `holdout` when applicable). `--hours` accepts whole hours from **1 to 168**. Use a window containing your original collection time; it does not recreate expired/deleted telemetry.
+Enter retry labels exactly as recorded. `--hours` accepts whole hours from **1 to 168**. This command cannot recover unverified traces outside that window or recreate expired/deleted telemetry.
 
 **Checkpoint:** `telemetry.json` has `complete: true` and matching `expected_trace_count` / `observed_trace_count` for the same label.
 
@@ -365,7 +407,9 @@ The query still filters the exact agent and run, and missing, duplicate, foreign
 
 </details>
 
-**Next:** do not repeat the recovered command; continue below its trace checkpoint: [baseline traces](../README.md#baseline-traces), [candidate traces](../README.md#candidate-traces), or [holdout traces](../README.md#holdout-traces). If cleanup already ran, read saved evidence only. For a new experiment, use a fresh workspace and names.
+**If you came to check traces before pausing:** do not jump ahead to step 6 or 9. Note the checked label and return to the [early-stop instructions](../README.md#stop-early). Resume at the next unexecuted block in your original notes, using the saved files for traces already checked.
+
+**Next — if recovering a trace error:** do not repeat the recovered command; continue below its trace checkpoint: [baseline traces](../README.md#baseline-traces), [candidate traces](../README.md#candidate-traces), or [holdout traces](../README.md#holdout-traces). If cleanup already ran, read saved evidence only. For a new experiment, use a fresh workspace and names.
 
 <a id="collection-retry"></a>
 
@@ -373,7 +417,7 @@ The query still filters the exact agent and run, and missing, duplicate, foreign
 
 Use this only when:
 
-- The original collector has stopped. Stopped means the original terminal is back at a prompt or, if you closed it, you confirmed that the process ended; if unsure, wait — never start a second command.
+- The original collector has stopped: its terminal returned to a prompt, or the [local collector check](#collector-status) confirmed termination after you lost the window. If uncertain, do not start a second collection.
 - You keep the failed label and original files.
 - You retry the same stage once with one unused retry label.
 - You do not change models, split, questions, prompt version, agent version, completed labels, reviewed source, or holdout meaning. Only [when V2 changed after 7-2](#v2-changed) do you collect with the current V2 version.
@@ -387,22 +431,37 @@ Use this only when:
 
 <a id="run-values"></a>
 
-### Run values to use after recovery
+### Run values after recovery or in a new terminal
 
 **After successful recollection, update these values in your existing notes before returning to the main guide.** Keep labels for stages you did not recover. For a stage not yet collected, note its default and change it only if it later needs recovery.
 
 | Value to note | First-run default | Recovery value and where to use it |
 |---|---|---|
-| V1 dev label | `baseline` | After successful V1 recovery: `baseline-retry`. Use it in later `feedback`, `compare`, `summary`, `monitor`, and the value after `verify --baseline`. |
-| V2 dev label | `improved` | After successful V2 recovery: `improved-retry`. Use it in later comparisons, reads, traces, and the value after `verify --candidate`. |
-| V2 holdout label | `holdout` | After successful holdout recovery: `holdout-retry`. Use it in later comparisons, reads, traces, and the value after `verify --holdout`. |
-| Collection `concurrency` | `4` | Read the **completed V1 baseline's** `src/agent/.foundry/results/<actual label>/manifest.json`. Use that value for later V2 dev and holdout `collect` too. If not the default `4`, specify it with `--concurrency`; for example, `2` needs `--concurrency 2`. |
+| V1 dev label (`BASELINE_LABEL`) | `baseline` | After successful V1 recovery: `baseline-retry`. Use it in later `feedback`, `compare`, `summary`, `monitor`, and the value after `verify --baseline`. |
+| V2 dev label (`CANDIDATE_LABEL`) | `improved` | After successful V2 recovery: `improved-retry`. Use it in later comparisons, reads, traces, and the value after `verify --candidate`. |
+| V2 holdout label (`HOLDOUT_LABEL`) | `holdout` | After successful holdout recovery: `holdout-retry`. Use it in later comparisons, reads, traces, and the value after `verify --holdout`. |
+| Collection `concurrency` (`COLLECTION_CONCURRENCY`) | `4` | Read the **completed V1 baseline's** `src/agent/.foundry/results/<actual label>/manifest.json`. Later V2 dev and holdout reuse it through this variable; `2` is equivalent to `--concurrency 2`. |
 
-**Change values, not option names.** Apply actual names to label values after `--label`, `--labels`, `--baseline`, `--candidate`, and `--holdout`, and to result paths and output descriptions. **Keep `--split dev` and `--split holdout` unchanged.** Copy `row_id` from that label's actual output. Do not rename or edit existing folders, files, row IDs, or manifests.
+**Terminal — restore only in a new window or when variables differ from your notes:** enter the four actual values. Before V1 collection, use the noted initial concurrency `4`; after V1 completes, its manifest is authoritative. Do not change files or `.env`.
 
-For example, after recovering **only V2 dev**, final verification is `python scripts/workshop.py verify --baseline baseline --candidate improved-retry --holdout holdout`. If other stages were recovered, use their noted values too. Carry these notes into the [9-3 report](../README.md#finish).
+```bash
+read -r -p "V1 dev label from your notes: " BASELINE_LABEL &&
+read -r -p "V2 dev label from your notes: " CANDIDATE_LABEL &&
+read -r -p "V2 holdout label from your notes: " HOLDOUT_LABEL &&
+read -r -p "Collection concurrency (1, 2, 4): " COLLECTION_CONCURRENCY &&
+printf 'V1 dev=%s\nV2 dev=%s\nV2 holdout=%s\nconcurrency=%s\n' \
+  "$BASELINE_LABEL" "$CANDIDATE_LABEL" "$HOLDOUT_LABEL" "$COLLECTION_CONCURRENCY"
+```
 
-**If you have not run recovery yet:** choose one failed stage in the first table above and run only its subsection's command. This checklist does not change when recollection is allowed.
+**Checkpoint:** no value is empty, and all four output lines match your notes and completed manifest. Recovery blocks update the relevant variables only after collection succeeds, so this input need not be repeated in the same terminal.
+
+**If not:** repeat only this input. If unsure which label completed, inspect the [saved state](#resume) first; do not overwrite it with defaults.
+
+**Do not edit the main commands.** Variables after `--label`, `--labels`, `--baseline`, `--candidate`, and `--holdout` supply the actual values. **Keep `--split dev` and `--split holdout` unchanged.** Copy `row_id` from the actual label's output and use that label in file paths. For example, the passing case when failures are `none` is your actual V1 label followed by `-sol-D01`. Do not rename or edit existing folders, files, row IDs, or manifests.
+
+For example, after recovering **only V2 dev**, `CANDIDATE_LABEL=improved-retry` while the other two labels stay unchanged. Carry these notes into the [9-3 report](../README.md#finish).
+
+**Next:** if you only restored variables or updated notes, return to the **next unexecuted block** in your original notes. Choose a failed stage above only if collection failed and still needs recovery. Opening a new terminal is not a reason to recollect.
 
 <a id="collection-retry-baseline"></a>
 
@@ -415,10 +474,13 @@ For example, after recovering **only V2 dev**, final verification is `python scr
 | A 429 or timeout where reducing concurrency is the recovery | `2` |
 | Another execution error | Keep `concurrency` from the failed `manifest.json`. Without a manifest, use the original command's value (`4` if omitted). |
 
-**Terminal — recollect V1:** this example uses `2`. If you chose `4`, **replace only `--concurrency 2` with `--concurrency 4`** and run once. Keep any other original value unchanged.
+**Terminal — recollect V1:** enter the concurrency chosen above. `2` is equivalent to `--concurrency 2`, and `4` to `--concurrency 4`; do not edit the command. V1's label and concurrency variables update only after collection succeeds.
 
 ```bash
-python scripts/workshop.py collect --split dev --label baseline-retry --concurrency 2
+read -r -p "Concurrency for this V1 retry (1, 2, 4): " RETRY_CONCURRENCY &&
+python scripts/workshop.py collect --split dev --label baseline-retry --concurrency "$RETRY_CONCURRENCY" &&
+BASELINE_LABEL=baseline-retry &&
+COLLECTION_CONCURRENCY="$RETRY_CONCURRENCY"
 ```
 
 **Checkpoint:** collection finishes at `18/18` without errors. Only **V1 collection** is complete; evaluation, portal, and trace checks still remain.
@@ -433,10 +495,11 @@ python scripts/workshop.py collect --split dev --label baseline-retry --concurre
 
 Also use this command to collect a new label when README 7-4 shows the review was not carried (`source trace carried: no`) or [V2 changed after 7-2](#v2-changed).
 
-**Terminal — recollect V2 dev:** check `concurrency` in the completed baseline's `manifest.json`. Set `--concurrency 4` below to that value (`--concurrency 2` if it is `2`).
+**Terminal — recollect V2 dev:** confirm `COLLECTION_CONCURRENCY` matches the completed V1's `manifest.json → concurrency`. The command reuses it and updates the V2 dev label only after success.
 
 ```bash
-python scripts/workshop.py collect --split dev --label improved-retry --concurrency 4
+python scripts/workshop.py collect --split dev --label improved-retry --concurrency "$COLLECTION_CONCURRENCY" &&
+CANDIDATE_LABEL=improved-retry
 ```
 
 **Checkpoint:** collection finishes at `18/18` without errors.
@@ -449,10 +512,11 @@ python scripts/workshop.py collect --split dev --label improved-retry --concurre
 
 ### Holdout collection failed
 
-**Terminal — recollect holdout:** check `concurrency` in the completed baseline's `manifest.json`. Set `--concurrency 4` below to that value (`--concurrency 2` if it is `2`).
+**Terminal — recollect holdout:** confirm `COLLECTION_CONCURRENCY` matches the completed V1's `manifest.json → concurrency`. The command reuses it and updates the holdout label only after success.
 
 ```bash
-python scripts/workshop.py collect --split holdout --label holdout-retry --concurrency 4
+python scripts/workshop.py collect --split holdout --label holdout-retry --concurrency "$COLLECTION_CONCURRENCY" &&
+HOLDOUT_LABEL=holdout-retry
 ```
 
 **Checkpoint:** collection finishes at `12/12` without errors.
@@ -474,12 +538,13 @@ First require complete response collection. Read **`src/agent/.foundry/results/<
 | Job completed with no errored rows, but validation rejects missing/duplicate IDs, null scores, or invalid output | Stop and preserve `evaluation.json` and any `evaluation-output-raw.json`. Ask the owner to inspect the result contract. **Do not force B or edit status/scores.** |
 | Job and rows completed correctly, but valid scores are low | Do not retry. Finish the report/portal checkpoint and continue the workshop. |
 
-Replace `baseline` below with **the label that actually failed**, including retry labels such as `improved-retry`. Run only one block, after the original command stops. There may be no output for 1–3 minutes while scoring.
+At the selected block's prompt, enter **the label that actually failed**, including retry labels such as `improved-retry`. Run only one block, after the original command stops. There may be no output for 1–3 minutes while scoring.
 
 **Terminal — A. start or resume evaluation with the same inputs:**
 
 ```bash
-python scripts/workshop.py evaluate --label baseline
+read -r -p "Actual label whose evaluation needs resuming: " RESULT_LABEL &&
+python scripts/workshop.py evaluate --label "$RESULT_LABEL"
 ```
 
 **Checkpoint:** `Foundry evaluation completed: ... (18 rows)`, or `(12 rows)` for holdout, appears with a report URL. Skip B below.
@@ -489,7 +554,8 @@ python scripts/workshop.py evaluate --label baseline
 **Terminal — B. retry only a recorded failed/errored run:**
 
 ```bash
-python scripts/workshop.py evaluate --label baseline --retry-failed
+read -r -p "Actual label with a failed evaluation to retry: " RESULT_LABEL &&
+python scripts/workshop.py evaluate --label "$RESULT_LABEL" --retry-failed
 ```
 
 Never repeat `collect` for an evaluation failure.
@@ -506,7 +572,7 @@ Never repeat `collect` for an evaluation failure.
 
 That is a legitimate result. Do not fabricate a failure or alter an answer/reference.
 
-1. Put `baseline-sol-D01` (or another baseline row) into the `show` block of [README 6-2](../README.md#review-case) to see the saved response and fixed reference. Note its `row_id` and `trace_id`.
+1. Enter the actual V1 label's `-sol-D01` row shown in [README 6-2's](../README.md#review-case) `show` prompt, or another row from that label. Inspect its saved response and fixed reference, and note its `row_id` and `trace_id`.
 2. As in 6-2, compare the response with its fixed dev reference, then check its trace in the portal.
 3. Write one line explaining that all business checks passed, what you inspected, and **behavior the provided V2 should preserve**. Do not claim a failure or improvement in advance.
 4. Return to [6-3 to save the review](../README.md#save-review). `feedback` accepts passing dev responses too. Then review V2's suitability in step 7.
@@ -602,7 +668,7 @@ Use [reference](reference.en.md) only for background, and [instructor guide](ins
 
 **If not:** preserve the screenshot and saved result file path for the instructor; do not change shared subscription settings.
 
-**Next:** return to the interrupted portal check, or continue to [holdout results](../README.md#holdout-results) if that was the active step.
+**Next:** return to the next unexecuted block of the interrupted portal check. If you came from [8-4's holdout report](../README.md#holdout-report), confirm its checkpoint and continue to [9-1's complete evidence check](../README.md#lab-g). Do not repeat the completed 8-3 readout.
 
 <a id="levels"></a>
 
@@ -780,12 +846,50 @@ python scripts/workshop.py check-cleanup
 
 **Next:** after A or B is verified, workshop cleanup is complete. To retire an exclusive environment, follow the [creation-record and deletion-scope checks](environment.en.md#final-cleanup). After separately approved whole-group deletion, use [final foundation verification](environment.en.md#final-cleanup-check), not `check-cleanup`. Never delete a shared group as a shortcut.
 
+<a id="existing-setup-resume"></a>
+
+## Environment owners: resume preparation with existing services
+
+**Return to the model-preparation clone from [existing-environment preparation](instructor.en.md#existing-foundation).** This path does not require `RUN_DIR` or `config.json`. If you have not created its virtual environment, continue the next unfinished [Python setup](instructor.en.md#existing-python) command in that clone.
+
+**Terminal — if the virtual environment already exists, restore it in Bash:**
+
+```bash
+read -r -p "Absolute path of the existing model-preparation clone: " PREP_DIR &&
+cd "$PREP_DIR" &&
+source src/agent/.venv/bin/activate &&
+export AZURE_CONFIG_DIR="$PWD/.azure-cli" &&
+pwd
+```
+
+**Checkpoint:** the path is the original model-preparation clone and the virtual environment is active. Keep `.env`, names, sign-in caches, and ownership records unchanged.
+
+**If not:** check the recorded path and failed command. Do not create another clone, run `init`, or provision a new foundation.
+
+| Unfinished task | Where to resume |
+|---|---|
+| Python installation or tests | The existing-environment path in [offline test recovery](#offline-tests) |
+| Settings or sign-in | [Settings](instructor.en.md#existing-settings), or [ID input](instructor.en.md#login-input) to restore both IDs, then only unfinished sign-in/verification |
+| Auxiliary deployment | The unfinished [auxiliary-deployment](instructor.en.md#auxiliary-model) task |
+| Candidate checks or preparation | The failed [candidate-preparation](instructor.en.md#check-candidates) command and later unexecuted commands |
+| Calibration | [Check the judge](instructor.en.md#candidate-calibration); do not repeat completed candidate preparation |
+| Preparation complete | Choose [rehearsal or self-study](instructor.en.md#after-calibration) |
+
+**Next:** go to the selected destination. Do not run the new-environment procedure below.
+
 <a id="setup-resume"></a>
 <a id="environment-owners-resume-setup-after-closing-the-terminal"></a>
 
 ## Environment owners: resume incomplete setup
 
-**Participants: stop here unless you were preparing the Azure environment.** Keep the original clone and `RUN_DIR`; do **not** make a new `RUN_ID`, repeat an already completed `init`, or overwrite a snapshot.
+**First choose your original preparation path.** Participants who were not preparing Azure return to [workshop resume](#resume).
+
+| Preparation path | Where to resume |
+|---|---|
+| Used existing Foundry, Search, and observability services | [Resume existing-service preparation](#existing-setup-resume); no `RUN_DIR` is required |
+| Chose `RUN_DIR` with the new dedicated-environment tools | Continue below with that same `RUN_DIR` |
+
+**The following applies only to new dedicated-environment preparation.** Keep the original clone and `RUN_DIR`; do **not** make a new `RUN_ID`, repeat an already completed `init`, or overwrite a snapshot.
 
 **Terminal — check the existing paths:** start `bash`, then paste the original clone path and existing `RUN_DIR` without quotes:
 

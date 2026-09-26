@@ -25,7 +25,9 @@
 
 ## 멈춘 지점부터 이어가기
 
-**먼저 진행 중인 작업이 없는지 확인합니다.** 원래 터미널·작업이 아직 실행 중이면 기다리며 두 번째 명령을 시작하지 않습니다.
+**먼저 진행 중인 작업이 없는지 확인합니다.** 원래 터미널·작업이 아직 실행 중이면 기다리며 두 번째 명령을 시작하지 않습니다. 수집하던 창을 잃었다면 [로컬 수집기 확인](#collector-status)을 사용합니다.
+
+**장기 중단 주의:** `monitor`는 최근 최대 **168시간(7일)**만 조회합니다. 수집은 끝났지만 `telemetry.json`의 `complete: true`를 아직 확인하지 못했다면 [trace 조회](#telemetry)를 그 범위 안에 마쳐야 합니다. 이미 완료된 trace 증거는 보존하며 다시 조회할 필요가 없습니다. 이 조회 제한은 Azure 보존 기간과 다릅니다.
 
 | 중단한 상태 | 지금 할 일 |
 |---|---|
@@ -45,7 +47,7 @@
 | Foundry 평가 실패 또는 결과 검증·다운로드 중단 | [저장 상태별 복구 표](#evaluation-retry)에서 선택. 모든 로컬 오류에 `--retry-failed`를 쓸 수 있는 것은 아님 |
 | `Telemetry is incomplete` | 수집 지연·권한과 [기본 2시간 조회 범위](#telemetry)를 확인한 뒤 같은 label의 `monitor`만 재실행 |
 | `Hosted prompt does not match`(holdout 수집) 또는 8-2에서 improved·holdout 버전 불일치 | [7-2 뒤 V2가 바뀌었다면](#v2-changed). 결과를 지우거나 고치지 않음 |
-| `Label ... already exists` | 상태 파일을 확인합니다. `completed`면 다음 미완료 평가·trace 단계로 갑니다. `failed`면 수집을 복구합니다. `running`이면 원래 프로세스가 실행 중인지 확인하고, 종료 확인 뒤에만 수집을 복구합니다. |
+| `Label ... already exists` | 상태 파일을 확인합니다. `completed`면 다음 미완료 평가·trace 단계로 갑니다. `failed`면 수집을 복구합니다. `running`이면 [로컬 수집기 확인](#collector-status)으로 실제 종료를 확인한 뒤에만 수집을 복구합니다. |
 | `feedback`에서 이미 같은 회귀 기록이 존재하거나 다른 행을 저장함 | [검토 기록 확인](#review-recovery). 행 ID·검토 이유·언어·출처 trace가 실제 검토와 일치할 때만 진행. 다른 행 추가 저장은 오저장을 제외하지 않음 |
 | 정리 또는 정리 확인 중단 | [정리 복구](#cleanup-recovery). 확인 실패를 해결하려고 성공한 삭제를 반복하지 않음 |
 | 레벨 2·3 명령 중단 | [레벨 2·3 복구](#levels). 5–9단계 결과는 바뀌지 않음 |
@@ -68,6 +70,44 @@
 **다르면:** 현재 폴더와 오류 출력을 보존합니다. 오류 메시지로 [증상별 확인](#symptoms)을 찾고, 수업 중이면 단계·label·상태 파일을 강사에게 보여 줍니다.
 
 **다음:** 위의 맞는 섹션을 열거나, 아직 단계가 불명확하면 [증상별 확인](#symptoms)을 사용합니다.
+
+<a id="collector-status"></a>
+
+## 수집하던 터미널을 닫았거나 잃었다면
+
+**확인 대상은 Azure 에이전트가 아니라 본인 계정의 로컬 `workshop.py collect` 프로세스입니다.** 창이 닫혔거나 manifest가 `running`이라는 사실만으로 종료를 판단하지 않습니다. 아래 명령은 조회만 하며 프로세스를 종료하지 않습니다.
+
+**터미널 — macOS·Linux·WSL 공통, 본인 수집기 목록:**
+
+```bash
+COLLECTOR_PROCESSES=$(ps -ww -u "$(id -u)" -o pid=,etime=,args=) &&
+printf '%s\n' "$COLLECTOR_PROCESSES" |
+  awk '/[w]orkshop[.]py[[:space:]]+collect/ { print; found = 1 } END { if (!found) print "No matching local collector." }'
+```
+
+**완료 확인:** 각 행의 첫 값은 PID, 다음은 실행 경과 시간, 나머지는 명령입니다. `No matching local collector.`이면 이 계정에 해당 수집기가 없습니다. 행이 있으면 원래 명령의 `--label`과 대조하고 아래에서 **내 OS의 블록 하나만** 실행합니다.
+
+**다르면:** 조회 오류를 보존하고 재수집하지 않습니다. 오류 출력을 “수집기 없음”으로 읽지 않습니다.
+
+**터미널 — macOS에서만, 해당 PID의 작업 폴더 확인:**
+
+```bash
+read -r -p "목록에서 확인한 수집기 PID: " COLLECTOR_PID &&
+lsof -a -p "$COLLECTOR_PID" -d cwd -Fn
+```
+
+**터미널 — Linux·WSL에서만, 해당 PID의 작업 폴더 확인:**
+
+```bash
+read -r -p "목록에서 확인한 수집기 PID: " COLLECTOR_PID &&
+readlink "/proc/$COLLECTOR_PID/cwd"
+```
+
+**완료 확인:** macOS는 `n`으로 시작하는 행의 경로, Linux·WSL은 출력 경로를 메모한 실습 폴더와 대조합니다. **같은 폴더의 수집기가 하나라도 있으면 기다립니다.** 다른 label의 수집도 겹쳐 실행하지 않습니다. 다른 폴더의 프로세스는 건드리지 않습니다.
+
+**다르면:** 조회 도중 종료됐을 수도 있으므로 첫 목록을 다시 확인합니다. 도구 없음·권한 오류 등으로 폴더를 확인할 수 없다면 상태는 불명확합니다. 임의 종료·재수집 대신 오류를 보존합니다.
+
+**다음:** 이 폴더의 수집기가 없음을 확인했다면 [저장 상태](#resume)를 읽습니다. `completed`는 다음 미완료 단계로, 실패했거나 종료 뒤에도 `running`으로 남은 수집은 [수집 복구](#collection-retry)로 갑니다. 종료 확인은 수집 성공 확인이 아닙니다.
 
 <a id="deployment-recovery"></a>
 
@@ -346,13 +386,15 @@ python scripts/workshop.py calibrate --retry-failed
 
 포털이 Last Day를 보여도 `monitor`의 기본 조회는 **최근 2시간**입니다. 최근 24시간 안의 실행이라면 **같은 label**을 유지하고 기간만 늘립니다.
 
-**터미널 — 기존 trace 조회 기간 늘리기:**
+**터미널 — 기존 trace 조회 기간 늘리기:** 실제 label과 수집 시각을 포함하는 시간 수(최근 하루면 `24`, 최대 `168`)를 입력합니다.
 
 ```bash
-python scripts/workshop.py monitor --label baseline --hours 24
+read -r -p "trace를 확인할 실제 label: " RESULT_LABEL &&
+read -r -p "조회 시간 (1–168, 최근 하루면 24): " TRACE_HOURS &&
+python scripts/workshop.py monitor --label "$RESULT_LABEL" --hours "$TRACE_HOURS"
 ```
 
-실패한 모니터링이 다른 단계라면 `baseline`을 실제 `improved` 또는 `holdout`으로 바꿉니다. `--hours`는 **1–168 사이 정수 시간**이며 원래 수집 시점을 포함하도록 선택합니다. 이미 보존 기간이 끝났거나 삭제된 telemetry를 되살리는 옵션은 아닙니다.
+복구 label도 메모에 있는 그대로 입력합니다. `--hours`는 **1–168 사이 정수 시간**입니다. 조회 범위를 벗어난 미확인 trace는 이 명령으로 복구할 수 없으며, 이미 보존 기간이 끝났거나 삭제된 telemetry를 되살리는 옵션도 아닙니다.
 
 **완료 확인:** `telemetry.json`의 `complete`가 `true`이고 같은 label의 `expected_trace_count`와 `observed_trace_count`가 일치합니다.
 
@@ -365,7 +407,9 @@ python scripts/workshop.py monitor --label baseline --hours 24
 
 </details>
 
-**다음:** 복구한 명령을 반복하지 말고 해당 trace의 완료 확인 아래부터 이어갑니다: [baseline trace](../README.ko.md#baseline-traces), [후보 trace](../README.ko.md#candidate-traces), [holdout trace](../README.ko.md#holdout-traces). 이미 정리까지 했다면 저장된 증거만 읽습니다. 새 실험은 새 작업 폴더와 새 이름으로 시작합니다.
+**중단 전에 미리 확인하러 왔다면:** 여기서 6단계나 9단계로 건너뛰지 않습니다. 완료한 label을 메모하고 [중도 종료 안내](../README.ko.md#stop-early)로 돌아갑니다. 재개할 때는 원래 메모의 다음 미실행 블록부터 진행하고 이미 확인한 trace는 저장된 파일을 사용합니다.
+
+**다음 — trace 오류 복구였다면:** 복구한 명령을 반복하지 말고 해당 trace의 완료 확인 아래부터 이어갑니다: [baseline trace](../README.ko.md#baseline-traces), [후보 trace](../README.ko.md#candidate-traces), [holdout trace](../README.ko.md#holdout-traces). 이미 정리까지 했다면 저장된 증거만 읽습니다. 새 실험은 새 작업 폴더와 새 이름으로 시작합니다.
 
 <a id="collection-retry"></a>
 
@@ -373,7 +417,7 @@ python scripts/workshop.py monitor --label baseline --hours 24
 
 다음 조건에서만 사용합니다:
 
-- 원래 수집기가 종료됐을 때만 사용합니다. 종료란 원래 터미널이 프롬프트로 돌아왔거나, 터미널을 닫았다면 그 프로세스가 끝난 것을 확인한 상태입니다. 확실하지 않으면 기다리며, 두 번째 수집 명령을 시작하지 않습니다.
+- 원래 수집기가 종료됐을 때만 사용합니다. 원래 터미널이 프롬프트로 돌아왔거나, 창을 잃었다면 [로컬 수집기 확인](#collector-status)으로 종료를 확인한 상태입니다. 확실하지 않으면 두 번째 수집 명령을 시작하지 않습니다.
 - 실패한 label의 상태와 원문은 보존합니다.
 - 같은 단계만 미사용 retry label 하나로 한 번 다시 수집합니다.
 - 모델·split·질문·지침·에이전트 버전·완료된 label·검토 출처는 바꾸지 않습니다. [7-2 뒤 V2가 바뀐 경우](#v2-changed)만 현재 V2 버전으로 수집합니다.
@@ -387,22 +431,37 @@ python scripts/workshop.py monitor --label baseline --hours 24
 
 <a id="run-values"></a>
 
-### 복구 뒤 사용할 실행값
+### 복구 뒤 또는 새 터미널에서 사용할 실행값
 
 **복구 수집이 성공하면 본문으로 돌아가기 전에 기존 메모의 아래 값만 갱신합니다.** 복구하지 않은 label은 원래 값을 유지합니다. 아직 수집하지 않은 단계는 기본값을 적고, 나중에 복구할 때만 바꿉니다.
 
 | 메모할 값 | 최초 기본값 | 복구 후 사용할 값과 위치 |
 |---|---|---|
-| V1 dev label | `baseline` | V1 복구 성공 시 `baseline-retry`. 이후 `feedback`·`compare`·`summary`·`monitor`와 `verify --baseline`의 값 |
-| V2 dev label | `improved` | V2 복구 성공 시 `improved-retry`. 이후 비교·조회·trace와 `verify --candidate`의 값 |
-| V2 holdout label | `holdout` | holdout 복구 성공 시 `holdout-retry`. 이후 비교·조회·trace와 `verify --holdout`의 값 |
-| 수집 동시성 `concurrency` | `4` | **완료한 V1 baseline**의 `src/agent/.foundry/results/<실제 label>/manifest.json`에서 읽음. 이후 V2 dev·holdout `collect`에도 같은 값을 적용. 기본 `4`가 아니면 해당 `--concurrency` 값을 지정하며, 예를 들어 `2`는 `--concurrency 2` |
+| V1 dev label (`BASELINE_LABEL`) | `baseline` | V1 복구 성공 시 `baseline-retry`. 이후 `feedback`·`compare`·`summary`·`monitor`와 `verify --baseline`의 값 |
+| V2 dev label (`CANDIDATE_LABEL`) | `improved` | V2 복구 성공 시 `improved-retry`. 이후 비교·조회·trace와 `verify --candidate`의 값 |
+| V2 holdout label (`HOLDOUT_LABEL`) | `holdout` | holdout 복구 성공 시 `holdout-retry`. 이후 비교·조회·trace와 `verify --holdout`의 값 |
+| 수집 동시성 `concurrency` (`COLLECTION_CONCURRENCY`) | `4` | **완료한 V1 baseline**의 `src/agent/.foundry/results/<실제 label>/manifest.json`에서 읽음. 이후 V2 dev·holdout도 이 변수로 같은 `--concurrency` 값을 사용하며, `2`는 `--concurrency 2`에 해당 |
 
-**바꿀 것은 값이지 옵션 이름이 아닙니다.** `--label`·`--labels`·`--baseline`·`--candidate`·`--holdout` 뒤의 label 값, 읽을 결과 경로와 출력 설명에 실제 이름을 적용합니다. **`--split dev`·`--split holdout`은 바꾸지 않습니다.** `row_id`는 그 label의 실제 출력에서 복사합니다. 기존 폴더·파일·row ID·manifest를 이름 변경하거나 편집하지 않습니다.
+**터미널 — 새 창을 열었거나 변수 값이 메모와 다를 때만 복원:** 메모의 실제 값 네 개를 입력합니다. V1 수집 전이라면 메모한 초기 동시성 `4`를 쓰며, 완료된 V1이 있으면 그 manifest를 우선합니다. 파일이나 `.env`는 바꾸지 않습니다.
 
-예를 들어 **V2 dev만** 복구했다면 최종 검증은 `python scripts/workshop.py verify --baseline baseline --candidate improved-retry --holdout holdout`입니다. 다른 단계도 복구했다면 그 값도 메모대로 바꿉니다. 이 메모는 [9-3 보고서](../README.ko.md#finish)에도 옮깁니다.
+```bash
+read -r -p "메모의 V1 dev label: " BASELINE_LABEL &&
+read -r -p "메모의 V2 dev label: " CANDIDATE_LABEL &&
+read -r -p "메모의 V2 holdout label: " HOLDOUT_LABEL &&
+read -r -p "수집 동시성 (1, 2, 4): " COLLECTION_CONCURRENCY &&
+printf 'V1 dev=%s\nV2 dev=%s\nV2 holdout=%s\nconcurrency=%s\n' \
+  "$BASELINE_LABEL" "$CANDIDATE_LABEL" "$HOLDOUT_LABEL" "$COLLECTION_CONCURRENCY"
+```
 
-**복구를 아직 실행하지 않았다면:** 위 첫 표에서 실패한 단계 하나를 고르고, 해당 하위 절의 명령만 실행합니다. 이 절은 재수집 허용 조건을 바꾸지 않습니다.
+**완료 확인:** 빈 값이 없고 출력 네 줄이 메모·완료된 manifest와 일치합니다. 복구 블록은 수집 성공 뒤 해당 변수만 갱신하므로 같은 터미널에서는 이 입력을 반복할 필요가 없습니다.
+
+**다르면:** 위 입력만 다시 합니다. 어떤 label이 완료됐는지 모르면 [저장 상태](#resume)를 먼저 확인하며 기본값으로 덮어쓰지 않습니다.
+
+**본문 명령은 수정하지 않습니다.** `--label`·`--labels`·`--baseline`·`--candidate`·`--holdout` 뒤의 변수가 실제 값을 사용합니다. **`--split dev`·`--split holdout`은 바꾸지 않습니다.** `row_id`와 출력·파일 경로는 실제 label을 사용합니다. 예를 들어 `none`일 때의 통과 사례는 실제 V1 label 뒤에 `-sol-D01`을 붙인 행입니다. 기존 폴더·파일·row ID·manifest를 이름 변경하거나 편집하지 않습니다.
+
+예를 들어 **V2 dev만** 복구했다면 `CANDIDATE_LABEL=improved-retry`이고 다른 두 label은 그대로입니다. 이 메모는 [9-3 보고서](../README.ko.md#finish)에도 옮깁니다.
+
+**다음:** 변수 복원·메모 갱신만 했다면 원래 메모의 **다음 미실행 블록**으로 돌아갑니다. 수집이 실패했고 아직 복구하지 않은 경우에만 위 표의 실패 단계로 갑니다. 새 터미널을 열었다는 이유로 재수집하지 않습니다.
 
 <a id="collection-retry-baseline"></a>
 
@@ -415,10 +474,13 @@ python scripts/workshop.py monitor --label baseline --hours 24
 | 429 또는 시간 초과이며 동시성을 낮추는 것이 복구 방법임 | `2` |
 | 그 밖의 실행 오류 | 실패한 `manifest.json`의 `concurrency`를 유지. manifest가 없으면 원래 명령의 값(옵션을 생략했다면 `4`) |
 
-**터미널 — V1 재수집:** 아래는 동시성 `2`의 명령입니다. 위에서 고른 값이 `4`이면 **`--concurrency 2`만 `--concurrency 4`로 바꿔** 한 번 실행합니다. 다른 원래 값이면 그 값을 유지합니다.
+**터미널 — V1 재수집:** 위에서 고른 동시성을 입력합니다. `2`는 `--concurrency 2`, `4`는 `--concurrency 4`와 같으며 명령을 편집하지 않습니다. 수집 성공 뒤에만 V1 label·동시성 변수를 갱신합니다.
 
 ```bash
-python scripts/workshop.py collect --split dev --label baseline-retry --concurrency 2
+read -r -p "이번 V1 재수집의 동시성 (1, 2, 4): " RETRY_CONCURRENCY &&
+python scripts/workshop.py collect --split dev --label baseline-retry --concurrency "$RETRY_CONCURRENCY" &&
+BASELINE_LABEL=baseline-retry &&
+COLLECTION_CONCURRENCY="$RETRY_CONCURRENCY"
 ```
 
 **완료 확인:** 오류 없이 `18/18`로 끝납니다. 완료한 것은 **V1 수집뿐**이며, 평가·포털·trace 확인은 아직 남아 있습니다.
@@ -433,10 +495,11 @@ python scripts/workshop.py collect --split dev --label baseline-retry --concurre
 
 README 7-4에서 검토 기록이 연결되지 않았거나(`source trace carried: no`) [7-2 뒤 V2가 바뀐](#v2-changed) 경우에도 이 명령으로 새 label을 수집합니다.
 
-**터미널 — V2 dev 재수집:** 완료한 baseline의 `manifest.json`에서 `concurrency`를 확인합니다. 아래 `--concurrency 4`를 그 값으로 맞춥니다(`2`이면 `--concurrency 2`).
+**터미널 — V2 dev 재수집:** `COLLECTION_CONCURRENCY`가 완료한 V1의 `manifest.json → concurrency`와 같은지 확인합니다. 아래 명령은 그 값을 그대로 쓰고, 성공 뒤에만 V2 dev label을 갱신합니다.
 
 ```bash
-python scripts/workshop.py collect --split dev --label improved-retry --concurrency 4
+python scripts/workshop.py collect --split dev --label improved-retry --concurrency "$COLLECTION_CONCURRENCY" &&
+CANDIDATE_LABEL=improved-retry
 ```
 
 **완료 확인:** 오류 없이 `18/18`로 끝납니다.
@@ -449,10 +512,11 @@ python scripts/workshop.py collect --split dev --label improved-retry --concurre
 
 ### Holdout 수집 실패
 
-**터미널 — holdout 재수집:** 완료한 baseline의 `manifest.json`에서 `concurrency`를 확인합니다. 아래 `--concurrency 4`를 그 값으로 맞춥니다(`2`이면 `--concurrency 2`).
+**터미널 — holdout 재수집:** `COLLECTION_CONCURRENCY`가 완료한 V1의 `manifest.json → concurrency`와 같은지 확인합니다. 아래 명령은 그 값을 그대로 쓰고, 성공 뒤에만 holdout label을 갱신합니다.
 
 ```bash
-python scripts/workshop.py collect --split holdout --label holdout-retry --concurrency 4
+python scripts/workshop.py collect --split holdout --label holdout-retry --concurrency "$COLLECTION_CONCURRENCY" &&
+HOLDOUT_LABEL=holdout-retry
 ```
 
 **완료 확인:** 오류 없이 `12/12`로 끝납니다.
@@ -474,12 +538,13 @@ python scripts/workshop.py collect --split holdout --label holdout-retry --concu
 | 오류 행 없이 평가 run은 완료됐지만 ID 누락·중복, `null` 점수, 결과 형식 검증에서 실패 | 중단하고 `evaluation.json`과, 있다면 `evaluation-output-raw.json`을 보존. 환경 소유자에게 결과 형식 확인을 요청하며 **B 강행·상태/점수 편집 금지** |
 | 평가 run과 각 행은 정상 완료됐지만 유효한 점수가 낮음 | 재시도하지 않습니다. 보고서와 포털 확인을 마치고 실습을 계속합니다. |
 
-아래 명령의 `baseline`을 **실제로 실패한 label**로 바꿉니다(`improved-retry` 같은 복구 label도 포함). 원래 명령이 끝난 뒤 하나만 실행합니다. 채점 중에는 1–3분쯤 출력이 없을 수 있습니다.
+선택한 블록의 입력 요청에 **실제로 실패한 label**을 입력합니다(`improved-retry` 같은 복구 label도 포함). 원래 명령이 끝난 뒤 하나만 실행합니다. 채점 중에는 1–3분쯤 출력이 없을 수 있습니다.
 
 **터미널 — A. 같은 입력의 평가 시작 또는 재개:**
 
 ```bash
-python scripts/workshop.py evaluate --label baseline
+read -r -p "평가를 이어갈 실제 label: " RESULT_LABEL &&
+python scripts/workshop.py evaluate --label "$RESULT_LABEL"
 ```
 
 **완료 확인:** `Foundry evaluation completed: ... (18 rows)` 또는 holdout의 `(12 rows)`와 보고서 URL이 나옵니다. 아래 B는 건너뜁니다.
@@ -489,7 +554,8 @@ python scripts/workshop.py evaluate --label baseline
 **터미널 — B. 실패·오류 run이 기록된 경우에만 재시도:**
 
 ```bash
-python scripts/workshop.py evaluate --label baseline --retry-failed
+read -r -p "실패 평가를 재시도할 실제 label: " RESULT_LABEL &&
+python scripts/workshop.py evaluate --label "$RESULT_LABEL" --retry-failed
 ```
 
 평가 오류 때문에 `collect`를 반복하지 않습니다.
@@ -506,7 +572,7 @@ python scripts/workshop.py evaluate --label baseline --retry-failed
 
 실패가 없다는 것도 결과입니다. 실패를 만들거나 답변·정답을 수정하지 않습니다.
 
-1. [README 6-2](../README.ko.md#review-case)의 `show` 블록에 `baseline-sol-D01`(또는 다른 baseline 행)을 넣어 저장된 응답과 고정 정답을 봅니다. `row_id`와 `trace_id`를 메모합니다.
+1. [README 6-2](../README.ko.md#review-case)의 `show` 입력 안내에 표시된 실제 V1 label의 `-sol-D01` 행(또는 같은 label의 다른 행)을 넣어 저장된 응답과 고정 정답을 봅니다. `row_id`와 `trace_id`를 메모합니다.
 2. 6-2처럼 응답을 고정 dev 정답과 비교하고, 포털에서 그 trace를 확인합니다.
 3. “업무 검사는 전부 통과했고 무엇을 확인했는지”와 **제공 V2에서도 유지할 동작**을 한 줄로 설명합니다. 실패나 품질 개선을 미리 주장하지 않습니다.
 4. [6-3 검토 기록 저장](../README.ko.md#save-review)으로 돌아갑니다. `feedback`은 통과한 dev 응답도 기록할 수 있습니다. 저장 후 7단계에서 V2의 타당성을 검토합니다.
@@ -603,7 +669,7 @@ python scripts/workshop.py smoke
 
 **다르면:** 화면과 저장 결과 파일 경로를 보존해 강사에게 전달합니다. 공유 구독 설정을 바꾸지 않습니다.
 
-**다음:** 중단했던 포털 확인으로 돌아가거나, 진행 중인 단계가 holdout이면 [holdout 결과 읽기](../README.ko.md#holdout-results)를 계속합니다.
+**다음:** 원래 중단했던 포털 확인의 다음 미실행 블록으로 돌아갑니다. [8-4 holdout 보고서](../README.ko.md#holdout-report)에서 왔다면 그 완료 조건을 확인한 뒤 [9-1 전체 증거 확인](../README.ko.md#lab-g)으로 갑니다. 이미 마친 8-3은 반복하지 않습니다.
 
 <a id="levels"></a>
 
@@ -781,12 +847,50 @@ python scripts/workshop.py check-cleanup
 
 **다음:** A 또는 B의 확인을 마치면 기본 정리는 끝났습니다. 본인 전용 환경을 종료하려면 [생성 기록과 삭제 범위 확인](environment.ko.md#final-cleanup)을 따릅니다. 별도 승인으로 그룹 전체를 삭제한 뒤에는 `check-cleanup`이 아니라 [기반 환경의 최종 확인](environment.ko.md#final-cleanup-check)을 사용합니다. 공유 그룹 삭제로 우회하지 않습니다.
 
+<a id="existing-setup-resume"></a>
+
+## 환경 소유자: 기존 서비스 준비를 이어가기
+
+**[기존 환경 준비](instructor.ko.md#existing-foundation)에서 만든 모델 준비 clone으로 돌아갑니다.** 이 경로에는 `RUN_DIR`·`config.json`이 없어도 정상입니다. 아직 가상환경을 만들지 않았다면 그 clone에서 [Python 준비](instructor.ko.md#existing-python)의 다음 미완료 명령부터 합니다.
+
+**터미널 — 가상환경이 이미 있다면, Bash에서 복원:**
+
+```bash
+read -r -p "기존 모델 준비 clone의 절대 경로: " PREP_DIR &&
+cd "$PREP_DIR" &&
+source src/agent/.venv/bin/activate &&
+export AZURE_CONFIG_DIR="$PWD/.azure-cli" &&
+pwd
+```
+
+**완료 확인:** 경로가 기존 모델 준비 clone이고 가상환경이 활성화됐습니다. `.env`·이름·로그인 캐시·소유권 기록은 그대로입니다.
+
+**다르면:** 메모한 경로와 실패한 명령을 확인합니다. 새 clone·`init`·새 기반 서비스를 만들지 않습니다.
+
+| 마지막 미완료 작업 | 이어갈 곳 |
+|---|---|
+| Python 설치·테스트 | [오프라인 테스트 복구](#offline-tests)의 기존 환경 경로 |
+| 설정 또는 로그인 | [설정](instructor.ko.md#existing-settings), 또는 [ID 입력](instructor.ko.md#login-input)으로 두 ID를 복원한 뒤 미완료 로그인·확인만 진행 |
+| 보조 배포 준비 | [보조 배포](instructor.ko.md#auxiliary-model)의 미완료 작업 |
+| 후보 점검·준비 | [후보 준비](instructor.ko.md#check-candidates)의 실패 명령과 뒤의 미실행 명령 |
+| calibration | [judge 확인](instructor.ko.md#candidate-calibration). 완료한 후보 준비는 반복하지 않음 |
+| 준비 완료 | [리허설 또는 개인 실습](instructor.ko.md#after-calibration) 선택 |
+
+**다음:** 위에서 고른 위치로 이동합니다. 아래 새 환경 준비 절차는 실행하지 않습니다.
+
 <a id="setup-resume"></a>
 <a id="환경-소유자-터미널을-닫은-뒤-준비-이어가기"></a>
 
 ## 환경 소유자: 미완료 준비 이어가기
 
-**참가자는 환경 준비 중이 아니었다면 여기서 멈춥니다.** 원래 clone과 `RUN_DIR`를 유지하고, 새 `RUN_ID` 생성·이미 완료한 `init` 반복·스냅샷 덮어쓰기는 하지 않습니다.
+**먼저 준비했던 경로를 고릅니다.** 참가자는 환경 준비 중이 아니었다면 [실습 재개](#resume)로 돌아갑니다.
+
+| 준비 경로 | 이어갈 곳 |
+|---|---|
+| 이미 있는 Foundry·Search·관측 서비스를 사용 | [기존 서비스 준비 재개](#existing-setup-resume). `RUN_DIR`를 요구하지 않음 |
+| 새 전용 환경 준비 도구로 `RUN_DIR`를 정함 | 아래에서 같은 `RUN_DIR`로 계속 |
+
+**아래는 새 전용 환경 준비에만 적용합니다.** 원래 clone과 `RUN_DIR`를 유지하고, 새 `RUN_ID` 생성·이미 완료한 `init` 반복·스냅샷 덮어쓰기는 하지 않습니다.
 
 **터미널 — 기존 경로 확인:** `bash`를 실행하고 원래 clone 경로와 기존 `RUN_DIR`를 따옴표 없이 입력합니다.
 

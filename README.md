@@ -26,7 +26,7 @@
 
 **Tools required:** Git, Python 3.13, Bash, curl, Azure CLI, azd with the `microsoft.foundry` extension, an editor (VS Code recommended), and a browser; on Windows, use WSL ([install and check](docs/instructor.en.md#tools)). Tool installation and Azure preparation are outside the 120 minutes.
 
-**Cost:** local execution still calls paid Azure models and Search. For an environment you create yourself, [delete your dedicated resource group](docs/environment.en.md#final-cleanup) after step 10 to stop foundation costs.
+**Cost:** local execution still calls paid Azure models and Search. For your exclusive environment created with the new-environment tools, [delete its resource group](docs/environment.en.md#final-cleanup) after step 10 to stop foundation costs. For existing services, follow the [environment owner's cleanup scope](docs/instructor.en.md#foundation-cleanup).
 
 <details>
 <summary>Optional: delegate execution to Copilot CLI</summary>
@@ -298,7 +298,7 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 
 **If not:** for `No such file or directory`, paste the full path starting with `/` again, without quotes and without `~`. If you forgot it, use **Terminal → New Terminal** in the VS Code window that has your workshop folder open, then run `pwd`.
 
-**After restoring:** return to the next unexecuted block in your notes. “Next: step 2” below is only for someone finishing step 1 for the first time. If a command reports an expired sign-in, use [sign-in recovery](docs/troubleshooting.en.md#login).
+**After restoring:** if you started step 5, [restore the run values](docs/troubleshooting.en.md#run-values) for labels and concurrency before returning to the next unexecuted block in your notes. Before step 5, that input is unnecessary. “Next: step 2” below is only for someone finishing step 1 for the first time. If a command reports an expired sign-in, use [sign-in recovery](docs/troubleshooting.en.md#login).
 
 **If you closed the terminal during sign-in:** restoration does not restore `LOGIN_TENANT_ID` or `LOGIN_SUBSCRIPTION_ID`. Run [only 1-3's ID-input block](#login-input), then continue the unfinished sign-in or verification. Do not repeat successful sign-ins.
 
@@ -511,7 +511,7 @@ python scripts/workshop.py smoke
 
 <a id="evaluation-runs"></a>
 
-**These three labels are the first-run defaults.** After collection recovery, apply your [actual-label and concurrency notes](docs/troubleshooting.en.md#run-values) to later commands, paths, and output descriptions. The same agent (`LAB_AGENT_NAME`) routes each question to three candidate models, which each produce one answer: `model_key` values `sol`, `luna`, and `astra` select `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`. These keys are not agent names or Azure deployment names.
+**These three labels are the first-run defaults.** Later commands use the variables you set below, so recovery does not require editing each command. Read `baseline`, `improved`, and `holdout` in output and path descriptions as your [actual labels](docs/troubleshooting.en.md#run-values). The same agent (`LAB_AGENT_NAME`) routes each question to three candidate models, which each produce one answer: `model_key` values `sol`, `luna`, and `astra` select `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`. These keys are not agent names or Azure deployment names.
 
 **V1 and V2 are instruction (prompt) versions, not models; split means question set; label means result-folder name.** Use `dev` for improvement and open the new `holdout` questions only at the end, after fixing V2.
 
@@ -532,6 +532,23 @@ python scripts/workshop.py smoke
 
 See [evaluator inputs](#what-is-being-evaluated) for details.
 
+<a id="run-settings"></a>
+
+**Terminal A — set result names only on the first run:** copy these four values into your existing notes. **When resuming or recovering, do not overwrite them with these defaults; [restore the run values](docs/troubleshooting.en.md#run-values)** instead.
+
+```bash
+BASELINE_LABEL=baseline
+CANDIDATE_LABEL=improved
+HOLDOUT_LABEL=holdout
+COLLECTION_CONCURRENCY=4
+printf 'V1 dev=%s\nV2 dev=%s\nV2 holdout=%s\nconcurrency=%s\n' \
+  "$BASELINE_LABEL" "$CANDIDATE_LABEL" "$HOLDOUT_LABEL" "$COLLECTION_CONCURRENCY"
+```
+
+**Checkpoint:** the output shows `baseline`, `improved`, `holdout`, and `4` on separate lines, and you recorded them in the same notes. Variables last only in this terminal; do not add them to `.env`.
+
+**If not:** in a new terminal or with existing collected results, [restore the run values](docs/troubleshooting.en.md#run-values). Do not rename existing results.
+
 ### 5-1. Check the judge
 
 **Terminal A:** use two examples to check that the scoring model (the judge) distinguishes a grounded answer from a wrong one. This is calibration, separate from the 48 evaluated agent responses. You may wait about a minute with no output.
@@ -548,10 +565,10 @@ python scripts/workshop.py calibrate
 
 ### 5-2. Collect the 18 baseline responses
 
-**Terminal A:** `--split dev` selects the six questions; `--label baseline` names the result folder. A long readiness JSON appears first, then lines such as `01/18 ...` add up one by one (usually 1–3 minutes).
+**Terminal A:** `--split dev` selects the six questions; `--label "$BASELINE_LABEL"` uses the result-folder name set above. A long readiness JSON appears first, then lines such as `01/18 ...` add up one by one (usually 1–3 minutes).
 
 ```bash
-python scripts/workshop.py collect --split dev --label baseline
+python scripts/workshop.py collect --split dev --label "$BASELINE_LABEL" --concurrency "$COLLECTION_CONCURRENCY"
 ```
 
 **Checkpoint:** the progress reaches `18/18` without errors and ends with a `Session ... retained ...` line. `business=False` marks a result to review, not a command failure.
@@ -562,10 +579,10 @@ python scripts/workshop.py collect --split dev --label baseline
 
 ### 5-3. Evaluate the saved responses
 
-**Terminal A:** after collection recovery, use your [actual V1 label](docs/troubleshooting.en.md#run-values) after `--label`. There may be no output for 1–3 minutes while Foundry scores the answers.
+**Terminal A:** the variable below reuses your [actual V1 label](docs/troubleshooting.en.md#run-values), including any update made during collection recovery. There may be no output for 1–3 minutes while Foundry scores the answers.
 
 ```bash
-python scripts/workshop.py evaluate --label baseline
+python scripts/workshop.py evaluate --label "$BASELINE_LABEL"
 ```
 
 **Checkpoint:** `Foundry evaluation completed: ... (18 rows)`, followed by a report URL. Low scores are valid results.
@@ -617,7 +634,7 @@ python scripts/workshop.py evaluate --label baseline
 **Terminal A — aggregate the results** into `comparison.json`, which `summary` reads:
 
 ```bash
-python scripts/workshop.py compare --labels baseline
+python scripts/workshop.py compare --labels "$BASELINE_LABEL"
 ```
 
 **Checkpoint:** a long comparison JSON prints without errors and ends with `comparison_notes`; inside it, `baseline → models` has `sol`, `luna`, and `astra`.
@@ -626,10 +643,10 @@ python scripts/workshop.py compare --labels baseline
 
 <a id="baseline-traces"></a>
 
-**Terminal A — check the traces:** a long KQL query prints first, then a result JSON below it.
+**Terminal A — check the traces:** if you already saved this label's `telemetry.json` before a pause and it matches the checkpoint below, use that file and skip this command. Otherwise a long KQL query prints first, then a result JSON below it.
 
 ```bash
-python scripts/workshop.py monitor --label baseline
+python scripts/workshop.py monitor --label "$BASELINE_LABEL"
 ```
 
 **Checkpoint:** the command finishes without errors, and the result JSON shows `complete: true`, `expected_trace_count: 18`, and `observed_trace_count: 18`.
@@ -639,7 +656,7 @@ python scripts/workshop.py monitor --label baseline
 **Terminal A — find a row to review:**
 
 ```bash
-python scripts/workshop.py summary --labels baseline
+python scripts/workshop.py summary --labels "$BASELINE_LABEL"
 ```
 
 **Checkpoint:** a model summary table and a `baseline business-check failures:` line appear; the line holds a comma-separated list of row IDs or `none`. The summary reads saved results; it does not evaluate again.
@@ -650,18 +667,18 @@ python scripts/workshop.py summary --labels baseline
 
 ### 6-2. Choose and explain one case
 
-**Choose:** copy the **first `row_id`** after `baseline business-check failures:` in 6-1 (for example, `baseline-luna-D01`), up to the parenthesis; the parentheses name its failed checks. If it says `none`, choose `baseline-sol-D01` and review **why it passed**.
+**Choose:** copy the **first `row_id`** after `business-check failures:` in 6-1 (for example, `baseline-luna-D01`), up to the parenthesis; the parentheses name its failed checks. If it says `none`, choose **your actual V1 label's `-sol-D01` row**, shown in the input prompt below, and review why it passed.
 
 **Terminal A — show one row:** paste the `row_id` you copied. The command shows the saved response beside the fixed reference; it changes no files and calls no model.
 
 ```bash
-read -r -p "row_id to review: " ROW_ID &&
-python scripts/workshop.py show --label baseline --row-id "$ROW_ID"
+read -r -p "row_id to review (if none: ${BASELINE_LABEL}-sol-D01): " ROW_ID &&
+python scripts/workshop.py show --label "$BASELINE_LABEL" --row-id "$ROW_ID"
 ```
 
 **Checkpoint:** the JSON has `case_id`, `trace_id`, `saved_response` (the saved answer), `business_checks` (the five business checks), and `fixed_reference` (the fixed answer from `data/en/dev.jsonl`). Note the `row_id` and `trace_id`.
 
-**If not:** for `Unknown row ID`, paste only the ID that starts with `baseline-`, without parentheses or commas.
+**If not:** for `Unknown row ID`, copy only the ID from the same V1 label's output, without parentheses or commas. If the variable differs from your notes, [restore the run values](docs/troubleshooting.en.md#run-values) first.
 
 **First read the question (`query`) in Terminal A.** Compare `saved_response` → `answer` with `fixed_reference` → `ground_truth`, then use this table to explain each `false` in `business_checks`. `saved_response` is the agent's answer; `fixed_reference` is the reference set in advance.
 
@@ -702,12 +719,24 @@ Finding a document (`source_ids`) is not the same as citing it (`citations`). An
 
 ### 6-3. Save your review
 
-**Terminal A:** at the first prompt, enter your reviewed `row_id`; at the second, paste your one-line review from 6-2 (at least 10 characters, not an example):
+**Saved reviews cannot be overwritten.** Check the preview first, then run the separate save block.
+
+**Terminal A — enter and preview, without saving yet:** at the first prompt, enter your reviewed `row_id`; at the second, paste your one-line review from 6-2 (at least 10 characters, not an example):
 
 ```bash
 read -r -p "Reviewed row_id: " ROW_ID &&
 read -r -p "Observation, evidence, and what to change or preserve (at least 10 characters): " REVIEW_REASON &&
-python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
+printf 'label=%s\nrow_id=%s\nreason=%s\n' "$BASELINE_LABEL" "$ROW_ID" "$REVIEW_REASON"
+```
+
+**Checkpoint:** the printed label, row ID, and reason match the actual review in your 6-2 notes.
+
+**If not:** repeat only the input block above. Do not save below yet.
+
+**Terminal A — save the reviewed input:** use the same terminal in which you checked the preview. If it was closed, restore the run values and repeat the preview first.
+
+```bash
+python scripts/workshop.py feedback --label "$BASELINE_LABEL" --row-id "$ROW_ID" \
   --reason "$REVIEW_REASON" --reviewer human
 ```
 
@@ -794,12 +823,12 @@ python scripts/workshop.py smoke
 
 ### 7-3. Collect and evaluate the same dev set
 
-**After collection recovery:** use the actual labels in your [run-value notes](docs/troubleshooting.en.md#run-values). If the completed baseline's `manifest.json` has `concurrency: 2`, append **`--concurrency 2`** to the collection command below. Both V2 dev and holdout must match the baseline.
+**Collection conditions:** `COLLECTION_CONCURRENCY` in your [run-value notes](docs/troubleshooting.en.md#run-values) must match `manifest.json → concurrency` for the completed V1 run. The command below uses that value; do not append another option such as `--concurrency 2`. Both V2 dev and holdout must keep V1's concurrency.
 
 **Terminal A — collect:** as in 5-2, lines such as `01/18 ...` add up after the readiness JSON (usually 1–3 minutes).
 
 ```bash
-python scripts/workshop.py collect --split dev --label improved
+python scripts/workshop.py collect --split dev --label "$CANDIDATE_LABEL" --concurrency "$COLLECTION_CONCURRENCY"
 ```
 
 **Checkpoint:** the progress reaches `18/18` without errors.
@@ -808,10 +837,10 @@ python scripts/workshop.py collect --split dev --label improved
 
 <a id="candidate-evaluation"></a>
 
-**Terminal A — evaluate:** after collection recovery, use your [actual V2 dev label](docs/troubleshooting.en.md#run-values) after `--label`. As in 5-3, there may be no output for 1–3 minutes.
+**Terminal A — evaluate:** the variable below uses your [actual V2 dev label](docs/troubleshooting.en.md#run-values). As in 5-3, there may be no output for 1–3 minutes.
 
 ```bash
-python scripts/workshop.py evaluate --label improved
+python scripts/workshop.py evaluate --label "$CANDIDATE_LABEL"
 ```
 
 **Checkpoint:** `Foundry evaluation completed: ... (18 rows)`, followed by a report URL.
@@ -823,7 +852,7 @@ python scripts/workshop.py evaluate --label improved
 **Terminal A — save the comparison:** after recovery, match both labels to your [run-value notes](docs/troubleshooting.en.md#run-values). Keep using those values in later `summary` and `show` commands.
 
 ```bash
-python scripts/workshop.py compare --labels baseline improved
+python scripts/workshop.py compare --labels "$BASELINE_LABEL" "$CANDIDATE_LABEL"
 ```
 
 **Checkpoint:** a long comparison JSON prints without errors, with `baseline` and `improved` inside it and `comparison_notes` at the end.
@@ -837,7 +866,7 @@ python scripts/workshop.py compare --labels baseline improved
 **Terminal A:** print a read-only summary of the saved results. Keep what it shows; never lower the criteria, swap models, or adopt V2 automatically.
 
 ```bash
-python scripts/workshop.py summary --labels baseline improved
+python scripts/workshop.py summary --labels "$BASELINE_LABEL" "$CANDIDATE_LABEL"
 ```
 
 **Checkpoint:** the output shows these three parts in order; copy them into your notes:
@@ -866,7 +895,7 @@ python scripts/workshop.py summary --labels baseline improved
 
 ```bash
 read -r -p "V2 row_id from the Reviewed case line: " V2_ROW_ID &&
-python scripts/workshop.py show --label improved --row-id "$V2_ROW_ID"
+python scripts/workshop.py show --label "$CANDIDATE_LABEL" --row-id "$V2_ROW_ID"
 ```
 
 **Checkpoint:** `case_id` and `model_key` match your 6-2 case, while `trace_id` is different: this is a new response, not the original trace copied as V2 evidence. Compare `saved_response` → `answer`, `decision`, and `citations` with 6-2 and the unchanged `fixed_reference`. Note the V2 `row_id` and what actually changed (or stayed the same), even if its business pass/fail did not change.
@@ -880,7 +909,7 @@ The summary reads `src/agent/.foundry/results/comparison.json` (`labels → base
 
 Tokens exclude the planner, judge, and other calls; timing six responses does not establish production performance ([measurement scope](docs/validation.en.md#tradeoffs)). Retrieval can also differ between runs (`comparison_notes`), so this compares **the whole agent, including retrieval**, not models in isolation.
 
-To inspect a failed row, see [failed rows](docs/validation.en.md#native-failures). For a recorded example, not your target, see the [September 23, 2026 English results](docs/validation.en.md#measured-results).
+Follow the link for the failure type: [business-check failures](docs/validation.en.md#business-failures) or [Foundry-score failures](docs/validation.en.md#native-failures). For a recorded example, not your target, see the [September 23, 2026 English results](docs/validation.en.md#measured-results).
 
 </details>
 
@@ -928,12 +957,12 @@ Click **Send once**: the comparison view sends the question to both versions. Ch
 
 <a id="holdout-collection"></a>
 
-**After collection recovery:** use the actual labels in your [run-value notes](docs/troubleshooting.en.md#run-values). If the completed baseline's `manifest.json` has `concurrency: 2`, append **`--concurrency 2`** to the collection command below. Keep `--split holdout` unchanged.
+**Collection conditions:** `COLLECTION_CONCURRENCY` in your [run-value notes](docs/troubleshooting.en.md#run-values) must match `manifest.json → concurrency` for the completed V1 run. The command below uses that value; do not append another option such as `--concurrency 2`. Keep `--split holdout` unchanged.
 
 **Terminal A:** lines such as `01/12 ...` add up after the readiness JSON (usually 1–3 minutes).
 
 ```bash
-python scripts/workshop.py collect --split holdout --label holdout
+python scripts/workshop.py collect --split holdout --label "$HOLDOUT_LABEL" --concurrency "$COLLECTION_CONCURRENCY"
 ```
 
 **Checkpoint:** the progress reaches `12/12` without errors.
@@ -944,10 +973,10 @@ python scripts/workshop.py collect --split holdout --label holdout
 
 ### 8-2. Evaluate the holdout and confirm V2 stayed frozen
 
-**Terminal A — evaluate:** after collection recovery, use your [actual holdout label](docs/troubleshooting.en.md#run-values) after `--label`. There may be no output for 1–3 minutes.
+**Terminal A — evaluate:** the variable below uses your [actual holdout label](docs/troubleshooting.en.md#run-values). There may be no output for 1–3 minutes.
 
 ```bash
-python scripts/workshop.py evaluate --label holdout
+python scripts/workshop.py evaluate --label "$HOLDOUT_LABEL"
 ```
 
 **Checkpoint:** `Foundry evaluation completed: ... (12 rows)`, followed by a report URL.
@@ -959,7 +988,7 @@ python scripts/workshop.py evaluate --label holdout
 **Terminal A — save the comparison:** after recovery, match all three labels to your [run-value notes](docs/troubleshooting.en.md#run-values). Read `baseline`, `improved`, and `holdout` in later output descriptions as those actual labels.
 
 ```bash
-python scripts/workshop.py compare --labels baseline improved holdout
+python scripts/workshop.py compare --labels "$BASELINE_LABEL" "$CANDIDATE_LABEL" "$HOLDOUT_LABEL"
 ```
 
 **Checkpoint:** a long comparison JSON prints without errors and ends with `comparison_notes`.
@@ -983,7 +1012,7 @@ python -c 'import json; labels = json.load(open("src/agent/.foundry/results/comp
 **Terminal A:** after 8-2 confirms V2 stayed frozen, print a read-only summary of the saved holdout (no model calls). Holdout uses different questions from dev, so its pass rates are not a V1 → V2 improvement claim.
 
 ```bash
-python scripts/workshop.py summary --labels holdout
+python scripts/workshop.py summary --labels "$HOLDOUT_LABEL"
 ```
 
 **Checkpoint:** the `sol` / `luna` / `astra` table shows `business`, `groundedness`, and `relevance` as **`.../4`**, followed by these two lists with row IDs or `none`; copy both lists into your notes separately (a `4/4` business result can still have Foundry failures):
@@ -991,7 +1020,9 @@ python scripts/workshop.py summary --labels holdout
 - `holdout business-check failures:`
 - `holdout Foundry-score failures:`
 
-**If not:** for a missing comparison file or label, resume at 8-2's `compare` block. For `n/a` evaluator results or a missing Foundry failure list, [recover evaluation](docs/troubleshooting.en.md#evaluation-retry). To inspect a failed row, see [failed rows](docs/validation.en.md#native-failures).
+**If not:** for a missing comparison file or label, resume at 8-2's `compare` block. For `n/a` evaluator results or a missing Foundry failure list, [recover evaluation](docs/troubleshooting.en.md#evaluation-retry). Inspect failed rows separately for [business checks](docs/validation.en.md#business-failures) and [Foundry scores](docs/validation.en.md#native-failures).
+
+<a id="holdout-report"></a>
 
 ### 8-4. Open the holdout report
 
@@ -1021,12 +1052,14 @@ python scripts/workshop.py summary --labels holdout
 
 ### 9-1. Verify the complete response matrix
 
+**If you checked traces before pausing:** skip a `monitor` command only when `src/agent/.foundry/results/<label>/telemetry.json` for that same actual label matches its checkpoint below. Still run unfinished queries for other labels. Do not overwrite completed trace evidence by querying a window that no longer includes the run.
+
 <a id="candidate-traces"></a>
 
-**Terminal A — V2 dev traces:** after recovery, use your [actual V2 dev label](docs/troubleshooting.en.md#run-values) after `--label`.
+**Terminal A — V2 dev traces:** the variable below uses your [actual V2 dev label](docs/troubleshooting.en.md#run-values).
 
 ```bash
-python scripts/workshop.py monitor --label improved
+python scripts/workshop.py monitor --label "$CANDIDATE_LABEL"
 ```
 
 **Checkpoint:** the command finishes without errors, and the result JSON shows `complete: true`, `expected_trace_count: 18`, and `observed_trace_count: 18`.
@@ -1035,20 +1068,20 @@ python scripts/workshop.py monitor --label improved
 
 <a id="holdout-traces"></a>
 
-**Terminal A — holdout traces:** after recovery, use your [actual holdout label](docs/troubleshooting.en.md#run-values) after `--label`.
+**Terminal A — holdout traces:** the variable below uses your [actual holdout label](docs/troubleshooting.en.md#run-values).
 
 ```bash
-python scripts/workshop.py monitor --label holdout
+python scripts/workshop.py monitor --label "$HOLDOUT_LABEL"
 ```
 
 **Checkpoint:** the command finishes without errors, and the result JSON shows `complete: true`, `expected_trace_count: 12`, and `observed_trace_count: 12`.
 
 **If not:** for `Telemetry is incomplete`, rerun only this command after 2–3 minutes; if it persists, [recover monitoring](docs/troubleshooting.en.md#telemetry) with the same label.
 
-**Terminal A — verify all evidence:** check the three label **values** against your [run-value notes](docs/troubleshooting.en.md#run-values). After recovery, replace only those values; keep the `--baseline`, `--candidate`, and `--holdout` option names. A long comparison JSON prints first, then the verification JSON.
+**Terminal A — verify all evidence:** check the three label **variable values** against your [run-value notes](docs/troubleshooting.en.md#run-values). The command below also reuses recovered values; keep the `--baseline`, `--candidate`, and `--holdout` option names. A long comparison JSON prints first, then the verification JSON.
 
 ```bash
-python scripts/workshop.py verify --baseline baseline --candidate improved --holdout holdout
+python scripts/workshop.py verify --baseline "$BASELINE_LABEL" --candidate "$CANDIDATE_LABEL" --holdout "$HOLDOUT_LABEL"
 ```
 
 **Checkpoint:** the last JSON shows `language: en`, `component_execution_verified: true`, `primary_model_outputs: 48`, and `distinct_verified_traces: 48`.
@@ -1131,7 +1164,7 @@ The actual labels are the result-folder names you used. Read `concurrency` from 
 
 **Checkpoint:** the saved report has no `...` left and includes the 7-4 table, actual labels, concurrency, recovery and holdout usage history, and unchanged `production_release_approved=false`. Do not rerun for better scores.
 
-**If not:** for missing gates, return to 9-1. For missing notes, read the **saved** [review](#read-review), [dev summary](#compare-results), and [holdout summary](#holdout-results); do not repeat review, collection, or evaluation.
+**If not:** for missing gates, return to 9-1. For missing notes, read the **saved** [review](#read-review), [dev summary](#compare-results), and [holdout summary](#holdout-results). Recover versions from each label's `agent_version` under `verified-evidence.json → runs`, concurrency from `manifest.json → concurrency` in the **completed V1 result folder**, and `Agent runs` / `Total tokens` from the [9-2 dashboard](#operational-dashboard). Do not repeat review, collection, or evaluation.
 
 **Next:** to add Levels 2–3, open the optional section below **before** cleanup; otherwise go to [10. Clean up only your owned workshop objects](#cleanup).
 
@@ -1166,6 +1199,8 @@ Stay in this folder. **Do not start these extras after step 10; it deletes the a
 | Continue later | Once active work finishes, save `Last completed block / Next block / Workshop folder` and the labels in use in the same notes. Keep the same folder, settings, and evidence; [resume according to a normal pause or error](docs/troubleshooting.en.md#resume). **Closing the terminal may leave Azure resources costing money.** |
 | End a run that started creating/changing Azure resources | Confirm that active collection, deployment, and evaluation work has finished. Save only completed steps, errors, and existing evidence in your current notes. Do not create results for unfinished steps; continue to [10-1's deletion plan](#cleanup-plan). |
 
+**Before a long break:** for any collected label whose trace check is unfinished, complete [trace verification](docs/troubleshooting.en.md#telemetry) first and preserve `telemetry.json`. `monitor` looks back **at most 168 hours (7 days)**. Once unverified traces fall outside that window, the provided recovery command cannot retrieve them. This is the tool's query limit, not a claim that Azure deletes traces after seven days.
+
 If your local server is still running, stop it with `Ctrl+C` in its terminal. If a cloud job's state is unclear or deployment/role assignment failed, first work with the owner through [cleanup recovery](docs/troubleshooting.en.md#cleanup-recovery) to confirm **every created object is recorded in the ownership plan**. Missing records do not make an empty plan proof of completed cleanup.
 
 If setup created Azure resources but this folder cannot yet run `cleanup`, the owner uses [exclusive-environment shutdown](docs/environment.en.md#final-cleanup). Never delete a shared group. If steps 1–9 were not completed, record **workshop incomplete** separately from the actual cleanup status.
@@ -1176,7 +1211,7 @@ If setup created Azure resources but this folder cannot yet run `cleanup`, the o
 
 - for a completed workshop, finish every portal check; for an early exit, follow the path above. Cleanup deletes the live agent;
 - never run `azd down` or delete a shared resource group;
-- Search, logs, the foundation, and the auxiliary model remain after this step and keep costing money. In a class, the environment owner manages them; **for an environment you created yourself, stop them by [deleting the resource group](docs/environment.en.md#final-cleanup) after 10-3.**
+- Search, logs, the foundation, and the auxiliary model remain after this step and keep costing money. For **your exclusive environment created with the new-environment tools**, stop them by [deleting the resource group](docs/environment.en.md#final-cleanup) after 10-3. Existing or shared environments follow the [owner's separate cleanup scope](docs/instructor.en.md#foundation-cleanup).
 
 <a id="cleanup-plan"></a>
 

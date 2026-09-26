@@ -6,7 +6,7 @@ Follow [the English README](../README.md) for the execution path. Use this page 
 
 | I need to check | Go to | Return to |
 |---|---|---|
-| Term or result label | [terms](#terms), [decision labels](#decision-values) | [Start](../README.md#start) or [step 6 review](../README.md#lab-d) |
+| Term or result label | [terms](#terms), [decision labels](#decision-values) | Browser Back, or [the 6-2 review block](../README.md#review-case) |
 | Model or deployment name | [model/deployment names](#model-names) | [step 5](../README.md#lab-c) or [step 8](../README.md#lab-f) |
 | Evidence field | [retrieval evidence](#retrieval-evidence) | [step 6 review](../README.md#lab-d) |
 | Evaluation gate | [evaluation scope](#evaluation-scope) | [step 8 holdout](../README.md#lab-f) |
@@ -65,7 +65,7 @@ Follow [the English README](../README.md) for the execution path. Use this page 
 | `case_id` / `row_id` | `case_id` identifies a question; `row_id` identifies one response by label, model, and question. Match V1/V2 with **`case_id` + `model_key`**. |
 | JSON / JSONL | JSON is one structured document; JSONL stores one JSON object per line. Find responses by `row_id`, not line number. |
 
-↩ [Start](../README.md#start).
+↩ Use browser **Back** to return to the block that opened this reference. If you came from 6-2, return to [the case review](../README.md#review-case).
 
 <a id="decision-values"></a>
 
@@ -83,7 +83,7 @@ Follow [the English README](../README.md) for the execution path. Use this page 
 
 A useful explanation can still carry the wrong label. For a mismatch, compare the explanation, label, and fixed reference separately. Preserve `expected_decision`; do not rewrite the rubric to agree with the response.
 
-↩ [step 5 baseline](../README.md#lab-c) or [step 6 review](../README.md#lab-d).
+↩ Use browser **Back** to return to the block that opened this reference. If you came from 6-2, return to [the case review](../README.md#review-case).
 
 <a id="scenario"></a>
 
@@ -247,10 +247,10 @@ Method, measurements, and interpretation are in [the English evaluation explanat
 
 `queries/monitor.kql` selects this agent's requests and connects dependencies through `operation_Id`. It avoids counting both framework and custom spans as duplicate model calls.
 
-**Terminal — repository root:** this is the baseline example. During recovery, use the actual label named in the guide.
+**Terminal — repository root:** the variable below uses your actual V1 label. In a new terminal, [restore the run values](troubleshooting.en.md#run-values) first. For another stage, use [that label's trace recovery](troubleshooting.en.md#telemetry).
 
 ```bash
-python scripts/workshop.py monitor --label baseline
+python scripts/workshop.py monitor --label "$BASELINE_LABEL"
 ```
 
 **Checkpoint:** the JSON output shows `expected_trace_count`, matching `observed_trace_count`, and `complete: true` for the selected agent/run.

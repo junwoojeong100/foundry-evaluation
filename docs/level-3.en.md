@@ -11,7 +11,7 @@
 | Red-team permission | Section 3 only if your organization permits the scan; otherwise record it as **skipped, not completed** |
 | After this level | Append your results to the main report, then [step 10 cleanup](../README.md#cleanup) |
 
-**Run order and scope:** In existing **Terminal A at the repository root**, complete sections 1–7 in order. If Terminal A is gone, open a new terminal and [restore the environment only](../README.md#resume-shell). Keep names, V2 instructions, and the deployed version unchanged; if you used a recovery label, replace `--label improved` with that label.
+**Run order and scope:** In existing **Terminal A at the repository root**, complete sections 1–7 in order. If Terminal A is gone, [restore only the environment and run values](../README.md#resume-shell). Keep names, V2 instructions, and the deployed version unchanged. Commands reuse the main workshop's `CANDIDATE_LABEL`; read `improved` in output and paths as that actual label too.
 
 **Cost and evidence:** Sections 1–6 make extra model/judge calls; section 6 also creates a schedule for up to 8 hours. Do not add these responses to the main workshop’s 48. Section 7 reads **only saved results**: step 9’s business gates, then this level’s results.
 
@@ -38,7 +38,7 @@
 **Terminal A:** Foundry reads your V2 instructions, proposes weighted dimensions, and both rubrics then score your V2 responses:
 
 ```bash
-python scripts/workshop.py generate-rubric --label improved
+python scripts/workshop.py generate-rubric --label "$CANDIDATE_LABEL"
 ```
 
 **Checkpoint:** `Generated rubric: <LAB_PREFIX>-generated-rubric version 1, pass threshold ...`, the `Full rubric definition:` file path, a list of dimensions with weights, then `policy_rubric: .../18 passed on improved` and `generated_rubric: .../18 passed on improved`, each with its failed rows or `none`.
@@ -231,7 +231,7 @@ This run took 12 minutes in a rehearsal folder without saved step 7 responses, s
 **Terminal A:** Foundry reads and scores the 18 traces from the main guide's step 7 in Application Insights. **The agent and retrieval are not rerun; the judge still makes paid model calls.**
 
 ```bash
-python scripts/workshop.py evaluate-traces --label improved
+python scripts/workshop.py evaluate-traces --label "$CANDIDATE_LABEL"
 ```
 
 **Checkpoint:** `Trace evaluation completed: 18 traces from improved, read from Application Insights.`, then a table with `traces` and `saved responses (Level 2)` columns for `relevance`, `intent_resolution`, `task_adherence`, and `indirect_attack`.

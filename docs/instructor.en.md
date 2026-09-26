@@ -117,14 +117,25 @@ azd ai agent --help
 
 **If not:** use the version-recovery guidance below. An update notice is not itself a failure; do not run “update all” or downgrade tools mid-experiment.
 
+<a id="tested-toolchain"></a>
+
+**Version reference for self-study:** distinguish recorded execution from recent command checks. This is not a latest-version recommendation or a mandatory downgrade table.
+
+| Scope and date checked | azd | `microsoft.foundry` | `azure.ai.agents` |
+|---|---|---|---|
+| Recorded deployment and local execution, 2026-09-23 | `1.34.0` | Version not recorded | `1.0.0-beta.10` |
+| Local `run` / `invoke` command availability rechecked, 2026-09-26 | `1.34.0` | `1.0.0-beta.2` | `1.0.0-beta.10` |
+
+The `azure.ai.agents` extension handles `azd ai agent`, so compare both extensions in `azd extension list`. Do not infer the unrecorded version in the first row. The second row checks `azd version`, `azd extension list`, and `azd ai agent --help`; it is not a new end-to-end Azure rehearsal or a revalidation of the [recorded evaluation results](validation.en.md).
+
 <a id="tool-version-recovery"></a>
 
 <details>
 <summary>If azd and the extension are installed but run/invoke are missing</summary>
 
-Keep the outputs of `azd version`, `azd extension list`, and `azd ai agent --help`, plus the error. Class participants give them to the instructor, who compares them with **both tool versions from a successful rehearsal** and repairs only the differing tool through its official installation guidance. Record both versions during rehearsal and include them in the team handoff.
+Keep the outputs of `azd version`, `azd extension list`, and `azd ai agent --help`, plus the error. Class participants give them to the instructor, who compares them with **azd and both extension versions from a successful rehearsal** and repairs only the differing tool through its official installation guidance. Record these versions during rehearsal and include them in the team handoff.
 
-This guide does not separately pin a verified azd/extension combination. For self-study without a rehearsal record, check the [official azd installation guidance](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd). If the commands remain missing, check or report a [repository issue](https://github.com/junwoojeong100/foundry-evaluation/issues) with those outputs. Do not continue by guessing versions.
+For self-study, first compare your installed versions with the [version reference above](#tested-toolchain). If a command is missing, repair that tool using the [official azd installation guidance](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd). If it remains missing, check or report a [repository issue](https://github.com/junwoojeong100/foundry-evaluation/issues) with those outputs. Do not change working tools merely because their versions differ or guess a replacement version.
 
 **Checkpoint:** in the same terminal, `azd extension list` shows an installed `microsoft.foundry`, and `azd ai agent --help` includes both `run` and `invoke`.
 
@@ -698,11 +709,15 @@ Use this checklist only after rehearsal cleanup, the [final model check](#final-
 
 **If not:** withhold the team packet and fix the missing account, setting, service, name, tool, or support owner before participants start.
 
+<a id="foundation-cleanup"></a>
+
 ## Cleanup and maintenance
 
 **README — each owned workshop folder:** use the [README step-10 dry run](../README.md#cleanup) before confirming cleanup. Continue only when the listed names match that folder's owned objects. Never delete an entire shared resource group or run `azd down` against shared resources. Shared Search, model deployments, and logging keep costing after team cleanup; the environment owner tracks them in Cost Management.
 
-For an exclusively owned self-study group, use [final foundation cleanup](environment.en.md#final-cleanup) after README step 10.
+For an **exclusive group created with the new-environment tools**, with creation records preserved in the original `RUN_DIR`, use [final foundation cleanup](environment.en.md#final-cleanup) after README step 10.
+
+**Preserve existing groups even in self-study with existing services.** This path normally has no `RUN_DIR`. For additions such as the auxiliary deployment, use the recorded Resource IDs to agree on a separate cleanup scope, owner, and retirement date. Do not delete an unrecorded whole group to stop costs.
 
 **Checkpoint:** each folder's README step-10 dry run lists only objects owned by that folder.
 
@@ -733,7 +748,7 @@ From the **original clone**, with its virtual environment active, run:
 python -m unittest discover -s tests -p 'test_docs.py' -v
 ```
 
-This checks local links/anchors/assets, code-block structure, Bash/JSON syntax, Python CLI arguments against the actual parsers, and matching English/Korean command sequences. It checks that the first evaluation step's **18 + 18 + 12 responses match the actual question and model counts**, and that required result-reading guidance is not collapsed. It also checks separate checkpoints in the main, candidate-preparation, and collection-recovery paths; **If not** guidance in participant and environment-preparation guides; handoff links and shared reading instructions; the **dashboard → report → cleanup** order; the shared report file; and Monitor fields in the report. It also checks the designated class runner, explicit Bash and edition settings in existing-environment setup, and sign-in recovery returning to the original path. It does **not** execute the example commands, contact Azure, or revalidate recorded cloud scores. Runnable source snapshots omit the guides and skip these documentation checks.
+This checks local links/anchors/assets, code-block structure, Bash/JSON syntax, Python CLI arguments against the actual parsers, and matching English/Korean command sequences. It checks that the first evaluation step's **18 + 18 + 12 responses match the actual question and model counts**, and that required result-reading guidance is not collapsed. It also checks separate checkpoints in the main, candidate-preparation, and collection-recovery paths; **If not** guidance in participant and environment-preparation guides; handoff links and shared reading instructions; the **dashboard → report → cleanup** order; the shared report file; and Monitor fields in the report. It also checks the designated class runner, explicit Bash and edition settings in existing-environment setup, and sign-in recovery returning to the original path. Input, variable restoration, and recovery branches run in isolated Bash with command doubles, not real experiment commands or Azure calls. This does not revalidate recorded cloud scores. Runnable source snapshots omit the guides and skip these documentation checks.
 
 Also follow [the starting instructions](../README.md#start-here) as a participant, an environment owner, and a returning user. Check that **the next action, completion signal, and next destination** require no guesswork. Automated checks cannot establish that a first-time reader understands the instructions.
 

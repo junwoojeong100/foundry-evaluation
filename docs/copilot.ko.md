@@ -272,7 +272,7 @@ README.ko.md, docs/instructor.ko.md, docs/environment.ko.md, docs/troubleshootin
 
 1. 계획에서 고른 준비 경로를 따라. 새 서비스는 docs/environment.ko.md와 제공 스크립트를 사용해. 기존 서비스의 준비가 덜 됐다면 docs/instructor.ko.md#existing-foundation의 미완료 단계만 끝내고 새 기반 환경을 만들지 마. 그 가이드가 요구하는 초기 .env 편집은 내가 하도록 안내하고 저장 확인을 받아. 완성된 환경은 README를 바로 따라. 선택한 가이드의 실행 폴더와 복귀 단계에서만 이어가.
 2. 과금 자원 생성, 역할 부여, 삭제 전에는 정확한 대상과 범위를 보여주고 승인을 받아. 로그인 전에 실제 실행 폴더의 Python 준비를 마쳐. 절대 경로를 보여주고, 별도 터미널에서 bash 시작 → README resume-shell 복원 블록 → README 1-3의 로그인 네 블록만 수행하도록 안내하고 기다려. 새 환경의 실행 폴더는 원래 clone이 아니라 RUN_DIR/workshop이며 로그인·MFA는 내가 직접 한다.
-3. 독립된 터미널마다 현재 폴더, 가상환경, AZURE_CONFIG_DIR를 확인하고, Python 준비가 없으면 README 설치 단계부터 진행해.
+3. 독립된 터미널마다 현재 폴더, 가상환경, AZURE_CONFIG_DIR를 확인하고, Python 준비가 없으면 README 설치 단계부터 진행해. 5단계 이후의 BASELINE_LABEL, CANDIDATE_LABEL, HOLDOUT_LABEL, COLLECTION_CONCURRENCY는 실행 메모와 완료된 manifest에서 확인해. 실행 도구가 호출마다 새 셸을 쓰면 같은 호출 안에서 이 값을 설정한 뒤 명령을 실행하고, 이전 호출의 변수가 남아 있다고 가정하거나 기본값으로 되돌리지 마.
 
 4. baseline 수집/평가 -> 실제 trace 검토 -> V2 -> holdout 순서로 실행해. 자동 검토는 --reviewer assistant로 남기고, 실패 기록과 label은 보존하며 실패 단계만 복구해. 해결되지 않는 오류는 보고해.
 5. 필수 포털 확인마다 위치와 확인값을 안내하고 내 확인을 기다려. 48개 응답, 48개 trace, 평가 결과, 검토된 baseline 원본 trace를 확인해. 실제 결과와 포털 메모로 README 9-3의 보고서를 src/agent/.foundry/results/workshop-report.txt에 저장하고 production_release_approved=false를 유지해. 내가 저장된 보고서를 검토한 뒤에만 정리 dry-run 검토와 승인을 진행해.
@@ -331,7 +331,7 @@ README.ko.md, docs/instructor.ko.md, docs/environment.ko.md, docs/troubleshootin
 | 수동으로 시작했고 Copilot 대화는 없음 | CLI 설치가 필요하면 1단계만 마친 뒤, 기존 실행 폴더에서 `copilot` 실행. 먼저 현재 상태를 읽기 전용으로 확인시키고 실패·미완료 단계만 재개 |
 | Azure 환경 준비 중 중단 | [준비 복구](troubleshooting.ko.md#setup-resume)에서 초기화·소스 복사·Python 테스트의 완료 여부를 먼저 확인한 뒤 기존 실행 폴더의 로그인 프로필 복원 |
 
-**대화를 복원해도 터미널 환경은 복원되지 않고, Azure 작업이 끝났다는 증거도 되지 않습니다.** [터미널 복원](../README.ko.md#resume-shell)과 기존 manifest·평가·trace 상태를 확인합니다. 실행 스냅샷에 가이드가 없다면 문서는 원래 clone에서 읽되, 명령은 기존 실행 폴더에서 수행합니다. 이미 끝난 clone·배포·수집은 반복하지 않습니다.
+**대화를 복원해도 터미널 환경은 복원되지 않고, Azure 작업이 끝났다는 증거도 되지 않습니다.** [터미널 복원](../README.ko.md#resume-shell), [label·동시성 복원](troubleshooting.ko.md#run-values), 기존 manifest·평가·trace 상태를 확인합니다. 실행 스냅샷에 가이드가 없다면 문서는 원래 clone에서 읽되, 명령은 기존 실행 폴더에서 수행합니다. 이미 끝난 clone·배포·수집은 반복하지 않습니다.
 
 **재개 요청문 — 블록 전체를 수정하지 말고 붙여넣습니다.** 상태만 확인하며, 실행은 완료 확인 뒤에 합니다. Copilot 입력창에 보냅니다.
 

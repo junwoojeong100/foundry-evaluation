@@ -6,7 +6,7 @@
 
 | 찾는 것 | 볼 곳 | 돌아갈 곳 |
 |---|---|---|
-| 용어 또는 결과 label | [용어](#terms), [판단값](#decision-values) | [시작](../README.ko.md#start) 또는 [6단계 review](../README.ko.md#lab-d) |
+| 용어 또는 결과 label | [용어](#terms), [판단값](#decision-values) | 브라우저 뒤로, 또는 [6-2 검토 블록](../README.ko.md#review-case) |
 | 모델 또는 배포 이름 | [모델과 배포 이름](#model-names) | [5단계](../README.ko.md#lab-c) 또는 [8단계](../README.ko.md#lab-f) |
 | 근거 필드 | [검색 결과 읽기](#retrieval-evidence) | [6단계 review](../README.ko.md#lab-d) |
 | 평가 게이트 | [평가 범위](#evaluation-scope) | [8단계 holdout](../README.ko.md#lab-f) |
@@ -65,7 +65,7 @@
 | `case_id` / `row_id` | `case_id`는 고정 질문 ID, `row_id`는 label·모델·질문별 응답 ID. V1/V2의 같은 사례는 **`case_id` + `model_key`**로 찾습니다. |
 | JSON / JSONL | JSON은 문서, JSONL은 줄별 JSON 객체입니다. 응답은 `row_id`로 찾습니다. |
 
-↩ [시작](../README.ko.md#start).
+↩ 브라우저 **뒤로**로 이 참고를 열기 직전 블록에 돌아갑니다. 6-2에서 왔다면 [한 사례 검토](../README.ko.md#review-case)입니다.
 
 <a id="decision-values"></a>
 
@@ -83,7 +83,7 @@
 
 설명이 타당해도 판단값은 틀릴 수 있습니다. 불일치하면 설명, label, 고정 기준을 따로 대조합니다. 응답에 맞춰 `expected_decision`이나 평가 기준을 바꾸지 않습니다.
 
-↩ [5단계 baseline](../README.ko.md#lab-c) 또는 [6단계 review](../README.ko.md#lab-d).
+↩ 브라우저 **뒤로**로 이 참고를 열기 직전 블록에 돌아갑니다. 6-2에서 왔다면 [한 사례 검토](../README.ko.md#review-case)입니다.
 
 <a id="scenario"></a>
 
@@ -247,10 +247,10 @@ Foundry Indexes 목록, knowledge source 고급 설정, 실제 Azure Search inde
 
 `queries/monitor.kql`은 실습 에이전트의 `requests`를 고르고 `operation_Id`로 `dependencies`를 연결합니다. framework span과 custom span을 중복 모델 호출로 세지 않습니다.
 
-**터미널 — 저장소 루트:** baseline 예시입니다. 복구 중이라면 가이드가 지정한 실제 label을 씁니다.
+**터미널 — 저장소 루트:** 아래 변수는 실제 V1 label을 사용합니다. 새 터미널이면 [실행값 복원](troubleshooting.ko.md#run-values)을 먼저 합니다. 다른 단계의 trace 복구는 [해당 label 조회](troubleshooting.ko.md#telemetry)를 따릅니다.
 
 ```bash
-python scripts/workshop.py monitor --label baseline
+python scripts/workshop.py monitor --label "$BASELINE_LABEL"
 ```
 
 **완료 확인:** JSON 출력에 run의 `expected_trace_count`, 그와 일치하는 `observed_trace_count`, `complete: true`가 나옵니다.

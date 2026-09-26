@@ -6,7 +6,7 @@
 
 **필요한 부분만 읽기:**
 
-- **내 실행:** [결과 파일](#read-your-results) · [그 밖의 확인](#other-lookups) · [Foundry 평가기 미통과 행](#native-failures) · [업무 검사](#business-checks)
+- **내 실행:** [결과 파일](#read-your-results) · [그 밖의 확인](#other-lookups) · [업무 검사 미통과 행](#business-failures) · [Foundry 평가기 미통과 행](#native-failures) · [평가기 입력](#business-checks)
 - **기록된 예시 실행:** [측정값](#measured-results) · [남은 업무 실패](#remaining-business-failure) · [D04 relevance 미통과](#d04-relevance) · [검색 누락](#retrieval-miss) · [검토한 trace](#reviewed-case) · [토큰·지연](#tradeoffs) · [실행과 품질의 구분](#execution-quality) · [대시보드](#dashboard)
 - **기록 확인:** [식별 정보](#lineage) · [정리 범위](#cleanup-scope)
 
@@ -27,12 +27,12 @@
 
 파일은 각각 `collect`, `evaluate`, `compare`, `verify`를 실행한 뒤 생성된다. 해당 단계를 아직 하지 않은 새 clone에 파일이 없는 것은 정상이다. **완료된 명령의 파일이 없다면 복구가 필요하며**, 기록된 예시 파일을 복사해 채우지 않는다.
 
-**한눈에 보기:** 워크숍 저장소 루트(repository root)에서 내 단계의 블록을 실행한다. `summary`는 저장된 결과를 읽기만 한다.
+**한눈에 보기:** 워크숍 저장소 루트(repository root)에서 내 단계의 블록을 실행한다. `summary`는 저장된 결과를 읽기만 한다. 아래 변수는 기본 실습에서 설정한 실제 label이다. 새 터미널이면 [실행값 복원](troubleshooting.ko.md#run-values)을 먼저 한다.
 
 **터미널 — 6단계, 검토할 baseline `row_id`:**
 
 ```bash
-python scripts/workshop.py summary --labels baseline
+python scripts/workshop.py summary --labels "$BASELINE_LABEL"
 ```
 
 **완료 확인:** `sol`·`luna`·`astra` 표와 `baseline business-check failures:`가 나온다.
@@ -44,7 +44,7 @@ python scripts/workshop.py summary --labels baseline
 **터미널 — 7-4, 같은 dev의 전후 값·검토 사례의 V2 결과·미통과 행:**
 
 ```bash
-python scripts/workshop.py summary --labels baseline improved
+python scripts/workshop.py summary --labels "$BASELINE_LABEL" "$CANDIDATE_LABEL"
 ```
 
 **완료 확인:** `source trace carried: yes`가 있는 `Reviewed case ...` 줄, V1 `->` V2 표, `improved business-check failures:`와 `improved Foundry-score failures:`가 차례로 나온다.
@@ -56,7 +56,7 @@ python scripts/workshop.py summary --labels baseline improved
 **터미널 — 8-3, 별도 holdout의 모델별 통과 수·미통과 행:**
 
 ```bash
-python scripts/workshop.py summary --labels holdout
+python scripts/workshop.py summary --labels "$HOLDOUT_LABEL"
 ```
 
 **완료 확인:** `business`·`groundedness`·`relevance`가 `.../4`인 표와 `holdout business-check failures:`, `holdout Foundry-score failures:`가 나온다.
@@ -90,11 +90,19 @@ python scripts/workshop.py summary --labels holdout
 - Foundry 평가의 평균 4점이 모든 행의 통과를 뜻하지는 않는다.
 - 업무 게이트는 **모델마다 dev 최소 5/6, holdout 4/4 업무 통과 + 필수 인용 전부 유효** 조건이며 운영 승인은 아니다.
 
+<a id="business-failures"></a>
+
+### 업무 검사 통과 건수가 전체보다 적을 때
+
+README 요약의 **`business-check failures:`**에서 row ID 하나를 고르고 [아래 공통 응답 조회](#inspect-failed-response)로 바로 간다. Foundry 점수 실패 목록이나 점수 파일은 필요 없다. `business_checks`의 `false`를 `fixed_reference`와 대조하며, 각 검사의 뜻은 [6-2의 검사표](../README.ko.md#review-case)를 따른다. Holdout은 남은 한계로 기록하고 지침 개선에 쓰지 않는다.
+
 <a id="native-failures"></a>
 
 ### Foundry 평가기 통과 건수가 전체보다 적을 때
 
 **편집기 — 점수 확인:** README 요약의 `Foundry-score failures:`에서 row ID 하나를 복사한다. `src/agent/.foundry/results/<그 label>/evaluation-results.json`을 열고 **Ctrl+F**(macOS **Cmd+F**)로 전체 row ID를 찾는다. 그 행의 `results`에서 미통과한 `name`과 `score`, `passed: false`를 읽는다.
+
+<a id="inspect-failed-response"></a>
 
 **터미널 — 같은 응답 확인:** 실제 label(예: `improved`)과 복사한 row ID를 각각 입력한다. 저장된 답변을 읽을 뿐 다시 평가하지 않는다.
 
@@ -104,7 +112,7 @@ read -r -p "row ID: " RESULT_ROW_ID &&
 python scripts/workshop.py show --label "$RESULT_LABEL" --row-id "$RESULT_ROW_ID"
 ```
 
-**완료 확인:** `row_id`가 점수 파일의 행과 같고 `query`, `saved_response`, `fixed_reference`가 나온다.
+**완료 확인:** `row_id`가 선택한 실패 목록의 행과 같고 `query`, `saved_response`, `business_checks`, `fixed_reference`가 나온다. 업무 실패는 `business_checks`의 `false`를 고정 정답과 비교하고, Foundry 실패는 위에서 읽은 점수·이유와 답변을 비교한다.
 
 **다르면:** `Unknown row ID`이면 괄호 안의 점수·검사 이름을 빼고 ID만 입력한다. 복구 label을 썼다면 두 입력 모두 그 실제 이름을 사용한다.
 
