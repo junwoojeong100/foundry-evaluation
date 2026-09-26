@@ -10,10 +10,12 @@ Follow [the English README](../README.md) for the execution path. Use this page 
 | Model or deployment name | [model/deployment names](#model-names) | [step 5](../README.md#lab-c) or [step 8](../README.md#lab-f) |
 | Evidence field | [retrieval evidence](#retrieval-evidence) | [step 6 review](../README.md#lab-d) |
 | Evaluation gate | [evaluation scope](#evaluation-scope) | [step 8 holdout](../README.md#lab-f) |
+| Regression or sample-size uncertainty | [paired comparisons and Wilson intervals](evaluation-design.en.md) | [step 7 comparison](../README.md#compare-results) |
 | Trace or Monitor | [Trace and Monitor](#trace-monitor) | [step 9 evidence](../README.md#lab-g) |
 | Background assumption | [scenario](#scenario), [optional background](#background) | [Start](../README.md#start) |
 | Runtime or language boundary | [execution path](#execution-path), [endpoints](#endpoints), [language isolation](#language) | [Start](../README.md#start) |
 | Preparation or recovery | [instructor](instructor.en.md), [troubleshooting](troubleshooting.en.md) | [Start](../README.md#start) |
+| Current SDK versus recorded runtime | [compatibility and source review](compatibility.en.md) | [Start](../README.md#start) |
 
 <a id="terms"></a>
 

@@ -2,6 +2,8 @@
 
 [English participant guide](../README.md#lab-c) · [한국어 실행 결과](validation.ko.md)
 
+**Beyond averages:** [paired regressions, dataset design, judge calibration, and small-sample uncertainty](evaluation-design.en.md). New `compare` output adds these diagnostics without rescoring or changing the recorded examples below.
+
 **For steps 5–9, read your saved results first; use the recorded example run only as an example.** This page answers where your result files are, which rows failed, what the recorded run showed, and what it does not prove.
 
 **Read only what you need:**

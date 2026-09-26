@@ -1,8 +1,12 @@
-# 출장 규정 에이전트를 실행하고, 평가하고, 개선하기
+# Microsoft Foundry Evaluation: 에이전트를 실행하고, 평가하고, 개선하기
+
+<a id="출장-규정-에이전트를-실행하고-평가하고-개선하기"></a>
 
 [English guide](README.md)
 
 **출장비 질문에 규정을 찾아 답하는 AI 에이전트를 실행하고, 지침을 바꾸면 답변이 나아지는지 확인합니다.** 에이전트 코드와 두 지침 버전(V1·V2)이 모두 제공되므로 코드를 작성하지 않습니다.
+
+**네 단계 학습 경로:** [Azure 없는 15분 입문](docs/offline.ko.md) → 아래 실제 클라우드 실습 → [사용자 지정 평가기](docs/level-2.ko.md) → [운영 평가·릴리스 게이트](docs/level-3.ko.md). [지원 범위·호환성·검토한 공개 자료](docs/compatibility.ko.md) · [내 업무의 평가 설계](docs/evaluation-design.ko.md).
 
 **처음 해도 괜찮습니다.** 이 가이드는 터미널·Azure·AI 에이전트를 처음 접하는 사람을 기준으로 설명합니다. 내가 할 일은 **명령 복사 → 완료 표시 확인 → 실제 결과를 내 말로 기록**하기입니다.
 
@@ -19,6 +23,7 @@
 
 | 내 상황 | 시작할 곳 |
 |---|---|
+| Azure가 없거나 평가 개념부터 이해하고 싶음 | [레벨 0: Python만으로 15분](docs/offline.ko.md). 작성된 예제, 모델·API 호출 0회이며 실제 Foundry 증거는 아님 |
 | 수업에서 강사에게 완성된 조별 `.env`를 받음 | 아래 [개념 설명](#understand-first)·[진행 방법](#how-to-follow)을 읽고 [1단계](#start)부터 **1–10단계를 순서대로** 진행 |
 | `.env` 준비가 덜 됐고, 사용할 Foundry·Search·관측 서비스가 모두 있음 | 환경 소유자가 [기존 환경 준비](docs/instructor.ko.md#existing-foundation)를 마침 → 그 문서의 전달 안내를 따름 |
 | 필요한 기반 서비스가 없어 **새 전용 환경**이 필요함 | [새 환경 준비](docs/environment.ko.md)의 시작 전 확인과 1–6단계를 마침 → 그 문서의 안내대로 [1-4 연결](#bind-project)부터 진행 |
@@ -26,9 +31,11 @@
 
 **`.env`가 없다는 이유만으로 새 서비스를 만들지 않습니다.** 환경 준비 경로는 하나만 선택합니다. 혼자 실습하면 환경 소유자는 본인입니다.
 
-**필요한 도구:** Git, Python 3.13, Bash, curl, Azure CLI, azd(`microsoft.foundry` 확장), 편집기(VS Code 권장), 브라우저. Windows는 WSL을 씁니다([설치·확인](docs/instructor.ko.md#tools)). 도구 설치·Azure 환경 준비는 120분에 포함하지 않습니다.
+**실제 클라우드 실습에 필요한 도구:** Git, Python 3.13, Bash, curl, Azure CLI, azd(`microsoft.foundry` 확장), 편집기(VS Code 권장), 브라우저. Windows는 WSL을 씁니다([설치·확인](docs/instructor.ko.md#tools)). 도구 설치·Azure 환경 준비는 120분에 포함하지 않습니다. 레벨 0에는 Python과 편집기만 필요합니다.
 
-**비용:** 로컬 실행도 유료 Azure 모델과 Search를 호출합니다. 새 환경 준비 도구로 만든 본인 전용 환경은 10단계 뒤 [리소스 그룹 삭제](docs/environment.ko.md#final-cleanup)까지 해야 기반 서비스 비용이 멈춥니다. 기존 서비스를 썼다면 [환경 소유자의 정리 범위](docs/instructor.ko.md#foundation-cleanup)를 따릅니다.
+**버전 범위 — 2026-09-26 출처 검토:** 실제 실습은 기록된 SDK 2.3.0 환경을 보존합니다. 현재 SDK 2.7.0에는 호환성 변경이 있으므로 중간에 업그레이드하지 말고 [호환성 경계](docs/compatibility.ko.md#재현-가능한-실행-환경과-최신-sdk-구분)를 확인합니다.
+
+**비용:** 레벨 0은 Azure를 호출하지 않습니다. 실제 실습의 로컬 에이전트는 유료 Azure 모델과 Search를 호출합니다. 새 환경 준비 도구로 만든 본인 전용 환경은 10단계 뒤 [리소스 그룹 삭제](docs/environment.ko.md#final-cleanup)까지 해야 기반 서비스 비용이 멈춥니다. 기존 서비스를 썼다면 [환경 소유자의 정리 범위](docs/instructor.ko.md#foundation-cleanup)를 따릅니다.
 
 <details>
 <summary>선택: Copilot CLI에 실행을 맡기고 싶다면</summary>
@@ -230,7 +237,7 @@ grep -E '^LAB_(LANGUAGE|PROMPT_VERSION)=' .env
 ```bash
 python3.13 -m venv src/agent/.venv &&
 source src/agent/.venv/bin/activate &&
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.lock.txt
 ```
 
 **완료 확인:** 설치 로그가 끝나고 `(.venv)`가 붙은 프롬프트로 돌아옵니다. `Requirement already satisfied`도 정상입니다.
@@ -1461,11 +1468,13 @@ python scripts/workshop.py check-cleanup
 아래는 모두 선택 자료입니다. 10단계 실습은 여기서 끝납니다.
 
 - **결과와 한계:** [평가 방법과 개선 결과](docs/validation.ko.md)
+- **내 업무에 적용:** [평가 설계·데이터셋 카드·judge 검증·짝 비교·불확실성](docs/evaluation-design.ko.md)
 - **설계와 용어:** [Learning loop 배경](docs/reference.ko.md#background) · [용어 설명](docs/reference.ko.md#terms) · [설계·모델·공식 출처](docs/reference.ko.md)
 - **레벨 2·3:** [Foundry 사용자 지정 평가기와 인사이트](docs/level-2.ko.md) · [생성 rubric·스트레스 테스트·red team·에이전트 직접 호출·trace·연속 평가·릴리스 게이트](docs/level-3.ko.md)
 - **오류:** [문제 해결](docs/troubleshooting.ko.md)
 - **강사·혼자 실습 준비:** [강사 준비](docs/instructor.ko.md) · [새 Azure 환경 생성](docs/environment.ko.md)
 - **선택:** [Copilot CLI로 진행](docs/copilot.ko.md)
+- **공개 가이드 유지:** [호환성과 검토 출처](docs/compatibility.ko.md) · [기여와 오프라인 CI](docs/maintaining.ko.md)
 
 <a id="summary-video"></a>
 

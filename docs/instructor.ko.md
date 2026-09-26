@@ -299,7 +299,7 @@ cd foundry-evaluation-model-prep-ko
 ```bash
 python3.13 -m venv src/agent/.venv &&
 source src/agent/.venv/bin/activate &&
-python -m pip install -r requirements.txt &&
+python -m pip install -r requirements.lock.txt &&
 python -m unittest discover -s tests -v
 ```
 
@@ -310,7 +310,7 @@ python -m unittest discover -s tests -v
 <details>
 <summary>고정 패키지 버전</summary>
 
-프레임워크와 Foundry SDK의 버전 상한이 다를 수 있어 Agent Framework Foundry 1.11.0, core 1.16.0, OpenAI adapter 1.14.1, Azure AI Projects 2.3.0, Agent Server Invocations 1.1.0을 고정했다. 실습 중에 프레임워크·확장·SDK를 무조건 최신으로 올리지 않는다. `requirements.lock.txt`는 검증 환경의 전체 의존성 스냅샷이며, 같은 Python 환경을 재현할 때 `python -m pip install -r requirements.lock.txt`를 사용할 수 있다.
+프레임워크와 Foundry SDK의 버전 상한이 다를 수 있어 Agent Framework Foundry 1.11.0, core 1.16.0, OpenAI adapter 1.14.1, Azure AI Projects 2.3.0, Agent Server Invocations 1.1.0을 고정했다. 실습 중에 프레임워크·확장·SDK를 무조건 최신으로 올리지 않는다. 위 설치는 기록된 전체 의존성 스냅샷 `requirements.lock.txt`를 사용한다. [현재 SDK 차이와 마이그레이션 조건](compatibility.ko.md#재현-가능한-실행-환경과-최신-sdk-구분)을 확인한다.
 
 </details>
 

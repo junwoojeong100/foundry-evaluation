@@ -1,8 +1,12 @@
-# Run, evaluate, and improve a travel-policy agent
+# Microsoft Foundry Evaluation: run, evaluate, and improve an agent
+
+<a id="run-evaluate-and-improve-a-travel-policy-agent"></a>
 
 [한국어 가이드](README.ko.md)
 
 **Run an AI agent that finds travel policies and answers expense questions, then check whether changing its instructions improves its answers.** The agent code and both instruction versions (V1, V2) are provided; you write no code.
+
+**Four learning levels:** [15-minute, no-Azure introduction](docs/offline.en.md) → the live workshop below → [custom evaluators](docs/level-2.en.md) → [operational evaluation and release gates](docs/level-3.en.md). [Coverage, compatibility, and reviewed public sources](docs/compatibility.en.md) · [Design your own evaluation](docs/evaluation-design.en.md).
 
 **No previous terminal, Azure, or AI-agent experience is assumed.** Your job is to **copy a command → check its completion signal → describe your actual result in your own words**.
 
@@ -19,6 +23,7 @@
 
 | Your situation | Start here |
 |---|---|
+| No Azure access yet, or you want to understand evaluation first | [Level 0: 15 minutes, Python only](docs/offline.en.md). Authored examples, zero model/API calls; not live Foundry evidence |
 | Your instructor gave you a complete team `.env` (class) | Read the [concepts](#understand-first) and [how to follow](#how-to-follow) below, then [step 1](#start) and **steps 1–10 in order** |
 | Your `.env` is not ready, and the Foundry, Search, and observability services you will use all exist | The environment owner completes [existing-environment preparation](docs/instructor.en.md#existing-foundation) → follows its handoff |
 | A required foundation service is missing and you need a **new dedicated environment** | Finish the prerequisites and steps 1–6 in [Create a new environment](docs/environment.en.md) → follow its handoff to [1-4 binding](#bind-project) |
@@ -26,9 +31,11 @@
 
 **A missing `.env` does not mean you need new services.** Choose one preparation path. In self-study, you are the environment owner.
 
-**Tools required:** Git, Python 3.13, Bash, curl, Azure CLI, azd with the `microsoft.foundry` extension, an editor (VS Code recommended), and a browser; on Windows, use WSL ([install and check](docs/instructor.en.md#tools)). Tool installation and Azure preparation are outside the 120 minutes.
+**Tools required for the live workshop:** Git, Python 3.13, Bash, curl, Azure CLI, azd with the `microsoft.foundry` extension, an editor (VS Code recommended), and a browser; on Windows, use WSL ([install and check](docs/instructor.en.md#tools)). Tool installation and Azure preparation are outside the 120 minutes. Level 0 needs only Python and an editor.
 
-**Cost:** local execution still calls paid Azure models and Search. For your exclusive environment created with the new-environment tools, [delete its resource group](docs/environment.en.md#final-cleanup) after step 10 to stop foundation costs. For existing services, follow the [environment owner's cleanup scope](docs/instructor.en.md#foundation-cleanup).
+**Version scope — sources reviewed 2026-09-26:** the live workshop preserves its recorded SDK 2.3.0 environment. The current SDK is 2.7.0 with breaking changes; [read the compatibility boundary](docs/compatibility.en.md#reproducible-runtime-versus-latest-available-sdk) rather than upgrading midway.
+
+**Cost:** Level 0 makes no Azure calls. The live workshop's local agent still calls paid Azure models and Search. For your exclusive environment created with the new-environment tools, [delete its resource group](docs/environment.en.md#final-cleanup) after step 10 to stop foundation costs. For existing services, follow the [environment owner's cleanup scope](docs/instructor.en.md#foundation-cleanup).
 
 <details>
 <summary>Optional: delegate execution to Copilot CLI</summary>
@@ -227,7 +234,7 @@ grep -E '^LAB_(LANGUAGE|PROMPT_VERSION)=' .env
 ```bash
 python3.13 -m venv src/agent/.venv &&
 source src/agent/.venv/bin/activate &&
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.lock.txt
 ```
 
 **Checkpoint:** installation logs finish and the prompt returns with `(.venv)`. `Requirement already satisfied` is normal too.
@@ -1428,11 +1435,13 @@ Keep them for your report and any recovery; do not delete them or replace them w
 Everything below is optional; the 10-step workshop is complete.
 
 - **Results and limits:** [evaluation method and English results](docs/validation.en.md)
+- **Apply the method:** [evaluation design, dataset card, judge calibration, paired regressions, and uncertainty](docs/evaluation-design.en.md)
 - **Design and terms:** [learning-loop background](docs/reference.en.md#background) · [glossary](docs/reference.en.md#terms) · [architecture, models, and official sources](docs/reference.en.md)
 - **Levels 2–3:** [Foundry custom evaluators and insights](docs/level-2.en.md) · [generated rubric, stress test, red teaming, live agent, trace and continuous evaluation, and release gate](docs/level-3.en.md)
 - **Errors:** [troubleshooting](docs/troubleshooting.en.md)
 - **Instructors and self-study setup:** [instructor preparation](docs/instructor.en.md) · [create a new English Azure environment](docs/environment.en.md)
 - **Optional:** [delegate to Copilot CLI](docs/copilot.en.md)
+- **Public guide maintenance:** [compatibility and reviewed sources](docs/compatibility.en.md) · [contributing and offline CI](docs/maintaining.en.md)
 
 <a id="summary-video"></a>
 

@@ -1,0 +1,57 @@
+name: Workshop problem
+description: Report a reproducibility or guide problem without sensitive data.
+title: "[Workshop] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue is public. Do not paste .env, credentials, tokens, subscription/account IDs,
+        customer data, raw traces, or unredacted screenshots.
+        이 Issue는 공개됩니다. .env, 자격 증명, 계정·구독 ID, 고객 데이터, 원본 trace를 넣지 마세요.
+  - type: dropdown
+    id: language
+    attributes:
+      label: Guide language / 문서 언어
+      options:
+        - English
+        - 한국어
+    validations:
+      required: true
+  - type: dropdown
+    id: path
+    attributes:
+      label: Execution path / 실행 경로
+      options:
+        - Level 0 (offline, no Azure)
+        - Level 1 (cloud workshop)
+        - Level 2 or 3
+        - Environment preparation
+        - Documentation or offline tests
+    validations:
+      required: true
+  - type: input
+    id: section
+    attributes:
+      label: Guide and section / 문서와 절
+      placeholder: README.ko.md, 7-4
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Command, expected checkpoint, actual result / 명령·기대 표시·실제 결과
+      description: Replace private values with placeholders. Include only the smallest sanitized error.
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Runtime versions / 실행 환경 버전
+      description: OS, Python, relevant package versions, and CLI versions if used. No account details.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Publication check / 공개 전 확인
+      options:
+        - label: I removed sensitive data and did not attach .env or raw cloud artifacts.
+          required: true

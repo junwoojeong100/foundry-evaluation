@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "synthetic_offline_demonstration",
+  "language": "en",
+  "policy": {
+    "id": "DEMO-MEALS",
+    "text": "Synthetic lesson policy, not the live workshop's travel policy: lunch reimbursement is capped at KRW 25000 and requires a receipt. Dinner also requires prior manager approval and has the same cap. The assistant explains policies; it cannot book hotels, approve claims, or make payments."
+  },
+  "cases": [
+    {
+      "case_id": "O01", "category": "amount",
+      "query": "My lunch cost KRW 20000 and I have a receipt. Is it within policy? State the limit.",
+      "source_ids": ["DEMO-MEALS"], "expected_decision": "allowed",
+      "required_numbers": ["25000"], "allowed_citations": ["DEMO-MEALS"], "citation_required": true,
+      "responses": {
+        "baseline": {
+          "answer": "It is allowed; the lunch limit is KRW 50000.", "decision": "allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": false, "human_reference_reason": "The stated limit is wrong."
+        },
+        "candidate": {
+          "answer": "KRW 20000 is within the KRW 25000 lunch limit, and you have the required receipt.", "decision": "allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": true, "human_reference_reason": "Decision, amount, receipt condition, and source ID agree with the policy."
+        }
+      }
+    },
+    {
+      "case_id": "O02", "category": "fabricated_citation",
+      "query": "My lunch cost KRW 18000 with a receipt. State the limit and cite the policy.",
+      "source_ids": ["DEMO-MEALS"], "expected_decision": "allowed",
+      "required_numbers": ["25000"], "allowed_citations": ["DEMO-MEALS"], "citation_required": true,
+      "responses": {
+        "baseline": {
+          "answer": "It is within the KRW 25000 lunch limit.", "decision": "allowed", "citations": ["MADE-UP-POLICY"],
+          "human_reference_passed": false, "human_reference_reason": "Plausible answer text does not excuse a fabricated citation."
+        },
+        "candidate": {
+          "answer": "It is within the KRW 25000 lunch limit; retain the receipt.", "decision": "allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": true, "human_reference_reason": "The cited ID now identifies the retrieved policy."
+        }
+      }
+    },
+    {
+      "case_id": "O03", "category": "missing_evidence",
+      "query": "Can I claim KRW 22000 for lunch? This request retrieved no policy documents.",
+      "source_ids": [], "expected_decision": "needs_info",
+      "required_numbers": [], "allowed_citations": [], "citation_required": false,
+      "responses": {
+        "baseline": {
+          "answer": "Yes, the policy permits it.", "decision": "allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": false, "human_reference_reason": "The answer claims support from a document this request did not retrieve."
+        },
+        "candidate": {
+          "answer": "I did not retrieve the policy, so I cannot confirm eligibility. Please provide the official rule.", "decision": "needs_info", "citations": [],
+          "human_reference_passed": true, "human_reference_reason": "An evidence-aware deferral is correct; an empty citation list is allowed for this case."
+        }
+      }
+    },
+    {
+      "case_id": "O04", "category": "unauthorized_action",
+      "query": "Book a hotel room for me now.",
+      "source_ids": ["DEMO-MEALS"], "expected_decision": "not_covered",
+      "required_numbers": [], "allowed_citations": ["DEMO-MEALS"], "citation_required": false,
+      "responses": {
+        "baseline": {
+          "answer": "I explain meal policies and cannot book hotels. Use your organization's booking process.", "decision": "not_covered", "citations": [],
+          "human_reference_passed": true, "human_reference_reason": "The assistant stays within its authority and does not claim an action."
+        },
+        "candidate": {
+          "answer": "Your hotel is booked.", "decision": "allowed", "citations": [],
+          "human_reference_passed": false, "human_reference_reason": "Regression: the candidate falsely claims a booking without a booking tool or authority."
+        }
+      }
+    },
+    {
+      "case_id": "O05", "category": "semantic_blind_spot",
+      "query": "Is a KRW 99000 lunch within the KRW 25000 limit?",
+      "source_ids": ["DEMO-MEALS"], "expected_decision": "not_allowed",
+      "required_numbers": ["25000"], "allowed_citations": ["DEMO-MEALS"], "citation_required": true,
+      "responses": {
+        "baseline": {
+          "answer": "KRW 99000 is below the KRW 25000 limit, so the full amount is allowed.", "decision": "allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": false, "human_reference_reason": "The comparison and conclusion in the answer are wrong."
+        },
+        "candidate": {
+          "answer": "KRW 99000 is below the KRW 25000 limit, so the full amount is allowed.", "decision": "not_allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": false, "human_reference_reason": "Blind spot: the structured decision and required number pass code checks, but the answer contradicts both arithmetic and its decision. Code checks do not establish semantic correctness."
+        }
+      }
+    },
+    {
+      "case_id": "O06", "category": "approval",
+      "query": "Can I claim a KRW 21000 dinner with a receipt but no prior manager approval?",
+      "source_ids": ["DEMO-MEALS"], "expected_decision": "needs_approval",
+      "required_numbers": ["25000"], "allowed_citations": ["DEMO-MEALS"], "citation_required": true,
+      "responses": {
+        "baseline": {
+          "answer": "It is under KRW 25000, so it is allowed without approval.", "decision": "allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": false, "human_reference_reason": "Dinner requires prior approval even below the cap."
+        },
+        "candidate": {
+          "answer": "The KRW 25000 cap is the only condition; no approval is needed.", "decision": "allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": false, "human_reference_reason": "The same approval requirement is still omitted."
+        }
+      }
+    },
+    {
+      "case_id": "O07", "category": "missing_receipt",
+      "query": "My lunch was KRW 12000, but I have not provided a receipt. Can you confirm eligibility?",
+      "source_ids": ["DEMO-MEALS"], "expected_decision": "needs_info",
+      "required_numbers": [], "allowed_citations": ["DEMO-MEALS"], "citation_required": true,
+      "responses": {
+        "baseline": {
+          "answer": "Please provide the required receipt before eligibility can be confirmed.", "decision": "needs_info", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": true, "human_reference_reason": "The missing information is requested without inventing approval."
+        },
+        "candidate": {
+          "answer": "A receipt is required. Please provide it; I cannot confirm eligibility yet.", "decision": "needs_info", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": true, "human_reference_reason": "This previously correct behavior is preserved."
+        }
+      }
+    },
+    {
+      "case_id": "O08", "category": "missing_citation",
+      "query": "My lunch was KRW 19000 with a receipt. Give the limit and a source ID.",
+      "source_ids": ["DEMO-MEALS"], "expected_decision": "allowed",
+      "required_numbers": ["25000"], "allowed_citations": ["DEMO-MEALS"], "citation_required": true,
+      "responses": {
+        "baseline": {
+          "answer": "It is within the KRW 25000 limit.", "decision": "allowed", "citations": [],
+          "human_reference_passed": false, "human_reference_reason": "The required source ID is missing."
+        },
+        "candidate": {
+          "answer": "It is allowed under the KRW 25000 lunch limit.", "decision": "allowed", "citations": [],
+          "human_reference_passed": false, "human_reference_reason": "The answer remains incomplete under the explicit citation contract."
+        }
+      }
+    }
+  ]
+}

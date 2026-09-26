@@ -296,7 +296,7 @@ cd foundry-evaluation-model-prep-en
 ```bash
 python3.13 -m venv src/agent/.venv &&
 source src/agent/.venv/bin/activate &&
-python -m pip install -r requirements.txt &&
+python -m pip install -r requirements.lock.txt &&
 python -m unittest discover -s tests -v
 ```
 
@@ -307,7 +307,7 @@ python -m unittest discover -s tests -v
 <details>
 <summary>Pinned package versions</summary>
 
-Framework and Foundry SDK version ceilings can differ, so the workshop pins Agent Framework Foundry 1.11.0, core 1.16.0, OpenAI adapter 1.14.1, Azure AI Projects 2.3.0, and Agent Server Invocations 1.1.0. Do not upgrade frameworks, extensions, or SDKs indiscriminately during a workshop. `requirements.lock.txt` is the validated full dependency snapshot; to reproduce the same Python environment, use `python -m pip install -r requirements.lock.txt`.
+Framework and Foundry SDK version ceilings can differ, so the workshop pins Agent Framework Foundry 1.11.0, core 1.16.0, OpenAI adapter 1.14.1, Azure AI Projects 2.3.0, and Agent Server Invocations 1.1.0. Do not upgrade frameworks, extensions, or SDKs indiscriminately during a workshop. The installation above uses `requirements.lock.txt`, the recorded full dependency snapshot. See [current SDK differences and migration requirements](compatibility.en.md#reproducible-runtime-versus-latest-available-sdk).
 
 </details>
 

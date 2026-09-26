@@ -10,10 +10,12 @@
 | 모델 또는 배포 이름 | [모델과 배포 이름](#model-names) | [5단계](../README.ko.md#lab-c) 또는 [8단계](../README.ko.md#lab-f) |
 | 근거 필드 | [검색 결과 읽기](#retrieval-evidence) | [6단계 review](../README.ko.md#lab-d) |
 | 평가 게이트 | [평가 범위](#evaluation-scope) | [8단계 holdout](../README.ko.md#lab-f) |
+| 회귀 또는 표본 수의 불확실성 | [짝 비교와 Wilson 구간](evaluation-design.ko.md) | [7단계 비교](../README.ko.md#compare-results) |
 | trace 또는 Monitor | [Trace와 Monitor](#trace-monitor) | [9단계 evidence](../README.ko.md#lab-g) |
 | 배경 가정 | [시나리오](#scenario), [선택 배경](#background) | [시작](../README.ko.md#start) |
 | 실행·언어 경계 | [실행 경로](#execution-path), [엔드포인트](#endpoints), [언어별 실행 분리](#language) | [시작](../README.ko.md#start) |
 | 준비·복구 | [강사 준비](instructor.ko.md), [문제 해결](troubleshooting.ko.md) | [시작](../README.ko.md#start) |
+| 현재 SDK와 기록된 실행 환경의 차이 | [호환성과 출처 검토](compatibility.ko.md) | [시작](../README.ko.md#start) |
 
 <a id="terms"></a>
 

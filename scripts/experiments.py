@@ -18,7 +18,7 @@ from common import (
     parse_azd_json, read_json, read_jsonl, utc_stamp, validate_azd_suffix, write_json, write_jsonl,
 )
 from contracts import Invocation, MODEL_SPECS, PolicyAnswer
-from grading import grade, summarize, validate_matrix
+from grading import grade, paired_outcomes, summarize, validate_matrix
 from prompting import load_prompt
 from settings import RuntimeConfig, credential, data_directory, required, workshop_language
 
@@ -472,14 +472,18 @@ def calibrate(timeout: int = 600, retry_failed: bool = False) -> None:
 
 
 def compare(labels: list[str]) -> dict[str, Any]:
-    report: dict[str, Any] = {"labels": {}, "comparison_notes": []}
+    if not labels or len(labels) != len(set(labels)):
+        raise ValueError("Comparison labels must be nonempty and unique.")
+    report: dict[str, Any] = {"labels": {}, "paired_comparisons": [], "comparison_notes": []}
     dev_hashes = set()
     corpus_hashes = set()
     concurrency_values = set()
+    dev_rows: dict[str, list[dict[str, Any]]] = {}
     for label in labels:
         manifest, rows = completed_rows(label)
         if manifest["split"] == "dev":
             dev_hashes.add(manifest["dataset_hash"])
+            dev_rows[label] = rows
         corpus_hashes.add(manifest["corpus_hash"])
         concurrency_values.add(manifest["concurrency"])
         summary = summarize(rows)
@@ -520,8 +524,23 @@ def compare(labels: list[str]) -> dict[str, Any]:
         raise ValueError("Before/after comparison requires identical dev dataset and knowledge corpus.")
     if len(concurrency_values) != 1:
         raise ValueError("Use the same concurrency for compared experiment runs.")
-    if any(item["different_context_cases"] for item in report["labels"].values()):
+    if len(dev_rows) > 1:
+        baseline = next(iter(dev_rows))
+        for candidate in list(dev_rows)[1:]:
+            report["paired_comparisons"].append({
+                "baseline": baseline, "candidate": candidate,
+                "models": paired_outcomes(dev_rows[baseline], dev_rows[candidate]),
+            })
+    changed_between_runs = any(
+        model["context_changed_case_ids"]
+        for pair in report["paired_comparisons"] for model in pair["models"].values()
+    )
+    if changed_between_runs or any(item["different_context_cases"] for item in report["labels"].values()):
         report["comparison_notes"].append("Retrieval contexts differ for some cases; these are end-to-end results, not isolated model rankings.")
+    report["comparison_notes"].append(
+        "Wilson 95% intervals assume independent Bernoulli trials. These small, curated datasets are not "
+        "representative production samples; do not pool models or languages or treat the intervals as release approval."
+    )
     report["comparison_notes"].append("A business gate is not automatic deployment approval. Inspect Foundry scores, holdout and human review.")
     write_json(RESULTS_DIR / "comparison.json", report)
     print(json.dumps(report, ensure_ascii=False, indent=2))
@@ -599,6 +618,27 @@ def summary_table(labels: list[str]) -> str:
             for row in read_json(eval_path) for result in row["results"] if not result["passed"]
         ]
         lines.append(f"{last} Foundry-score failures: {', '.join(native) or 'none'}")
+    for pair in report.get("paired_comparisons", []):
+        if pair["baseline"] not in labels or pair["candidate"] not in labels:
+            continue
+        lines.extend(["", f"Paired business checks {pair['baseline']} -> {pair['candidate']} (same model + case):"])
+        for key in MODEL_SPECS:
+            item = pair["models"][key]
+            regressions = ", ".join(item["regressed_case_ids"]) or "none"
+            contexts = ", ".join(item["context_changed_case_ids"]) or "none"
+            lines.append(
+                f"{key}: {item['fail_to_pass']} fail->pass; {item['pass_to_fail']} pass->fail "
+                f"(cases: {regressions}); changed context: {contexts}"
+            )
+    intervals = [
+        (key, report["labels"][last]["models"][key].get("business_pass_rate_wilson_95"))
+        for key in MODEL_SPECS
+    ]
+    if all(interval is not None for _, interval in intervals):
+        lines.extend(["", f"{last} business pass rate: illustrative Wilson 95% intervals"])
+        for key, interval in intervals:
+            lines.append(f"{key}: [{interval['lower']:.1%}, {interval['upper']:.1%}]")
+        lines.append("Independent-trial assumption only; curated cases do not establish production accuracy.")
     text = "\n".join(lines)
     print(text)
     return text

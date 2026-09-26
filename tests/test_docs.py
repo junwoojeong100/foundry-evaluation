@@ -21,7 +21,9 @@ sys.path[:0] = [str(ROOT / "src" / "agent"), str(ROOT / "scripts")]
 
 FENCES = re.compile(r"^```([^\n]*)\n(.*?)^```[ \t]*$", re.MULTILINE | re.DOTALL)
 LINKS = re.compile(r"!?\[[^\]\n]*\]\(([^)\s]+)\)")
-COMMANDS = re.compile(r"^[ \t]*(?:run: )?python scripts/(\w+)\.py(?:[ \t]+([^\n]*))?$", re.MULTILINE)
+COMMANDS = re.compile(
+    r"^[ \t]*(?:run: )?python(?:3(?:\.\d+)?)? scripts/(\w+)\.py(?:[ \t]+([^\n]*))?$", re.MULTILINE,
+)
 RUN_LABELS = {
     "baseline": "$BASELINE_LABEL",
     "improved": "$CANDIDATE_LABEL",
@@ -123,6 +125,10 @@ class MarkdownParsingTests(unittest.TestCase):
         text = "```yaml\n- name: Gate\n  run: python scripts/workshop.py gate\n```\n"
         self.assertEqual(list(commands(text)), [(1, "workshop", ["gate"])])
 
+    def test_dependency_free_python_commands_are_checked_too(self):
+        text = "```bash\npython3 scripts/offline_lab.py --language ko --fail-on-regression\n```\n"
+        self.assertEqual(list(commands(text)), [(1, "offline_lab", ["--language", "ko", "--fail-on-regression"])])
+
     def test_only_a_recorded_source_snapshot_can_skip_missing_guides(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "workshop"
@@ -141,6 +147,8 @@ class DocumentationTests(unittest.TestCase):
         if not (ROOT / "README.md").exists() and (ROOT.parent / "source-manifest.json").is_file():
             raise unittest.SkipTest("Runtime snapshots omit guides; check documentation in the original clone.")
         paths = [ROOT / "README.md", ROOT / "README.ko.md", *sorted((ROOT / "docs").glob("*.md"))]
+        if (ROOT / "CONTRIBUTING.md").exists():
+            paths.append(ROOT / "CONTRIBUTING.md")
         cls.documents = {path: path.read_text(encoding="utf-8") for path in paths}
 
     def test_local_links_images_and_fragments(self):
@@ -199,7 +207,7 @@ class DocumentationTests(unittest.TestCase):
             "$COLLECTION_CONCURRENCY": "4", "$RETRY_CONCURRENCY": "2", "$TRACE_HOURS": "24",
         }
         parsers = {}
-        for name in ("workshop", "prepare_environment", "provision_environment"):
+        for name in ("workshop", "prepare_environment", "provision_environment", "offline_lab"):
             module = importlib.import_module(name)
             # Capture the real parser before settings, dispatch, or cloud operations.
             with patch.object(workshop, "load_settings_env"), patch.object(
@@ -280,6 +288,78 @@ class DocumentationTests(unittest.TestCase):
                     normalized_commands(self.documents[english]),
                     normalized_commands(self.documents[korean]),
                 )
+
+    def test_offline_onramp_is_visible_and_examples_match_executable_results(self):
+        from offline_lab import evaluate_fixture
+
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            with self.subTest(language=language):
+                introduction = self.documents[ROOT / name].split("```bash", 1)[0]
+                self.assertIn(f"docs/offline.{language}.md", introduction)
+                lesson = self.documents[ROOT / "docs" / f"offline.{language}.md"]
+                report = evaluate_fixture(language)
+                for variant in ("baseline", "candidate"):
+                    counts = report["summaries"][variant]
+                    self.assertIn(f"{variant}: business {counts['business_passed']}/{counts['total']}", lesson)
+                self.assertIn("pass->fail: O04", lesson)
+                self.assertIn("code/reference disagreement: O05", lesson)
+                self.assertIn("synthetic_offline_demonstration", lesson)
+                self.assertIn("--fail-on-regression", lesson)
+                self.assertIn("production_release_approved=false", lesson)
+                self.assertIn(f"../README{'.ko' if language == 'ko' else ''}.md#start-here",
+                              LINKS.findall(prose(lesson)))
+                self.assertNotIn("pip install", "\n".join(body for _, _, body in blocks(lesson)))
+
+    def test_statistical_guidance_matches_the_implemented_interval_and_pair_fields(self):
+        from grading import wilson_interval
+
+        interval = wilson_interval(4, 4)
+        for language in ("en", "ko"):
+            guide = self.documents[ROOT / "docs" / f"evaluation-design.{language}.md"]
+            self.assertIn(f"{interval['lower']:.1%}–{interval['upper']:.1%}", guide)
+            for field in ("paired_comparisons", "pass_to_fail", "fail_to_pass", "context_changed_case_ids",
+                          "business_pass_rate_wilson_95", "production_release_approved"):
+                self.assertIn(field, guide)
+            self.assertIn(f"compatibility.{language}.md", guide)
+
+    def test_local_installs_use_the_complete_snapshot_and_pins_match(self):
+        root_requirement = (ROOT / "requirements.txt").read_text(encoding="utf-8").strip()
+        self.assertEqual(root_requirement, "-r src/agent/requirements.txt")
+        direct = set((ROOT / "src" / "agent" / "requirements.txt").read_text(encoding="utf-8").splitlines())
+        locked = set((ROOT / "requirements.lock.txt").read_text(encoding="utf-8").splitlines())
+        self.assertLessEqual(direct, locked)
+        for name in ("README.md", "README.ko.md"):
+            text = self.documents[ROOT / name]
+            self.assertIn("python -m pip install -r requirements.lock.txt", text)
+            self.assertNotIn("python -m pip install -r requirements.txt", text)
+
+    def test_default_ci_has_no_cloud_credentials_and_keeps_live_ci_opt_in(self):
+        import yaml
+
+        path = ROOT / ".github" / "workflows" / "validate.yml"
+        text = path.read_text(encoding="utf-8")
+        workflow = yaml.safe_load(text)
+        self.assertEqual(set(workflow.get("on", workflow.get(True))), {"push", "pull_request", "workflow_dispatch"})
+        self.assertEqual(workflow["permissions"], {"contents": "read"})
+        for forbidden in ("azure/login", "secrets.", "id-token", "pull_request_target", "workshop.py collect"):
+            self.assertNotIn(forbidden, text)
+        for job in workflow["jobs"].values():
+            self.assertGreater(job["timeout-minutes"], 0)
+            self.assertEqual(job.get("permissions", {"contents": "read"}), {"contents": "read"})
+            for step in job["steps"]:
+                if "uses" in step:
+                    self.assertRegex(step["uses"], r"^actions/(checkout|setup-python)@[0-9a-f]{40}$")
+                    if step["uses"].startswith("actions/checkout@"):
+                        self.assertIs(step["with"]["persist-credentials"], False)
+        platforms = workflow["jobs"]["offline-lesson"]["strategy"]["matrix"]["include"]
+        self.assertEqual({item["os"] for item in platforms}, {"ubuntu-latest", "macos-latest", "windows-latest"})
+        self.assertIn("python -S -m unittest discover -s tests -p test_offline_lab.py -v", text)
+        self.assertIn("python -m unittest discover -s tests -v", text)
+        live_template = yaml.safe_load((ROOT / "ci" / "release-gate.yml").read_text(encoding="utf-8"))
+        self.assertEqual(set(live_template.get("on", live_template.get(True))), {"workflow_dispatch"})
+        template = yaml.safe_load((ROOT / ".github" / "ISSUE_TEMPLATE" / "workshop-problem.yml").read_text(encoding="utf-8"))
+        self.assertIn("public", template["body"][0]["attributes"]["value"])
+        self.assertEqual(template["body"][-1]["type"], "checkboxes")
 
     def test_main_workshop_keeps_the_controlled_experiment(self):
         expected = {

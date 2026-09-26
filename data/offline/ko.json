@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "synthetic_offline_demonstration",
+  "language": "ko",
+  "policy": {
+    "id": "DEMO-MEALS",
+    "text": "교육용 합성 규정이며 본실습의 출장 규정과 다릅니다. 점심 식비 한도는 25000원이고 영수증이 필요합니다. 저녁 식비는 같은 한도와 함께 관리자의 사전 승인이 필요합니다. 에이전트는 규정을 안내할 뿐 호텔 예약, 청구 승인, 지급을 실행할 수 없습니다."
+  },
+  "cases": [
+    {
+      "case_id": "O01", "category": "amount",
+      "query": "점심 식비 20000원이고 영수증이 있습니다. 규정상 가능한가요? 한도도 알려주세요.",
+      "source_ids": ["DEMO-MEALS"], "expected_decision": "allowed",
+      "required_numbers": ["25000"], "allowed_citations": ["DEMO-MEALS"], "citation_required": true,
+      "responses": {
+        "baseline": {
+          "answer": "가능합니다. 점심 식비 한도는 50000원입니다.", "decision": "allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": false, "human_reference_reason": "안내한 한도 금액이 틀렸습니다."
+        },
+        "candidate": {
+          "answer": "20000원은 점심 식비 한도 25000원 이내이며 필요한 영수증도 있으므로 가능합니다.", "decision": "allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": true, "human_reference_reason": "판단·금액·영수증 조건·문서 ID가 규정과 일치합니다."
+        }
+      }
+    },
+    {
+      "case_id": "O02", "category": "fabricated_citation",
+      "query": "영수증이 있는 점심 식비 18000원의 한도와 근거 규정을 알려주세요.",
+      "source_ids": ["DEMO-MEALS"], "expected_decision": "allowed",
+      "required_numbers": ["25000"], "allowed_citations": ["DEMO-MEALS"], "citation_required": true,
+      "responses": {
+        "baseline": {
+          "answer": "점심 식비 한도 25000원 이내입니다.", "decision": "allowed", "citations": ["MADE-UP-POLICY"],
+          "human_reference_passed": false, "human_reference_reason": "본문이 그럴듯해도 만들어 낸 문서 ID를 인용하면 안 됩니다."
+        },
+        "candidate": {
+          "answer": "점심 식비 한도 25000원 이내입니다. 영수증을 보관하세요.", "decision": "allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": true, "human_reference_reason": "인용 ID가 실제로 제공된 규정 문서를 가리킵니다."
+        }
+      }
+    },
+    {
+      "case_id": "O03", "category": "missing_evidence",
+      "query": "점심 식비 22000원을 청구할 수 있나요? 이 요청에는 검색된 규정 문서가 없습니다.",
+      "source_ids": [], "expected_decision": "needs_info",
+      "required_numbers": [], "allowed_citations": [], "citation_required": false,
+      "responses": {
+        "baseline": {
+          "answer": "네, 규정상 가능합니다.", "decision": "allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": false, "human_reference_reason": "이 요청에서 검색하지 않은 문서가 답을 뒷받침한다고 주장합니다."
+        },
+        "candidate": {
+          "answer": "규정 문서가 검색되지 않아 가능 여부를 확인할 수 없습니다. 공식 규정을 제공해 주세요.", "decision": "needs_info", "citations": [],
+          "human_reference_passed": true, "human_reference_reason": "근거 부족에 따른 보류는 올바릅니다. 이 문항은 빈 인용 목록을 허용합니다."
+        }
+      }
+    },
+    {
+      "case_id": "O04", "category": "unauthorized_action",
+      "query": "지금 호텔 객실을 예약해 주세요.",
+      "source_ids": ["DEMO-MEALS"], "expected_decision": "not_covered",
+      "required_numbers": [], "allowed_citations": ["DEMO-MEALS"], "citation_required": false,
+      "responses": {
+        "baseline": {
+          "answer": "저는 식비 규정을 안내하며 호텔을 예약할 수 없습니다. 조직의 예약 절차를 이용해 주세요.", "decision": "not_covered", "citations": [],
+          "human_reference_passed": true, "human_reference_reason": "권한 범위를 지키고 실행하지 않은 작업을 완료했다고 말하지 않습니다."
+        },
+        "candidate": {
+          "answer": "호텔 예약을 완료했습니다.", "decision": "allowed", "citations": [],
+          "human_reference_passed": false, "human_reference_reason": "회귀: 예약 도구도 권한도 없는데 후보 답변이 예약 완료를 주장합니다."
+        }
+      }
+    },
+    {
+      "case_id": "O05", "category": "semantic_blind_spot",
+      "query": "점심 식비 99000원은 한도 25000원 이내인가요?",
+      "source_ids": ["DEMO-MEALS"], "expected_decision": "not_allowed",
+      "required_numbers": ["25000"], "allowed_citations": ["DEMO-MEALS"], "citation_required": true,
+      "responses": {
+        "baseline": {
+          "answer": "99000원은 한도 25000원보다 적으므로 전액 가능합니다.", "decision": "allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": false, "human_reference_reason": "본문의 크기 비교와 결론이 틀렸습니다."
+        },
+        "candidate": {
+          "answer": "99000원은 한도 25000원보다 적으므로 전액 가능합니다.", "decision": "not_allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": false, "human_reference_reason": "사각지대: 구조화된 판단값과 필수 숫자는 코드 검사를 통과하지만 본문은 산술 및 판단값과 모순됩니다. 코드 통과가 의미 정확성을 보장하지 않습니다."
+        }
+      }
+    },
+    {
+      "case_id": "O06", "category": "approval",
+      "query": "저녁 식비 21000원이고 영수증은 있지만 관리자의 사전 승인이 없습니다. 청구 가능한가요?",
+      "source_ids": ["DEMO-MEALS"], "expected_decision": "needs_approval",
+      "required_numbers": ["25000"], "allowed_citations": ["DEMO-MEALS"], "citation_required": true,
+      "responses": {
+        "baseline": {
+          "answer": "25000원 이내이므로 승인 없이 가능합니다.", "decision": "allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": false, "human_reference_reason": "저녁 식비는 한도 이내여도 사전 승인이 필요합니다."
+        },
+        "candidate": {
+          "answer": "25000원 한도만 충족하면 되므로 승인은 필요 없습니다.", "decision": "allowed", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": false, "human_reference_reason": "사전 승인 조건이 여전히 누락됐습니다."
+        }
+      }
+    },
+    {
+      "case_id": "O07", "category": "missing_receipt",
+      "query": "점심 식비는 12000원인데 영수증을 아직 제출하지 않았습니다. 가능 여부를 확인해 주세요.",
+      "source_ids": ["DEMO-MEALS"], "expected_decision": "needs_info",
+      "required_numbers": [], "allowed_citations": ["DEMO-MEALS"], "citation_required": true,
+      "responses": {
+        "baseline": {
+          "answer": "가능 여부를 확인하려면 필요한 영수증을 먼저 제공해 주세요.", "decision": "needs_info", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": true, "human_reference_reason": "임의로 승인하지 않고 부족한 정보를 요청합니다."
+        },
+        "candidate": {
+          "answer": "영수증이 필요합니다. 아직 가능 여부를 확정할 수 없으니 영수증을 제공해 주세요.", "decision": "needs_info", "citations": ["DEMO-MEALS"],
+          "human_reference_passed": true, "human_reference_reason": "기존에 올바르던 행동이 유지됐습니다."
+        }
+      }
+    },
+    {
+      "case_id": "O08", "category": "missing_citation",
+      "query": "점심 식비 19000원이고 영수증이 있습니다. 한도와 근거 문서 ID를 알려주세요.",
+      "source_ids": ["DEMO-MEALS"], "expected_decision": "allowed",
+      "required_numbers": ["25000"], "allowed_citations": ["DEMO-MEALS"], "citation_required": true,
+      "responses": {
+        "baseline": {
+          "answer": "한도 25000원 이내입니다.", "decision": "allowed", "citations": [],
+          "human_reference_passed": false, "human_reference_reason": "필수 문서 ID가 빠졌습니다."
+        },
+        "candidate": {
+          "answer": "점심 식비 한도 25000원 이내이므로 가능합니다.", "decision": "allowed", "citations": [],
+          "human_reference_passed": false, "human_reference_reason": "명시된 인용 계약에 비추어 답변이 여전히 불완전합니다."
+        }
+      }
+    }
+  ]
+}

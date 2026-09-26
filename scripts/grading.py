@@ -1,8 +1,7 @@
 import math
 import re
+from statistics import NormalDist
 from typing import Any
-
-from contracts import MODEL_SPECS
 
 
 def numeric_values(text: str) -> set[str]:
@@ -28,6 +27,8 @@ def grade(row: dict[str, Any], case: dict[str, Any]) -> dict[str, Any]:
 
 
 def validate_matrix(rows: list[dict[str, Any]], cases: list[dict[str, Any]]) -> None:
+    from contracts import MODEL_SPECS
+
     ids = [case["case_id"] for case in cases]
     if len(ids) != len(set(ids)):
         raise ValueError("Duplicate case IDs in dataset.")
@@ -52,7 +53,69 @@ def percentile(values: list[float], percent: float) -> float:
     return sorted(values)[max(0, math.ceil(len(values) * percent) - 1)]
 
 
+def wilson_interval(passed: int, total: int) -> dict[str, float]:
+    """Two-sided 95% Wilson interval; assumes independent Bernoulli trials."""
+    if type(passed) is not int or type(total) is not int or total <= 0 or not 0 <= passed <= total:
+        raise ValueError("Wilson interval requires integer counts with 0 <= passed <= total and total > 0.")
+    z = NormalDist().inv_cdf(0.975)
+    rate = passed / total
+    denominator = 1 + z * z / total
+    center = (rate + z * z / (2 * total)) / denominator
+    radius = z * math.sqrt(rate * (1 - rate) / total + z * z / (4 * total * total)) / denominator
+    return {"lower": max(0.0, center - radius), "upper": min(1.0, center + radius)}
+
+
+def paired_outcomes(
+    baseline: list[dict[str, Any]], candidate: list[dict[str, Any]]
+) -> dict[str, dict[str, Any]]:
+    """Match complete response sets by model and case, never by file order."""
+    def index(rows: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
+        if not rows:
+            raise ValueError("Paired comparison requires nonempty response sets.")
+        indexed = {}
+        for row in rows:
+            key = (row["model_key"], row["case_id"])
+            if key in indexed:
+                raise ValueError("Duplicate model/case pair in comparison.")
+            if row.get("error") or type(row["business_grade"]["passed"]) is not bool:
+                raise ValueError("Paired comparison requires valid boolean grades, not invocation errors.")
+            if not row.get("context_hash"):
+                raise ValueError("Paired comparison requires retrieval context hashes.")
+            indexed[key] = row
+        return indexed
+
+    before, after = index(baseline), index(candidate)
+    if before.keys() != after.keys():
+        raise ValueError("Paired comparison requires exactly the same model/case pairs; missing rows cannot be dropped.")
+    result: dict[str, dict[str, Any]] = {}
+    for model, case_id in sorted(before):
+        key = (model, case_id)
+        previous, current = before[key]["business_grade"]["passed"], after[key]["business_grade"]["passed"]
+        entry = result.setdefault(model, {
+            "total": 0, "both_pass": 0, "both_fail": 0, "fail_to_pass": 0, "pass_to_fail": 0,
+            "improved_case_ids": [], "regressed_case_ids": [], "context_changed_case_ids": [],
+        })
+        entry["total"] += 1
+        if previous and current:
+            entry["both_pass"] += 1
+        elif not previous and not current:
+            entry["both_fail"] += 1
+        elif current:
+            entry["fail_to_pass"] += 1
+            entry["improved_case_ids"].append(case_id)
+        else:
+            entry["pass_to_fail"] += 1
+            entry["regressed_case_ids"].append(case_id)
+        if before[key]["context_hash"] != after[key]["context_hash"]:
+            entry["context_changed_case_ids"].append(case_id)
+    for entry in result.values():
+        entry["pass_rate_delta"] = (entry["fail_to_pass"] - entry["pass_to_fail"]) / entry["total"]
+    return result
+
+
 def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    from contracts import MODEL_SPECS
+
     summaries: dict[str, Any] = {}
     for key in MODEL_SPECS:
         selected = [row for row in rows if row["model_key"] == key]
@@ -70,6 +133,7 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "total": len(selected),
             "business_passed": passed,
             "business_pass_rate": passed / len(selected),
+            "business_pass_rate_wilson_95": wilson_interval(passed, len(selected)),
             "check_pass_counts": {
                 check: sum(row["business_grade"]["checks"][check] for row in selected)
                 for check in selected[0]["business_grade"]["checks"]
