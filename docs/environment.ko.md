@@ -83,16 +83,18 @@ pwd
 1. VS Code의 **File → Open Folder**로 이 clone을 엽니다. 탐색기에서 `.env.example`을 복사해 같은 위치에 붙여넣고 복사본 이름을 `.env`로 바꿉니다.
 2. 아래 다섯 행만 채우고 **Ctrl+S(macOS: Cmd+S)**로 저장합니다. 나머지 템플릿 값은 그대로 둡니다.
 
+각 행은 `설정이름=값`입니다. `=` 왼쪽 이름은 그대로 두고 오른쪽 값만 바꿉니다. 예를 들어 `LAB_LANGUAGE=ko`는 한국어를 선택한다는 설정이며 터미널 명령이 아닙니다.
+
 - 기존 `.env`를 덮어쓰거나 `.env.txt`를 만들지 않습니다.
 - 암호, API key, 토큰은 넣지 않습니다.
 - 구독 ID는 [Azure Portal](https://portal.azure.com/) **Subscriptions → 해당 구독 → Overview**, tenant ID는 **Microsoft Entra ID → Overview**에서 확인합니다. 포털 로그인은 `az`/`azd` 로그인과 별개입니다.
 
 | 필드 | 값 |
 |---|---|
-| `AZURE_SUBSCRIPTION_ID` | 강사가 승인한 실습 구독. 혼자라면 본인이 Owner인 구독 |
-| `AZURE_TENANT_ID` | 그 구독의 tenant |
+| `AZURE_SUBSCRIPTION_ID` | 자원·사용 비용을 묶는 **구독의 ID**. 강사가 승인한 실습 구독이며, 혼자라면 본인이 Owner인 구독 |
+| `AZURE_TENANT_ID` | 그 구독이 신뢰하는 조직 디렉터리(**tenant**)의 ID. 구독 ID나 로그인 이메일이 아님 |
 | `AZURE_EXPECTED_USERNAME` | 직접 로그인할 계정의 로그인 이름/이메일. 표시 이름이 아님 |
-| `AZURE_RESOURCE_GROUP` | 처음이면 빈 값 **`AZURE_RESOURCE_GROUP=`**. 이전 실행 그룹을 보존 대상으로 확인할 때만 그 이름 |
+| `AZURE_RESOURCE_GROUP` | 자원을 담는 관리 단위인 **리소스 그룹**. 처음이면 빈 값 **`AZURE_RESOURCE_GROUP=`**. 이전 실행 그룹을 보존 대상으로 확인할 때만 그 이름 |
 | `LAB_LANGUAGE` | `ko` |
 
 **지금 채울 것은 위 다섯 항목뿐입니다.** 그 밖의 `<...>` 표시와 예시 배포 이름은 지금 바꾸지 않습니다. 새 서비스 이름·엔드포인트·모델 배포 이름은 도구가 별도 폴더의 `.env`에 생성합니다. 수업 참가자가 받는 **완성된 `.env`**와 이 초기 파일을 혼동하지 않습니다.

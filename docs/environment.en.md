@@ -83,16 +83,18 @@ pwd
 1. Open this clone with VS Code **File → Open Folder**. In the Explorer, copy and paste `.env.example` in the same location, then rename the copy to `.env`.
 2. Fill only the five rows below and save with **Ctrl+S (macOS: Cmd+S)**. Leave every other template value unchanged.
 
+Each line is `SETTING_NAME=value`. Keep the name to the left of `=` and change only the value on the right. For example, `LAB_LANGUAGE=en` selects English; it is a setting, not a terminal command.
+
 - Do not create `.env.txt` or overwrite an existing `.env`.
 - Never add passwords, API keys, or tokens.
 - Subscription ID: [Azure Portal](https://portal.azure.com/) **Subscriptions → your subscription → Overview**; tenant ID: **Microsoft Entra ID → Overview**. Portal sign-in does not sign in `az` or `azd`.
 
 | Initial field | Value |
 |---|---|
-| `AZURE_SUBSCRIPTION_ID` | Authorized workshop subscription; in self-study, a subscription where you are Owner |
-| `AZURE_TENANT_ID` | Its tenant |
+| `AZURE_SUBSCRIPTION_ID` | The **subscription ID**, grouping the resources and their billing. Use the authorized workshop subscription; in self-study, one where you are Owner |
+| `AZURE_TENANT_ID` | ID of the organization directory (**tenant**) the subscription trusts, not the subscription ID or sign-in email |
 | `AZURE_EXPECTED_USERNAME` | Sign-in name/email of the account you will use, not its display name |
-| `AZURE_RESOURCE_GROUP` | On a first run, leave it empty: **`AZURE_RESOURCE_GROUP=`**. Use a group name only to confirm a previous run's group as preserved |
+| `AZURE_RESOURCE_GROUP` | A **resource group** is a management container for resources. On a first run, leave it empty: **`AZURE_RESOURCE_GROUP=`**. Use a group name only to confirm a previous run's group as preserved |
 | `LAB_LANGUAGE` | `en` |
 
 **Fill only those five fields now.** Leave other `<...>` placeholders and example deployment names unchanged. The tools generate service names, endpoints, and deployment names in a separate `.env` in the isolated folder. This initial file is not the **complete `.env`** given to class participants.

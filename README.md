@@ -4,7 +4,9 @@
 
 **Run an AI agent that finds travel policies and answers expense questions, then check whether changing its instructions improves its answers.** The agent code and both instruction versions (V1, V2) are provided; you write no code.
 
-**The main workshop takes 120 minutes.** Collect 48 real responses, then **review one case, compare V1 → V2, and report whether V2 also works on new questions**. Low scores are valid workshop results. Perfect scores and production approval are not the goal.
+**No previous terminal, Azure, or AI-agent experience is assumed.** Your job is to **copy a command → check its completion signal → describe your actual result in your own words**.
+
+**Allow about 120 minutes with an environment already prepared.** For first-time self-study, allow extra time to read and follow the explanations. Collect 48 real responses, then **review one case, compare V1 → V2, and report whether V2 also works on new questions**. Low scores are valid workshop results. Perfect scores and production approval are not the goal.
 
 <a id="start-here"></a>
 <a id="other-starts"></a>
@@ -17,7 +19,7 @@
 
 | Your situation | Start here |
 |---|---|
-| Your instructor gave you a complete team `.env` (class) | [Step 1](#start), then **steps 1–10 in order** |
+| Your instructor gave you a complete team `.env` (class) | Read the [concepts](#understand-first) and [how to follow](#how-to-follow) below, then [step 1](#start) and **steps 1–10 in order** |
 | Your `.env` is not ready, and the Foundry, Search, and observability services you will use all exist | The environment owner completes [existing-environment preparation](docs/instructor.en.md#existing-foundation) → follows its handoff |
 | A required foundation service is missing and you need a **new dedicated environment** | Finish the prerequisites and steps 1–6 in [Create a new environment](docs/environment.en.md) → follow its handoff to [1-4 binding](#bind-project) |
 | Continuing an earlier attempt | [Resume in the same folder](docs/troubleshooting.en.md#resume): next unexecuted block after a normal pause; command recovery after an error or uncertain outcome |
@@ -35,15 +37,41 @@ Follow the [Copilot guide](docs/copilot.en.md); do not also execute the steps ma
 
 </details>
 
+<a id="understand-first"></a>
+
+## Understand first: a convincing answer is not necessarily a correct one
+
+Imagine an employee at the fictional **Hanbit Technology** asking the question below. The policies are synthetic training material, not a real company's rules. The agent explains them; it does not book travel, approve requests, or make payments.
+
+> For a business trip to Busan on 2026-09-10, is lodging at KRW 170000 per night allowed by policy? Please also state the limit.
+
+The provided current policy, `TRAVEL-2026`, sets a lodging limit of **KRW 180000 per night**. The answer should explain that this expense is within the limit and **identify the policy supporting it**. Fluent wording alone is insufficient if the amount, decision, or citation is wrong. This is `D01` in the `dev` questions used for improvement, not an early look at the separate new questions.
+
+| Term | Plain meaning | In this workshop |
+|---|---|---|
+| Model | The engine that reads input and generates an answer | Each request calls one of `sol`, `luna`, or `astra` |
+| Agent | The program connecting retrieval and model calls | The provided Python travel-policy app |
+| Instructions (prompt) | Rules telling the model how to answer | Original `V1` and candidate `V2` |
+| Evaluation | Checking an answer against criteria | Python business checks and Foundry's AI scoring |
+
+**Microsoft Foundry** is an Azure platform for deploying, evaluating, and observing AI agents. Here is how the workshop fits together. This diagram is **an explanation, not commands to run**.
+
+```text
+Question -> Python agent (step 3: your PC / step 4 onward: Azure)
+              |-- Foundry IQ: retrieve policy evidence from Azure AI Search
+              |-- Question + evidence + V1/V2 instructions -> one candidate model -> answer
+              `-- Retrieval/model-call records (traces) -> Application Insights
+
+Agent answers -> business checks and saving -> Foundry evaluation -> human review -> reevaluate V2
+```
+
+The three models do not debate or vote: **compare their separate answers to the same questions**. Saving a review does not train the model automatically. The exercise changes the provided instructions and **measures whether that actually helps**.
+
 <a id="workshop-overview"></a>
 
 ## The 10-step path
 
-**Microsoft Foundry** is an Azure platform for deploying, evaluating, and observing AI agents. In this workshop, ask three models the same questions and compare results after changing only the provided instructions from V1 to V2.
-
-```text
-Question → Python agent → Foundry IQ policy retrieval → candidate model → answer
-```
+**Steps 1–4 get the agent running, 5–9 evaluate and compare it, and 10 cleans up.** This table is your route map; execute commands one block at a time in each step below.
 
 | Step | Continue when |
 |---|---|
@@ -64,6 +92,8 @@ Question → Python agent → Foundry IQ policy retrieval → candidate model �
 
 ### How to follow the steps
 
+**Coming from an environment-setup guide?** Read the [concepts above](#understand-first) too. This is reading only; do not repeat installation or sign-in already completed.
+
 - **Class runner:** for each team `.env`, **one person runs commands with their own account, PC, and one workshop folder**; teammates review that screen together. Running the same `.env` on several PCs causes ownership conflicts over the same named resources. For individual execution, obtain a separate `.env` with distinct `LAB_PREFIX` and `LAB_AGENT_NAME` values for each runner before starting.
 - **Where:** follow the bold label before each block: **Terminal A**, **Terminal B** (step 3 only), **Editor**, or **Portal**. "Your agent" means `LAB_AGENT_NAME`.
 - **One block at a time:** follow **location → run the command → checkpoint → next block**. Wait for the input prompt—the line where you can type another command—to return, except for step 3's server. When asked for input, paste only the requested value and press Enter.
@@ -73,25 +103,40 @@ Question → Python agent → Foundry IQ policy retrieval → candidate model �
 
 **Do not open `data/en/holdout.jsonl` before step 8.** Terms are explained where you use them ([full glossary](docs/reference.en.md#terms)). Open collapsed references, examples, or the video only when needed.
 
-<details>
-<summary>If terminals, files, or structured output are new to you</summary>
+### Which window do I use?
+
+Keep the guide open in your browser and switch between these work surfaces. **Terminal A and B are names used by this guide, not application names.**
+
+| Label in the guide | How to open it | What to do there |
+|---|---|---|
+| **Terminal A** | Terminal on macOS, your terminal on Linux, or your installed WSL Linux terminal such as Ubuntu on Windows. After opening the folder, VS Code **Terminal → New Terminal** also works | Paste commands and press Enter. Only step 3's server intentionally keeps running without returning a prompt |
+| **Terminal B** | Only in step 3: another terminal window/tab, or **+** in VS Code's terminal panel | Send a request while A keeps the server running. Step 3-2 sets this new terminal's folder and environment |
+| **Editor / Portal** | VS Code / Foundry in a web browser | Read and save files/notes in the editor; inspect deployment, evaluation, and trace screens in the portal |
+
+On Windows, [connect VS Code to WSL](docs/instructor.en.md#tools) first. Do not paste workshop commands into PowerShell, Command Prompt, or the browser address bar.
+
+<a id="reading-commands"></a>
+
+### Reading commands, files, and output
 
 | What you see | How to read it |
 |---|---|
 | Repository root / "this folder" | The top of the code folder where commands run: the 1-1 clone in a class, or the `/workshop` folder from setup step 6-3 for a new environment |
 | Code block | Copy only the commands inside it, without a leading `$`. After collection recovery, first apply your [actual labels and concurrency](docs/troubleshooting.en.md#run-values) |
+| `cd`, `pwd`, `ls` | Change folder, print the current folder's path, and list files, respectively |
 | `&&` | Run the next command only if the previous one succeeds |
+| `\` at the end of a line | The command continues on the next line. Copy the **whole block at once**, including `\` |
 | `$PWD`, `"$ROW_ID"`, and similar code | The terminal substitutes the value. Do not remove `$` or quotes, or replace the variables yourself |
 | `<your agent>` in an output description | Your actual `LAB_AGENT_NAME` value appears in the output. Do not type this placeholder |
 | `language: en` | JSON displays it as `"language": "en"`. `true` means true, `false` means false, and `[]` is an empty list |
+
+`python scripts/workshop.py ...` runs the provided workshop tool. The following word, such as `collect` or `evaluate`, selects its job; options such as `--label` supply inputs. You do not need to memorize them: each step explains what it uses.
 
 Long JSON or queries are normal. **Checkpoint** values are usually at the **bottom** of the output. Follow **this guide's next block**, not the `Next:` suggestions or `Update available` notice printed by a tool.
 
 `.env` (settings) and `src/agent/.foundry/` (results) are hidden files or folders because their names start with a dot. Open the workshop folder with VS Code **File → Open Folder** to see them in the Explorer. After editing a file, save with **Ctrl+S (macOS: Cmd+S)**. Never run or `source` `.env`.
 
 For help, share only the failed command, error, and step—not passwords, tokens, or the whole `.env`. “Instructor” and “environment owner” mean the instructor in a class and you in self-study.
-
-</details>
 
 <a id="background-learning-loops-and-frontier-ecosystems"></a>
 
@@ -104,6 +149,8 @@ For help, share only the failed command, error, and step—not passwords, tokens
 <a id="source-setup"></a>
 
 ### 1-1. Get the source and `.env`
+
+**What are you preparing?** A `clone` downloads the provided code folder to your PC. It does not create Azure resources or sign you in. Because each learner can use a different Azure environment, you receive `.env` separately from the code.
 
 **Terminal A — start Bash:** open a terminal and run this (fine even if it already runs Bash; macOS starts zsh by default, and on Windows use the WSL terminal):
 
@@ -131,6 +178,8 @@ pwd
 <a id="workspace-settings"></a>
 
 **Editor — add `.env` (class participants):** open this folder with VS Code **File → Open Folder**. Put the instructor's `.env` next to `README.md` (the top of the folder) in the Explorer, open it, and confirm the items below. Do not overwrite an existing `.env`; ask the instructor.
+
+Each line is `SETTING_NAME=value`: **the name is on the left, your environment's value on the right**. For example, `LAB_LANGUAGE=en` selects the English workshop; it is not a command to enter in the terminal.
 
 - **File:** `.env`, not `.env.txt`.
 - **Who signs in:** `AZURE_EXPECTED_USERNAME` must be the runner's **own Azure sign-in name/email**. `.env` supplies settings, not an account, password, or access permission. The instructor prepares access for that account; the runner completes their own sign-in and MFA.
@@ -163,6 +212,16 @@ grep -E '^LAB_(LANGUAGE|PROMPT_VERSION)=' .env
 
 ### 1-2. Create the Python environment and run the offline tests
 
+**Why a virtual environment?** It keeps this workshop's Python packages separate from other projects. The tests below check the provided code without calling Azure.
+
+| Similar-looking name | Actual purpose | Your action |
+|---|---|---|
+| `.env` | A **settings file** identifying which Azure environment to use | Check the supplied values in 1-1 |
+| `src/agent/.venv/` | A **virtual-environment folder** containing this workshop's Python and packages | Create and activate it below |
+| `src/agent/.foundry/` | A **results and review-record folder** created by the workshop tools later | Read results after they exist; it may be absent at the start |
+
+`source .../.venv/bin/activate` below **activates the virtual environment**. It does not contradict the warning against running `source` on the different file `.env`.
+
 **Terminal A — install:**
 
 ```bash
@@ -188,6 +247,10 @@ python -m unittest discover -s tests -v
 <a id="login"></a>
 
 ### 1-3. Sign in to Azure CLI and azd
+
+**Why two sign-ins?** `az` inspects and prepares Azure resources; `azd` runs and deploys the agent. They manage sign-in separately, so sign in to both with the same account. Signing in to the browser portal does not replace either one.
+
+**Reading the IDs:** a tenant is the organization directory used for this Azure sign-in; a subscription groups the Azure resources and billing you will use. The IDs identify those targets. Use the values supplied in `.env`; do not create or guess replacements.
 
 **Terminal A:** run blocks 1–4 in order in this terminal; block 4 checks both sign-ins.
 
@@ -313,11 +376,13 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 
 **Goal:** a searchable **knowledge base (KB)** of seven synthetic policies that returns the right one.
 
+**Why start with retrieval?** If the needed policy is not retrieved, changing the model alone may not fix the answer. `prepare-iq` registers the policies; `retrieve` finds evidence in them. **This is not yet the step that generates the final travel-expense answer.**
+
 <a id="knowledge-registration"></a>
 
 ### 2-1. Register the policies
 
-**Editor:** open `data/en/policies.json`, find `TRAVEL-2026`, and note its effective date, status, and lodging limit. Do not edit the file.
+**Editor:** open `data/en/policies.json` and use **Ctrl+F (macOS: Cmd+F)** to find `TRAVEL-2026`. In its `content`, check the **effective date `2026-09-01`, status `published`, and lodging limit of `KRW 180000` per night**. Do not edit the file. The corpus also contains old policies and a draft, so not every retrieved document is current policy.
 
 **Terminal A:**
 
@@ -367,6 +432,8 @@ python scripts/workshop.py retrieve --query "What is the lodging limit for a dom
 ## 3. Run the agent locally
 
 **Goal:** a real English V1 answer from the agent running on your machine.
+
+**Why two terminals?** A keeps the **server**, a program waiting for requests, running while B sends it a question. `127.0.0.1:8088` means port 8088 on your own PC. Only the program runs locally: retrieval and models still call Azure, requiring internet access and incurring costs.
 
 ### 3-1. Start the server
 
@@ -418,6 +485,17 @@ python scripts/workshop.py smoke --local
 
 **If not:** confirm that Terminal A is still running, then see [common symptoms](docs/troubleshooting.en.md#symptoms).
 
+**Read your first answer this way.** JSON presents results as `field name: value`. `HTTP 200` means the readiness request succeeded, not that the travel-policy answer is correct.
+
+| Result field | Plain meaning |
+|---|---|
+| `answer` | The answer text a user reads |
+| `decision` | A decision such as allowed or approval required. `allowed` means permitted by policy, not that approval was executed |
+| `citations` | Document IDs the model **cited as support** for its answer |
+| `source_ids` | Document IDs **actually returned by retrieval** |
+
+The two ID lists serve different purposes. V1 can cite a title instead of a document ID while the request itself still succeeds. Check execution now; review such quality issues in steps 5–6.
+
 <details>
 <summary>Example screen: a real local response</summary>
 
@@ -442,6 +520,8 @@ python scripts/workshop.py smoke --local
 
 **Goal:** the same code answering from Azure as a numbered agent version. Local Docker is not required.
 
+**What is deployment?** It puts the program that ran on your PC in step 3 into Azure's managed runtime. It does not train a new model. **`v1` names the instructions**, while `agent_version` is **a number created by deployment**; they need not match.
+
 <a id="deploy-code"></a>
 
 ### 4-1. Deploy the code
@@ -459,6 +539,8 @@ azd deploy --no-prompt
 <a id="agent-access"></a>
 
 ### 4-2. Grant the agent access
+
+A service you can access after signing in is not automatically accessible to the agent running in Azure. The agent uses **its own service identity (managed identity)**, so it needs separate retrieval and model-call permissions.
 
 **Terminal A:**
 
@@ -511,8 +593,6 @@ python scripts/workshop.py smoke
 
 <a id="evaluation-runs"></a>
 
-**These three labels are the first-run defaults.** Later commands use the variables you set below, so recovery does not require editing each command. Read `baseline`, `improved`, and `holdout` in output and path descriptions as your [actual labels](docs/troubleshooting.en.md#run-values). The same agent (`LAB_AGENT_NAME`) routes each question to three candidate models, which each produce one answer: `model_key` values `sol`, `luna`, and `astra` select `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`. These keys are not agent names or Azure deployment names.
-
 **V1 and V2 are instruction (prompt) versions, not models; split means question set; label means result-folder name.** Use `dev` for improvement and open the new `holdout` questions only at the end, after fixing V2.
 
 | Result name (label) | Instructions | Question set (split) | Responses | What to check |
@@ -523,6 +603,8 @@ python scripts/workshop.py smoke
 
 **Run only the first row, `baseline`, now.** Step 7 runs `improved` and step 8 runs `holdout`, giving **18 + 18 + 12 = 48 responses**. Setup calls and scores from the scoring model (judge) are not added to this count. `improved` is a name, not an improvement verdict; dev and holdout use different questions, so do not treat them as a before/after comparison.
 
+The same agent (`LAB_AGENT_NAME`) routes each question to three candidate models, which each produce one answer: `model_key` values `sol`, `luna`, and `astra` select `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`. These keys are not agent names or Azure deployment names.
+
 **Generating answers and scoring answers are separate commands.** The two kinds of checks do not replace each other.
 
 | Command | What it does | What it checks |
@@ -530,7 +612,9 @@ python scripts/workshop.py smoke
 | `collect` | Saves **18 new agent responses** and runs Python business checks | Whether decisions, amounts, and citations match the fixed rules |
 | `evaluate` | Scores **the 18 saved responses** with the judge; generates no new agent answers | Whether answers match their evidence (`groundedness`) and address the question (`relevance`) |
 
-See [evaluator inputs](#what-is-being-evaluated) for details.
+The judge is **a separate model that reads and scores answers**. Each metric passes at **4 out of 5 or above**, independently of the Python business checks. `evaluate` also makes paid judge calls. See [evaluator inputs](#what-is-being-evaluated) for details.
+
+**These three labels are the first-run defaults.** Later commands use the variables you set below, so recovery does not require editing each command. Read `baseline`, `improved`, and `holdout` in output and path descriptions as your [actual labels](docs/troubleshooting.en.md#run-values).
 
 <a id="run-settings"></a>
 
@@ -614,7 +698,7 @@ python scripts/workshop.py evaluate --label "$BASELINE_LABEL"
 - The six dev cases cover current limits, prior approval, historical policy, uncovered questions, prohibited expenses, and requests to ignore policy.
 - Keep the question sets and result names from [this step's evaluation plan](#evaluation-runs).
 - The judge, `gpt-5.4-mini`, is not a candidate, and its two calibration examples are not among the 48 responses.
-- Groundedness and relevance pass at **4 of 5**. `compare` and `summary` only read saved results; they make no model calls.
+- `compare` and `summary` only read saved results; they make no model calls.
 - Foundry's groundedness and relevance evaluators see the answer text, not the `decision` or `citations` fields, so **a high groundedness score does not establish a correct decision or citation IDs** ([what each evaluator receives](docs/validation.en.md#business-checks)).
 - Step 9's gates use the business checks; Foundry scores are a separate quality signal.
 
@@ -628,6 +712,8 @@ python scripts/workshop.py evaluate --label "$BASELINE_LABEL"
 ## 6. Review a real case and preserve its source
 
 **Goal:** explain one real response with its fixed reference and its **trace** (the record of that request's retrieval and model calls), then save it as a **regression case** that V2's collection reuses.
+
+**What is a regression case?** A question to check again after the next change. It links the existing fixed answer to your review reason and the original trace. It does not turn a wrong response into a new correct answer or retrain the model.
 
 ### 6-1. Aggregate the results and find a row to review
 
@@ -666,6 +752,8 @@ python scripts/workshop.py summary --labels "$BASELINE_LABEL"
 <a id="review-case"></a>
 
 ### 6-2. Choose and explain one case
+
+**Practice reading an ID:** `baseline-luna-D01` is a response name (`row_id`) made from **result set `baseline` + model `luna` + question `D01`**. Another model or a V2 answer to the same question produces a different row. `trace_id` is a separate ID for finding that row's execution record. Below, use an ID **actually present in your own output**.
 
 **Choose:** copy the **first `row_id`** after `business-check failures:` in 6-1 (for example, `baseline-luna-D01`), up to the parenthesis; the parentheses name its failed checks. If it says `none`, choose **your actual V1 label's `-sol-D01` row**, shown in the input prompt below, and review why it passed.
 
@@ -889,6 +977,19 @@ python scripts/workshop.py summary --labels "$BASELINE_LABEL" "$CANDIDATE_LABEL"
 | `tokens in/out` | How much text the model read / produced, measured in tokens. Totals for that model's **six dev responses**, not an Azure bill |
 | `p50/p95 s` | Retrieval plus model processing time, in **seconds**. Of six responses ordered fastest to slowest, p50 is the third and p95 is the last. Lower is faster |
 
+<a id="comparison-reading-example"></a>
+
+**Reading exercise — these are illustrative numbers, not measured results.** Suppose one model's table contains the values below. They are neither commands to run nor target scores to reproduce.
+
+```text
+business       3/6 -> 5/6
+groundedness   6/6 -> 6/6
+relevance      6/6 -> 5/6
+p50/p95 s      1.20/2.00 -> 1.40/2.30
+```
+
+Here, **two more answers pass the business checks, but one fewer passes relevance and p95 rises from 2.00 to 2.30 seconds**. Read this as “business checks improved, but relevance and latency need review,” not “better in every way.” These selected columns alone do not establish a quality-gate pass or production approval.
+
 **Interpretation to note:** use your values to write `Business passes increased/stayed the same/decreased; judge failures were ...; tokens and time were ...`. Preserve unchanged or worse results too.
 
 **Terminal A — inspect your reviewed case's saved V2 answer:** in the `Reviewed case ...` line above, copy the V2 row ID **after `->` and before `:`**. Use the line whose V1 row matches your 6-3 review, not a new Playground response.
@@ -945,6 +1046,8 @@ Click **Send once**: the comparison view sends the question to both versions. Ch
 ## 8. Keep V2 unchanged and evaluate holdout
 
 **Goal:** 12 responses (4 held-out questions × 3 models) from the unchanged V2.
+
+**Why keep new questions aside?** Think of dev as practice questions whose answers you can inspect while improving, and holdout as questions attempted for the first time at the end. Better dev results do not guarantee better answers elsewhere. **If you change V2 after seeing these answers, the same questions can no longer count as untouched validation.**
 
 ### 8-1. Collect the holdout responses
 
@@ -1050,6 +1153,16 @@ python scripts/workshop.py summary --labels "$HOLDOUT_LABEL"
 
 **Goal:** verify the evidence, inspect the operational dashboard, then write the final report. Gather all the values before assembling the report once.
 
+**Evaluation, tracing, and monitoring answer different questions.**
+
+| View | Question it answers | Where you use it |
+|---|---|---|
+| Evaluation | “Does this answer meet the criteria?” | Scores and business checks in steps 5, 7, and 8 |
+| Trace | “Which retrieval and model calls did this request make?” | One request in step 6, and all traces in 9-1 |
+| Monitor | “What are the overall run counts, tokens, and statuses?” | The dashboard in 9-2 below |
+
+For example, a `completed` run can still contain an incorrect policy answer. See the official [Foundry evaluation, tracing, and monitoring explanation](https://learn.microsoft.com/azure/foundry/concepts/observability) for this distinction.
+
 ### 9-1. Verify the complete response matrix
 
 **If you checked traces before pausing:** skip a `monitor` command only when `src/agent/.foundry/results/<label>/telemetry.json` for that same actual label matches its checkpoint below. Still run unfinished queries for other labels. Do not overwrite completed trace evidence by querying a window that no longer includes the run.
@@ -1132,6 +1245,16 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
 **Checkpoint:** `candidate_quality_gates` contains six `dev` / `holdout` values for `sol`, `luna`, and `astra`. A `false` value is a valid result to record.
 
 **If not:** if the file is missing, check that [9-1 verification](#lab-g) completed. Do not create the file or fill in values yourself.
+
+**Separate the final decision into three parts.**
+
+| Evidence-file value | Meaning | What to report |
+|---|---|---|
+| `component_execution_verified: true` | Required execution, evaluation, and trace links were verified | Execution evidence verified |
+| Each model's `dev` / `holdout` under `candidate_quality_gates` | Whether the fixed business-quality criteria passed | Record the actual `true` / `false` values |
+| `production_release_approved: false` | This training exercise does not approve a production release | Keep the value unchanged |
+
+The first being true while some of the second are false is not a contradiction. It means **“the evaluation completed correctly and found remaining quality gaps.”**
 
 **Editor — save your notes as the report:** organize **the same document** you have been using into this template (not a command). Use VS Code **File → Save As** to save it as `src/agent/.foundry/results/workshop-report.txt` inside your workshop folder. Leave no `...`, write empty lists as `none`, and keep `production_release_approved=false`:
 

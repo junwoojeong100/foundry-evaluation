@@ -53,21 +53,23 @@ The recorded English main run showed 53 agent runs and about 125.7K tokens on th
 
 ## Install and check the local tools
 
-**This is the basic setup, even when you run commands yourself.** If you use Copilot CLI, finish these checks first and follow the [Copilot CLI guide](copilot.en.md) separately; manual runs do not need Copilot CLI, Node.js, or Playwright.
+**This is the basic setup, even when you run commands yourself.** If you use Copilot CLI, finish these checks first and follow the [Copilot CLI guide](copilot.en.md) separately; manual runs do not need Copilot CLI, Node.js, or Playwright. The tools serve different purposes; do not reinstall ones already available.
 
-| Tool | Installation reference / requirement |
-|---|---|
-| Git | [Install Git](https://git-scm.com/downloads) |
-| Python | [Install Python](https://www.python.org/downloads/), selecting **3.13.x**; `python3.13` must work in the workshop terminal |
-| Azure CLI | [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) |
-| azd | [Install Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) |
-| Bash | Required shell. [GNU Bash](https://www.gnu.org/software/bash/) |
-| curl | Required transfer tool. [curl packages for your platform](https://curl.se/download.html) |
-| Editor | [Install VS Code](https://code.visualstudio.com/download) or use an existing editor that can open `.env` and JSON files |
-| Browser | [Install Edge](https://www.microsoft.com/edge/download) or [Chrome](https://www.google.com/chrome/) for sign-in and Foundry portal checks |
-| Windows only: WSL terminal | [Install WSL](https://learn.microsoft.com/windows/wsl/install) |
+| Tool | Why you need it | Installation reference / requirement |
+|---|---|---|
+| Git | Download the workshop code to your PC | [Install Git](https://git-scm.com/downloads) |
+| Python | Run the provided workshop scripts and agent | [Install Python](https://www.python.org/downloads/), selecting **3.13.x**; `python3.13` must work in the workshop terminal |
+| Azure CLI (`az`) | Sign in to Azure and inspect/prepare resources | [Install Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) |
+| azd | Run the agent locally and deploy it to Azure | [Install Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) |
+| Bash | Interpret the commands you copy | [GNU Bash](https://www.gnu.org/software/bash/) |
+| curl | Check whether the local server is ready for requests | [curl packages for your platform](https://curl.se/download.html) |
+| Editor | Read and save `.env`, results, and notes | [Install VS Code](https://code.visualstudio.com/download) or use an existing text editor |
+| Browser | Complete sign-in and inspect the Foundry portal | [Install Edge](https://www.microsoft.com/edge/download) or [Chrome](https://www.google.com/chrome/) |
+| Windows only: WSL terminal | Run this guide's Linux commands on Windows | [Install WSL](https://learn.microsoft.com/windows/wsl/install) |
 
 Run workshop commands in Bash: macOS/Linux use the local terminal; Windows uses WSL with the Linux tools installed inside WSL. Windows editors and browsers are fine for manual checks.
+
+**Opening a terminal for the first time:** on macOS, use **Cmd+Space → search for Terminal → Enter**; on Linux, open **Terminal** from the application menu; on Windows, install WSL first, then open **Ubuntu or your installed Linux distribution** from Start. Do not paste these workshop commands into Windows PowerShell. Copy only the code block and press **Enter**; version checks can run from any folder.
 
 **Editor — Windows/WSL users:** install the [WSL extension](https://code.visualstudio.com/docs/remote/wsl) in Windows VS Code. After creating the workshop folder later, use **F1 → WSL: Connect to WSL**, then **File → Open Folder** to open it. The bottom-left **WSL** indicator confirms that the later Linux paths and terminals work in that window.
 
@@ -734,7 +736,9 @@ For an **exclusive group created with the new-environment tools**, with creation
 
 Before changing Foundry agent code or instructions, read the `microsoft-foundry` skill guidance. Use synthetic data only, do not change shared Azure resources or the default CLI subscription, and name the configured subscription in Azure commands. Keep the links between models, instructions, datasets, and traces; do not substitute models or count missing or failed rows as successes. Keep documented commands matched to the code, and pass the offline tests before any Azure run.
 
-Keep English and Korean execution paths aligned. Lead with the outcome and starting conditions, keeping direct links for **class participants, self-study setup, and resuming an existing run** visible. Distinguish instructions (V1/V2), question sets (splits), and result names (labels) at the first evaluation step. Collapse existing-Azure preparation, tool delegation, and background explanations, but **keep the guidance needed to review cases and interpret results visible in the main text**.
+Keep English and Korean execution paths aligned. Lead with the outcome and starting conditions, keeping direct links for **class participants, self-study setup, and resuming an existing run** visible. Distinguish instructions (V1/V2), question sets (splits), and result names (labels) at the first evaluation step. Collapse existing-Azure preparation, tool delegation, and advanced background, but **keep beginner guidance on windows and commands, case review, and result interpretation visible in the main text**.
+
+Explain concepts with a provided dev question, not early exposure to holdout. Each step should explain **why it is needed and what its result does not establish**, not only which command to run. Label illustrative reading exercises as neither measured results nor target scores, and match their fields, units, and denominators to the actual output. Distinguish `.env` / `.venv` / `.foundry`, models / agents / instructions, and execution completion / quality passes / production approval.
 
 Each execution step must name **where to act, the command, its completion evidence, and the recovery path**. Give collection, evaluation, aggregation, trace lookup, verification, **candidate preparation, and calibration one command and one checkpoint each**. Recovery pages should fix the failed task, then link to **the main guide's next unexecuted command**, not duplicate a bundle of later steps. Do not repeat checks that a command already performs internally.
 
@@ -749,6 +753,8 @@ python -m unittest discover -s tests -p 'test_docs.py' -v
 ```
 
 This checks local links/anchors/assets, code-block structure, Bash/JSON syntax, Python CLI arguments against the actual parsers, and matching English/Korean command sequences. It checks that the first evaluation step's **18 + 18 + 12 responses match the actual question and model counts**, and that required result-reading guidance is not collapsed. It also checks separate checkpoints in the main, candidate-preparation, and collection-recovery paths; **If not** guidance in participant and environment-preparation guides; handoff links and shared reading instructions; the **dashboard → report → cleanup** order; the shared report file; and Monitor fields in the report. It also checks the designated class runner, explicit Bash and edition settings in existing-environment setup, and sign-in recovery returning to the original path. Input, variable restoration, and recovery branches run in isolated Bash with command doubles, not real experiment commands or Azure calls. This does not revalidate recorded cloud scores. Runnable source snapshots omit the guides and skip these documentation checks.
+
+The checks also verify that the beginner explanation uses a real dev question, command/file guidance is not collapsed, first-response fields match the code's contract, and illustrative comparison values match the actual `summary` renderer.
 
 Also follow [the starting instructions](../README.md#start-here) as a participant, an environment owner, and a returning user. Check that **the next action, completion signal, and next destination** require no guesswork. Automated checks cannot establish that a first-time reader understands the instructions.
 

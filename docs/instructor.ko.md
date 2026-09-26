@@ -53,21 +53,23 @@
 
 ## 로컬 도구 설치와 확인
 
-**기본 도구부터 확인한다.** 직접 실행에는 Copilot CLI·Node.js·Playwright가 필요 없다. Copilot CLI를 쓸 때도 이 확인을 마친 뒤 [별도 Copilot CLI 안내](copilot.ko.md)를 진행한다.
+**기본 도구부터 확인한다.** 직접 실행에는 Copilot CLI·Node.js·Playwright가 필요 없다. Copilot CLI를 쓸 때도 이 확인을 마친 뒤 [별도 Copilot CLI 안내](copilot.ko.md)를 진행한다. 아래 도구는 목적이 서로 다르며, 이미 설치된 것은 다시 설치하지 않는다.
 
-| 도구 | 설치 안내 / 확인 조건 |
-|---|---|
-| Git | [Git 설치](https://git-scm.com/downloads) |
-| Python | [Python 설치](https://www.python.org/downloads/)에서 **3.13.x** 선택. 실습 터미널에서 `python3.13` 실행 가능 |
-| Azure CLI | [Azure CLI 설치](https://learn.microsoft.com/cli/azure/install-azure-cli) |
-| azd | [Azure Developer CLI 설치](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) |
-| Bash | 필요한 셸. [GNU Bash](https://www.gnu.org/software/bash/) |
-| curl | 필요한 전송 도구. [배포판별 curl 다운로드](https://curl.se/download.html) |
-| 편집기 | [VS Code 설치](https://code.visualstudio.com/download) 또는 기존 텍스트 편집기. `.env`·JSON을 열 수 있으면 됨 |
-| 브라우저 | [Edge 설치](https://www.microsoft.com/edge/download) 또는 [Chrome 설치](https://www.google.com/chrome/). 로그인·Foundry 포털 확인에 사용 |
-| Windows만: WSL 터미널 | [WSL 설치](https://learn.microsoft.com/windows/wsl/install) |
+| 도구 | 왜 필요한가 | 설치 안내 / 확인 조건 |
+|---|---|---|
+| Git | 실습 코드를 내 PC로 내려받기 | [Git 설치](https://git-scm.com/downloads) |
+| Python | 제공된 실습 스크립트와 에이전트 실행 | [Python 설치](https://www.python.org/downloads/)에서 **3.13.x** 선택. 실습 터미널에서 `python3.13` 실행 가능 |
+| Azure CLI(`az`) | Azure 로그인·자원 조회와 준비 | [Azure CLI 설치](https://learn.microsoft.com/cli/azure/install-azure-cli) |
+| azd | 에이전트 로컬 실행·Azure 배포 | [Azure Developer CLI 설치](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) |
+| Bash | 복사한 명령을 해석하는 셸 | [GNU Bash](https://www.gnu.org/software/bash/) |
+| curl | 로컬 서버가 요청을 받을 준비가 됐는지 확인 | [배포판별 curl 다운로드](https://curl.se/download.html) |
+| 편집기 | `.env`·결과·내 메모를 읽고 저장 | [VS Code 설치](https://code.visualstudio.com/download) 또는 기존 텍스트 편집기 |
+| 브라우저 | 계정 로그인과 Foundry 포털 확인 | [Edge 설치](https://www.microsoft.com/edge/download) 또는 [Chrome 설치](https://www.google.com/chrome/) |
+| Windows만: WSL 터미널 | Windows에서 이 가이드의 Linux 명령 실행 | [WSL 설치](https://learn.microsoft.com/windows/wsl/install) |
 
 실습 명령은 Bash에서 실행한다. macOS/Linux는 로컬 터미널을 사용하고, Windows는 WSL 안에 Linux 도구를 설치해 WSL Bash를 사용한다. 수동 확인용 편집기와 브라우저는 Windows 앱을 사용해도 된다.
+
+**터미널을 처음 연다면:** macOS는 **Cmd+Space → Terminal 검색 → Enter**, Linux는 앱 메뉴의 **Terminal**, Windows는 WSL 설치 후 시작 메뉴의 **Ubuntu 등 설치한 Linux 배포판**을 연다. Windows의 PowerShell에 아래 실습 명령을 붙여넣지 않는다. 명령은 코드 블록만 복사하고 **Enter**를 누르며, 버전 확인 블록은 어느 폴더에서 실행해도 된다.
 
 **편집기 — Windows/WSL 사용자:** Windows의 VS Code에 [WSL 확장](https://code.visualstudio.com/docs/remote/wsl)을 설치한다. 이후 실습 폴더를 만들면 **F1 → WSL: Connect to WSL**로 연결한 뒤 **File → Open Folder**에서 연다. 왼쪽 아래에 **WSL** 표시가 있어야 뒤의 Linux 경로와 터미널을 그대로 쓸 수 있다.
 
@@ -739,7 +741,9 @@ python scripts/workshop.py preflight
 
 Foundry 에이전트를 수정하거나 설명하기 전에 `microsoft-foundry` 스킬의 지침을 확인한다. 합성 데이터만 사용하며 공유 Azure 리소스와 기본 CLI 구독은 변경하지 않는다. Azure 명령에는 구성된 구독을 명시한다. 모델·지침·데이터셋·trace의 연결 관계를 보존하고, 다른 모델로 대체하거나 누락·오류 행을 성공으로 집계하지 않는다. 문서의 명령은 실제 코드와 일치해야 하며, Azure 실행 전에 로컬 테스트를 통과시킨다.
 
-영문·국문 실행 경로를 함께 유지한다. 결과와 시작 조건부터 쓰고, **수업 참가·개인 환경 준비·기존 실행 복구**의 시작 링크를 본문에 보이게 둔다. 지침(V1·V2), 질문 묶음(split), 결과 이름(label)은 첫 평가 단계에서 구분한다. 기존 Azure 준비·도구 위임과 배경 설명은 접어 두되, **사례 검토와 결과 해석에 필요한 설명은 본문에 보이게 둔다.**
+영문·국문 실행 경로를 함께 유지한다. 결과와 시작 조건부터 쓰고, **수업 참가·개인 환경 준비·기존 실행 복구**의 시작 링크를 본문에 보이게 둔다. 지침(V1·V2), 질문 묶음(split), 결과 이름(label)은 첫 평가 단계에서 구분한다. 기존 Azure 준비·도구 위임과 심화 배경은 접어 두되, **초보자의 화면·명령 읽기, 사례 검토와 결과 해석에 필요한 설명은 본문에 보이게 둔다.**
+
+개념은 제공된 dev 질문으로 설명하고 holdout을 미리 노출하지 않는다. 각 단계에서 무엇을 실행하는지뿐 아니라 **왜 하는지와 결과가 무엇을 의미하지 않는지**도 설명한다. 가상 수치로 읽기 연습을 만들면 실제 측정 결과·목표 점수가 아님을 명시하고, 실제 출력의 필드·단위·분모와 맞춘다. `.env`·`.venv`·`.foundry`, 모델·에이전트·지침, 실행 완료·품질 통과·운영 승인을 서로 구분한다.
 
 실행 단계마다 **작업 위치·명령·완료 증거·복구 경로**를 명시한다. 수집·평가·집계·trace 조회·증거 검증뿐 아니라 **후보 준비와 calibration도 명령 하나와 완료 확인 하나씩** 배치한다. 복구 페이지에 뒤의 실습 명령을 묶어 복제하지 말고, 실패한 작업을 복구한 뒤 **메인 가이드의 다음 미실행 명령**으로 돌려보낸다. 내부에서 이미 수행하는 검사를 별도 명령으로 반복하지 않는다.
 
@@ -754,6 +758,8 @@ python -m unittest discover -s tests -p 'test_docs.py' -v
 ```
 
 로컬 링크·앵커·첨부 파일, 코드 블록 구조, Bash·JSON 문법, 실제 파서와 Python 명령 인자의 일치, 한영 명령 순서를 확인한다. 첫 평가 단계의 **18 + 18 + 12응답이 실제 질문·모델 수와 맞는지**, 필수 결과 해석이 접혀 있지 않은지도 검사한다. 기본·후보 준비·수집 복구 경로의 독립된 완료 확인, 참가자·환경 준비 가이드의 **다르면** 안내, 복귀 링크와 공통 진행 방법, **대시보드 → 보고 → 정리** 순서, 같은 보고서 파일과 Monitor 기록 항목도 검사한다. 조별 실행자 안내, 기존 환경의 Bash 시작·언어 명시, 로그인 복구의 경로별 복귀도 확인한다. 입력·변수 복원·복구 분기는 격리된 Bash와 명령 대역으로 실행해 확인하며, 실제 실험 명령이나 Azure 호출은 하지 않는다. 과거 cloud 점수를 재검증하는 테스트가 아니다. 가이드가 없는 실행용 소스 스냅샷에서는 문서 검사를 건너뛴다.
+
+초보자 설명에 쓰인 질문이 실제 dev 사례인지, 명령·파일 안내가 접혀 있지 않은지, 첫 응답의 필드가 코드의 계약과 같은지, 가상 비교 예제가 실제 `summary` 출력과 같은 값·형식을 쓰는지도 검사한다.
 
 추가로 참가자·환경 소유자·재개 사용자 입장에서 [시작 안내](../README.ko.md#start-here)를 따라 읽는다. **지금 할 일·완료 표시·다음 위치**를 추측 없이 찾을 수 있는지 확인한다. 자동 검사가 처음 읽는 사람의 이해도까지 입증하지는 않는다.
 

@@ -449,6 +449,94 @@ class DocumentationTests(unittest.TestCase):
                 positions = [text.index(f'<a id="{anchor}"></a>') for anchor in sequence]
                 self.assertEqual(positions, sorted(positions))
 
+    def test_beginner_orientation_uses_a_real_dev_question_before_commands(self):
+        from contracts import MODEL_SPECS
+
+        for name, directory in (("README.md", ROOT / "data" / "en"), ("README.ko.md", ROOT / "data")):
+            visible = re.sub(r"<details>.*?</details>", "", self.documents[ROOT / name], flags=re.DOTALL)
+            introduction = visible.split("```bash", 1)[0]
+            concept = introduction.split('<a id="understand-first"></a>', 1)[1]
+            concept = concept.split('<a id="workshop-overview"></a>', 1)[0]
+            cases = [json.loads(line) for line in (directory / "dev.jsonl").read_text(encoding="utf-8").splitlines()]
+            case = next(item for item in cases if item["case_id"] == "D01")
+            with self.subTest(document=name):
+                self.assertEqual(re.findall(r"^> (.+)$", concept, re.MULTILINE), [case["query"]])
+                for value in [*case["allowed_citations"], *case["required_numbers"], "dev", "D01",
+                              *MODEL_SPECS, "V1", "V2", "Python", "Foundry IQ",
+                              "Azure AI Search", "Application Insights"]:
+                    self.assertIn(value, concept)
+                self.assertIn("#understand-first", LINKS.findall(prose(introduction)))
+                self.assertEqual(list(commands(concept)), [])
+
+    def test_beginner_basics_and_first_response_fields_are_visible(self):
+        from contracts import PolicyAnswer
+
+        for name in ("README.md", "README.ko.md"):
+            visible = re.sub(r"<details>.*?</details>", "", self.documents[ROOT / name], flags=re.DOTALL)
+            basics = visible.split('<a id="reading-commands"></a>', 1)[1].split("```bash", 1)[0]
+            python_setup = visible.split('<a id="python-setup"></a>', 1)[1].split("```bash", 1)[0]
+            local = visible.split('<a id="local"></a>', 1)[1].split('<a id="deploy"></a>', 1)[0]
+            with self.subTest(document=name):
+                for term in ("`cd`", "`pwd`", "`ls`", "`&&`", "`\\`", "`$PWD`"):
+                    self.assertIn(term, basics)
+                for path in ("`.env`", "`src/agent/.venv/`", "`src/agent/.foundry/`"):
+                    self.assertIn(path, python_setup)
+                self.assertIn("Terminal → New Terminal", visible.split("```bash", 1)[0])
+                self.assertEqual(
+                    set(re.findall(r"^\| `(\w+)` \|", local, re.MULTILINE)),
+                    set(PolicyAnswer.model_fields) | {"source_ids"},
+                )
+
+    def test_illustrative_comparison_values_match_the_real_summary_renderer(self):
+        from contracts import MODEL_SPECS
+        from experiments import summary_table
+
+        report = {"labels": {}}
+        for label, passed, relevant, p50, p95 in (
+            ("baseline", 3, 6, 1.2, 2.0), ("improved", 5, 5, 1.4, 2.3),
+        ):
+            report["labels"][label] = {
+                "models": {
+                    key: {
+                        "total": 6, "business_passed": passed,
+                        "required_citation_passed": 5, "required_citation_total": 5,
+                        "input_tokens": 100, "output_tokens": 20,
+                        "latency_p50_seconds": p50, "latency_p95_seconds": p95,
+                        "foundry_evaluators": {
+                            "groundedness": {"native_passed": 6, "total": 6},
+                            "relevance": {"native_passed": relevant, "total": 6},
+                        },
+                    } for key in MODEL_SPECS
+                },
+                "business_failures": [
+                    {"row_id": f"{label}-{key}-D{number:02d}", "checks": {"decision": False}}
+                    for key in MODEL_SPECS for number in range(passed + 1, 7)
+                ],
+            }
+        with tempfile.TemporaryDirectory() as directory:
+            foundry = Path(directory)
+            results = foundry / "results"
+            results.mkdir()
+            path = results / "comparison.json"
+            path.write_text(json.dumps(report), encoding="utf-8")
+            before = path.read_bytes()
+            with patch("common.RESULTS_DIR", results), patch("experiments.RESULTS_DIR", results), \
+                    patch("experiments.FOUNDRY_DIR", foundry), contextlib.redirect_stdout(io.StringIO()):
+                rendered = summary_table(["baseline", "improved"])
+            self.assertEqual(path.read_bytes(), before)
+        header, first_model = rendered.splitlines()[:2]
+        actual = dict(zip(re.split(r" {2,}", header), re.split(r" {2,}", first_model), strict=True))
+        for name, disclaimer in (("README.md", "not measured results"), ("README.ko.md", "실제 실행 결과가 아닙니다")):
+            visible = re.sub(r"<details>.*?</details>", "", self.documents[ROOT / name], flags=re.DOTALL)
+            example = visible.split('<a id="comparison-reading-example"></a>', 1)[1]
+            kind, _, body = next(blocks(example))
+            with self.subTest(document=name):
+                self.assertIn(disclaimer, example.split("```", 1)[0])
+                self.assertEqual(kind, "text")
+                documented = dict(re.split(r" {2,}", line, maxsplit=1) for line in body.strip().splitlines())
+                self.assertEqual(set(documented), {"business", "groundedness", "relevance", "p50/p95 s"})
+                self.assertEqual(documented, {key: actual[key] for key in documented})
+
     def test_normal_resume_covers_precollection_and_pre_virtual_environment_pauses(self):
         for name, language, last, next_block in (
             ("README.md", "en", "Last completed block", "Next block"),
