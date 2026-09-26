@@ -1,13 +1,13 @@
-# If a step fails: stop, identify the cause, and resume safely
+# Resume a paused workshop without repeating completed work
 
 [Return to the English guide](../README.md) · [한국어](troubleshooting.ko.md)
 
-**Keep the current folder and error output. Do not restart the whole workshop.**
-- **Failed stage:** [offline tests](#offline-tests) · [sign-in](#login) · [retrieval](#retrieval) · [local run](#symptom-local) · [hosted run](#symptom-hosted) · [calibration](#calibration) · [collection](#collection-retry) · [evaluation](#evaluation-retry) · [V2 changed](#v2-changed) · [cleanup](#cleanup-recovery).
+**After a normal break, [resume the next unexecuted block](#resume). After an error, preserve the current folder and error output, then choose below.**
+- **Failed stage:** [offline tests](#offline-tests) · [sign-in](#login) · [retrieval](#retrieval) · [local run](#symptom-local) · [deployment](#deployment-recovery) · [hosted run](#symptom-hosted) · [calibration](#calibration) · [collection](#collection-retry) · [evaluation](#evaluation-retry) · [review record](#review-recovery) · [V2 changed](#v2-changed) · [cleanup](#cleanup-recovery).
 - **Evidence or optional work:** [no baseline failures](#no-failures) · [traces](#telemetry) · [portal](#portal-differs) · [completion](#symptom-completion) · [Levels 2-3](#levels).
 - **Not sure?** [common symptoms](#symptoms) · [saved-state resume](#resume) if a label or state file exists · [environment-owner resume](#setup-resume) if setup failed (environment owners only).
 - Run participant recovery commands from the existing workshop folder's repository root; environment-owner recovery names its own folders.
-- Keep the workshop virtual environment active and restore `AZURE_CONFIG_DIR` from [README resume-shell](../README.md#resume-shell).
+- If the virtual environment already exists, restore it and `AZURE_CONFIG_DIR` with [README resume-shell](../README.md#resume-shell).
 
 **First distinguish execution failure from low quality.**
 
@@ -23,12 +23,21 @@ In this guide, “instructor” and “environment owner” mean the instructor 
 
 <a id="resume"></a>
 
-## Resume the failed command, not the whole block
+## Resume from where you stopped
 
-If `collect` finished but `evaluate` stopped, do not paste the block again from `collect`.
+**First check for active work.** If the original terminal or job is still running, wait; do not start a second command.
+
+| How you stopped | What to do now |
+|---|---|
+| Virtual environment exists; normal break with the last completed block noted | [Restore the terminal](../README.md#resume-shell) in the existing folder and start the **next block** in your notes. For example: 2-3 completed → start 3-1. Do not repeat completed deployment, collection, or evaluation. |
+| Before creating the virtual environment (before 1-2) | Return to the existing folder in Bash and continue after the last completed block. Do not run `source .../activate` yet. If 1-1 is complete, continue [1-2](../README.md#python-setup). |
+| An error occurred, or completion is uncertain | Use the failed-stage table and saved state below. File existence alone does not establish portal checks or human review. |
+
+**For errors, repeat the failed command, not the whole block.** If `collect` finished but `evaluate` stopped, do not paste the block again from `collect`. Only recollection needs a new label; evaluation and trace recovery keep the existing label.
 
 | Stopping point | Correct next action |
 |---|---|
+| `azd deploy` itself failed, or deployment success is uncertain | [Check deployment status](#deployment-recovery). Do not mistake a starting or older version for a successful new deployment. |
 | Deployment succeeded; `grant-agent-access` or `smoke` failed afterward | Resolve the cause and repeat **only that failed command**. Do not redeploy and create another agent version. |
 | Collection failed; manifest status is `failed` | Follow [collection recovery](#collection-retry), preserving the failed attempt |
 | `Evaluation is still running` | Repeat only `evaluate` with the same label |
@@ -36,11 +45,11 @@ If `collect` finished but `evaluate` stopped, do not paste the block again from 
 | `Telemetry is incomplete` | Check ingestion/access and the [two-hour query window](#telemetry); repeat only `monitor` for that label |
 | `Hosted prompt does not match` (holdout collection), or 8-2 shows different improved and holdout versions | [If V2 changed after 7-2](#v2-changed); do not delete or edit results |
 | `Label ... already exists` | Read the status files below. If collection is `completed`, find the next unfinished evaluation/trace step. If `failed`, recover collection. If `running`, check the original process: wait while active; [recover collection](#collection-retry) only after confirming it stopped. |
-| Reviewed regression already exists | Verify its row, reason, language, and source trace. Continue only if they match the intended review; do not overwrite it. |
+| A `feedback` record exists, or the wrong row was saved | [Check the review record](#review-recovery). Its row, reason, language, and trace must match an actual review. Adding another row does not exclude the mistaken one. |
 | Cleanup or its verification stopped | Use [cleanup recovery](#cleanup-recovery); do not repeat successful deletion to fix a failed check. |
 | A Level 2 or 3 command stopped | Use [Level 2–3 recovery](#levels); your step 5–9 results stay unchanged |
 
-**Reopened a terminal?** Open your **existing workshop folder**, not a new clone, and follow [the terminal restore block](../README.md#resume-shell). Do not repeat `init`, `bind`, deployment, or collection just because the terminal is empty.
+**When checking saved files:** the table below applies only to a label whose **5-2 collection has started**. Missing files are normal before collection. If creation/deployment completion is unclear and no output remains, confirm the state with the owner before rerunning. An empty terminal is not a reason for a new clone, `init`, or `bind`.
 
 Read these files under **`src/agent/.foundry/results/<label>/`** without editing them:
 
@@ -58,6 +67,31 @@ Choose the recovery section for the first incomplete file; a completed manifest 
 **If not:** preserve the current folder and error output. Look up the error message in [common symptoms](#symptoms); in a class, show the stage, label, and status files to the instructor.
 
 **Next:** open the matching section above, or use [common symptoms](#symptoms) when the stage is still unclear.
+
+<a id="deployment-recovery"></a>
+
+## If the deployment command itself failed
+
+**Use this for a failed `azd deploy` in 4-1 or 7-2.** Note the step, last error, and agent name/version printed by the attempt. Wait if the original command is still running. If deployment succeeded and only `grant-agent-access` or `smoke` failed, [recover that command](#resume), not deployment.
+
+**Terminal — query status only, in the same folder:**
+
+```bash
+azd ai agent show --output json
+```
+
+This command uses the name/version in `azure.yaml` and the current azd environment. **First match the returned version to the attempted deployment's target.** An `active` older V1 does not prove a new V2 deployment succeeded.
+
+| Confirmed state | Next action |
+|---|---|
+| The target version is still starting | Wait and repeat only the status query. Do not overlap deployments. |
+| The target version is confirmed `active` | For the first deployment, continue [4-2 access](../README.md#agent-access); for V2, continue [7-2's new-version check](../README.md#candidate-smoke). Do not skip the response check. |
+| The target deployment failed or was never created, and the cause is resolved | Retry once at [4-1](../README.md#deploy-code), or only `azd deploy --no-prompt` from [7-2](../README.md#candidate-deploy) for V2. Do not repeat a successful `set-prompt`. |
+| Only an older version appears, the query fails, or the target version is unknown | Have the owner reconcile the output and target version with **Agents → your agent → Playground → Log stream** in the portal. A visible version alone is not success or permission to redeploy. |
+
+**Checkpoint:** the attempted target version and current state are confirmed, identifying one next action in the table.
+
+**If not:** if the retry fails or state cannot be confirmed, stop and preserve the error. Follow [the early-stop path](../README.md#stop-early); reconcile created objects and ownership with the owner before cleanup.
 
 <a id="symptoms"></a>
 
@@ -84,6 +118,7 @@ Use the matching row, then return to the failed checkpoint. If it persists, pres
 | Route | Symptom | Cause or check | Action / exact return |
 |---|---|---|---|
 | <a id="symptom-local"></a>Local run | Port 8088 unavailable | Terminal A may not be serving, or another process owns the port. | For `Connection refused`, wait for A's `Running on ...:8088`, then repeat only B's request block. For `Address already in use`, stop only another workshop server you started with `Ctrl+C` in its window, then resume [3-1](../README.md#local). Do not stop an unfamiliar process. |
+| Deployment | `azd deploy` error or uncertain outcome | Distinguish the previous version from this attempt's target. | [Check deployment status](#deployment-recovery), then return only to the unfinished block. |
 | Retrieval | `prepare-iq` cannot create a role assignment | The Search identity needs planner access. | Check [access](instructor.en.md#access), then rerun the failed [2-1 registration](../README.md#knowledge-registration). Do not skip to 2-2 retrieval yet. |
 | Retrieval | `retrieve` finishes without documents or without `TRAVEL-2026` | Registration and retrieval are separate checks. | [Recover retrieval](#retrieval); return to [policy retrieval](../README.md#policy-retrieval). |
 | <a id="symptom-hosted"></a>Hosted run | Search 403 / role assignment failure | Local user permissions and hosted agent instance permissions differ. | Check both identities; return to [hosted access](../README.md#agent-access). |
@@ -338,13 +373,24 @@ Use this only when:
 | V2 dev after baseline | [V2 dev collection failed](#collection-retry-improved) |
 | Holdout | [Holdout collection failed](#collection-retry-holdout) |
 
-| Failed stage | Example retry label | Use it afterward |
-|---|---|---|
-| Initial V1 baseline | `baseline-retry` | Feedback and `verify --baseline baseline-retry` |
-| V2 dev candidate | `improved-retry` | Comparison and `verify --candidate improved-retry` |
-| Frozen V2 holdout | `holdout-retry` | Comparison and `verify --holdout holdout-retry` |
+<a id="run-values"></a>
 
-Choose the failed stage in the first table, run only that subsection's command, then apply the substitutions in the second table.
+### Run values to use after recovery
+
+**After successful recollection, update these values in your existing notes before returning to the main guide.** Keep labels for stages you did not recover. For a stage not yet collected, note its default and change it only if it later needs recovery.
+
+| Value to note | First-run default | Recovery value and where to use it |
+|---|---|---|
+| V1 dev label | `baseline` | After successful V1 recovery: `baseline-retry`. Use it in later `feedback`, `compare`, `summary`, `monitor`, and the value after `verify --baseline`. |
+| V2 dev label | `improved` | After successful V2 recovery: `improved-retry`. Use it in later comparisons, reads, traces, and the value after `verify --candidate`. |
+| V2 holdout label | `holdout` | After successful holdout recovery: `holdout-retry`. Use it in later comparisons, reads, traces, and the value after `verify --holdout`. |
+| Collection `concurrency` | `4` | Read the **completed V1 baseline's** `src/agent/.foundry/results/<actual label>/manifest.json`. If `2`, apply `--concurrency 2` to later V2 dev and holdout `collect` commands too. |
+
+**Change values, not option names.** Apply actual names to label values after `--label`, `--labels`, `--baseline`, `--candidate`, and `--holdout`, and to result paths and output descriptions. **Keep `--split dev` and `--split holdout` unchanged.** Copy `row_id` from that label's actual output. Do not rename or edit existing folders, files, row IDs, or manifests.
+
+For example, after recovering **only V2 dev**, final verification is `python scripts/workshop.py verify --baseline baseline --candidate improved-retry --holdout holdout`. If other stages were recovered, use their noted values too. Carry these notes into the [9-3 report](../README.md#finish).
+
+**If you have not run recovery yet:** choose one failed stage in the first table above and run only its subsection's command. This checklist does not change when recollection is allowed.
 
 <a id="collection-retry-baseline"></a>
 
@@ -360,12 +406,7 @@ python scripts/workshop.py collect --split dev --label baseline-retry --concurre
 
 **If not:** do not create another label; preserve the error and original failure record.
 
-**Next:** resume the main guide at [step 5-3's evaluation command](../README.md#baseline-evaluation). Note both substitutions now; do not repeat completed collection.
-
-| Later command/path | Substitute |
-|---|---|
-| Every later command, file path, and example row ID that uses `baseline` | Use **`baseline-retry`**, including `feedback`, `compare`, `summary`, and `verify --baseline`. For example, `baseline-retry-sol-D01`. |
-| V2 dev and holdout `collect` commands | Add **`--concurrency 2`**. |
+**Next:** update your [run-value notes](#run-values) to `V1 dev=baseline-retry`, `concurrency=2`, then resume [step 5-3's evaluation command](../README.md#baseline-evaluation). Apply `--concurrency 2` to later V2 dev and holdout collection, and read the example `baseline-sol-D01` as `baseline-retry-sol-D01`. Do not repeat completed collection.
 
 <a id="collection-retry-improved"></a>
 
@@ -383,7 +424,7 @@ python scripts/workshop.py collect --split dev --label improved-retry --concurre
 
 **If not:** stop and preserve the error; keep the completed baseline and review unchanged.
 
-**Next:** resume at [step 7's evaluation and comparison](../README.md#candidate-evaluation), replacing `improved` with `improved-retry`.
+**Next:** update the V2 dev label in your [run-value notes](#run-values) to `improved-retry`, then resume [step 7's evaluation and comparison](../README.md#candidate-evaluation). Keep using that value in later commands and paths.
 
 <a id="collection-retry-holdout"></a>
 
@@ -399,7 +440,7 @@ python scripts/workshop.py collect --split holdout --label holdout-retry --concu
 
 **If not:** stop and preserve the error; keep the frozen instructions unchanged.
 
-**Next:** resume at [step 8's evaluation](../README.md#holdout-evaluation), replacing `holdout` with `holdout-retry`.
+**Next:** update the V2 holdout label in your [run-value notes](#run-values) to `holdout-retry`, then resume [step 8's evaluation](../README.md#holdout-evaluation). Keep `--split holdout` unchanged.
 
 <a id="evaluation-retry"></a>
 
@@ -458,6 +499,22 @@ Final verification only checks that candidate results store the saved baseline t
 **If not:** return to the selected baseline response and fixed dev reference; do not use holdout or invent a failure.
 
 **Next:** continue with [V2 deployment and candidate evaluation](../README.md#lab-e).
+
+<a id="review-recovery"></a>
+
+## If a review already exists or was saved incorrectly
+
+**Check this before V2 collection.** The next dev collection reads every `src/agent/.foundry/datasets/regression-*.jsonl`. Saving the correct row as well, or selecting a different row to report, does not exclude a mistaken record.
+
+1. **Editor:** read `source_row_id`, `source_trace_id`, `review_reason`, and `language` in the existing file's `lineage`. Actually compare that row's saved response, fixed reference, and trace using [6-2](../README.md#review-case).
+2. Keep a record that already matches an actual review. If you accidentally saved a different row but have now reviewed it too and its saved reason matches the evidence, note **the original mistake and the later additional review** in your existing notes.
+3. If the reason, provenance, or reference is wrong, or V2 was already collected with an incorrect record, stop. Preserve the files/error and give the row ID, trace ID, and mistake description to the instructor or repository maintainer. Deleting, editing, or adding a record alone does not complete recovery.
+
+**Checkpoint:** every remaining review record matches a row and evidence you actually reviewed; any original mistake is documented in your notes.
+
+**If not:** do not begin V2 collection. Do not report an unverified review as valid or alter original evidence.
+
+**Next:** complete only [6-3's saved-record check](../README.md#read-review), then continue to step 7. Do not repeat `feedback` for an existing row.
 
 <a id="v2-changed"></a>
 

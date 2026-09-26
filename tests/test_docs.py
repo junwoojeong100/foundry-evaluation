@@ -413,11 +413,178 @@ class DocumentationTests(unittest.TestCase):
                 self.assertIn(f"docs/environment.{language}.md", primary_start)
                 self.assertIn("](#bind-project)", primary_start)
                 self.assertNotIn(f"docs/copilot.{language}.md", primary_start)
-                self.assertNotIn("#existing-foundation", primary_start)
+                self.assertIn(f"docs/instructor.{language}.md#existing-foundation", primary_start)
                 sequence = ("start", "lab-a", "local", "deploy", "lab-c", "lab-d",
                             "lab-e", "lab-f", "lab-g", "cleanup")
                 positions = [text.index(f'<a id="{anchor}"></a>') for anchor in sequence]
                 self.assertEqual(positions, sorted(positions))
+
+    def test_normal_resume_covers_precollection_and_pre_virtual_environment_pauses(self):
+        for name, language, last, next_block in (
+            ("README.md", "en", "Last completed block", "Next block"),
+            ("README.ko.md", "ko", "마지막 완료 블록", "다음 블록"),
+        ):
+            text = self.documents[ROOT / name]
+            recovery = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+            resume = recovery.split('<a id="resume"></a>', 1)[1]
+            resume = resume.split('<a id="deployment-recovery"></a>', 1)[0]
+            restore = text.split('<a id="resume-shell"></a>', 1)[1].split("</details>", 1)[0]
+            with self.subTest(language=language):
+                notes = text.split('<a id="how-to-follow"></a>', 1)[1].split("<details>", 1)[0]
+                for marker in (last, next_block):
+                    self.assertIn(marker, notes)
+                    self.assertIn(marker, text.split('<a id="stop-early"></a>', 1)[1])
+                self.assertIn(f"../{name}#python-setup", LINKS.findall(prose(resume)))
+                self.assertIn(f"../{name}#resume-shell", LINKS.findall(prose(resume)))
+                for marker in ("1-2", "5-2", "2-3", "3-1"):
+                    self.assertIn(marker, resume)
+                self.assertEqual(list(commands(resume)), [])
+                self.assertIn("#python-setup", LINKS.findall(prose(restore)))
+                self.assertIn(f"docs/troubleshooting.{language}.md#login", LINKS.findall(prose(restore)))
+                self.assertIn(
+                    "next unexecuted block" if language == "en" else "다음 미실행 블록",
+                    restore.lower(),
+                )
+
+    def test_deployment_recovery_reads_status_and_returns_to_the_right_version_check(self):
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            main = self.documents[ROOT / name]
+            recovery = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+            deployment = recovery.split('<a id="deployment-recovery"></a>', 1)[1]
+            deployment = deployment.split('<a id="symptoms"></a>', 1)[0]
+            with self.subTest(language=language):
+                shell_blocks = [body.strip() for kind, _, body in blocks(deployment) if kind == "bash"]
+                self.assertEqual(shell_blocks, ["azd ai agent show --output json"])
+                for marker in ("azure.yaml", "active", "V1", "V2", "Log stream"):
+                    self.assertIn(marker, deployment)
+                for anchor in ("agent-access", "candidate-smoke", "deploy-code", "candidate-deploy", "stop-early"):
+                    self.assertIn(f"../{name}#{anchor}", LINKS.findall(prose(deployment)))
+                for start, end in (("deploy-code", "agent-access"), ("candidate-deploy", "candidate-smoke")):
+                    block = main.split(f'<a id="{start}"></a>', 1)[1].split(f'<a id="{end}"></a>', 1)[0]
+                    self.assertIn(f"docs/troubleshooting.{language}.md#deployment-recovery", block)
+                smoke = main.split('<a id="candidate-smoke"></a>', 1)[1]
+                _, script, args = next(commands(smoke))
+                self.assertEqual((script, args), ("workshop", ["smoke"]))
+
+    def test_recovered_run_values_follow_each_collection_handoff_and_later_read(self):
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            main = self.documents[ROOT / name]
+            recovery = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+            values = recovery.split('<a id="run-values"></a>', 1)[1]
+            values = values.split('<a id="collection-retry-baseline"></a>', 1)[0]
+            with self.subTest(language=language):
+                for field in ("baseline-retry", "improved-retry", "holdout-retry", "manifest.json",
+                              "concurrency", "--concurrency 2", "--split dev", "--split holdout",
+                              "--baseline", "--candidate", "--holdout", "row_id"):
+                    self.assertIn(field, values)
+                self.assertEqual(list(commands(values)), [], "The checklist must not rerun an experiment.")
+                for anchor in ("baseline-evaluation", "candidate-evaluation", "holdout-evaluation",
+                               "candidate-comparison", "holdout-comparison", "candidate-traces", "holdout-traces"):
+                    preamble = main.split(f'<a id="{anchor}"></a>', 1)[1].split("```bash", 1)[0]
+                    self.assertIn(f"docs/troubleshooting.{language}.md#run-values", preamble, anchor)
+                for anchor in ("candidate-collection", "holdout-collection"):
+                    preamble = main.split(f'<a id="{anchor}"></a>', 1)[1].split("```bash", 1)[0]
+                    for field in ("manifest.json", "concurrency", "--concurrency 2"):
+                        self.assertIn(field, preamble, anchor)
+                collection = recovery.split('<a id="collection-retry-baseline"></a>', 1)[1]
+                collection = collection.split('<a id="evaluation-retry"></a>', 1)[0]
+                self.assertEqual(LINKS.findall(prose(collection)).count("#run-values"), 3)
+
+    def test_additional_review_keeps_all_original_provenance_and_requires_reconciliation(self):
+        experiments = importlib.import_module("experiments")
+        case = {"case_id": "D01", "query": "Fixture question", "ground_truth": "Fixed reference"}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            originals = {}
+            for source in ("mistaken", "intended"):
+                record = {**case, "lineage": {
+                    "language": "en", "source_row_id": f"baseline-{source}",
+                    "source_trace_id": f"trace-{source}", "review_reason": f"Review of {source}",
+                }}
+                path = root / f"regression-{source}.jsonl"
+                path.write_text(json.dumps(record) + "\n", encoding="utf-8")
+                originals[path] = path.read_bytes()
+            with patch.object(experiments, "workshop_language", return_value="en"):
+                reused, provenance = experiments.reviewed_cases([case], root)
+            self.assertEqual(reused, [case])
+            self.assertEqual(
+                {item["source_trace_id"] for item in provenance["D01"]},
+                {"trace-mistaken", "trace-intended"},
+                "Saving an intended review must not imply an old review was excluded.",
+            )
+            for path, contents in originals.items():
+                self.assertEqual(path.read_bytes(), contents)
+        for name, language in (("README.md", "en"), ("README.ko.md", "ko")):
+            main = self.documents[ROOT / name]
+            recovery = self.documents[ROOT / "docs" / f"troubleshooting.{language}.md"]
+            review = recovery.split('<a id="review-recovery"></a>', 1)[1]
+            review = review.split('<a id="v2-changed"></a>', 1)[0]
+            with self.subTest(language=language):
+                saved = main.split('<a id="read-review"></a>', 1)[1].split('<a id="lab-e"></a>', 1)[0]
+                self.assertIn(f"docs/troubleshooting.{language}.md#review-recovery", saved)
+                for field in ("regression-*.jsonl", "source_row_id", "source_trace_id", "review_reason", "language"):
+                    self.assertIn(field, review)
+                self.assertEqual(list(commands(review)), [])
+                self.assertIn(f"../{name}#read-review", LINKS.findall(prose(review)))
+
+    def test_report_records_actual_run_values_and_holdout_usage(self):
+        for name, recovery_heading, usage_heading in (
+            ("README.md", "Recovery history", "Holdout usage"),
+            ("README.ko.md", "복구 이력", "holdout 사용 이력"),
+        ):
+            text = self.documents[ROOT / name]
+            report = text.split('<a id="finish"></a>', 1)[1].split('<a id="levels"></a>', 1)[0]
+            template = next(body for kind, _, body in blocks(report) if kind == "text")
+            with self.subTest(document=name):
+                for field in ("V1 dev=", "V2 dev=", "V2 holdout=", "concurrency", recovery_heading, usage_heading):
+                    self.assertIn(field, template)
+                self.assertIn("manifest.json", report.split("```text", 1)[0])
+                self.assertIn("production_release_approved=false", template)
+
+    def test_cleanup_guidance_maps_ownership_and_uses_the_persisted_confirmation_plan(self):
+        cloud = importlib.import_module("cloud_setup")
+        state = {
+            "agent_owned": "fixture-agent",
+            "owned_models": [{"name": "fixture-sol", "id": "fixture-model", "model": "fixture", "version": "1"}],
+            "owned_search_paths": ["indexes/fixture-policies", "knowledgebases/fixture-kb"],
+            "owned_roles": ["fixture-role"],
+        }
+        with patch.object(cloud, "authenticate"), \
+                patch.object(cloud.RuntimeConfig, "from_env"), \
+                patch.object(cloud, "load_state", return_value=state), \
+                patch.object(cloud, "write_json") as write, \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            cloud.cleanup(confirm=False)
+        write.assert_not_called()
+        plan = json.loads(output.getvalue())
+        self.assertEqual(plan["agent"], state["agent_owned"])
+        self.assertEqual(plan["search_objects"], list(reversed(state["owned_search_paths"])))
+        self.assertEqual(plan["role_assignments"], state["owned_roles"])
+        self.assertEqual(plan["models"], state["owned_models"])
+        for name in ("README.md", "README.ko.md"):
+            text = self.documents[ROOT / name]
+            deletion = text.split('<a id="cleanup-plan"></a>', 1)[1].split("### 10-2.", 1)[0]
+            check = text.split('<a id="cleanup-check"></a>', 1)[1]
+            with self.subTest(document=name):
+                self.assertIn("src/agent/.foundry/local-state.json", deletion)
+                for target, owner in (("agent", "agent_owned"), ("search_objects", "owned_search_paths"),
+                                      ("role_assignments", "owned_roles"), ("models", "owned_models")):
+                    row = next(line for line in deletion.splitlines() if line.startswith(f"| `{target}` |"))
+                    self.assertIn(f"`{owner}`", row)
+                before_check = check.split("```bash", 1)[0]
+                self.assertIn("src/agent/.foundry/results/cleanup.json", before_check)
+                self.assertIn("`plan`", before_check)
+
+    def test_trace_review_records_observed_spans_without_equating_success_with_quality(self):
+        for name, retrieval_note, model_note in (
+            ("README.md", "Retrieval span=", "Model span="),
+            ("README.ko.md", "검색 span=", "모델 span="),
+        ):
+            text = self.documents[ROOT / name]
+            review = text.split('<a id="review-case"></a>', 1)[1].split('<a id="save-review"></a>', 1)[0]
+            with self.subTest(document=name):
+                for field in (retrieval_note, model_note, "foundry_iq.retrieve", "chat", "**Success**", "`show`"):
+                    self.assertIn(field, review)
 
     def test_class_handoff_identifies_the_runner_before_commands(self):
         for name, language, marker, runner in (
@@ -440,6 +607,9 @@ class DocumentationTests(unittest.TestCase):
                 for field in ("AZURE_EXPECTED_USERNAME", "MFA"):
                     self.assertIn(field, settings)
                     self.assertIn(field, handoff)
+                for field in ("2-1", "prepare-iq", "4-2", "grant-agent-access"):
+                    self.assertIn(field, settings)
+                self.assertIn(f"docs/instructor.{language}.md#access", settings)
 
     def test_existing_environment_starts_bash_before_prompting_for_input(self):
         for language in ("en", "ko"):

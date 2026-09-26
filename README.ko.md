@@ -18,22 +18,20 @@
 | 내 상황 | 시작할 곳 |
 |---|---|
 | 수업에서 강사에게 완성된 조별 `.env`를 받음 | [1단계](#start)부터 **1–10단계를 순서대로** 진행 |
-| **혼자 실습**하며 `.env`가 없음(본인 Azure 구독 사용) | [새 환경 준비](docs/environment.ko.md)의 시작 전 확인과 1–6단계를 마침 → 그 문서의 안내대로 [1-4 연결](#bind-project)부터 진행 |
-| 이전 실행을 이어감 | [같은 폴더에서 복구](docs/troubleshooting.ko.md#resume). 새로 시작하지 않음 |
+| `.env` 준비가 덜 됐고, 사용할 Foundry·Search·관측 서비스가 모두 있음 | 환경 소유자가 [기존 환경 준비](docs/instructor.ko.md#existing-foundation)를 마침 → 그 문서의 전달 안내를 따름 |
+| 필요한 기반 서비스가 없어 **새 전용 환경**이 필요함 | [새 환경 준비](docs/environment.ko.md)의 시작 전 확인과 1–6단계를 마침 → 그 문서의 안내대로 [1-4 연결](#bind-project)부터 진행 |
+| 이전 실행을 이어감 | [같은 폴더에서 재개](docs/troubleshooting.ko.md#resume). 정상 중단이면 다음 미실행 블록, 오류·상태 불명이면 해당 명령 복구 |
+
+**`.env`가 없다는 이유만으로 새 서비스를 만들지 않습니다.** 환경 준비 경로는 하나만 선택합니다. 혼자 실습하면 환경 소유자는 본인입니다.
 
 **필요한 도구:** Git, Python 3.13, Bash, curl, Azure CLI, azd(`microsoft.foundry` 확장), 편집기(VS Code 권장), 브라우저. Windows는 WSL을 씁니다([설치·확인](docs/instructor.ko.md#tools)). 도구 설치·Azure 환경 준비는 120분에 포함하지 않습니다.
 
 **비용:** 로컬 실행도 유료 Azure 모델과 Search를 호출합니다. 혼자 만든 환경은 10단계 뒤 [본인 전용 리소스 그룹 삭제](docs/environment.ko.md#final-cleanup)까지 해야 기반 서비스 비용이 멈춥니다.
 
 <details>
-<summary>다른 경로: 기존 Azure를 준비할 때 · Copilot에 맡길 때</summary>
+<summary>선택: Copilot CLI에 실행을 맡기고 싶다면</summary>
 
-| 내 상황 | 시작할 곳 |
-|---|---|
-| Azure 서비스는 있지만 설정·모델·권한 준비가 필요함 | 환경 소유자가 [기존 환경 준비](docs/instructor.ko.md#existing-foundation) 진행 |
-| Copilot CLI에 실행을 맡기고 싶음 | [선택 Copilot 가이드](docs/copilot.ko.md) 사용. 수동 실행과 동시에 진행하지 않음. 직접 실행에는 Copilot·Playwright가 필요 없음 |
-
-**환경 준비 경로는 하나만 선택합니다.**
+[Copilot 가이드](docs/copilot.ko.md)를 따르고, 수동 실행을 동시에 하지 않습니다. 직접 실행에는 Copilot·Playwright가 필요 없습니다.
 
 </details>
 
@@ -71,7 +69,7 @@
 - **한 블록씩:** **작업 위치 → 명령 실행 → 완료 확인 → 다음 블록** 순서입니다. 입력 프롬프트(다음 명령을 입력할 수 있는 줄)가 돌아올 때까지 기다립니다. 3단계 서버만 예외입니다. 입력 요청이 나오면 값만 붙여넣고 Enter를 누릅니다.
 - **멈출 때:** 오류가 나거나 **완료 확인**의 필수 값이 없으면 바로 아래 **다르면**을 따라 [그 명령만 복구](docs/troubleshooting.ko.md#resume)합니다. 실행이 끝난 뒤의 낮은 유효 점수는 **기록하고 계속**합니다. 좋은 점수를 얻으려고 다시 실행하지 않습니다. 오늘 끝내거나 나중에 이어 하려면 [중도 종료 안내](#stop-early)를 따릅니다.
 - **새 터미널:** Bash를 열고 메모한 경로로 [복원 블록](#resume-shell)을 실행합니다(3단계 터미널 B 블록에는 포함됨).
-- **기록:** 편집기에 텍스트 문서 **하나**를 열고, 각 단계에서 “메모합니다”라고 안내한 값만 적습니다. 9-3에서 **같은 문서**를 [보고서 양식](#finish)에 맞춰 저장합니다. 별도 메모 파일을 만들 필요는 없습니다.
+- **기록:** 편집기에 텍스트 문서 **하나**를 열고, 각 단계에서 요청한 값을 적습니다. 쉬기 전에는 `마지막 완료 블록 / 다음 블록 / 실습 폴더`도 저장합니다. 9-3에서 **같은 문서**를 [보고서 양식](#finish)에 맞춰 정리합니다.
 
 **`data/holdout.jsonl`은 8단계 전까지 열지 않습니다.** 용어는 사용하는 단계에서 설명합니다([전체 용어](docs/reference.ko.md#terms)). 접힌 참고·예시와 영상은 필요할 때만 봅니다.
 
@@ -81,7 +79,7 @@
 | 보이는 표현 | 이렇게 읽으세요 |
 |---|---|
 | 저장소 루트 / “이 폴더” | 명령을 실행할 코드의 맨 위 폴더. 수업은 1-1의 clone, 새 환경을 만들었다면 준비 문서 6-3의 `/workshop` 폴더 |
-| 코드 블록 | 블록 안의 명령만 그대로 복사합니다. 앞에 프롬프트 기호 `$`를 덧붙이지 않습니다 |
+| 코드 블록 | 블록 안의 명령만 복사합니다. 앞에 `$`를 덧붙이지 않습니다. 수집을 복구했다면 [실제 label·동시성](docs/troubleshooting.ko.md#run-values)을 먼저 적용합니다 |
 | `&&` | 앞 명령이 성공해야 다음 명령을 실행합니다 |
 | `$PWD`, `"$ROW_ID"` 같은 코드 | 터미널이 값으로 바꿉니다. `$`나 따옴표를 지우거나 직접 치환하지 않습니다 |
 | 출력 설명의 `<내 에이전트>` | 실제 출력에는 내 `LAB_AGENT_NAME` 값이 나옵니다. 이 문구를 입력하지 않습니다 |
@@ -138,6 +136,7 @@ pwd
 
 - **파일:** `.env`(`.env.txt`가 아님).
 - **로그인할 사람:** `AZURE_EXPECTED_USERNAME`이 실행자 **본인의 Azure 로그인 이름/이메일**이어야 합니다. `.env`는 설정표이지 계정·암호나 접근 권한이 아닙니다. 강사가 이 계정의 접근을 준비하고, 실행자가 자기 로그인·MFA를 완료합니다.
+- **역할 부여 지원:** 직접 역할을 부여할 권한이 없다면 강사와 **2-1 `prepare-iq`·4-2 `grant-agent-access`의 지원 담당자·가능 시간**을 정합니다([권한 확인](docs/instructor.ko.md#access)). 관리자는 자기 세션에서 필요한 할당만 수행하며, 실행자는 본인 계정·폴더를 유지합니다.
 - **내 값:** `LAB_LANGUAGE=ko`, `LAB_PROMPT_VERSION=v1`, 그리고 조별로 겹치지 않는 `LAB_PREFIX`·`LAB_AGENT_NAME`.
 - **강사 값:** `MODEL_*_DEPLOYMENT`와 `LAB_AUX_DEPLOYMENT`에 강사가 준비한 배포 이름.
 - **금지:** 빈 값, `<...>` 표시, 암호, key, token.
@@ -290,7 +289,7 @@ python scripts/workshop.py bind
 <details>
 <summary>나중에 새 터미널을 열었다면: 이 폴더의 실행 환경 복원</summary>
 
-새 터미널에서 `bash`를 실행한 뒤 아래 블록을 실행하고, 입력 요청에 메모한 이 폴더의 절대 경로를 붙여넣습니다. 저장된 로그인은 그대로 유효합니다. 3단계 터미널 B 블록에는 이미 포함돼 있습니다.
+새 터미널에서 `bash`를 실행한 뒤 아래 블록을 실행하고, 입력 요청에 메모한 이 폴더의 절대 경로를 붙여넣습니다. 기존 로그인 캐시를 다시 사용합니다. 3단계 터미널 B 블록에는 이미 포함돼 있습니다. **가상환경 생성 전이라면** 복원 대신 기존 폴더에서 메모한 다음 작업을 진행합니다. 1-1을 마쳤다면 [1-2](#python-setup)입니다.
 
 ```bash
 read -r -p "실습 폴더의 절대 경로: " WORKSHOP_DIR &&
@@ -302,6 +301,8 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 **완료 확인:** 프롬프트에 `(.venv)`가 표시되고 오류가 없습니다. `az account set`은 쓰지 않으며, 실행을 시작한 뒤에는 `LAB_LANGUAGE`를 바꾸지 않습니다.
 
 **다르면:** `No such file or directory`이면 `/`로 시작하는 전체 경로를 따옴표 없이 다시 붙여넣습니다(`~`는 쓰지 않음). 경로를 잊었다면 실습 폴더를 연 VS Code 창에서 **Terminal → New Terminal**을 열고 `pwd`로 확인합니다.
+
+**복원 뒤:** 메모한 다음 미실행 블록으로 돌아갑니다. 아래 “다음: 2단계”는 처음 1단계를 마친 사람의 경로입니다. 로그인 만료 오류가 실제로 나면 [로그인 복구](docs/troubleshooting.ko.md#login)를 따릅니다.
 
 </details>
 
@@ -445,6 +446,8 @@ python scripts/workshop.py smoke --local
 
 **목표:** 같은 코드가 Azure에서 번호가 붙은 에이전트 버전으로 답합니다. 로컬 Docker는 필요 없습니다.
 
+<a id="deploy-code"></a>
+
 ### 4-1. 코드 배포
 
 **터미널 A:** 보통 1–3분 걸리며, `Polling agent status (1/30)`처럼 상태 줄이 이어지는 것은 정상입니다.
@@ -455,7 +458,7 @@ azd deploy --no-prompt
 
 **완료 확인:** `SUCCESS: Your application was deployed ...`가 나오고 입력 프롬프트가 돌아옵니다. 그 앞뒤의 `Next:` 제안 명령과 `Update available` 안내는 실행하지 않습니다.
 
-**다르면:** 오류 출력을 보존하고 [실패한 명령만 복구](docs/troubleshooting.ko.md#resume)합니다.
+**다르면:** 오류 출력을 보존하고 [배포 자체 실패·상태 확인](docs/troubleshooting.ko.md#deployment-recovery)을 따릅니다. 성공 여부를 모른 채 재배포하거나 4-2로 넘어가지 않습니다.
 
 <a id="agent-access"></a>
 
@@ -517,7 +520,7 @@ Playground에서 호출한 V1 답변입니다. 금액·판단은 맞지만 `cita
 
 <a id="evaluation-runs"></a>
 
-**평가에서 쓸 이름은 아래 세 개로 고정합니다.** 같은 에이전트(`LAB_AGENT_NAME`)가 질문을 세 후보 모델에 보내 각각 답변 하나씩 받습니다. `model_key`의 `sol`·`luna`·`astra`는 각각 `gpt-6-sol`·`gpt-6-luna`·`gpt-6-astra`를 고르는 키이며, 에이전트 이름이나 Azure 배포 이름이 아닙니다.
+**아래 세 label은 첫 실행의 기본값입니다.** 수집을 복구했다면 [실제 label·동시성 메모](docs/troubleshooting.ko.md#run-values)를 이후 명령·경로·출력 설명에 적용합니다. 같은 에이전트(`LAB_AGENT_NAME`)가 질문을 세 후보 모델에 보내 각각 답변 하나씩 받습니다. `model_key`의 `sol`·`luna`·`astra`는 각각 `gpt-6-sol`·`gpt-6-luna`·`gpt-6-astra`를 고르는 키이며, 에이전트 이름이나 Azure 배포 이름이 아닙니다.
 
 **V1·V2는 모델이 아니라 지침(prompt)의 버전**, **split은 질문 묶음**, **label은 결과 폴더 이름**입니다. `dev`는 개선에 쓰고, `holdout`은 V2를 고정한 뒤 마지막에만 여는 새 질문입니다.
 
@@ -568,7 +571,7 @@ python scripts/workshop.py collect --split dev --label baseline
 
 ### 5-3. 저장된 응답 평가
 
-**터미널 A:** Foundry가 채점하는 동안 1–3분쯤 출력이 없을 수 있습니다.
+**터미널 A:** 수집 복구에서 돌아왔다면 `--label` 뒤에 [실제 V1 label](docs/troubleshooting.ko.md#run-values)을 씁니다. Foundry가 채점하는 동안 1–3분쯤 출력이 없을 수 있습니다.
 
 ```bash
 python scripts/workshop.py evaluate --label baseline
@@ -685,13 +688,13 @@ python scripts/workshop.py show --label baseline --row-id "$ROW_ID"
 **이어서 포털에서 같은 요청의 기록을 확인합니다.** `row_id`는 응답 이름이고, `trace_id`는 포털에서 찾을 실행 기록 ID입니다.
 
 1. 왼쪽 **Agents** → 내 에이전트 → **Traces → Trace view**를 엽니다. 표 위 왼쪽 검색창에 전체 `trace_id`를 붙여넣고, 검색된 행의 **Trace ID** 링크를 누릅니다. 보이지 않으면 **Date range → 7D**로 넓힙니다.
-2. 열린 창의 **Graph view**에서 `foundry_iq.retrieve`(검색)와 `chat`으로 시작하는 상자(모델 호출)를 눌러 봅니다. 각 상자가 작업 하나의 기록인 **span**입니다. **Success**는 작업 실행 성공이며, 답변의 업무 검사 통과와는 다릅니다.
+2. 열린 창의 **Graph view**에서 `foundry_iq.retrieve`(검색)와 `chat`으로 시작하는 상자(모델 호출)를 열어 **이름과 실행 상태**를 확인합니다. 각 상자가 작업 하나의 기록인 **span**입니다. 메모에 `검색 span=이름/상태; 모델 span=이름/상태`를 덧붙입니다. 내부 JSON 전체를 해석할 필요는 없습니다. **Success**는 실행 성공일 뿐 답변 품질이나 원인을 증명하지 않으므로, 원인 설명은 앞서 `show`로 대조한 근거를 사용합니다.
 
 **그다음 한 줄로 메모합니다:** `row_id=...; trace_id=...; 관찰: ...; 근거: ...; 바꿀 점: ...`. `관찰`에는 무엇이 맞거나 틀렸는지, `근거`에는 위에서 대조한 필드·문서 ID, `바꿀 점`에는 필요한 지침을 적습니다. 통과한 사례라면 **V2에서도 유지할 동작**을 적습니다([통과 사례](docs/troubleshooting.ko.md#no-failures), [원인 구분 예시](#실제-예시-금액은-맞는데-왜-실패했나요)).
 
-**완료 확인:** 포털 창 위쪽 `ID:`가 내 `trace_id`와 같고, 메모에 `row_id=...; trace_id=...; 관찰: ...; 근거: ...; 바꿀 점(또는 유지할 동작): ...` 한 줄이 완성되어 있습니다.
+**완료 확인:** 포털 창 위쪽 `ID:`가 내 `trace_id`와 같고, 두 span의 이름·상태와 `row_id=...; trace_id=...; 관찰: ...; 근거: ...; 바꿀 점(또는 유지할 동작): ...` 메모가 있습니다.
 
-**다르면:** trace가 보이지 않으면 기간을 넓히고 전체 `trace_id`로 다시 찾습니다([포털 화면 차이](docs/troubleshooting.ko.md#portal-differs)). 파일은 수정하지 않습니다.
+**다르면:** trace가 보이지 않으면 기간을 넓히고 전체 `trace_id`로 다시 찾습니다([포털 화면 차이](docs/troubleshooting.ko.md#portal-differs)). 필요한 span이 없으면 확인 완료로 기록하지 말고 [trace 복구](docs/troubleshooting.ko.md#telemetry)를 따릅니다. 파일은 수정하지 않습니다.
 
 **예시 화면:** `foundry_iq.retrieve`와 `chat` span이 보이는 **Graph view**(내 ID·이름은 다름)
 
@@ -730,9 +733,9 @@ python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
 python -m json.tool --no-ensure-ascii "src/agent/.foundry/datasets/regression-$ROW_ID.jsonl"
 ```
 
-**완료 확인:** `lineage → source_row_id`와 `source_trace_id`가 검토한 행·trace와 같고, 맨 위 `ground_truth`가 6-2 `fixed_reference`의 `ground_truth`와 같습니다(모델 답변이 아님).
+**완료 확인:** `lineage → source_row_id`·`source_trace_id`·`review_reason`이 실제 검토한 행·trace·이유와 같고, 맨 위 `ground_truth`가 6-2 `fixed_reference`의 `ground_truth`와 같습니다(모델 답변이 아님).
 
-**다르면:** `No such file`이면 새 터미널이라 `ROW_ID`가 비었을 수 있으니 위 출력의 경로를 따옴표 안에 직접 붙여넣습니다. 검토하지 않은 행이 저장됐다면 파일을 고치거나 지우지 말고, 검토한 `row_id`로 위 저장 블록을 한 번 더 실행한 뒤 9-3에는 그 행을 보고합니다.
+**다르면:** `No such file`이면 새 터미널이라 `ROW_ID`가 비었을 수 있으니 위 출력의 경로를 따옴표 안에 직접 붙여넣습니다. 검토하지 않은 행이나 맞지 않는 이유가 저장됐다면 **V2 수집 전에 멈추고 [검토 기록 확인](docs/troubleshooting.ko.md#review-recovery)**을 따릅니다. 올바른 행을 추가 저장해도 오저장 기록은 제외되지 않습니다.
 
 <a id="실제-예시-금액은-맞는데-왜-실패했나요"></a>
 
@@ -782,6 +785,8 @@ python -m json.tool --no-ensure-ascii "src/agent/.foundry/datasets/regression-$R
 
 **다르면:** 직접 연결되는 지침이 없으면 `직접 대응하는 V2 지침 없음`으로 메모하고 진행합니다. 억지로 연결하거나 제공된 V2가 내 사례를 개선한다고 미리 단정하지 않습니다.
 
+<a id="candidate-deploy"></a>
+
 ### 7-2. V2 배포 후 새 버전 확인
 
 **터미널 A — V2 선택 후 배포:** 4-1처럼 1–3분 걸립니다.
@@ -793,7 +798,9 @@ azd deploy --no-prompt
 
 **완료 확인:** `Selected v2; ...`에 이어 `SUCCESS: Your application was deployed ...`가 나옵니다.
 
-**다르면:** 오류 출력을 보존하고 [실패한 명령만 복구](docs/troubleshooting.ko.md#resume)합니다.
+**다르면:** `Selected v2; ...`가 없으면 [설정 오류](docs/troubleshooting.ko.md#symptoms)를, 그 뒤 배포가 실패했다면 [배포 상태 확인](docs/troubleshooting.ko.md#deployment-recovery)을 따릅니다. 성공한 `set-prompt`까지 반복하지 않습니다.
+
+<a id="candidate-smoke"></a>
 
 **터미널 A — 새 버전 확인:** 출력된 `agent_version`을 메모에 `V2 버전: N`으로 적습니다.
 
@@ -805,7 +812,11 @@ python scripts/workshop.py smoke
 
 **다르면:** `Hosted prompt does not match` 오류가 나거나 `agent_version`이 4-3과 같으면 V2가 배포되지 않은 것입니다. `.env`에 `LAB_PROMPT_VERSION=v2`가 있는지 확인하고 위 V2 선택·배포 블록을 **한 번만** 다시 실행한 뒤 이 확인을 반복합니다. 그 밖의 호출 오류는 [해당 명령만 복구](docs/troubleshooting.ko.md#resume)합니다.
 
+<a id="candidate-collection"></a>
+
 ### 7-3. 같은 dev 수집·평가
+
+**수집 복구를 거쳤다면:** [실행값 메모](docs/troubleshooting.ko.md#run-values)의 실제 label을 사용합니다. 완료한 baseline의 `manifest.json`에서 `concurrency`가 `2`이면 아래 수집 명령 끝에 **`--concurrency 2`**를 붙입니다. V2 dev·holdout 모두 baseline과 같아야 합니다.
 
 **터미널 A — 수집:** 5-2처럼 준비 점검 JSON 뒤에 `01/18 ...` 줄이 늘어납니다(보통 1–3분).
 
@@ -819,7 +830,7 @@ python scripts/workshop.py collect --split dev --label improved
 
 <a id="candidate-evaluation"></a>
 
-**터미널 A — 평가:** 5-3처럼 1–3분쯤 출력이 없을 수 있습니다.
+**터미널 A — 평가:** 수집 복구에서 돌아왔다면 `--label` 뒤에 [실제 V2 dev label](docs/troubleshooting.ko.md#run-values)을 씁니다. 5-3처럼 1–3분쯤 출력이 없을 수 있습니다.
 
 ```bash
 python scripts/workshop.py evaluate --label improved
@@ -831,7 +842,7 @@ python scripts/workshop.py evaluate --label improved
 
 <a id="candidate-comparison"></a>
 
-**터미널 A — 비교 저장:**
+**터미널 A — 비교 저장:** 복구했다면 두 label을 [실행값 메모](docs/troubleshooting.ko.md#run-values)와 대조합니다. 이후 `summary`·`show`에서도 같은 값을 씁니다.
 
 ```bash
 python scripts/workshop.py compare --labels baseline improved
@@ -937,9 +948,11 @@ python scripts/workshop.py show --label improved --row-id "$V2_ROW_ID"
 - `set-prompt` 또는 `azd deploy` 실행
 - `.env` 또는 prompt 파일 수정
 
-**복구를 마쳤다면:** A의 원래 V2 버전 확인, 또는 B의 새 V2 dev 수집·평가·7-4 확인을 마친 뒤 추가 변경이 없으면 복구를 반복하지 않습니다. B에서는 새 버전을 메모의 V2 기준으로 삼습니다. 이미 holdout 기록이 있다면 복구 문서의 retry label을 쓰며, 8-2의 버전·해시 대조는 생략하지 않습니다.
+**복구를 마쳤다면:** **원래 V2 버전을 다시 확인했거나, 새 V2로 dev 수집·평가·7-4 확인을 마쳤고** 이후 변경이 없다면 복구를 반복하지 않습니다. 새 버전으로 진행했다면 그 번호를 메모의 V2 기준으로 삼습니다. 이미 holdout 기록이 있다면 복구 문서의 retry label을 쓰며, 8-2의 버전·해시 대조는 생략하지 않습니다.
 
 <a id="holdout-collection"></a>
+
+**수집 복구를 거쳤다면:** [실행값 메모](docs/troubleshooting.ko.md#run-values)의 실제 label을 사용합니다. 완료한 baseline의 `manifest.json`에서 `concurrency`가 `2`이면 아래 수집 명령 끝에 **`--concurrency 2`**를 붙입니다. `--split holdout`은 바꾸지 않습니다.
 
 **터미널 A:** 준비 점검 JSON 뒤에 `01/12 ...` 줄이 늘어납니다(보통 1–3분).
 
@@ -955,7 +968,7 @@ python scripts/workshop.py collect --split holdout --label holdout
 
 ### 8-2. Holdout 평가와 V2 고정 확인
 
-**터미널 A — 평가:** 1–3분쯤 출력이 없을 수 있습니다.
+**터미널 A — 평가:** 수집 복구에서 돌아왔다면 `--label` 뒤에 [실제 holdout label](docs/troubleshooting.ko.md#run-values)을 씁니다. 1–3분쯤 출력이 없을 수 있습니다.
 
 ```bash
 python scripts/workshop.py evaluate --label holdout
@@ -967,7 +980,7 @@ python scripts/workshop.py evaluate --label holdout
 
 <a id="holdout-comparison"></a>
 
-**터미널 A — 비교 저장:**
+**터미널 A — 비교 저장:** 복구했다면 세 label을 [실행값 메모](docs/troubleshooting.ko.md#run-values)와 대조합니다. 이후 출력 설명의 `baseline`·`improved`·`holdout`도 실제 label로 읽습니다.
 
 ```bash
 python scripts/workshop.py compare --labels baseline improved holdout
@@ -1035,7 +1048,7 @@ python scripts/workshop.py summary --labels holdout
 
 <a id="candidate-traces"></a>
 
-**터미널 A — V2 dev trace:**
+**터미널 A — V2 dev trace:** 복구했다면 `--label` 뒤에 [실제 V2 dev label](docs/troubleshooting.ko.md#run-values)을 씁니다.
 
 ```bash
 python scripts/workshop.py monitor --label improved
@@ -1047,7 +1060,7 @@ python scripts/workshop.py monitor --label improved
 
 <a id="holdout-traces"></a>
 
-**터미널 A — holdout trace:**
+**터미널 A — holdout trace:** 복구했다면 `--label` 뒤에 [실제 holdout label](docs/troubleshooting.ko.md#run-values)을 씁니다.
 
 ```bash
 python scripts/workshop.py monitor --label holdout
@@ -1057,7 +1070,7 @@ python scripts/workshop.py monitor --label holdout
 
 **다르면:** `Telemetry is incomplete`이면 2–3분 뒤 이 명령만 다시 실행하고, 계속되면 같은 label의 [모니터링 복구](docs/troubleshooting.ko.md#telemetry)를 따릅니다.
 
-**터미널 A — 전체 증거 검증:** 긴 비교 JSON 뒤에 검증 결과 JSON이 나옵니다.
+**터미널 A — 전체 증거 검증:** [실행값 메모](docs/troubleshooting.ko.md#run-values)와 세 label **값**을 대조합니다. 복구했다면 값만 바꾸고 `--baseline`·`--candidate`·`--holdout` 옵션 이름은 그대로 둡니다. 긴 비교 JSON 뒤에 검증 결과 JSON이 나옵니다.
 
 ```bash
 python scripts/workshop.py verify --baseline baseline --candidate improved --holdout holdout
@@ -1116,6 +1129,8 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
 
 **편집기 — 메모를 보고서로 저장:** 지금까지 메모한 **같은 문서**를 아래 양식(명령 아님)으로 정리합니다. VS Code의 **File → Save As**에서 실습 폴더의 `src/agent/.foundry/results/workshop-report.txt`로 저장합니다. `...`를 남기지 않고 빈 목록은 `none`으로 적습니다. `production_release_approved=false`는 바꾸지 않습니다.
 
+실제 label은 사용한 결과 폴더 이름이며, 동시성은 그 폴더의 `manifest.json` → `concurrency`에서 읽습니다. 복구하지 않았어도 이 값과 `복구 이력: none`을 적습니다.
+
 ```text
 1. 검토(6-2의 한 줄): ...
    연결한 V2 지침(7-1): ...
@@ -1126,6 +1141,10 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
    해석(업무 통과·judge 미통과·토큰·시간): ...
    improved 미통과: 업무=...; Foundry=...
 3. 판단(verified-evidence.json의 게이트):
+   실제 label: V1 dev=...; V2 dev=...; V2 holdout=...
+   수집 동시성(concurrency)=...
+   복구 이력(없으면 none): ...
+   holdout 사용 이력(최초 사용 또는 재사용과 그 사유): ...
    sol: dev=..., holdout=...
    luna: dev=..., holdout=...
    astra: dev=..., holdout=...
@@ -1135,9 +1154,9 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
    production_release_approved=false
 ```
 
-**그대로 보고할 것:** `false`인 게이트, Foundry 점수 미통과, 나빠진 값도 유효한 결과입니다. 게이트 통과는 운영 승인이 아닙니다.
+**그대로 보고할 것:** `false`인 게이트, Foundry 점수 미통과, 나빠진 값도 유효한 결과입니다. 게이트 통과는 운영 승인이 아닙니다. V2 변경 복구로 holdout을 재사용했다면 **새로운 미사용 검증이 아님**을 적습니다. 버전·해시 일치만으로 최초 사용이 증명되지는 않습니다.
 
-**완료 확인:** 보고서 파일을 저장했고, `...`가 남아 있지 않으며, 7-4의 표와 `production_release_approved=false`가 있습니다. 점수를 높이려고 재실행하지 않습니다.
+**완료 확인:** 보고서 파일을 저장했고, `...`가 남아 있지 않으며, 7-4의 표·실제 label·동시성·복구 및 holdout 사용 이력과 `production_release_approved=false`가 있습니다. 점수를 높이려고 재실행하지 않습니다.
 
 **다르면:** 게이트 값이 없으면 9-1로 돌아갑니다. 메모가 빠졌다면 **저장된** [검토 기록](#read-review)·[dev 요약](#compare-results)·[holdout 요약](#holdout-results)을 읽어 채웁니다. 검토·수집·평가를 다시 실행하지 않습니다.
 
@@ -1171,7 +1190,7 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
 
 | 선택 | 할 일 |
 |---|---|
-| 나중에 이어 하기 | 같은 폴더·설정·오류·완료한 단계를 보관하고 [실패한 단계부터 재개](docs/troubleshooting.ko.md#resume)합니다. **터미널을 닫아도 Azure 자원 비용은 계속될 수 있습니다.** |
+| 나중에 이어 하기 | 진행 중인 작업이 끝나면 같은 메모에 `마지막 완료 블록 / 다음 블록 / 실습 폴더`와 사용 중인 label을 저장합니다. 같은 폴더·설정·증거를 보존하고 [정상 중단 또는 오류에 맞게 재개](docs/troubleshooting.ko.md#resume)합니다. **터미널을 닫아도 Azure 자원 비용은 계속될 수 있습니다.** |
 | 이번 실행 끝내기 | 진행 중인 수집·배포·평가가 끝났는지 확인하고, 완료한 단계·오류·현재 증거만 기존 메모에 저장합니다. 미완료 단계의 결과를 만들지 말고 아래 [10-1 삭제 계획](#cleanup-plan)부터 진행합니다. |
 
 로컬 서버가 켜져 있다면 그 터미널에서 `Ctrl+C`로 종료합니다. 클라우드 작업 상태가 불명확하거나 배포·역할 부여 중 실패했다면, **생성된 객체가 소유권 계획에 모두 기록됐는지** 환경 소유자와 [정리 복구](docs/troubleshooting.ko.md#cleanup-recovery)에서 먼저 확인합니다. 기록 누락을 빈 계획으로 간주해 정리 완료로 보고하지 않습니다.
@@ -1198,6 +1217,15 @@ python scripts/workshop.py cleanup --dry-run
 
 **완료 확인:** 출력 JSON의 모든 대상이 이 폴더의 소유권 기록에 속합니다. 완료 경로에서는 `agent`가 내 `LAB_AGENT_NAME`이고 `search_objects`의 세 이름(`...-kb`, `...-source`, `...-policies`)에 모두 내 `LAB_PREFIX`가 들어 있습니다. **중도 종료는 실제 생성한 대상만 있어야 합니다.** 만들지 않은 에이전트의 `agent: null`이나 빈 목록은 정상이며, 생성한 대상이 계획에서 빠졌다면 삭제 전에 위 정리 복구로 확인합니다.
 
+**대조 방법:** 편집기에서 `src/agent/.foundry/local-state.json`을 읽고, 출력 계획과 아래를 대조합니다. 파일을 고쳐 맞추지 않습니다.
+
+| 계획 필드 | 소유권 기록 필드 |
+|---|---|
+| `agent` | `agent_owned`(미생성이면 둘 다 없음/`null`) |
+| `search_objects` | `owned_search_paths`의 같은 경로들(순서는 달라도 됨) |
+| `role_assignments` | `owned_roles`의 같은 전체 ID들 |
+| `models` | `owned_models`의 같은 이름·ID·모델·버전 |
+
 | 계획 필드 | 있어야 할 대상 |
 |---|---|
 | `agent`, `search_objects`, `role_assignments` | 내 `LAB_AGENT_NAME`, 내 `LAB_PREFIX` 지식 객체 3개, 이 폴더에서 만든 역할(긴 ID, 보통 2개). 공유 수업에서는 [공유 Search의 planner 역할](docs/instructor.ko.md#shared-search-access)이 목록에 없는지 소유자와 확인하며, 있으면 10-2 전에 멈춥니다. 본인 전용 개인 실습은 이 역할도 폴더 소유일 수 있습니다. |
@@ -1205,7 +1233,7 @@ python scripts/workshop.py cleanup --dry-run
 | `schedules`, `custom_evaluators`, `generated_datasets` | 레벨 2·3을 하지 않았다면 빈 목록. 했다면 이 폴더의 일정·평가기·생성 데이터셋만 포함 |
 | `preserved` | 기존 Foundry 프로젝트·Search·App Insights·평가 증거(삭제하지 않음) |
 
-기반 서비스와 보조 모델(planner/judge)은 보존합니다. `.env`에 모델 이름이 있다는 것만으로 소유권이 생기지는 않습니다.
+기반 서비스와 보조 모델(planner/judge)은 보존합니다. `.env`에 모델 이름이 있다는 것만으로 소유권이 생기지는 않습니다. **확인한 JSON 출력을 기존 메모에 복사합니다.** `--dry-run`은 계획 파일을 저장하지 않으며, 기록 대조는 위의 공유 의존성 확인을 대신하지 않습니다.
 
 **다르면:** 10-2를 실행하지 않고 [정리 복구](docs/troubleshooting.ko.md#cleanup-recovery)의 “소유권·대상이 다름” 행을 따릅니다. 아무것도 삭제하지 않습니다.
 
@@ -1224,6 +1252,8 @@ python scripts/workshop.py cleanup --confirm
 <a id="cleanup-check"></a>
 
 ### 10-3. 삭제 여부를 별도로 확인
+
+**대조할 계획:** 편집기에서 `src/agent/.foundry/results/cleanup.json`의 `plan`을 엽니다. 10-2가 실제 사용한 계획이며, 10-1에서 메모한 대상과 같아야 합니다. 아래 개수는 이 `plan`과 대조합니다. 원래 계획을 얻으려고 삭제나 dry-run을 반복하지 않습니다.
 
 **터미널 A:**
 

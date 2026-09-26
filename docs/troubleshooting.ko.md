@@ -1,13 +1,13 @@
-# 막혔을 때: 전체를 다시 하지 말고 실패한 단계만 복구하세요
+# 중단한 실습 이어가기: 완료한 작업은 반복하지 않습니다
 
 [참가자 가이드로 돌아가기](../README.ko.md) · [English](troubleshooting.en.md)
 
-**현재 폴더와 오류 출력을 유지하고, 실습 전체를 처음부터 반복하지 않습니다.**
-- **실패 단계:** [오프라인 테스트](#offline-tests) · [로그인](#login) · [검색](#retrieval) · [로컬 실행](#symptom-local) · [Hosted Agent](#symptom-hosted) · [calibration](#calibration) · [수집](#collection-retry) · [평가](#evaluation-retry) · [V2 변경](#v2-changed) · [정리](#cleanup-recovery).
+**오류 없이 쉬었다면 [다음 미실행 블록부터 재개](#resume)합니다. 오류가 났다면 현재 폴더와 오류 출력을 보존하고 아래에서 고릅니다.**
+- **실패 단계:** [오프라인 테스트](#offline-tests) · [로그인](#login) · [검색](#retrieval) · [로컬 실행](#symptom-local) · [배포](#deployment-recovery) · [Hosted Agent](#symptom-hosted) · [calibration](#calibration) · [수집](#collection-retry) · [평가](#evaluation-retry) · [검토 기록](#review-recovery) · [V2 변경](#v2-changed) · [정리](#cleanup-recovery).
 - **증거·선택 단계:** [baseline 전부 통과](#no-failures) · [trace](#telemetry) · [포털](#portal-differs) · [완료 판단](#symptom-completion) · [레벨 2·3](#levels).
 - **확실하지 않으면:** [증상별 확인](#symptoms)을 먼저 봅니다. label이나 상태 파일이 있으면 [저장 상태로 이어가기](#resume), 환경 준비 실패라면 [환경 소유자 이어가기](#setup-resume)를 봅니다(환경 소유자만).
 - 참가자 복구 명령은 기존 실습 폴더의 저장소 루트에서 실행합니다. 환경 소유자 복구는 실행 폴더를 따로 안내합니다.
-- 가상환경을 활성화하고 [README 터미널 복원](../README.ko.md#resume-shell)으로 `AZURE_CONFIG_DIR`를 복원합니다.
+- 가상환경을 이미 만든 경우 [README 터미널 복원](../README.ko.md#resume-shell)으로 가상환경과 `AZURE_CONFIG_DIR`를 복원합니다.
 
 **명령 오류와 낮은 평가 점수부터 구분하세요.**
 
@@ -23,12 +23,21 @@
 
 <a id="resume"></a>
 
-## 실패한 명령부터 이어가기
+## 멈춘 지점부터 이어가기
 
-**코드 블록 전체를 반복하지 말고, 아래 표에서 멈춘 위치만 고릅니다.** 예를 들어 `collect`는 성공했고 `evaluate`만 멈췄다면 `collect`부터 다시 실행하지 않습니다. 수집을 새로 해야 할 때만 새 label을 쓰며, 평가·trace 복구는 기존 label을 유지합니다.
+**먼저 진행 중인 작업이 없는지 확인합니다.** 원래 터미널·작업이 아직 실행 중이면 기다리며 두 번째 명령을 시작하지 않습니다.
+
+| 중단한 상태 | 지금 할 일 |
+|---|---|
+| 가상환경이 있고, 오류 없이 쉬었으며 마지막 완료 블록을 메모함 | 기존 폴더에서 [터미널 복원](../README.ko.md#resume-shell) 후 메모한 **다음 블록**부터 진행. 예: 2-3 완료 → 3-1 시작. 완료한 배포·수집·평가를 반복하지 않음 |
+| 가상환경 생성 전(1-2 이전)에 중단함 | Bash에서 기존 폴더로 돌아와 마지막 완료 블록의 다음 작업을 진행. `source .../activate`는 아직 실행하지 않음. 1-1을 마쳤다면 [1-2](../README.ko.md#python-setup)로 이동 |
+| 오류가 있었거나 완료 여부를 모름 | 아래 실패 단계 표와 저장 상태로 확인. 포털 확인·사람의 검토 완료는 파일 존재만으로 판단하지 않음 |
+
+**오류 복구에서는 코드 블록 전체가 아니라 실패한 명령만 반복합니다.** 예를 들어 `collect`는 성공했고 `evaluate`만 멈췄다면 `collect`부터 다시 실행하지 않습니다. 수집을 새로 해야 할 때만 새 label을 쓰며, 평가·trace 복구는 기존 label을 유지합니다.
 
 | 멈춘 위치 / 메시지 | 이어갈 곳 |
 |---|---|
+| `azd deploy` 자체 실패 또는 배포 성공 여부 불명확 | [배포 상태 확인](#deployment-recovery). 준비 중인 버전이나 이전 버전을 새 성공으로 간주하지 않음 |
 | 배포는 성공했지만 뒤의 `grant-agent-access` 또는 `smoke` 실패 | 원인을 해결하고 **실패한 명령만** 재실행. 재배포해 에이전트 버전을 하나 더 만들지 않음 |
 | `collect` 중 오류, `manifest.json`의 `status: failed` | [응답 수집 복구](#collection-retry). 실패한 결과는 보존하고 새 label로 전체 수집 |
 | `Evaluation is still running` | [평가 복구](#evaluation-retry). 같은 label의 `evaluate`만 다시 실행 |
@@ -36,11 +45,11 @@
 | `Telemetry is incomplete` | 수집 지연·권한과 [기본 2시간 조회 범위](#telemetry)를 확인한 뒤 같은 label의 `monitor`만 재실행 |
 | `Hosted prompt does not match`(holdout 수집) 또는 8-2에서 improved·holdout 버전 불일치 | [7-2 뒤 V2가 바뀌었다면](#v2-changed). 결과를 지우거나 고치지 않음 |
 | `Label ... already exists` | 상태 파일을 확인합니다. `completed`면 다음 미완료 평가·trace 단계로 갑니다. `failed`면 수집을 복구합니다. `running`이면 원래 프로세스가 실행 중인지 확인하고, 종료 확인 뒤에만 수집을 복구합니다. |
-| `feedback`에서 이미 같은 회귀 기록이 존재 | 기존 행 ID·검토 이유·언어·출처 trace가 이번에 검토한 내용과 일치할 때만 다음 단계 진행. 다르면 중단하고 확인하며 파일을 지워 우회하지 않음 |
+| `feedback`에서 이미 같은 회귀 기록이 존재하거나 다른 행을 저장함 | [검토 기록 확인](#review-recovery). 행 ID·검토 이유·언어·출처 trace가 실제 검토와 일치할 때만 진행. 다른 행 추가 저장은 오저장을 제외하지 않음 |
 | 정리 또는 정리 확인 중단 | [정리 복구](#cleanup-recovery). 확인 실패를 해결하려고 성공한 삭제를 반복하지 않음 |
 | 레벨 2·3 명령 중단 | [레벨 2·3 복구](#levels). 5–9단계 결과는 바뀌지 않음 |
 
-**터미널을 다시 열었나요?** 새 clone이 아니라 **기존 실습 폴더**를 열고 [터미널 복원 블록](../README.ko.md#resume-shell)을 따릅니다. 빈 터미널이라는 이유로 `init`·`bind`·배포·수집을 반복하지 않습니다.
+**저장 파일로 확인할 때:** 아래 표는 **5-2 수집을 시작한 label**에만 적용합니다. 아직 수집 전이면 이 파일들이 없는 것이 정상입니다. 생성·배포 완료 여부가 불명확하고 남은 출력도 없다면 환경 소유자와 상태를 확인하기 전까지 재실행하지 않습니다. 빈 터미널이라는 이유로 새 clone·`init`·`bind`를 실행하지 않습니다.
 
 **`src/agent/.foundry/results/<label>/`**에서 아래 파일을 수정하지 말고 읽습니다.
 
@@ -58,6 +67,31 @@
 **다르면:** 현재 폴더와 오류 출력을 보존합니다. 오류 메시지로 [증상별 확인](#symptoms)을 찾고, 수업 중이면 단계·label·상태 파일을 강사에게 보여 줍니다.
 
 **다음:** 위의 맞는 섹션을 열거나, 아직 단계가 불명확하면 [증상별 확인](#symptoms)을 사용합니다.
+
+<a id="deployment-recovery"></a>
+
+## 배포 명령 자체가 실패했다면
+
+**4-1 또는 7-2의 `azd deploy`가 실패한 경우입니다.** 단계·마지막 오류·출력에 표시된 에이전트 이름과 버전을 기존 메모에 남깁니다. 원래 명령이 실행 중이면 끝날 때까지 기다립니다. 성공한 배포 뒤 `grant-agent-access`·`smoke`만 실패했다면 배포를 반복하지 말고 [그 명령만 복구](#resume)합니다.
+
+**터미널 — 같은 폴더에서 상태만 조회:**
+
+```bash
+azd ai agent show --output json
+```
+
+이 명령은 `azure.yaml`과 현재 azd 환경의 이름·버전을 사용합니다. **조회된 버전이 실패한 배포의 대상 버전인지 먼저 대조합니다.** 이전 V1이 `active`인 것은 새 V2 배포 성공이 아닙니다.
+
+| 확인한 상태 | 다음 행동 |
+|---|---|
+| 대상 버전이 아직 준비 중 | 기다린 뒤 위 상태 조회만 반복. 새 배포를 겹쳐 실행하지 않음 |
+| 대상 버전이 `active`로 확인됨 | 첫 배포였다면 [4-2 접근 권한](../README.ko.md#agent-access), V2 배포였다면 [7-2 새 버전 확인](../README.ko.md#candidate-smoke)으로 이동. 응답 확인은 생략하지 않음 |
+| 대상 배포의 실패 또는 미생성을 확인했고 원인을 해결함 | 첫 배포는 [4-1](../README.ko.md#deploy-code), V2는 [7-2](../README.ko.md#candidate-deploy)의 `azd deploy --no-prompt`만 한 번 재시도. 이미 성공한 `set-prompt`는 반복하지 않음 |
+| 이전 버전만 나옴, 조회 오류, 대상 버전을 모름 | 환경 소유자가 출력·대상 버전·포털의 **Agents → 내 에이전트 → Playground → Log stream**을 대조. 버전이 보인다는 이유만으로 성공 처리하거나 재배포하지 않음 |
+
+**완료 확인:** 실패했던 대상 버전과 현재 상태를 확인했고, 위 표의 다음 행동 하나가 정해졌습니다.
+
+**다르면:** 재시도도 실패하거나 상태를 확인할 수 없다면 멈추고 오류를 보존합니다. [중도 종료 안내](../README.ko.md#stop-early)를 따르며, 정리 전에 생성된 객체와 소유권 기록을 소유자와 대조합니다.
 
 <a id="symptoms"></a>
 
@@ -84,6 +118,7 @@
 | 분류 | 증상 | 원인 또는 확인 | 조치 / 정확한 복귀 지점 |
 |---|---|---|---|
 | <a id="symptom-local"></a>로컬 실행 | 로컬 8088 연결 실패 | 터미널 A가 준비되지 않았거나 포트를 다른 프로세스가 씁니다. | `Connection refused`이면 A의 `Running on ...:8088`을 기다린 뒤 B의 요청 블록만 반복합니다. `Address already in use`이면 내가 켜 둔 다른 실습 서버만 그 창에서 `Ctrl+C`로 종료하고 [3-1](../README.ko.md#local)을 재개합니다. 모르는 프로세스는 종료하지 않습니다. |
+| 배포 | `azd deploy` 오류·상태 불명확 | 이전 버전과 이번 대상 버전을 구분해야 합니다. | [배포 상태 확인](#deployment-recovery) 후 해당 미완료 블록으로만 복귀합니다. |
 | 검색 | `prepare-iq`에서 역할 부여 거부 | Search identity에 planner 접근 권한이 필요합니다. | [권한](instructor.ko.md#access)을 확인한 뒤 실패한 [2-1 정책 등록](../README.ko.md#knowledge-registration)을 다시 실행합니다. 아직 2-2 검색으로 넘어가지 않습니다. |
 | 검색 | `retrieve`가 끝났지만 문서가 없거나 `TRAVEL-2026`이 없음 | 등록 성공과 검색 성공은 별도입니다. | [검색 복구](#retrieval) 후 [정책 검색](../README.ko.md#policy-retrieval)으로 돌아갑니다. |
 | <a id="symptom-hosted"></a>Hosted Agent | Search 403 / 역할 부여 실패 | 사용자 권한과 Hosted Agent 인스턴스 ID 권한은 다릅니다. | 두 ID를 확인한 뒤 [에이전트 접근 권한](../README.ko.md#agent-access)으로 돌아갑니다. |
@@ -338,13 +373,24 @@ python scripts/workshop.py monitor --label baseline --hours 24
 | baseline 완료 뒤 V2 dev 실패 | [V2 dev 수집 실패](#collection-retry-improved) |
 | holdout 실패 | [Holdout 수집 실패](#collection-retry-holdout) |
 
-| 실패한 단계 | 예시 retry label | 이후 적용할 곳 |
-|---|---|---|
-| 첫 V1 baseline | `baseline-retry` | 검토 기록, `verify --baseline baseline-retry` |
-| V2 dev 후보 | `improved-retry` | 비교와 `verify --candidate improved-retry` |
-| 고정 V2 holdout | `holdout-retry` | 비교와 `verify --holdout holdout-retry` |
+<a id="run-values"></a>
 
-첫 표에서 실패한 단계를 고르고, 해당 하위 절의 명령만 실행한 뒤, 두 번째 표의 치환을 적용합니다.
+### 복구 뒤 사용할 실행값
+
+**복구 수집이 성공하면 본문으로 돌아가기 전에 기존 메모의 아래 값만 갱신합니다.** 복구하지 않은 label은 원래 값을 유지합니다. 아직 수집하지 않은 단계는 기본값을 적고, 나중에 복구할 때만 바꿉니다.
+
+| 메모할 값 | 최초 기본값 | 복구 후 사용할 값과 위치 |
+|---|---|---|
+| V1 dev label | `baseline` | V1 복구 성공 시 `baseline-retry`. 이후 `feedback`·`compare`·`summary`·`monitor`와 `verify --baseline`의 값 |
+| V2 dev label | `improved` | V2 복구 성공 시 `improved-retry`. 이후 비교·조회·trace와 `verify --candidate`의 값 |
+| V2 holdout label | `holdout` | holdout 복구 성공 시 `holdout-retry`. 이후 비교·조회·trace와 `verify --holdout`의 값 |
+| 수집 동시성 `concurrency` | `4` | **완료한 V1 baseline**의 `src/agent/.foundry/results/<실제 label>/manifest.json`에서 읽음. `2`이면 이후 V2 dev·holdout `collect`에도 `--concurrency 2` 적용 |
+
+**바꿀 것은 값이지 옵션 이름이 아닙니다.** `--label`·`--labels`·`--baseline`·`--candidate`·`--holdout` 뒤의 label 값, 읽을 결과 경로와 출력 설명에 실제 이름을 적용합니다. **`--split dev`·`--split holdout`은 바꾸지 않습니다.** `row_id`는 그 label의 실제 출력에서 복사합니다. 기존 폴더·파일·row ID·manifest를 이름 변경하거나 편집하지 않습니다.
+
+예를 들어 **V2 dev만** 복구했다면 최종 검증은 `python scripts/workshop.py verify --baseline baseline --candidate improved-retry --holdout holdout`입니다. 다른 단계도 복구했다면 그 값도 메모대로 바꿉니다. 이 메모는 [9-3 보고서](../README.ko.md#finish)에도 옮깁니다.
+
+**복구를 아직 실행하지 않았다면:** 위 첫 표에서 실패한 단계 하나를 고르고, 해당 하위 절의 명령만 실행합니다. 이 절은 재수집 허용 조건을 바꾸지 않습니다.
 
 <a id="collection-retry-baseline"></a>
 
@@ -360,12 +406,7 @@ python scripts/workshop.py collect --split dev --label baseline-retry --concurre
 
 **다르면:** 새 label을 또 만들지 말고 오류와 원래 실패 기록을 보존합니다.
 
-**다음:** [5-3의 평가 명령](../README.ko.md#baseline-evaluation)부터 메인 가이드를 이어갑니다. 아래 두 조건을 메모해 두고, 완료한 수집은 반복하지 않습니다.
-
-| 이후 위치 | 바꿀 내용 |
-|---|---|
-| `baseline`을 쓰는 이후 명령·파일 경로·예시 row ID | **`baseline-retry`**를 사용합니다. `feedback`, `compare`, `summary`, `verify --baseline`도 포함합니다. 예: `baseline-retry-sol-D01`. |
-| V2 dev·holdout `collect` 명령 | **`--concurrency 2`**를 추가합니다. |
+**다음:** [실행값 메모](#run-values)를 `V1 dev=baseline-retry`, `concurrency=2`로 갱신하고 [5-3의 평가 명령](../README.ko.md#baseline-evaluation)부터 이어갑니다. 이후 V2 dev·holdout 수집에도 `--concurrency 2`를 적용하며, 예시 `baseline-sol-D01`은 `baseline-retry-sol-D01`로 읽습니다. 완료한 수집은 반복하지 않습니다.
 
 <a id="collection-retry-improved"></a>
 
@@ -383,7 +424,7 @@ python scripts/workshop.py collect --split dev --label improved-retry --concurre
 
 **다르면:** 멈추고 오류를 보존합니다. 완료된 baseline·검토 기록은 바꾸지 않습니다.
 
-**다음:** [7단계의 평가·비교](../README.ko.md#candidate-evaluation)부터 `improved`를 `improved-retry`로 바꾸어 이어갑니다.
+**다음:** [실행값 메모](#run-values)의 V2 dev label을 `improved-retry`로 갱신하고 [7단계의 평가·비교](../README.ko.md#candidate-evaluation)부터 이어갑니다. 이후 명령·경로에서도 이 값을 유지합니다.
 
 <a id="collection-retry-holdout"></a>
 
@@ -399,7 +440,7 @@ python scripts/workshop.py collect --split holdout --label holdout-retry --concu
 
 **다르면:** 멈추고 오류를 보존합니다. 고정한 지침은 바꾸지 않습니다.
 
-**다음:** [8단계의 평가](../README.ko.md#holdout-evaluation)부터 `holdout`을 `holdout-retry`로 바꾸어 이어갑니다.
+**다음:** [실행값 메모](#run-values)의 V2 holdout label을 `holdout-retry`로 갱신하고 [8단계의 평가](../README.ko.md#holdout-evaluation)부터 이어갑니다. `--split holdout`은 그대로입니다.
 
 <a id="evaluation-retry"></a>
 
@@ -459,6 +500,22 @@ holdout을 열어 실패를 찾거나 개선 재료로 사용하는 것은 금�
 **다르면:** 선택한 baseline 응답과 고정 dev 정답으로 돌아갑니다. holdout을 쓰거나 실패를 만들지 않습니다.
 
 **다음:** [V2 배포와 후보 평가](../README.ko.md#lab-e)를 계속합니다.
+
+<a id="review-recovery"></a>
+
+## 검토 기록이 이미 있거나 잘못 저장됐다면
+
+**V2 수집 전에 확인합니다.** `src/agent/.foundry/datasets/regression-*.jsonl`은 다음 dev 수집에서 모두 읽습니다. 올바른 행을 추가 저장하거나 보고할 행을 바꾸는 것만으로 오저장 기록이 제외되지 않습니다.
+
+1. **편집기:** 기존 파일의 `lineage`에서 `source_row_id`·`source_trace_id`·`review_reason`·`language`를 읽습니다. [6-2](../README.ko.md#review-case)에서 그 행의 저장된 응답·고정 정답·trace를 실제로 대조합니다.
+2. 이미 실제 검토와 일치하는 기록이면 그대로 둡니다. 실수로 다른 행을 저장했지만 이제 그 행도 검토했고 저장된 이유가 근거와 일치한다면, 기존 메모에 **오저장 경위와 나중에 추가 검토한 사실**을 적습니다.
+3. 이유·출처·정답이 맞지 않거나, 오저장 상태로 V2 수집까지 했다면 멈춥니다. 파일과 오류를 보존하고 행 ID·trace ID·오저장 사유를 강사 또는 저장소 담당자에게 전달합니다. 파일 삭제·편집·추가 저장만으로 복구 완료를 만들지 않습니다.
+
+**완료 확인:** 남아 있는 모든 검토 기록이 실제 검토한 행·근거와 일치하고, 오저장이 있었다면 경위가 메모에 남아 있습니다.
+
+**다르면:** V2 수집을 시작하지 않습니다. 확인할 수 없는 검토를 정상 결과로 보고하거나 원래 증거를 수정하지 않습니다.
+
+**다음:** [6-3의 저장된 기록 확인](../README.ko.md#read-review)만 마친 뒤 7단계로 갑니다. 기존 행의 `feedback`은 반복하지 않습니다.
 
 <a id="v2-changed"></a>
 

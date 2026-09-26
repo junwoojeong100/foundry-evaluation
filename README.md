@@ -18,22 +18,20 @@
 | Your situation | Start here |
 |---|---|
 | Your instructor gave you a complete team `.env` (class) | [Step 1](#start), then **steps 1–10 in order** |
-| **Self-study** with no `.env` (your own Azure subscription) | Finish the prerequisites and steps 1–6 in [Create a new environment](docs/environment.en.md) → follow its handoff to [1-4 binding](#bind-project) |
-| Continuing an earlier attempt | [Resume in the same folder](docs/troubleshooting.en.md#resume); do not start again |
+| Your `.env` is not ready, and the Foundry, Search, and observability services you will use all exist | The environment owner completes [existing-environment preparation](docs/instructor.en.md#existing-foundation) → follows its handoff |
+| A required foundation service is missing and you need a **new dedicated environment** | Finish the prerequisites and steps 1–6 in [Create a new environment](docs/environment.en.md) → follow its handoff to [1-4 binding](#bind-project) |
+| Continuing an earlier attempt | [Resume in the same folder](docs/troubleshooting.en.md#resume): next unexecuted block after a normal pause; command recovery after an error or uncertain outcome |
+
+**A missing `.env` does not mean you need new services.** Choose one preparation path. In self-study, you are the environment owner.
 
 **Tools required:** Git, Python 3.13, Bash, curl, Azure CLI, azd with the `microsoft.foundry` extension, an editor (VS Code recommended), and a browser; on Windows, use WSL ([install and check](docs/instructor.en.md#tools)). Tool installation and Azure preparation are outside the 120 minutes.
 
 **Cost:** local execution still calls paid Azure models and Search. For an environment you create yourself, [delete your dedicated resource group](docs/environment.en.md#final-cleanup) after step 10 to stop foundation costs.
 
 <details>
-<summary>Other paths: preparing existing Azure · delegating to Copilot</summary>
+<summary>Optional: delegate execution to Copilot CLI</summary>
 
-| Your situation | Start here |
-|---|---|
-| Azure services exist, but you need settings, models, or access | As the environment owner, use [existing-environment preparation](docs/instructor.en.md#existing-foundation) |
-| You want Copilot CLI to execute the steps | Use the [optional Copilot guide](docs/copilot.en.md); do not also execute the steps manually. Manual execution needs neither Copilot nor Playwright. |
-
-**Choose one preparation path, not both.**
+Follow the [Copilot guide](docs/copilot.en.md); do not also execute the steps manually. Manual execution needs neither Copilot nor Playwright.
 
 </details>
 
@@ -71,7 +69,7 @@ Question → Python agent → Foundry IQ policy retrieval → candidate model �
 - **One block at a time:** follow **location → run the command → checkpoint → next block**. Wait for the input prompt—the line where you can type another command—to return, except for step 3's server. When asked for input, paste only the requested value and press Enter.
 - **When to stop:** for an error or a missing required **Checkpoint** value, follow the **If not** below it to [recover only that command](docs/troubleshooting.en.md#resume). Once execution finishes, **record and continue** for low valid scores. Never rerun for a better score. To finish early or continue another day, use [the early-stop path](#stop-early).
 - **New terminal later:** start Bash and run the [restore block](#resume-shell) with the path you noted; step 3's Terminal B block already includes it.
-- **Record:** open **one** text document in your editor and record values only where a step asks you to. In 9-3, organize **that same document** using the [report template](#finish) and save it; no separate notes file is needed.
+- **Record:** open **one** text document in your editor and record the values each step requests. Before a break, also save `Last completed block / Next block / Workshop folder`. In 9-3, organize **that same document** using the [report template](#finish).
 
 **Do not open `data/en/holdout.jsonl` before step 8.** Terms are explained where you use them ([full glossary](docs/reference.en.md#terms)). Open collapsed references, examples, or the video only when needed.
 
@@ -81,7 +79,7 @@ Question → Python agent → Foundry IQ policy retrieval → candidate model �
 | What you see | How to read it |
 |---|---|
 | Repository root / "this folder" | The top of the code folder where commands run: the 1-1 clone in a class, or the `/workshop` folder from setup step 6-3 for a new environment |
-| Code block | Copy the commands inside it exactly. Do not add a leading prompt symbol `$` |
+| Code block | Copy only the commands inside it, without a leading `$`. After collection recovery, first apply your [actual labels and concurrency](docs/troubleshooting.en.md#run-values) |
 | `&&` | Run the next command only if the previous one succeeds |
 | `$PWD`, `"$ROW_ID"`, and similar code | The terminal substitutes the value. Do not remove `$` or quotes, or replace the variables yourself |
 | `<your agent>` in an output description | Your actual `LAB_AGENT_NAME` value appears in the output. Do not type this placeholder |
@@ -136,6 +134,7 @@ pwd
 
 - **File:** `.env`, not `.env.txt`.
 - **Who signs in:** `AZURE_EXPECTED_USERNAME` must be the runner's **own Azure sign-in name/email**. `.env` supplies settings, not an account, password, or access permission. The instructor prepares access for that account; the runner completes their own sign-in and MFA.
+- **Role-assignment support:** if you cannot assign roles, agree with the instructor **who will help and when for 2-1 `prepare-iq` and 4-2 `grant-agent-access`** ([access checks](docs/instructor.en.md#access)). The administrator makes only the required assignments in their own session; the runner keeps their own account and folder.
 - **Your values:** `LAB_LANGUAGE=en`, `LAB_PROMPT_VERSION=v1`, and team names in `LAB_PREFIX` and `LAB_AGENT_NAME` that no one else uses.
 - **Instructor values:** `MODEL_*_DEPLOYMENT` and `LAB_AUX_DEPLOYMENT` hold the instructor's deployment names.
 - **Never:** empty values, `<...>` placeholders, passwords, keys, or tokens.
@@ -284,7 +283,7 @@ python scripts/workshop.py bind
 <details>
 <summary>Later, in a new terminal: restore this folder's environment</summary>
 
-In the new terminal, start `bash`, run this block, and paste this folder's absolute path you noted; your cached sign-in stays valid. Step 3's Terminal B block already includes it.
+In the new terminal, start `bash`, run this block, and paste this folder's absolute path you noted; it reuses your sign-in cache. Step 3's Terminal B block already includes it. **Before the virtual environment exists,** skip restoration and continue the next task in your notes in the existing folder. If 1-1 is complete, that is [1-2](#python-setup).
 
 ```bash
 read -r -p "Absolute workshop folder path: " WORKSHOP_DIR &&
@@ -296,6 +295,8 @@ export AZURE_CONFIG_DIR="$PWD/.azure-cli"
 **Checkpoint:** the prompt shows `(.venv)` and no error appears. Never use `az account set`, and never change `LAB_LANGUAGE` after a run has started.
 
 **If not:** for `No such file or directory`, paste the full path starting with `/` again, without quotes and without `~`. If you forgot it, use **Terminal → New Terminal** in the VS Code window that has your workshop folder open, then run `pwd`.
+
+**After restoring:** return to the next unexecuted block in your notes. “Next: step 2” below is only for someone finishing step 1 for the first time. If a command reports an expired sign-in, use [sign-in recovery](docs/troubleshooting.en.md#login).
 
 </details>
 
@@ -437,6 +438,8 @@ python scripts/workshop.py smoke --local
 
 **Goal:** the same code answering from Azure as a numbered agent version. Local Docker is not required.
 
+<a id="deploy-code"></a>
+
 ### 4-1. Deploy the code
 
 **Terminal A:** this usually takes 1–3 minutes; status lines such as `Polling agent status (1/30)` are normal.
@@ -447,7 +450,7 @@ azd deploy --no-prompt
 
 **Checkpoint:** `SUCCESS: Your application was deployed ...` appears and the prompt returns. Do not run the `Next:` suggestions or the `Update available` notice around it.
 
-**If not:** keep the error output and [resume only the failed command](docs/troubleshooting.en.md#resume).
+**If not:** keep the error output and follow [deployment failure and status checks](docs/troubleshooting.en.md#deployment-recovery). Do not redeploy or continue to 4-2 while success is uncertain.
 
 <a id="agent-access"></a>
 
@@ -504,7 +507,7 @@ python scripts/workshop.py smoke
 
 <a id="evaluation-runs"></a>
 
-**Keep these three result names throughout the evaluation.** The same agent (`LAB_AGENT_NAME`) routes each question to three candidate models, which each produce one answer: `model_key` values `sol`, `luna`, and `astra` select `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`. These keys are not agent names or Azure deployment names.
+**These three labels are the first-run defaults.** After collection recovery, apply your [actual-label and concurrency notes](docs/troubleshooting.en.md#run-values) to later commands, paths, and output descriptions. The same agent (`LAB_AGENT_NAME`) routes each question to three candidate models, which each produce one answer: `model_key` values `sol`, `luna`, and `astra` select `gpt-6-sol`, `gpt-6-luna`, and `gpt-6-astra`. These keys are not agent names or Azure deployment names.
 
 **V1 and V2 are instruction (prompt) versions, not models; split means question set; label means result-folder name.** Use `dev` for improvement and open the new `holdout` questions only at the end, after fixing V2.
 
@@ -555,7 +558,7 @@ python scripts/workshop.py collect --split dev --label baseline
 
 ### 5-3. Evaluate the saved responses
 
-**Terminal A:** there may be no output for 1–3 minutes while Foundry scores the answers.
+**Terminal A:** after collection recovery, use your [actual V1 label](docs/troubleshooting.en.md#run-values) after `--label`. There may be no output for 1–3 minutes while Foundry scores the answers.
 
 ```bash
 python scripts/workshop.py evaluate --label baseline
@@ -671,13 +674,13 @@ Finding a document (`source_ids`) is not the same as citing it (`citations`). An
 **Next, inspect the same request in the portal.** `row_id` names the response; `trace_id` identifies the execution record you search for in the portal.
 
 1. Open **Agents** on the left → your agent → **Traces → Trace view**. Paste the full `trace_id` into the search box above the table on the left, then click the matching row's **Trace ID** link. If it is missing, widen **Date range → 7D**.
-2. In the opened window's **Graph view**, select the `foundry_iq.retrieve` (retrieval) box and the box starting with `chat` (model call). Each box is a **span**, the record of one operation. **Success** means the operation ran successfully, not that its answer passed the business checks.
+2. In the opened window's **Graph view**, open the `foundry_iq.retrieve` (retrieval) box and the box starting with `chat` (model call), and check their **names and execution statuses**. Each box is a **span**, the record of one operation. Add `Retrieval span=name/status; Model span=name/status` to your notes. You do not need to interpret all the internal JSON. **Success** establishes execution, not answer quality or a cause; base your explanation on the evidence you compared with `show`.
 
 **Then record one line:** `row_id=...; trace_id=...; Observation: ...; Evidence: ...; Change: ...`. In `Observation`, say what was right or wrong; in `Evidence`, name the fields or document IDs you compared; in `Change`, state the instruction needed. For a passing case, write the **behavior V2 should preserve** ([passing cases](docs/troubleshooting.en.md#no-failures), [cause-analysis example](#how-to-distinguish-retrieval-and-instruction-problems)).
 
-**Checkpoint:** the `ID:` at the top of the portal window equals your `trace_id`, and your note holds one complete line: `row_id=...; trace_id=...; Observation: ...; Evidence: ...; Change (or behavior to preserve): ...`.
+**Checkpoint:** the `ID:` at the top of the portal window equals your `trace_id`, and your notes include both span names/statuses and `row_id=...; trace_id=...; Observation: ...; Evidence: ...; Change (or behavior to preserve): ...`.
 
-**If not:** for a missing trace, widen the time range and search by the full `trace_id` again ([portal differences](docs/troubleshooting.en.md#portal-differs)). Edit no files.
+**If not:** for a missing trace, widen the time range and search by the full `trace_id` again ([portal differences](docs/troubleshooting.en.md#portal-differs)). If a required span is missing, do not record the check as complete; use [trace recovery](docs/troubleshooting.en.md#telemetry). Edit no files.
 
 **Example screen:** **Graph view** with the `foundry_iq.retrieve` and `chat` spans (your IDs and names differ).
 
@@ -716,9 +719,9 @@ python scripts/workshop.py feedback --label baseline --row-id "$ROW_ID" \
 python -m json.tool --no-ensure-ascii "src/agent/.foundry/datasets/regression-$ROW_ID.jsonl"
 ```
 
-**Checkpoint:** `lineage → source_row_id` and `source_trace_id` equal your row and trace, and the top-level `ground_truth` equals the `ground_truth` in 6-2's `fixed_reference`, not the model's answer.
+**Checkpoint:** `lineage → source_row_id`, `source_trace_id`, and `review_reason` match the row, trace, and reason you actually reviewed, and the top-level `ground_truth` equals the `ground_truth` in 6-2's `fixed_reference`, not the model's answer.
 
-**If not:** for `No such file`, `ROW_ID` may be empty in a new terminal; paste the path printed above inside the quotes instead. If a row you did not review was saved, do not edit or delete that file; run the save block above once more with the row you reviewed, and report that row in 9-3.
+**If not:** for `No such file`, `ROW_ID` may be empty in a new terminal; paste the path printed above inside the quotes instead. If an unreviewed row or an incorrect reason was saved, **stop before V2 collection and [check the review record](docs/troubleshooting.en.md#review-recovery)**. Saving the correct row as well does not exclude the mistaken record.
 
 <a id="how-to-distinguish-retrieval-and-instruction-problems"></a>
 
@@ -756,6 +759,8 @@ Check your own row before using that explanation. `feedback` preserves a referen
 
 **If not:** if no instruction directly matches, note `no direct V2 instruction` and continue. Do not force a connection or assume the provided V2 improves your case.
 
+<a id="candidate-deploy"></a>
+
 ### 7-2. Deploy V2 and confirm the new version
 
 **Terminal A — select V2 and deploy:** like 4-1, this takes 1–3 minutes.
@@ -767,7 +772,9 @@ azd deploy --no-prompt
 
 **Checkpoint:** `Selected v2; ...` is followed by `SUCCESS: Your application was deployed ...`.
 
-**If not:** keep the error output and [resume only the failed command](docs/troubleshooting.en.md#resume).
+**If not:** if `Selected v2; ...` is missing, use [configuration recovery](docs/troubleshooting.en.md#symptoms). If deployment failed after it, use [deployment status checks](docs/troubleshooting.en.md#deployment-recovery). Do not repeat a successful `set-prompt`.
+
+<a id="candidate-smoke"></a>
 
 **Terminal A — confirm the new version:** note the printed `agent_version` as `V2 version: N`.
 
@@ -779,7 +786,11 @@ python scripts/workshop.py smoke
 
 **If not:** a `Hosted prompt does not match` error or an `agent_version` equal to 4-3 means V2 was not deployed. Check that `.env` has `LAB_PROMPT_VERSION=v2`, rerun the select-and-deploy block above **once**, and repeat this check. For other call errors, [recover only that command](docs/troubleshooting.en.md#resume).
 
+<a id="candidate-collection"></a>
+
 ### 7-3. Collect and evaluate the same dev set
+
+**After collection recovery:** use the actual labels in your [run-value notes](docs/troubleshooting.en.md#run-values). If the completed baseline's `manifest.json` has `concurrency: 2`, append **`--concurrency 2`** to the collection command below. Both V2 dev and holdout must match the baseline.
 
 **Terminal A — collect:** as in 5-2, lines such as `01/18 ...` add up after the readiness JSON (usually 1–3 minutes).
 
@@ -793,7 +804,7 @@ python scripts/workshop.py collect --split dev --label improved
 
 <a id="candidate-evaluation"></a>
 
-**Terminal A — evaluate:** as in 5-3, there may be no output for 1–3 minutes.
+**Terminal A — evaluate:** after collection recovery, use your [actual V2 dev label](docs/troubleshooting.en.md#run-values) after `--label`. As in 5-3, there may be no output for 1–3 minutes.
 
 ```bash
 python scripts/workshop.py evaluate --label improved
@@ -805,7 +816,7 @@ python scripts/workshop.py evaluate --label improved
 
 <a id="candidate-comparison"></a>
 
-**Terminal A — save the comparison:**
+**Terminal A — save the comparison:** after recovery, match both labels to your [run-value notes](docs/troubleshooting.en.md#run-values). Keep using those values in later `summary` and `show` commands.
 
 ```bash
 python scripts/workshop.py compare --labels baseline improved
@@ -909,9 +920,11 @@ Click **Send once**: the comparison view sends the question to both versions. Ch
 - ran `set-prompt` or `azd deploy`; or
 - edited `.env` or a prompt file.
 
-**After recovery:** if A confirmed the original V2 version, or B completed new V2 dev collection, evaluation, and 7-4, do not repeat recovery unless you changed something afterward. For B, use the new version as your noted V2 reference. If holdout records already exist, use the recovery guide's retry label; always compare versions and hashes in 8-2.
+**After recovery:** if you **confirmed the original V2 version, or collected and evaluated dev with the new V2 and completed 7-4**, do not repeat recovery unless you changed something afterward. When using a new version, make it your noted V2 reference. If holdout records already exist, use the recovery guide's retry label; always compare versions and hashes in 8-2.
 
 <a id="holdout-collection"></a>
+
+**After collection recovery:** use the actual labels in your [run-value notes](docs/troubleshooting.en.md#run-values). If the completed baseline's `manifest.json` has `concurrency: 2`, append **`--concurrency 2`** to the collection command below. Keep `--split holdout` unchanged.
 
 **Terminal A:** lines such as `01/12 ...` add up after the readiness JSON (usually 1–3 minutes).
 
@@ -927,7 +940,7 @@ python scripts/workshop.py collect --split holdout --label holdout
 
 ### 8-2. Evaluate the holdout and confirm V2 stayed frozen
 
-**Terminal A — evaluate:** there may be no output for 1–3 minutes.
+**Terminal A — evaluate:** after collection recovery, use your [actual holdout label](docs/troubleshooting.en.md#run-values) after `--label`. There may be no output for 1–3 minutes.
 
 ```bash
 python scripts/workshop.py evaluate --label holdout
@@ -939,7 +952,7 @@ python scripts/workshop.py evaluate --label holdout
 
 <a id="holdout-comparison"></a>
 
-**Terminal A — save the comparison:**
+**Terminal A — save the comparison:** after recovery, match all three labels to your [run-value notes](docs/troubleshooting.en.md#run-values). Read `baseline`, `improved`, and `holdout` in later output descriptions as those actual labels.
 
 ```bash
 python scripts/workshop.py compare --labels baseline improved holdout
@@ -1006,7 +1019,7 @@ python scripts/workshop.py summary --labels holdout
 
 <a id="candidate-traces"></a>
 
-**Terminal A — V2 dev traces:**
+**Terminal A — V2 dev traces:** after recovery, use your [actual V2 dev label](docs/troubleshooting.en.md#run-values) after `--label`.
 
 ```bash
 python scripts/workshop.py monitor --label improved
@@ -1018,7 +1031,7 @@ python scripts/workshop.py monitor --label improved
 
 <a id="holdout-traces"></a>
 
-**Terminal A — holdout traces:**
+**Terminal A — holdout traces:** after recovery, use your [actual holdout label](docs/troubleshooting.en.md#run-values) after `--label`.
 
 ```bash
 python scripts/workshop.py monitor --label holdout
@@ -1028,7 +1041,7 @@ python scripts/workshop.py monitor --label holdout
 
 **If not:** for `Telemetry is incomplete`, rerun only this command after 2–3 minutes; if it persists, [recover monitoring](docs/troubleshooting.en.md#telemetry) with the same label.
 
-**Terminal A — verify all evidence:** a long comparison JSON prints first, then the verification JSON.
+**Terminal A — verify all evidence:** check the three label **values** against your [run-value notes](docs/troubleshooting.en.md#run-values). After recovery, replace only those values; keep the `--baseline`, `--candidate`, and `--holdout` option names. A long comparison JSON prints first, then the verification JSON.
 
 ```bash
 python scripts/workshop.py verify --baseline baseline --candidate improved --holdout holdout
@@ -1085,6 +1098,8 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
 
 **Editor — save your notes as the report:** organize **the same document** you have been using into this template (not a command). Use VS Code **File → Save As** to save it as `src/agent/.foundry/results/workshop-report.txt` inside your workshop folder. Leave no `...`, write empty lists as `none`, and keep `production_release_approved=false`:
 
+The actual labels are the result-folder names you used. Read `concurrency` from their `manifest.json`. Record these values even without recovery, using `Recovery history: none`.
+
 ```text
 1. Review (6-2 line): ...
    Linked V2 instruction (7-1): ...
@@ -1095,6 +1110,10 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
    Interpretation (business passes, judge failures, tokens, time): ...
    improved failures: business=...; Foundry=...
 3. Decision (gates from verified-evidence.json):
+   Actual labels: V1 dev=...; V2 dev=...; V2 holdout=...
+   Collection concurrency=...
+   Recovery history (none if unused): ...
+   Holdout usage (first use, or reuse and its reason): ...
    sol: dev=..., holdout=...
    luna: dev=..., holdout=...
    astra: dev=..., holdout=...
@@ -1104,9 +1123,9 @@ python -m json.tool --no-ensure-ascii src/agent/.foundry/results/verified-eviden
    production_release_approved=false
 ```
 
-**Report as is:** `false` gates, Foundry-score failures, and regressions are valid results; passing gates is not production approval.
+**Report as is:** `false` gates, Foundry-score failures, and regressions are valid results; passing gates is not production approval. If V2-change recovery reused holdout, state that this is **not fresh, untouched validation**. Matching versions and hashes do not prove first use.
 
-**Checkpoint:** the report file is saved with no `...` left, the 7-4 table pasted, and `production_release_approved=false` unchanged. Do not rerun for better scores.
+**Checkpoint:** the saved report has no `...` left and includes the 7-4 table, actual labels, concurrency, recovery and holdout usage history, and unchanged `production_release_approved=false`. Do not rerun for better scores.
 
 **If not:** for missing gates, return to 9-1. For missing notes, read the **saved** [review](#read-review), [dev summary](#compare-results), and [holdout summary](#holdout-results); do not repeat review, collection, or evaluation.
 
@@ -1139,7 +1158,7 @@ Stay in this folder. **Do not start these extras after step 10; it deletes the a
 
 | Choice | Action |
 |---|---|
-| Continue later | Keep the same folder, settings, error, and completed-step notes; [resume the failed stage](docs/troubleshooting.en.md#resume). **Closing the terminal may leave Azure resources costing money.** |
+| Continue later | Once active work finishes, save `Last completed block / Next block / Workshop folder` and the labels in use in the same notes. Keep the same folder, settings, and evidence; [resume according to a normal pause or error](docs/troubleshooting.en.md#resume). **Closing the terminal may leave Azure resources costing money.** |
 | End this run | Confirm that active collection, deployment, and evaluation work has finished. Save only completed steps, errors, and existing evidence in your current notes. Do not create results for unfinished steps; continue to [10-1's deletion plan](#cleanup-plan). |
 
 If your local server is still running, stop it with `Ctrl+C` in its terminal. If a cloud job's state is unclear or deployment/role assignment failed, first work with the owner through [cleanup recovery](docs/troubleshooting.en.md#cleanup-recovery) to confirm **every created object is recorded in the ownership plan**. Missing records do not make an empty plan proof of completed cleanup.
@@ -1166,6 +1185,15 @@ python scripts/workshop.py cleanup --dry-run
 
 **Checkpoint:** every target in the printed JSON belongs to this folder's ownership record. For a completed workshop, `agent` is your `LAB_AGENT_NAME` and all three `search_objects` names (`...-kb`, `...-source`, `...-policies`) contain your `LAB_PREFIX`. **For an early exit, expect only objects actually created.** `agent: null` or empty lists are normal for objects never created; if a created object is missing, use the cleanup recovery above before deletion.
 
+**How to compare:** read `src/agent/.foundry/local-state.json` in your editor and compare these fields with the printed plan. Do not edit the file to make them match.
+
+| Plan field | Ownership field |
+|---|---|
+| `agent` | `agent_owned` (absent/`null` if never created) |
+| `search_objects` | The same paths in `owned_search_paths` (order can differ) |
+| `role_assignments` | The same full IDs in `owned_roles` |
+| `models` | The same names, IDs, models, and versions in `owned_models` |
+
 | Plan field | Expected target |
 |---|---|
 | `agent`, `search_objects`, `role_assignments` | Your `LAB_AGENT_NAME`, your three `LAB_PREFIX` knowledge objects, and roles created by this folder (long IDs, usually two). In a shared class, have the owner confirm that [shared Search-to-planner access](docs/instructor.en.md#shared-search-access) is not listed; if it is, stop before 10-2. Exclusive self-study may also own that role in this folder. |
@@ -1173,7 +1201,7 @@ python scripts/workshop.py cleanup --dry-run
 | `schedules`, `custom_evaluators`, `generated_datasets` | Empty unless you added Levels 2–3; then only this folder's schedule, evaluators, and generated datasets |
 | `preserved` | The existing Foundry project, Search, App Insights, and evaluation evidence (not deleted) |
 
-The foundation and auxiliary planner/judge are preserved. A model's name in `.env` does not establish ownership.
+The foundation and auxiliary planner/judge are preserved. A model's name in `.env` does not establish ownership. **Copy the checked JSON output into your existing notes.** `--dry-run` does not save a plan file, and matching records does not replace the shared-dependency checks above.
 
 **If not:** do not run 10-2; follow the “ownership/targets do not match” row of [cleanup recovery](docs/troubleshooting.en.md#cleanup-recovery). Delete nothing.
 
@@ -1192,6 +1220,8 @@ python scripts/workshop.py cleanup --confirm
 <a id="cleanup-check"></a>
 
 ### 10-3. Verify deletion separately
+
+**Plan to compare:** open `plan` in `src/agent/.foundry/results/cleanup.json` in your editor. This is the plan 10-2 actually used; its targets must match your 10-1 notes. Compare the counts below with this `plan`. Do not repeat deletion or dry-run to recover the original plan.
 
 **Terminal A:**
 
